@@ -1,0 +1,5 @@
+/.gcm/
+/assets/admin/push_config.json
+.env
+.env.*
+!.env.example
