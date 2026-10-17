@@ -724,10 +724,34 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-promo-card__body a { color: var(--nocturne-green); text-decoration: none; font-weight: 700; font-size: 13px; }
 
 .nocturne-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-.nocturne-tier-card { padding: 24px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-tier-card { position: relative; padding: 24px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-tier-card.is-current { border-color: var(--nocturne-green); box-shadow: 0 0 0 1px rgba(0,239,135,.25); }
+.nocturne-tier-card__current { position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 999px; background: rgba(0,239,135,.16); color: var(--nocturne-green); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .nocturne-tier-card img { width: 56px; height: 56px; margin-bottom: 14px; object-fit: contain; }
-.nocturne-tier-card h5 { margin: 0 0 8px; color: var(--nocturne-text); }
+.nocturne-tier-card__icon { display: block; margin: 0 auto 14px; color: var(--nocturne-green); font-size: 34px; }
+.nocturne-tier-card h5 { margin: 0 0 10px; color: var(--nocturne-text); }
 .nocturne-tier-card p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+.nocturne-tier-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.nocturne-tier-card ul li { color: var(--nocturne-muted); font-size: 13px; line-height: 1.5; }
+
+/* ---- VIP progress + rakeback claim (user.vip page) ---- */
+.nocturne-vip-progress { margin-bottom: 20px; padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-vip-progress__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+.nocturne-vip-progress__head span, .nocturne-vip-progress__wagered span { display: block; color: var(--nocturne-muted); font-size: 12.5px; margin-bottom: 4px; }
+.nocturne-vip-progress__head strong { font-size: 22px; color: var(--nocturne-text); }
+.nocturne-vip-progress__wagered { text-align: right; }
+.nocturne-vip-progress__wagered strong { font-size: 18px; color: var(--nocturne-text); }
+.nocturne-vip-progress__bar { height: 10px; border-radius: 999px; background: var(--nocturne-raised); overflow: hidden; }
+.nocturne-vip-progress__bar span { display: block; height: 100%; background: var(--nocturne-green); border-radius: inherit; transition: width .4s ease; }
+.nocturne-vip-progress__note { margin: 12px 0 0; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-vip-progress__note strong { color: var(--nocturne-text); }
+.nocturne-rakeback-claim { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.nocturne-rakeback-claim strong { display: block; color: var(--nocturne-text); font-size: 15px; margin-bottom: 4px; }
+.nocturne-rakeback-claim p { color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-rakeback-claim__amount { display: flex; align-items: center; gap: 14px; }
+.nocturne-rakeback-claim__amount > span { font-size: 22px; font-weight: 800; color: var(--nocturne-green); }
+.nocturne-rakeback-claim__amount .btn--base { display: inline-flex; align-items: center; gap: 8px; }
+.nocturne-rakeback-claim__amount .btn--base:disabled { opacity: .45; cursor: not-allowed; }
 
 /* =========================================================================
    Mobile bottom nav — icon + label tab bar

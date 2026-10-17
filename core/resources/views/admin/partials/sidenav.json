@@ -67,6 +67,30 @@
             }
         ]
     },
+    "vip": {
+        "keyword": [
+            "VIP",
+            "VIP Club",
+            "Tiers",
+            "Rakeback",
+            "Loyalty"
+        ],
+        "title": "VIP Club",
+        "icon": "las la-crown",
+        "menu_active": "admin.vip*",
+        "submenu": [
+            {
+                "title": "VIP Tiers",
+                "route_name": "admin.vip.index",
+                "menu_active": "admin.vip.index,admin.vip.create,admin.vip.edit"
+            },
+            {
+                "title": "Rakeback Claims",
+                "route_name": "admin.vip.claims",
+                "menu_active": "admin.vip.claims"
+            }
+        ]
+    },
     "manage_users": {
         "title": "Manage Users",
         "icon": "las la-users",
@@ -616,6 +640,19 @@
                 "title": "Cache",
                 "route_name": "admin.system.optimize",
                 "menu_active": "admin.system.optimize"
+            },
+            {
+                "keyword": [
+                    "Database",
+                    "Update",
+                    "Migration",
+                    "Migrate",
+                    "Database update",
+                    "Schema update"
+                ],
+                "title": "Database Update",
+                "route_name": "admin.system.database.update",
+                "menu_active": "admin.system.database.update"
             }
         ]
     }

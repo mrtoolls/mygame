@@ -65,6 +65,18 @@ Route::middleware('admin')->group(function () {
         Route::post('dream-catcher/{id}', 'dreamCatcherUpdate')->name('dream.catcher.update');
     });
 
+    // VIP Tiers
+    Route::controller('VipTierController')->name('vip.')->prefix('vip')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('create', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('edit/{id}', 'update')->name('update');
+        Route::post('status/{id}', 'status')->name('status');
+        Route::post('delete/{id}', 'destroy')->name('destroy');
+        Route::get('claims', 'claims')->name('claims');
+    });
+
     // Users Manager
     Route::controller('ManageUsersController')->name('users.')->prefix('users')->group(function () {
         Route::get('/', 'allUsers')->name('all');
@@ -310,6 +322,8 @@ Route::middleware('admin')->group(function () {
         Route::get('server-info', 'systemServerInfo')->name('server.info');
         Route::get('optimize', 'optimize')->name('optimize');
         Route::get('optimize-clear', 'optimizeClear')->name('optimize.clear');
+        Route::get('database-update', 'databaseUpdate')->name('database.update');
+        Route::post('database-update/run', 'databaseUpdateRun')->name('database.update.run');
     });
 
     // SEO

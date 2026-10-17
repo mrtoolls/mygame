@@ -413,20 +413,10 @@
     },
     "vip_club": {
         "builder": true,
-        "name": "VIP Club",
+        "name": "VIP Club (tier benefits managed under VIP Club > VIP Tiers in the admin menu)",
         "content": {
             "heading": "text",
             "subheading": "text"
-        },
-        "element": {
-            "images": {
-                "image": {
-                    "size": "80x80"
-                }
-            },
-            "title": "text",
-            "description": "textarea",
-            "modal": true
         }
     },
     "awards": {

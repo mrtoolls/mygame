@@ -18,7 +18,7 @@
         @else
             <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i><span>@lang('Games')</span></a>
         @endauth
-        <a href="{{ route('pages', 'vip-club') }}"><i class="ph-bold ph-crown"></i><span>@lang('VIP-Club')</span></a>
+        <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-bold ph-crown"></i><span>@lang('VIP-Club')</span></a>
     </nav>
     <div class="nocturne-actions">
         @auth

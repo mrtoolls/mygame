@@ -85,6 +85,47 @@ class User extends Authenticatable
         return $this->hasMany(GameLog::class);
     }
 
+    public function rakebackClaims()
+    {
+        return $this->hasMany(VipRakebackClaim::class);
+    }
+
+    /**
+     * Lifetime real-money wagering (demo play excluded) - the single figure
+     * VIP tier thresholds and rakeback are both computed from.
+     */
+    public function totalWagered()
+    {
+        return (float) $this->gameLogs()->where('demo_play', 0)->sum('invest');
+    }
+
+    public function vipTier()
+    {
+        $wagered = $this->totalWagered();
+        return VipTier::active()->where('min_wagered', '<=', $wagered)->orderByDesc('min_wagered')->first();
+    }
+
+    public function nextVipTier()
+    {
+        $wagered = $this->totalWagered();
+        return VipTier::active()->where('min_wagered', '>', $wagered)->orderBy('min_wagered')->first();
+    }
+
+    /**
+     * Rakeback is computed against the user's current tier rate applied to
+     * lifetime wagering, minus whatever has already been claimed - never
+     * trust a claimed amount from the client, always recompute here.
+     */
+    public function rakebackClaimable()
+    {
+        $tier = $this->vipTier();
+        if (!$tier || $tier->rakeback_percent <= 0) {
+            return 0.0;
+        }
+        $accrued = $this->totalWagered() * ((float) $tier->rakeback_percent / 100);
+        return max(0, round($accrued - (float) $this->rakeback_claimed_total, 8));
+    }
+
     public function fullname(): Attribute
     {
         return new Attribute(

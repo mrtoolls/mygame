@@ -74,6 +74,12 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('commission/log', 'commissionLog')->name('commission.log');
             });
 
+            // VIP Club
+            Route::controller('VipController')->prefix('vip')->name('vip.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('claim-rakeback', 'claimRakeback')->name('claim.rakeback');
+            });
+
             //Profile setting
             Route::controller('ProfileController')->group(function () {
                 Route::get('profile-setting', 'profile')->name('profile.setting');
