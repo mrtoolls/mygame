@@ -4,6 +4,7 @@
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Profile')</h1>
+    @include('Template::partials.promo_banner_row')
     <div class="notice"></div>
     @php
         $kyc = getContent('user_kyc.content', true);
@@ -124,15 +125,6 @@
             <div class="info-card__content">
                 <p class="info-card__desc mb-2">@lang('Total Loss')</p>
                 <h4 class="info-card__title mb-0">{{ showAmount($widget['total_loss']) }}</h4>
-            </div>
-        </div>
-    </div>
-
-    <h4 class="mb-3 mt-5">@lang('Explore Games')</h4>
-    <div class="games-section pb-50">
-        <div class="games-section-inner">
-            <div class="games-section-wrapper">
-                @include('Template::partials.game', ['games' => $games->take(12)])
             </div>
         </div>
     </div>

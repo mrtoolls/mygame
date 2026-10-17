@@ -330,6 +330,22 @@
             "heading": "text"
         }
     },
+    "trending_games": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Trending Games Row (shows games marked \"Trending\" in Admin > Manage Games)",
+        "content": {
+            "heading": "text"
+        }
+    },
+    "featured_games": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Featured Games Row (shows games marked \"Featured\" in Admin > Manage Games)",
+        "content": {
+            "heading": "text"
+        }
+    },
     "bonus_countdown": {
         "builder": true,
         "no_selection": true,

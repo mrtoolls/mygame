@@ -456,6 +456,44 @@ a:hover { color: var(--nocturne-green); }
 .game-item__play .btn:last-child { background: rgba(255,255,255,.12); color: #fff; }
 .game-item__title { margin: 0; padding: 11px 12px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* ---- Promo banner row (reuses admin-managed Promotions content) ---- */
+.nocturne-promo-banners { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 26px; }
+.nocturne-promo-banner { display: flex; align-items: center; gap: 14px; padding: 18px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); overflow: hidden; }
+.nocturne-promo-banner__body { flex: 1 1 auto; min-width: 0; }
+.nocturne-promo-banner__badge { display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; background: var(--nocturne-raised); color: var(--nocturne-muted); font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.nocturne-promo-banner__body h4 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 16px; font-weight: 800; line-height: 1.25; }
+.nocturne-promo-banner__body p { margin: 0 0 8px; color: var(--nocturne-muted); font-size: 12.5px; line-height: 1.5; }
+.nocturne-promo-banner__body a { color: var(--nocturne-green); text-decoration: none; font-size: 12.5px; font-weight: 700; }
+.nocturne-promo-banner__body a:hover { text-decoration: underline; }
+.nocturne-promo-banner__media { flex: 0 0 auto; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; }
+.nocturne-promo-banner__media img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 575.98px) { .nocturne-promo-banners { grid-template-columns: 1fr; } }
+
+/* ---- Game catalogue search (games.blade.php) ---- */
+.nocturne-game-search { position: relative; margin-bottom: 24px; }
+.nocturne-game-search i { position: absolute; top: 50%; left: 18px; transform: translateY(-50%); color: var(--nocturne-muted); font-size: 18px; }
+.nocturne-game-search input { width: 100%; min-height: 52px; padding: 0 18px 0 48px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 14px; color: var(--nocturne-text); font-size: 14px; }
+.nocturne-game-search input::placeholder { color: var(--nocturne-muted); }
+.nocturne-game-search input:focus { outline: 0; border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
+.nocturne-game-search__empty { margin-top: 8px; color: var(--nocturne-muted); font-size: 13px; text-align: center; }
+
+/* ---- Homepage game rows (Trending Now / Featured) — horizontal scroller ---- */
+.nocturne-game-row { margin: 0 0 32px; }
+.nocturne-game-row__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.nocturne-game-row__head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--nocturne-text); font-size: 19px; font-weight: 800; }
+.nocturne-game-row__head h2 i { color: var(--nocturne-green); font-size: 21px; }
+.nocturne-game-row__head a { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 11px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.nocturne-game-row__head a:hover { background: #303958; color: var(--nocturne-green); }
+.nocturne-game-scroller { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity; }
+.nocturne-game-scroller::-webkit-scrollbar { height: 6px; }
+.nocturne-game-scroller::-webkit-scrollbar-thumb { background: var(--nocturne-raised); border-radius: 999px; }
+.nocturne-game-scroller__item { flex: 0 0 168px; scroll-snap-align: start; }
+.nocturne-game-scroller__item .game-item__title { padding-bottom: 2px; }
+.game-item__tag { display: block; padding: 0 12px 12px; color: var(--nocturne-muted); font-size: 10.5px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+@media (max-width: 575.98px) {
+    .nocturne-game-scroller__item { flex-basis: 136px; }
+}
+
 /* =========================================================================
    Footer — CTA bar, link grid, support box, payment/trust logos, socket bar
    ========================================================================= */
