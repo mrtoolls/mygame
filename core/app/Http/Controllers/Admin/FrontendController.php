@@ -25,7 +25,8 @@ class FrontendController extends Controller
             $arr                      = explode('/', $temp);
             $tempname                 = end($arr);
             $templates[$key]['name']  = $tempname;
-            $templates[$key]['image'] = asset($temp) . '/preview.jpg';
+            $preview = file_exists($temp . '/preview.svg') ? 'preview.svg' : 'preview.jpg';
+            $templates[$key]['image'] = asset($temp) . '/' . $preview;
         }
         $extraTemplates = [];
         return view('admin.frontend.templates', compact('pageTitle', 'templates', 'extraTemplates'));
