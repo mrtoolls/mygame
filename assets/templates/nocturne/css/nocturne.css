@@ -436,26 +436,86 @@ a:hover { color: var(--nocturne-green); }
 }
 
 /* =========================================================================
-   Auth pages (login / register / password reset)
+   Auth pages (login / register / password reset) — dedicated split layout
    ========================================================================= */
-.account.accout-bg { position: relative; padding: 60px 0; }
-.account-inner { display: flex; justify-content: center; }
-.account-form {
-    width: 100%; max-width: 460px; padding: 34px 32px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 22px;
+.nocturne-auth { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 20px; background: var(--nocturne-bg); }
+.nocturne-auth-card {
+    position: relative; display: grid; grid-template-columns: 420px 1fr; width: 100%; max-width: 1080px; overflow: hidden;
+    background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 26px; box-shadow: 0 30px 80px rgba(0,0,0,.45);
 }
-.account-form__content { margin-bottom: 22px; text-align: center; }
-.account-form__logo img { max-height: 44px; margin-bottom: 14px; }
-.account-form__desc { color: var(--nocturne-muted); font-size: 14px; }
-.account-form .input-inner { position: relative; }
-.account-form .input-inner__icon { position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: var(--nocturne-muted); }
-.account-form .input-inner .form--control { padding-left: 44px; }
-.account-form .forgot-password { color: var(--nocturne-muted); font-size: 13px; text-decoration: none; }
-.account-form .forgot-password:hover { color: var(--nocturne-green); }
-.account-form .form--check { display: flex; align-items: center; gap: 8px; }
-.account-form .account-note { color: var(--nocturne-muted); font-size: 13.5px; }
-.account-form .account-note a { color: var(--nocturne-green); font-weight: 700; text-decoration: none; }
-.registration-inner .account-form, .registration .account-form { max-width: 620px; }
-.registration .lock-icon { display: block; margin: 0 auto 18px; text-align: center; }
+.nocturne-auth-card--wide { max-width: 1160px; }
+
+.nocturne-auth-visual {
+    position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 22px;
+    min-height: 560px; padding: 28px 34px 32px; background-color: #10142a; background-size: cover; background-position: 72% 20%;
+}
+.nocturne-auth-visual::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,239,135,.14), transparent 55%),
+        linear-gradient(180deg, rgba(10,13,26,.1) 0%, rgba(10,13,26,.4) 45%, rgba(8,10,20,.93) 82%, #0a0d1a 100%);
+}
+.nocturne-auth-visual__brand {
+    position: absolute; top: 26px; left: 30px; z-index: 2; display: flex; align-items: center; gap: 10px;
+    color: #fff; text-decoration: none; font-size: 19px; font-weight: 800;
+}
+.nocturne-auth-visual__brand img { height: 30px; object-fit: contain; }
+.nocturne-auth-visual__copy { position: relative; z-index: 2; }
+.nocturne-auth-visual__copy h2 { margin: 0 0 8px; color: #fff; font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; line-height: 1.2; }
+.nocturne-auth-visual__copy h2 span { color: var(--nocturne-green); }
+.nocturne-auth-visual__copy p { margin: 0 0 18px; color: var(--nocturne-muted); font-size: 14.5px; font-weight: 700; }
+.nocturne-auth-visual__trust { display: inline-flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 12.5px; }
+.nocturne-auth-visual__trust i { color: var(--nocturne-green); }
+.nocturne-auth-visual__copyright { position: relative; z-index: 2; color: #5c6384; font-size: 11.5px; }
+
+.nocturne-auth-form { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 44px 50px; }
+.nocturne-auth-form h1 { margin: 0 0 26px; color: var(--nocturne-text); font-size: 28px; font-weight: 800; }
+.nocturne-field { margin-bottom: 18px; }
+.nocturne-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.nocturne-field .form--label { display: block; margin-bottom: 8px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; }
+.nocturne-field__control {
+    position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px;
+    background: #0d1023; border: 1px solid #2c3453; border-radius: 13px; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.nocturne-field__control:focus-within { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
+.nocturne-field__control > i:first-child { color: var(--nocturne-muted); font-size: 17px; }
+.nocturne-field__control input { flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--nocturne-text); font-size: 14px; outline: 0; }
+.nocturne-field__control input::placeholder { color: #6b7399; }
+.nocturne-field__control input[readonly] { color: var(--nocturne-muted); }
+.nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 17px; cursor: pointer; }
+.nocturne-field__toggle:hover { color: var(--nocturne-green); }
+.nocturne-field-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.nocturne-field-row .form--check { display: flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-field-row .forgot-password { color: var(--nocturne-muted); font-size: 13px; text-decoration: none; }
+.nocturne-field-row .forgot-password:hover { color: var(--nocturne-green); }
+.nocturne-agree { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+.nocturne-agree input { margin-top: 3px; accent-color: var(--nocturne-green); }
+.nocturne-agree a { color: var(--nocturne-green); text-decoration: none; }
+.nocturne-auth-form .form-submit { margin-top: 4px; }
+.nocturne-auth-form .btn--gradient { min-height: 52px; border: 0; border-radius: 14px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; font-size: 15px; }
+.nocturne-auth-form .btn--gradient:hover { filter: brightness(1.05); }
+.nocturne-auth-switch { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--nocturne-line); text-align: center; }
+.nocturne-auth-switch span { color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-auth-switch a { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-weight: 700; font-size: 13.5px; }
+.nocturne-auth-switch a:hover { background: #303958; color: var(--nocturne-green); }
+.nocturne-auth-form .account-form__other { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--nocturne-muted); font-size: 12px; }
+.nocturne-auth-form .account-form__other-line { flex: 1; height: 1px; background: var(--nocturne-line); }
+.nocturne-auth-form .social-list { display: flex; justify-content: center; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.nocturne-auth-form .social-list__link { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-text); }
+.nocturne-auth-card.form-disabled .nocturne-auth-form > form,
+.nocturne-auth-card.form-disabled .nocturne-auth-form h1 { filter: blur(2px); opacity: .45; pointer-events: none; }
+.nocturne-auth-card.form-disabled .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-muted); font-size: 34px; }
+
+@media (max-width: 991.98px) {
+    .nocturne-auth-card, .nocturne-auth-card--wide { grid-template-columns: 1fr; max-width: 520px; }
+    .nocturne-auth-visual { min-height: 300px; }
+    .nocturne-auth-form { padding: 32px 26px; }
+}
+@media (max-width: 575.98px) {
+    .nocturne-auth { padding: 0; }
+    .nocturne-auth-card { border-radius: 0; min-height: 100vh; }
+    .nocturne-field-grid { grid-template-columns: 1fr; gap: 0; }
+    .nocturne-auth-form { padding: 28px 18px; }
+}
 
 /* ---- Shared input-group (referral link, copy boxes) ---- */
 .nocturne-main .input-group { border-radius: 13px; overflow: hidden; }
