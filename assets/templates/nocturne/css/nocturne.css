@@ -535,13 +535,31 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 19px; cursor: pointer; }
 .nocturne-field__toggle:hover { color: var(--nocturne-green); }
 .nocturne-field-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-.nocturne-field-row .form--check { display: flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-field-row .form--check { display: flex; flex-wrap: nowrap; align-items: center; gap: 9px; color: var(--nocturne-muted); }
+.nocturne-field-row .form-check-label { margin: 0; color: var(--nocturne-muted); font-size: 13px !important; font-weight: 600; white-space: nowrap; }
 .nocturne-field-row .forgot-password { color: var(--nocturne-muted); font-size: 13px; text-decoration: none; }
 .nocturne-field-row .forgot-password:hover { color: var(--nocturne-green); }
 .nocturne-agree { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; }
-.nocturne-agree input { flex: 0 0 auto; margin-top: 3px; accent-color: var(--nocturne-green); }
 .nocturne-agree label { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
 .nocturne-agree a, .nocturne-agree span { color: var(--nocturne-green); font-weight: 700; text-decoration: none; }
+
+/* ---- Modern checkbox (Remember Me / agreement) ---- */
+.nocturne-auth-form input.form-check-input {
+    flex: 0 0 auto; appearance: none; -webkit-appearance: none; width: 19px; height: 19px; margin: 0;
+    border: 1.5px solid #3a4268 !important; border-image: none !important; border-radius: 6px !important;
+    background: #0d1023; cursor: pointer; display: grid; place-items: center; transition: background .15s ease, border-color .15s ease;
+}
+.nocturne-auth-form input.form-check-input::before {
+    content: "" !important; width: 10px; height: 6px; margin-top: -2px; border: 2px solid #073c2a; border-top: 0; border-right: 0;
+    background: none !important; -webkit-text-fill-color: initial !important; transform: rotate(-45deg) scale(0); position: static !important;
+    transition: transform .15s ease;
+}
+.nocturne-auth-form input.form-check-input:checked {
+    background: var(--nocturne-green) !important; border-color: var(--nocturne-green) !important;
+}
+.nocturne-auth-form input.form-check-input:checked::before { transform: rotate(-45deg) scale(1); }
+.nocturne-auth-form input.form-check-input:focus-visible { outline: 2px solid var(--nocturne-green); outline-offset: 2px; }
+.nocturne-agree input.form-check-input { margin-top: 2px; }
 .nocturne-optional { color: var(--nocturne-muted); font-weight: 400; }
 .nocturne-auth-form .form-submit { margin-top: 4px; }
 .nocturne-auth-form .btn--gradient,
