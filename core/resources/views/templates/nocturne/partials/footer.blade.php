@@ -18,7 +18,7 @@
                 <strong>@lang('Do you have a question?')</strong>
                 <span>@lang('Write us and our support team will help you')</span>
             </div>
-            <a class="nocturne-footer-cta__btn" href="{{ route('ticket.index') }}"><i class="las la-headset"></i>@lang('Live Support')</a>
+            <a class="nocturne-footer-cta__btn" href="{{ route('ticket.index') }}"><i class="ph-bold ph-headset"></i>@lang('Live Support')</a>
         </div>
 
         <div class="nocturne-footer-grid">
@@ -66,9 +66,9 @@
             </div>
             <div class="nocturne-footer-col">
                 <div class="nocturne-footer-support">
-                    <div class="nocturne-footer-support__head"><i class="las la-headset"></i> @lang('Support') <span>24/7</span></div>
+                    <div class="nocturne-footer-support__head"><i class="ph-bold ph-headset"></i> @lang('Support') <span>24/7</span></div>
                     <p>@lang('Contact us if you have questions')</p>
-                    <a class="btn-write" href="{{ route('contact') }}"><i class="las la-envelope"></i>@lang('Write Us')</a>
+                    <a class="btn-write" href="{{ route('contact') }}"><i class="ph-bold ph-envelope"></i>@lang('Write Us')</a>
                 </div>
             </div>
         </div>

@@ -4,7 +4,7 @@
 @endphp
 <section class="nocturne-page-hero">
     <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="las la-ticket-alt"></i> {{ __(@$content->data_values->heading ?: 'Promotions') }}</span>
+        <span class="nocturne-eyebrow"><i class="ph-bold ph-ticket"></i> {{ __(@$content->data_values->heading ?: 'Promotions') }}</span>
         <p>{{ __(@$content->data_values->subheading) }}</p>
     </div>
 </section>
@@ -19,7 +19,7 @@
                         <h4>{{ __(@$promo->data_values->title) }}</h4>
                         <p>{{ __(@$promo->data_values->description) }}</p>
                         @if (@$promo->data_values->button_url)
-                            <a href="{{ $promo->data_values->button_url }}">@lang('Read More') <i class="las la-arrow-right"></i></a>
+                            <a href="{{ $promo->data_values->button_url }}">@lang('Read More') <i class="ph-bold ph-arrow-right"></i></a>
                         @endif
                     </div>
                 </div>

@@ -56,7 +56,7 @@
                     </div>
 
                     <div class="form-submit">
-                        <button type="submit" class="btn btn--gradient w-100">@lang('Log In')</button>
+                        <button type="submit" class="btn btn--gradient w-100"><x-icon name="sign-in" />@lang('Log In')</button>
                     </div>
                 </form>
 

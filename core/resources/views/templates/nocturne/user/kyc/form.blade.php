@@ -6,10 +6,10 @@
     <h1 class="nocturne-page-title">@lang('Verification')</h1>
 
     <div class="nocturne-steps">
-        <div class="nocturne-step is-active"><i class="las la-user-check"></i>@lang('Start Verification')</div>
-        <div class="nocturne-step"><i class="las la-id-card"></i>@lang('Data Input')</div>
-        <div class="nocturne-step"><i class="las la-search"></i>@lang('Data Checking')</div>
-        <div class="nocturne-step"><i class="las la-check-circle"></i>@lang('Verification Complete')</div>
+        <div class="nocturne-step is-active"><i class="ph-bold ph-user-check"></i>@lang('Start Verification')</div>
+        <div class="nocturne-step"><i class="ph-bold ph-identification-card"></i>@lang('Data Input')</div>
+        <div class="nocturne-step"><i class="ph-bold ph-magnifying-glass"></i>@lang('Data Checking')</div>
+        <div class="nocturne-step"><i class="ph-bold ph-check-circle"></i>@lang('Verification Complete')</div>
     </div>
 
     <div class="row justify-content-center">

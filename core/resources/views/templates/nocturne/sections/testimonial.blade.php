@@ -15,7 +15,7 @@
                         <img src="{{ getImage('assets/images/frontend/testimonial/' . @$testimonial->data_values->image, '90x80') }}" alt="@lang('image')">
                         <div>
                             <strong>{{ __(@$testimonial->data_values->name) }}</strong>
-                            <span class="nocturne-review-card__stars"><i class="las la-star"></i><i class="las la-star"></i><i class="las la-star"></i><i class="las la-star"></i><i class="las la-star"></i></span>
+                            <span class="nocturne-review-card__stars"><i class="ph-bold ph-star"></i><i class="ph-bold ph-star"></i><i class="ph-bold ph-star"></i><i class="ph-bold ph-star"></i><i class="ph-bold ph-star"></i></span>
                         </div>
                     </div>
                     <p>{{ __(@$testimonial->data_values->quote) }}</p>

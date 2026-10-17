@@ -95,7 +95,7 @@
                     @endif
 
                     <div class="form-submit">
-                        <button type="submit" class="btn btn--gradient w-100">@lang('Register')</button>
+                        <button type="submit" class="btn btn--gradient w-100"><x-icon name="user-plus" />@lang('Register')</button>
                     </div>
                 </form>
 

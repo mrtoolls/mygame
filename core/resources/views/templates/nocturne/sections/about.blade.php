@@ -3,7 +3,7 @@
 @endphp
 <section class="nocturne-page-hero">
     <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="las la-spade"></i> {{ __(@$content->data_values->heading ?: 'About Us') }}</span>
+        <span class="nocturne-eyebrow"><i class="ph-bold ph-spade"></i> {{ __(@$content->data_values->heading ?: 'About Us') }}</span>
         <p>{{ __(@$content->data_values->description) }}</p>
     </div>
     @if (@$content->data_values->image)

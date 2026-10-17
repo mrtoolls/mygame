@@ -8,6 +8,11 @@
     --nocturne-green: #00ef87;
     --nocturne-line: rgba(145, 156, 205, .16);
     color-scheme: dark;
+    /* The base theme drives nearly every heading/body font-family declaration
+       through these two variables - redefining them here retunes the whole
+       site at once instead of chasing individual selectors. */
+    --heading-font: "Mulish", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    --body-font: "Mulish", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
 html { background: var(--nocturne-bg); scroll-behavior: smooth; }
@@ -15,11 +20,11 @@ body {
     margin: 0;
     background: var(--nocturne-bg) !important;
     color: var(--nocturne-text) !important;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    font-family: var(--body-font);
     font-size: 15px;
     line-height: 1.55;
 }
-body, button, input, select, textarea { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
 a:hover { color: var(--nocturne-green); }
 .nocturne-shell { min-height: 100vh; }
@@ -133,7 +138,17 @@ a:hover { color: var(--nocturne-green); }
 .footer-area .socket-area, .footer-area .socket-area__text, .footer-area a { color: var(--nocturne-muted); }
 .footer-area .socket-area { border-top: 1px solid var(--nocturne-line); }
 .footer-area .form--control { color: var(--nocturne-text); background: var(--nocturne-panel); border-color: var(--nocturne-line); }
-.nocturne-main .preloader { background: var(--nocturne-bg); }
+/* The stock markup is `<div class="preloader"><div class="loader-p"></div></div>`,
+   rendered outside .nocturne-main (directly in <body>) - so it has to be targeted
+   unscoped here, not under .nocturne-main (which never matches it). */
+.preloader { background: var(--nocturne-bg) !important; display: flex; align-items: center; justify-content: center; }
+.loader-p { position: static !important; top: auto; left: auto; width: 84px; height: 84px; border: 0; }
+.loader-p::before, .loader-p::after { content: none !important; }
+.loader-p { background: url('../../../images/frontend/nockturne_assets/iconlt.png') center/contain no-repeat; animation: nocturnePulse .9s ease-in-out infinite; }
+@keyframes nocturnePulse {
+    0%, 100% { transform: scale(.88); opacity: .65; }
+    50% { transform: scale(1.04); opacity: 1; }
+}
 .nocturne-main .cookies-card { color: var(--nocturne-text); background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 18px; }
 .nocturne-welcome { position: relative; display: flex; min-height: 350px; align-items: center; overflow: hidden; margin: 8px 0 28px; padding: clamp(28px, 5vw, 72px); border-radius: 24px; background: radial-gradient(ellipse at 90% 95%, rgba(0,239,135,.22), transparent 43%), linear-gradient(120deg,#151a31 12%,#171e38 60%,#102b33); }
 .nocturne-welcome-copy { position: relative; z-index: 2; max-width: 660px; }
@@ -464,10 +479,10 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-visual__copy h2 span { color: var(--nocturne-green); }
 .nocturne-auth-visual__copy p { margin: 0 0 18px; color: var(--nocturne-muted); font-size: 14.5px; font-weight: 700; }
 .nocturne-auth-visual__trust { display: inline-flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 12.5px; }
-.nocturne-auth-visual__trust .nocturne-icon { width: 16px; height: 16px; color: var(--nocturne-green); }
+.nocturne-auth-visual__trust .nocturne-icon { font-size: 16px; color: var(--nocturne-green); }
 
-/* ---- Bold outline SVG icon set (x-icon component) ---- */
-.nocturne-icon { width: 20px; height: 20px; flex: 0 0 auto; }
+/* ---- x-icon component (Phosphor Bold icon font) ---- */
+.nocturne-icon { display: inline-block; line-height: 1; flex: 0 0 auto; }
 .nocturne-auth-visual__copyright { position: relative; z-index: 2; color: #5c6384; font-size: 11.5px; }
 
 .nocturne-auth-form { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 44px 50px; }
@@ -480,12 +495,11 @@ a:hover { color: var(--nocturne-green); }
     background: #0d1023; border: 1px solid #2c3453; border-radius: 13px; transition: border-color .15s ease, box-shadow .15s ease;
 }
 .nocturne-field__control:focus-within { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
-.nocturne-field__control > i:first-child, .nocturne-field__control > .nocturne-icon:first-child { color: var(--nocturne-muted); font-size: 17px; width: 19px; height: 19px; }
+.nocturne-field__control > i:first-child, .nocturne-field__control > .nocturne-icon:first-child { color: var(--nocturne-muted); font-size: 19px; }
 .nocturne-field__control input { flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--nocturne-text); font-size: 14px; outline: 0; }
 .nocturne-field__control input::placeholder { color: #6b7399; }
 .nocturne-field__control input[readonly] { color: var(--nocturne-muted); }
-.nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 17px; cursor: pointer; }
-.nocturne-field__toggle .nocturne-icon { width: 19px; height: 19px; }
+.nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 19px; cursor: pointer; }
 .nocturne-field__toggle:hover { color: var(--nocturne-green); }
 .nocturne-field-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .nocturne-field-row .form--check { display: flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 13px; }
@@ -501,11 +515,13 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-form .btn--gradient:focus,
 .nocturne-auth-form .btn--gradient:active,
 .nocturne-auth-form .btn--gradient:hover {
-    min-height: 52px; border: 0 !important; border-bottom: 0 !important; outline: 0 !important; border-radius: 14px !important;
+    display: flex !important; align-items: center; justify-content: center; gap: 10px;
+    min-height: 54px; border: 0 !important; border-bottom: 0 !important; outline: 0 !important; border-radius: 14px !important;
     background: var(--nocturne-green) !important; background-image: none !important; color: #073c2a !important;
-    font-weight: 800; font-size: 15px !important; box-shadow: none !important; text-shadow: none !important;
-    padding: 14px 24px !important;
+    font-family: inherit !important; font-weight: 800 !important; font-size: 18px !important; letter-spacing: -.01em;
+    box-shadow: none !important; text-shadow: none !important; padding: 14px 24px !important;
 }
+.nocturne-auth-form .btn--gradient .nocturne-icon { font-size: 19px; }
 .nocturne-auth-form .btn--gradient:hover { filter: brightness(1.05); }
 /* Base theme renders the gradient/glow as a layered ::after pseudo-element, not via
    the button's own background — it has to be removed separately. */
@@ -514,7 +530,7 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-switch span { color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-auth-switch a { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-weight: 700; font-size: 13.5px; }
 .nocturne-auth-switch a:hover { background: #303958; color: var(--nocturne-green); }
-.nocturne-auth-switch a .nocturne-icon { width: 16px; height: 16px; }
+.nocturne-auth-switch a .nocturne-icon { font-size: 16px; }
 .nocturne-auth-form .account-form__other { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--nocturne-muted); font-size: 12px; }
 .nocturne-auth-form .account-form__other-line { flex: 1; height: 1px; background: var(--nocturne-line); }
 .nocturne-auth-form .social-list { display: flex; justify-content: center; gap: 12px; list-style: none; margin: 0; padding: 0; }
@@ -522,7 +538,7 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-card.form-disabled .nocturne-auth-form > form,
 .nocturne-auth-card.form-disabled .nocturne-auth-form h1 { filter: blur(2px); opacity: .45; pointer-events: none; }
 .nocturne-auth-card.form-disabled .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-muted); font-size: 34px; }
-.nocturne-auth-card.form-disabled .lock-icon .nocturne-icon { width: 36px; height: 36px; }
+.nocturne-auth-card.form-disabled .lock-icon .nocturne-icon { font-size: 36px; }
 
 @media (max-width: 991.98px) {
     .nocturne-auth-card, .nocturne-auth-card--wide { grid-template-columns: 1fr; max-width: 520px; }

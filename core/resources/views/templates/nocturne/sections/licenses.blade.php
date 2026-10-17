@@ -4,11 +4,11 @@
 @endphp
 <section class="nocturne-page-hero">
     <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="las la-shield-alt"></i> {{ __(@$content->data_values->heading ?: 'Licenses and Security') }}</span>
+        <span class="nocturne-eyebrow"><i class="ph-bold ph-shield-check"></i> {{ __(@$content->data_values->heading ?: 'Licenses and Security') }}</span>
         <p>{{ __(@$content->data_values->subheading) }}</p>
         @if (@$content->data_values->image)
             <a class="nocturne-outline-btn" href="{{ getImage('assets/images/frontend/licenses/' . $content->data_values->image, '800x1000') }}" target="_blank" rel="noopener">
-                <i class="las la-file-alt"></i> @lang('Certificate of Cooperation')
+                <i class="ph-bold ph-file-text"></i> @lang('Certificate of Cooperation')
             </a>
         @endif
     </div>

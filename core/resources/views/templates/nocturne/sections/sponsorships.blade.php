@@ -4,7 +4,7 @@
 @endphp
 <section class="nocturne-page-hero">
     <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="las la-handshake"></i> {{ __(@$content->data_values->heading ?: 'Sponsorships') }}</span>
+        <span class="nocturne-eyebrow"><i class="ph-bold ph-handshake"></i> {{ __(@$content->data_values->heading ?: 'Sponsorships') }}</span>
         <p>{{ __(@$content->data_values->subheading) }}</p>
     </div>
 </section>

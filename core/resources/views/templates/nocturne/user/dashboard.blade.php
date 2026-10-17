@@ -14,7 +14,7 @@
     <div class="nocturne-profile-summary">
         <div class="nocturne-balance-card">
             <div class="nocturne-balance-card__head">
-                <span class="nocturne-account-avatar"><i class="las la-user-circle"></i></span>
+                <span class="nocturne-account-avatar"><i class="ph-bold ph-user-circle"></i></span>
                 <div>
                     <strong>{{ $user->username }}</strong>
                     <span>{{ $user->email }}</span>
@@ -24,14 +24,14 @@
                 <strong>{{ showAmount($widget['total_balance']) }}</strong>
             </div>
             <div class="nocturne-balance-card__actions">
-                <a href="{{ route('user.deposit.index') }}"><i class="las la-wallet"></i>@lang('Deposit')</a>
-                <a href="{{ route('user.withdraw') }}"><i class="las la-money-bill-wave"></i>@lang('Withdraw')</a>
+                <a href="{{ route('user.deposit.index') }}"><i class="ph-bold ph-wallet"></i>@lang('Deposit')</a>
+                <a href="{{ route('user.withdraw') }}"><i class="ph-bold ph-money-wavy"></i>@lang('Withdraw')</a>
             </div>
         </div>
         <a class="nocturne-kyc-card" href="{{ route('user.kyc.form') }}">
-            <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="las la-angle-right"></i></div>
+            <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="ph-bold ph-caret-right"></i></div>
             <div class="nocturne-kyc-card__status {{ $kycStatusClass }}">{{ $kycStatusText }}</div>
-            <i class="nocturne-kyc-card__icon las la-lock"></i>
+            <i class="nocturne-kyc-card__icon ph-bold ph-lock"></i>
         </a>
     </div>
 
@@ -144,7 +144,7 @@
                     <div class="modal-header">
                         <h5 class="modal-title">@lang('KYC Document Rejection Reason')</h5>
                         <span class="close" data-bs-dismiss="modal" type="button" aria-label="Close">
-                            <i class="las la-times"></i>
+                            <i class="ph-bold ph-x"></i>
                         </span>
                     </div>
                     <div class="modal-body">
