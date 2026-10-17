@@ -464,7 +464,10 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-visual__copy h2 span { color: var(--nocturne-green); }
 .nocturne-auth-visual__copy p { margin: 0 0 18px; color: var(--nocturne-muted); font-size: 14.5px; font-weight: 700; }
 .nocturne-auth-visual__trust { display: inline-flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 12.5px; }
-.nocturne-auth-visual__trust i { color: var(--nocturne-green); }
+.nocturne-auth-visual__trust .nocturne-icon { width: 16px; height: 16px; color: var(--nocturne-green); }
+
+/* ---- Bold outline SVG icon set (x-icon component) ---- */
+.nocturne-icon { width: 20px; height: 20px; flex: 0 0 auto; }
 .nocturne-auth-visual__copyright { position: relative; z-index: 2; color: #5c6384; font-size: 11.5px; }
 
 .nocturne-auth-form { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 44px 50px; }
@@ -477,11 +480,12 @@ a:hover { color: var(--nocturne-green); }
     background: #0d1023; border: 1px solid #2c3453; border-radius: 13px; transition: border-color .15s ease, box-shadow .15s ease;
 }
 .nocturne-field__control:focus-within { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
-.nocturne-field__control > i:first-child { color: var(--nocturne-muted); font-size: 17px; }
+.nocturne-field__control > i:first-child, .nocturne-field__control > .nocturne-icon:first-child { color: var(--nocturne-muted); font-size: 17px; width: 19px; height: 19px; }
 .nocturne-field__control input { flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--nocturne-text); font-size: 14px; outline: 0; }
 .nocturne-field__control input::placeholder { color: #6b7399; }
 .nocturne-field__control input[readonly] { color: var(--nocturne-muted); }
 .nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 17px; cursor: pointer; }
+.nocturne-field__toggle .nocturne-icon { width: 19px; height: 19px; }
 .nocturne-field__toggle:hover { color: var(--nocturne-green); }
 .nocturne-field-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .nocturne-field-row .form--check { display: flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 13px; }
@@ -495,16 +499,22 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-form .form-submit { margin-top: 4px; }
 .nocturne-auth-form .btn--gradient,
 .nocturne-auth-form .btn--gradient:focus,
-.nocturne-auth-form .btn--gradient:active {
-    min-height: 52px; border: 0 !important; outline: 0 !important; border-radius: 14px !important;
+.nocturne-auth-form .btn--gradient:active,
+.nocturne-auth-form .btn--gradient:hover {
+    min-height: 52px; border: 0 !important; border-bottom: 0 !important; outline: 0 !important; border-radius: 14px !important;
     background: var(--nocturne-green) !important; background-image: none !important; color: #073c2a !important;
-    font-weight: 800; font-size: 15px; box-shadow: none !important; text-shadow: none !important;
+    font-weight: 800; font-size: 15px !important; box-shadow: none !important; text-shadow: none !important;
+    padding: 14px 24px !important;
 }
 .nocturne-auth-form .btn--gradient:hover { filter: brightness(1.05); }
+/* Base theme renders the gradient/glow as a layered ::after pseudo-element, not via
+   the button's own background — it has to be removed separately. */
+.nocturne-auth-form .btn--gradient::after { content: none !important; display: none !important; }
 .nocturne-auth-switch { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--nocturne-line); text-align: center; }
 .nocturne-auth-switch span { color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-auth-switch a { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-weight: 700; font-size: 13.5px; }
 .nocturne-auth-switch a:hover { background: #303958; color: var(--nocturne-green); }
+.nocturne-auth-switch a .nocturne-icon { width: 16px; height: 16px; }
 .nocturne-auth-form .account-form__other { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--nocturne-muted); font-size: 12px; }
 .nocturne-auth-form .account-form__other-line { flex: 1; height: 1px; background: var(--nocturne-line); }
 .nocturne-auth-form .social-list { display: flex; justify-content: center; gap: 12px; list-style: none; margin: 0; padding: 0; }
@@ -512,6 +522,7 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-auth-card.form-disabled .nocturne-auth-form > form,
 .nocturne-auth-card.form-disabled .nocturne-auth-form h1 { filter: blur(2px); opacity: .45; pointer-events: none; }
 .nocturne-auth-card.form-disabled .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-muted); font-size: 34px; }
+.nocturne-auth-card.form-disabled .lock-icon .nocturne-icon { width: 36px; height: 36px; }
 
 @media (max-width: 991.98px) {
     .nocturne-auth-card, .nocturne-auth-card--wide { grid-template-columns: 1fr; max-width: 520px; }

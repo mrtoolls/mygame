@@ -15,13 +15,13 @@
                 <div class="nocturne-auth-visual__copy">
                     <h2>@lang('Welcome to') <span>{{ gs('site_name') }}</span>!</h2>
                     <p>{{ __(@$register->data_values->heading) ?: __('Begin Your Adventure Today!') }}</p>
-                    <div class="nocturne-auth-visual__trust"><i class="las la-shield-alt"></i> @lang('Secure, encrypted connection')</div>
+                    <div class="nocturne-auth-visual__trust"><x-icon name="shield" /> @lang('Secure, encrypted connection')</div>
                 </div>
                 <small class="nocturne-auth-visual__copyright">&copy; {{ date('Y') }} {{ gs('site_name') }} | @lang('All Rights Reserved').</small>
             </div>
             <div class="nocturne-auth-form">
                 @if (!gs('registration'))
-                    <span class="lock-icon"><i class="las la-lock"></i></span>
+                    <span class="lock-icon"><x-icon name="lock" /></span>
                 @endif
                 <h1>@lang('Register')</h1>
 
@@ -33,7 +33,7 @@
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Email')</label>
                         <div class="nocturne-field__control">
-                            <i class="las la-envelope"></i>
+                            <x-icon name="mail" />
                             <input class="checkUser" type="email" name="email" value="{{ old('email') }}" placeholder="@lang('Enter Email')" required>
                         </div>
                     </div>
@@ -42,17 +42,23 @@
                         <div class="nocturne-field">
                             <label class="form--label">@lang('Password')</label>
                             <div class="nocturne-field__control">
-                                <i class="las la-lock"></i>
+                                <x-icon name="lock" />
                                 <input id="password" class="nocturne-password-input" type="password" name="password" placeholder="@lang('Enter Password')" required>
-                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')"><i class="las la-eye"></i></button>
+                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
+                                    <x-icon name="eye" class="icon-eye" />
+                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                </button>
                             </div>
                         </div>
                         <div class="nocturne-field">
                             <label class="form--label">@lang('Repeat Password')</label>
                             <div class="nocturne-field__control">
-                                <i class="las la-lock"></i>
+                                <x-icon name="lock" />
                                 <input id="confirm-password" class="nocturne-password-input" name="password_confirmation" type="password" placeholder="@lang('Repeat Password')" required>
-                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')"><i class="las la-eye"></i></button>
+                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
+                                    <x-icon name="eye" class="icon-eye" />
+                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -60,7 +66,7 @@
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Promo Code') <span class="nocturne-optional">(@lang('Optional'))</span></label>
                         <div class="nocturne-field__control">
-                            <i class="las la-gift"></i>
+                            <x-icon name="gift" />
                             <input name="referBy" type="text" value="{{ old('referBy', session()->get('reference')) }}" placeholder="@lang('Enter Promo Code')">
                         </div>
                         <small class="text--danger usernameExist"></small>
@@ -97,7 +103,7 @@
 
                 <div class="nocturne-auth-switch">
                     <span>@lang('Already Have an Account?')</span>
-                    <a href="{{ route('user.login') }}"><i class="las la-sign-in-alt"></i>@lang('Log In')</a>
+                    <a href="{{ route('user.login') }}"><x-icon name="sign-in" />@lang('Log In')</a>
                 </div>
             </div>
         </div>
@@ -138,7 +144,7 @@
                 var input = $(this).siblings('input');
                 var showing = input.attr('type') === 'text';
                 input.attr('type', showing ? 'password' : 'text');
-                $(this).find('i').toggleClass('la-eye la-eye-slash');
+                $(this).find('.icon-eye, .icon-eye-off').toggleClass('d-none');
             });
 
             $('#registerForm').on('submit', function() {
