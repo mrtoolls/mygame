@@ -487,11 +487,19 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-field-row .form--check { display: flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-field-row .forgot-password { color: var(--nocturne-muted); font-size: 13px; text-decoration: none; }
 .nocturne-field-row .forgot-password:hover { color: var(--nocturne-green); }
-.nocturne-agree { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
-.nocturne-agree input { margin-top: 3px; accent-color: var(--nocturne-green); }
-.nocturne-agree a { color: var(--nocturne-green); text-decoration: none; }
+.nocturne-agree { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; }
+.nocturne-agree input { flex: 0 0 auto; margin-top: 3px; accent-color: var(--nocturne-green); }
+.nocturne-agree label { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+.nocturne-agree a, .nocturne-agree span { color: var(--nocturne-green); font-weight: 700; text-decoration: none; }
+.nocturne-optional { color: var(--nocturne-muted); font-weight: 400; }
 .nocturne-auth-form .form-submit { margin-top: 4px; }
-.nocturne-auth-form .btn--gradient { min-height: 52px; border: 0; border-radius: 14px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; font-size: 15px; }
+.nocturne-auth-form .btn--gradient,
+.nocturne-auth-form .btn--gradient:focus,
+.nocturne-auth-form .btn--gradient:active {
+    min-height: 52px; border: 0 !important; outline: 0 !important; border-radius: 14px !important;
+    background: var(--nocturne-green) !important; background-image: none !important; color: #073c2a !important;
+    font-weight: 800; font-size: 15px; box-shadow: none !important; text-shadow: none !important;
+}
 .nocturne-auth-form .btn--gradient:hover { filter: brightness(1.05); }
 .nocturne-auth-switch { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--nocturne-line); text-align: center; }
 .nocturne-auth-switch span { color: var(--nocturne-muted); font-size: 13px; }

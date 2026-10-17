@@ -80,7 +80,7 @@ class RegisterController extends Controller {
     }
 
     protected function create(array $data) {
-        $referBy = session()->get('reference');
+        $referBy = @$data['referBy'] ?: session()->get('reference');
         if ($referBy) {
             $referUser = User::where('username', $referBy)->first();
         } else {

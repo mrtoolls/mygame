@@ -11,10 +11,9 @@
             <div class="nocturne-auth-visual" @if ($authImage) style="background-image:url('{{ $authImage }}')" @endif>
                 <a href="{{ route('home') }}" class="nocturne-auth-visual__brand">
                     <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
-                    <span>{{ gs('site_name') }}</span>
                 </a>
                 <div class="nocturne-auth-visual__copy">
-                    <h2>@lang('Welcome to') <span>{{ gs('site_name') }}.pro</span>!</h2>
+                    <h2>@lang('Welcome to') <span>{{ gs('site_name') }}</span>!</h2>
                     <p>{{ __(@$loginContent->data_values->heading) ?: __('Begin Your Adventure Today!') }}</p>
                     <div class="nocturne-auth-visual__trust"><i class="las la-shield-alt"></i> @lang('Secure, encrypted connection')</div>
                 </div>

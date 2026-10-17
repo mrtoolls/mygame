@@ -11,10 +11,9 @@
             <div class="nocturne-auth-visual" @if ($authImage) style="background-image:url('{{ $authImage }}')" @endif>
                 <a href="{{ route('home') }}" class="nocturne-auth-visual__brand">
                     <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
-                    <span>{{ gs('site_name') }}</span>
                 </a>
                 <div class="nocturne-auth-visual__copy">
-                    <h2>@lang('Welcome to') <span>{{ gs('site_name') }}.pro</span>!</h2>
+                    <h2>@lang('Welcome to') <span>{{ gs('site_name') }}</span>!</h2>
                     <p>{{ __(@$register->data_values->heading) ?: __('Begin Your Adventure Today!') }}</p>
                     <div class="nocturne-auth-visual__trust"><i class="las la-shield-alt"></i> @lang('Secure, encrypted connection')</div>
                 </div>
@@ -26,35 +25,10 @@
                 @endif
                 <h1>@lang('Register')</h1>
 
-                <form class="verify-gcaptcha" action="{{ route('user.register') }}" method="POST">
+                <form class="verify-gcaptcha" action="{{ route('user.register') }}" method="POST" id="registerForm">
                     @csrf
-                    @if (session()->get('reference') != null)
-                        <div class="nocturne-field">
-                            <label class="form--label">@lang('Referred By')</label>
-                            <div class="nocturne-field__control">
-                                <i class="las la-user"></i>
-                                <input name="referBy" type="text" value="{{ session()->get('reference') }}" readonly>
-                            </div>
-                            <small class="text--danger usernameExist"></small>
-                        </div>
-                    @endif
-
-                    <div class="nocturne-field-grid">
-                        <div class="nocturne-field">
-                            <label class="form--label">@lang('First Name')</label>
-                            <div class="nocturne-field__control">
-                                <i class="las la-user"></i>
-                                <input type="text" name="firstname" value="{{ old('firstname') }}" placeholder="@lang('Enter First Name')" required>
-                            </div>
-                        </div>
-                        <div class="nocturne-field">
-                            <label class="form--label">@lang('Last Name')</label>
-                            <div class="nocturne-field__control">
-                                <i class="las la-user"></i>
-                                <input type="text" name="lastname" value="{{ old('lastname') }}" placeholder="@lang('Enter Last Name')" required>
-                            </div>
-                        </div>
-                    </div>
+                    <input type="hidden" name="firstname" id="auto-firstname" value="Member">
+                    <input type="hidden" name="lastname" id="auto-lastname" value="{{ gs('site_name') }}">
 
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Email')</label>
@@ -83,25 +57,34 @@
                         </div>
                     </div>
 
+                    <div class="nocturne-field">
+                        <label class="form--label">@lang('Promo Code') <span class="nocturne-optional">(@lang('Optional'))</span></label>
+                        <div class="nocturne-field__control">
+                            <i class="las la-gift"></i>
+                            <input name="referBy" type="text" value="{{ old('referBy', session()->get('reference')) }}" placeholder="@lang('Enter Promo Code')">
+                        </div>
+                        <small class="text--danger usernameExist"></small>
+                    </div>
+
                     <x-captcha />
 
                     @if (gs('agree'))
                         @php
                             $policyPages = getContent('policy_pages.element', false, null, true);
+                            $agreementPage = $policyPages->first();
                         @endphp
-                        <div class="form--check nocturne-agree">
+                        <div class="nocturne-agree">
                             <input class="form-check-input" name="agree" type="checkbox" id="remember"
                                 @checked(old('agree'))>
-                            <div class="form-check-label">
-                                <label for="remember">@lang('I agree to the')</label>
-                                @foreach ($policyPages as $policy)
-                                    <a href="{{ route('policy.pages', $policy->slug) }}" class="text">{{ __($policy->data_values->title) }}</a>
-                                    @if (!$loop->last)
-                                        ,
-                                    @endif
-                                @endforeach
-                                @lang('and confirm I am at least 18 years old')
-                            </div>
+                            <label for="remember">
+                                @lang('I agree to the')
+                                @if ($agreementPage)
+                                    <a href="{{ route('policy.pages', $agreementPage->slug) }}">@lang('User Agreement')</a>
+                                @else
+                                    <span>@lang('User Agreement')</span>
+                                @endif
+                                &amp; @lang('confirm I am at least 18 years old')
+                            </label>
                         </div>
                     @endif
 
@@ -156,6 +139,15 @@
                 var showing = input.attr('type') === 'text';
                 input.attr('type', showing ? 'password' : 'text');
                 $(this).find('i').toggleClass('la-eye la-eye-slash');
+            });
+
+            $('#registerForm').on('submit', function() {
+                var local = ($('.checkUser').val() || 'Member').split('@')[0];
+                var parts = local.split(/[._-]+/).filter(Boolean);
+                var firstname = (parts[0] || 'Member').slice(0, 30);
+                var lastname = (parts[1] || parts[0] || '{{ gs('site_name') }}').slice(0, 30);
+                $('#auto-firstname').val(firstname);
+                $('#auto-lastname').val(lastname);
             });
 
             $('.checkUser').on('focusout', function(e) {
