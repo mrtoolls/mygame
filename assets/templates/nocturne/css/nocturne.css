@@ -416,20 +416,32 @@ a:hover { color: var(--nocturne-green); }
 /* =========================================================================
    Game cards — catalogue, home sections, search results
    ========================================================================= */
-.games-section-wrapper, .game-list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 16px; }
+.games-section-wrapper, .game-list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
 .game-item {
+    /* The base theme sets `.game-item { width: calc(25% - 30px) }` sized for its
+       own flex-wrap layout. Under our grid that percentage resolves against the
+       grid CELL, not the row, collapsing cards to a sliver a few px wide - this
+       has to win outright, at every one of the base theme's own breakpoints. */
+    width: 100% !important;
     position: relative; overflow: hidden; border-radius: var(--nocturne-radius-md); background: var(--nocturne-panel);
     border: 1px solid var(--nocturne-line); transition: transform .18s ease, border-color .18s ease;
 }
 .game-item:hover { transform: translateY(-4px); border-color: rgba(0,239,135,.35); }
-.game-item__image { position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
-.game-item__image img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.game-item__image {
+    position: relative; z-index: auto; aspect-ratio: 3 / 4; overflow: hidden;
+    -webkit-mask-image: none !important; mask-image: none !important;
+}
+.game-item__image img {
+    width: 100%; height: 100% !important; object-fit: cover; transition: transform .3s ease;
+    -webkit-mask-image: none !important; mask-image: none !important;
+}
 .game-item:hover .game-item__image img { transform: scale(1.06); }
 .game-item__play {
-    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    background: linear-gradient(180deg, rgba(10,13,28,.1), rgba(7,9,20,.86)); opacity: 0; transition: opacity .2s ease;
+    position: absolute; inset: 0; height: auto; width: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(180deg, rgba(10,13,28,.1), rgba(7,9,20,.86)) !important; opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s ease;
+    -webkit-mask-image: none !important; mask-image: none !important;
 }
-.game-item:hover .game-item__play { opacity: 1; }
+.game-item:hover .game-item__play { opacity: 1; visibility: visible; }
 .game-item__play .btn { min-width: 108px; border: 0; border-radius: 11px; font-weight: 800; }
 .game-item__play .btn:first-child { background: var(--nocturne-green); color: #073c2a; }
 .game-item__play .btn:last-child { background: rgba(255,255,255,.12); color: #fff; }
