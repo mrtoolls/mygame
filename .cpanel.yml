@@ -2,4 +2,4 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/hyqmfwgrfl/winxpot.com
-    - /usr/bin/rsync -a --exclude='.git/' --exclude='.cpanel.yml' --exclude='core/.env' --exclude='core/storage/' --exclude='core/vendor/' --exclude='assets/images/' --exclude='assets/admin/push_config.json' ./ $DEPLOYPATH/
+    - /usr/bin/rsync -a --exclude='.git/' --exclude='.cpanel.yml' --exclude='core/.env' --exclude='core/storage/' --exclude='assets/images/' --exclude='assets/admin/push_config.json' ./ $DEPLOYPATH/
