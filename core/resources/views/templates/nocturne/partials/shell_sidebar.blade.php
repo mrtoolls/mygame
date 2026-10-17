@@ -1,13 +1,23 @@
 <div class="nocturne-sidebar-backdrop"></div>
 <aside class="nocturne-sidebar" aria-label="@lang('Site menu')">
     <div class="nocturne-sidebar-scroll">
-        <div class="nocturne-game-tabs" role="tablist" aria-label="@lang('Catalogue')">
-            <button type="button" class="is-active" data-tab="games"><i class="ph-bold ph-dice-five"></i>@lang('Games')</button>
-            <button type="button" data-tab="slots"><i class="ph-bold ph-diamond"></i>@lang('Slots')</button>
+        <div class="nocturne-game-tabs" aria-label="@lang('Catalogue')">
+            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i>@lang('Games')</a>
+            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-diamond"></i>@lang('Slots')</a>
         </div>
-        <a class="nocturne-reward" href="{{ auth()->check() ? route('user.deposit.index') : route('user.register') }}">
-            <span class="nocturne-reward-badge">@lang('Welcome offer')</span>
-            <strong class="nocturne-reward-title">@lang('Claim your first deposit reward')</strong>
+        @php
+            $bonusCountdown = getContent('bonus_countdown.content', true);
+            $countdownEndAt = @$bonusCountdown->data_values->end_at ? strtotime($bonusCountdown->data_values->end_at) : null;
+            $countdownActive = $countdownEndAt && $countdownEndAt > time();
+        @endphp
+        <a class="nocturne-reward" href="{{ @$bonusCountdown->data_values->button_url ?: (auth()->check() ? route('user.deposit.index') : route('user.register')) }}">
+            <span class="nocturne-reward-badge">{{ __(@$bonusCountdown->data_values->badge) ?: __('Welcome offer') }}</span>
+            <strong class="nocturne-reward-title">{{ __(@$bonusCountdown->data_values->heading) ?: __('Claim your first deposit reward') }}</strong>
+            @if ($countdownActive)
+                <span class="nocturne-reward-countdown" data-countdown-end="{{ $countdownEndAt * 1000 }}">
+                    <span class="nocturne-reward-countdown__unit" data-unit="h">00</span>:<span class="nocturne-reward-countdown__unit" data-unit="m">00</span>:<span class="nocturne-reward-countdown__unit" data-unit="s">00</span>
+                </span>
+            @endif
             <span class="nocturne-reward-icon"><i class="ph-bold ph-gift"></i></span>
         </a>
         <section class="nocturne-menu-group" aria-label="@lang('Play')">
@@ -44,7 +54,7 @@
 <nav class="nocturne-mobile-nav" aria-label="@lang('Quick navigation')">
     <button class="nocturne-mobile-menu" type="button"><i class="ph-bold ph-squares-four"></i><span>@lang('Menu')</span></button>
     <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i><span>@lang('Games')</span></a>
-    <a href="{{ route('games') }}"><i class="ph-bold ph-diamond"></i><span>@lang('Slots')</span></a>
+    <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-diamond"></i><span>@lang('Slots')</span></a>
     @auth
         <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
         <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-bold ph-user"></i><span>@lang('Profile')</span></a>
@@ -78,11 +88,28 @@
         backdrop?.addEventListener('click', closeMenu);
         document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
 
-        const tabs = document.querySelectorAll('.nocturne-game-tabs button');
-        tabs.forEach(btn => btn.addEventListener('click', () => {
-            tabs.forEach(b => b.classList.remove('is-active'));
-            btn.classList.add('is-active');
-        }));
+        const countdown = document.querySelector('.nocturne-reward-countdown');
+        if (countdown) {
+            const endAt = Number(countdown.dataset.countdownEnd);
+            const unitH = countdown.querySelector('[data-unit="h"]');
+            const unitM = countdown.querySelector('[data-unit="m"]');
+            const unitS = countdown.querySelector('[data-unit="s"]');
+            const pad = n => String(n).padStart(2, '0');
+            const tick = () => {
+                const remaining = endAt - Date.now();
+                if (remaining <= 0) {
+                    countdown.closest('.nocturne-reward')?.classList.add('is-ended');
+                    unitH.textContent = unitM.textContent = unitS.textContent = '00';
+                    clearInterval(timer);
+                    return;
+                }
+                unitH.textContent = pad(Math.floor(remaining / 3600000));
+                unitM.textContent = pad(Math.floor((remaining % 3600000) / 60000));
+                unitS.textContent = pad(Math.floor((remaining % 60000) / 1000));
+            };
+            tick();
+            const timer = setInterval(tick, 1000);
+        }
     })();
 </script>
 @endpush

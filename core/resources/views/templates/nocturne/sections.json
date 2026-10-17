@@ -330,6 +330,18 @@
             "heading": "text"
         }
     },
+    "bonus_countdown": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Sidebar Bonus Countdown",
+        "content": {
+            "heading": "text",
+            "badge": "text",
+            "end_at": "text",
+            "button_text": "text",
+            "button_url": "text"
+        }
+    },
     "statistics": {
         "builder": true,
         "name": "Statistics Section",
