@@ -76,14 +76,14 @@
     @endphp
 
     @if ($cookie->data_values->status == Status::ENABLE && !\Cookie::get('gdpr_cookie'))
-        <div class="cookies-card hide text-center">
-            <div class="cookies-card__icon bg--base">
-                <i class="las la-cookie-bite text--dark"></i>
+        <div class="cookies-card hide">
+            <div class="cookies-card__row">
+                <div class="cookies-card__icon"><x-icon name="cookie" /></div>
+                <p class="cookies-card__content">{{ $cookie->data_values->short_desc }}</p>
             </div>
-            <p class="cookies-card__content mt-4">{{ $cookie->data_values->short_desc }} <a class="text--base"
-                    href="{{ route('cookie.policy') }}" target="_blank">@lang('learn more')</a></p>
-            <div class="cookies-card__btn mt-4">
-                <a class="btn btn--base w-100 policy" href="javascript:void(0)">@lang('Allow')</a>
+            <div class="cookies-card__actions">
+                <a class="cookies-card__learn" href="{{ route('cookie.policy') }}" target="_blank">@lang('Learn more') <x-icon name="arrow-right" /></a>
+                <a class="cookies-card__allow policy" href="javascript:void(0)">@lang('Allow')</a>
             </div>
         </div>
     @endif
