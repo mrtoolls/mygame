@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Withdraw History')</h1>
     <section class="transection-section">
         @include('Template::partials.search_form')
         <div class="latest-transection">
@@ -102,6 +106,8 @@
                     <div class="feedback"></div>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

@@ -1,9 +1,40 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Profile')</h1>
     <div class="notice"></div>
     @php
         $kyc = getContent('user_kyc.content', true);
+        $kycStatusClass = $user->kv == Status::KYC_VERIFIED ? 'is-verified' : ($user->kv == Status::KYC_PENDING ? 'is-pending' : 'is-unverified');
+        $kycStatusText = $user->kv == Status::KYC_VERIFIED ? __('Verified') : ($user->kv == Status::KYC_PENDING ? __('Pending') : __('Unverified'));
     @endphp
+
+    <div class="nocturne-profile-summary">
+        <div class="nocturne-balance-card">
+            <div class="nocturne-balance-card__head">
+                <span class="nocturne-account-avatar"><i class="las la-user-circle"></i></span>
+                <div>
+                    <strong>{{ $user->username }}</strong>
+                    <span>{{ $user->email }}</span>
+                </div>
+            </div>
+            <div class="nocturne-balance-card__amount">@lang('Your Balance')
+                <strong>{{ showAmount($widget['total_balance']) }}</strong>
+            </div>
+            <div class="nocturne-balance-card__actions">
+                <a href="{{ route('user.deposit.index') }}"><i class="las la-wallet"></i>@lang('Deposit')</a>
+                <a href="{{ route('user.withdraw') }}"><i class="las la-money-bill-wave"></i>@lang('Withdraw')</a>
+            </div>
+        </div>
+        <a class="nocturne-kyc-card" href="{{ route('user.kyc.form') }}">
+            <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="las la-angle-right"></i></div>
+            <div class="nocturne-kyc-card__status {{ $kycStatusClass }}">{{ $kycStatusText }}</div>
+            <i class="nocturne-kyc-card__icon las la-lock"></i>
+        </a>
+    </div>
+
     @if ($user->kv == Status::KYC_UNVERIFIED && $user->kyc_rejection_reason)
         <div class="card custom--card mb-5">
             <div class="card-body">
@@ -39,6 +70,7 @@
         </div>
     @endif
 
+    <h4 class="mb-3">@lang('Account Overview')</h4>
     <div class="info-wrapper">
         <div class="info-card">
             <div class="info-card__icon">
@@ -96,10 +128,11 @@
         </div>
     </div>
 
-    <div class="games-section pt-100 pb-50">
+    <h4 class="mb-3 mt-5">@lang('Explore Games')</h4>
+    <div class="games-section pb-50">
         <div class="games-section-inner">
             <div class="games-section-wrapper">
-                @include('Template::partials.game', ['games' => $games])
+                @include('Template::partials.game', ['games' => $games->take(12)])
             </div>
         </div>
     </div>
@@ -121,4 +154,6 @@
             </div>
         </div>
     @endif
+        </div>
+    </div>
 @endsection

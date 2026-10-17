@@ -330,6 +330,111 @@
             "heading": "text"
         }
     },
+    "statistics": {
+        "builder": true,
+        "name": "Statistics Section",
+        "element": {
+            "title": "text",
+            "amount": "text",
+            "modal": true
+        }
+    },
+    "licenses": {
+        "builder": true,
+        "name": "Licenses & Security",
+        "content": {
+            "images": {
+                "image": {
+                    "size": "800x1000"
+                }
+            },
+            "heading": "text",
+            "subheading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "120x60"
+                }
+            },
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "sponsorships": {
+        "builder": true,
+        "name": "Sponsorships",
+        "content": {
+            "heading": "text",
+            "subheading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "160x160"
+                }
+            },
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "promotions": {
+        "builder": true,
+        "name": "Promotions",
+        "content": {
+            "heading": "text",
+            "subheading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "500x300"
+                }
+            },
+            "title": "text",
+            "description": "textarea",
+            "button_url": "text",
+            "modal": true
+        }
+    },
+    "vip_club": {
+        "builder": true,
+        "name": "VIP Club",
+        "content": {
+            "heading": "text",
+            "subheading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "80x80"
+                }
+            },
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "awards": {
+        "builder": true,
+        "name": "Awards",
+        "content": {
+            "heading": "text",
+            "subheading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "140x140"
+                }
+            },
+            "title": "text",
+            "description": "text",
+            "modal": true
+        }
+    },
     "slider": {
         "builder": true,
         "name": "App Slider Section",

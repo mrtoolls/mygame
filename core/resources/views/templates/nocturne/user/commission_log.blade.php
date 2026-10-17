@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Commission History')</h1>
     <section class="transection-section">
         <div class="latest-transection">
             <div class="transection-table-scroller">
@@ -35,4 +39,6 @@
             </div>
         </div>
     </section>
+        </div>
+    </div>
 @endsection

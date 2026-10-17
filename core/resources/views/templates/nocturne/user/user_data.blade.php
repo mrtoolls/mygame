@@ -1,6 +1,9 @@
 @extends('Template::layouts.frontend')
 
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
     <section class="py-100">
         <div class="container">
             <div class="row justify-content-center">
@@ -83,6 +86,8 @@
             </div>
         </div>
     </section>
+        </div>
+    </div>
 @endsection
 @push('style-lib')
     <link rel="stylesheet" href="{{ asset('assets/global/css/select2.min.css') }}">

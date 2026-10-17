@@ -3,6 +3,10 @@
     @if ($layout == 'frontend')
         <section class="py-100">
             <div class="container">
+    @else
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
     @endif
     <div class="card custom--card">
         <div class="card-header card-header-bg d-flex flex-wrap justify-content-between align-items-center">
@@ -131,8 +135,11 @@
     </div>
     <x-confirmation-modal customModal="custom--modal" baseBtn="btn--base btn--sm" closeBtn="btn--danger btn--sm" />
     @if ($layout == 'frontend')
+            </div>
         </section>
+    @else
         </div>
+    </div>
     @endif
 @endsection
 @push('style')

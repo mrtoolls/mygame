@@ -11,7 +11,70 @@
             <img src="{{ getImage('assets/images/frontend/footer/' . $footer->data_values->image, '1110x420') }}" alt="@lang('image')">
         </div>
     @endif
-    <div class="payment-method pb-100">
+
+    <div class="container">
+        <div class="nocturne-footer-cta">
+            <div class="nocturne-footer-cta__text">
+                <strong>@lang('Do you have a question?')</strong>
+                <span>@lang('Write us and our support team will help you')</span>
+            </div>
+            <a class="nocturne-footer-cta__btn" href="{{ route('ticket.index') }}"><i class="las la-headset"></i>@lang('Live Support')</a>
+        </div>
+
+        <div class="nocturne-footer-grid">
+            <div class="nocturne-footer-col">
+                <h6>@lang('Main')</h6>
+                <ul>
+                    <li><a href="{{ route('games') }}">@lang('Games')</a></li>
+                    <li><a href="{{ route('pages', 'promotions') }}">@lang('Promotions')</a></li>
+                    <li><a href="{{ route('pages', 'vip-club') }}">@lang('VIP Club')</a></li>
+                    <li><a href="{{ route('blog') }}">@lang('News')</a></li>
+                </ul>
+            </div>
+            <div class="nocturne-footer-col">
+                <h6>@lang('Team')</h6>
+                <ul>
+                    <li><a href="{{ route('pages', 'about-us') }}">@lang('About Us')</a></li>
+                    <li><a href="{{ route('pages', 'sponsorships') }}">@lang('Sponsorships')</a></li>
+                    <li><a href="{{ route('pages', 'licenses-security') }}">@lang('Licenses & Security')</a></li>
+                    <li><a href="{{ route('contact') }}">@lang('Contact')</a></li>
+                </ul>
+            </div>
+            <div class="nocturne-footer-col">
+                <h6>@lang('Info')</h6>
+                <ul>
+                    @foreach ($policyPages as $policy)
+                        <li><a href="{{ route('policy.pages', @$policy->slug) }}">{{ __(@$policy->data_values->title) }}</a></li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="nocturne-footer-col">
+                <h6>@lang('Profile')</h6>
+                <ul>
+                    @auth
+                        <li><a href="{{ route('user.deposit.index') }}">@lang('Deposit')</a></li>
+                        <li><a href="{{ route('user.withdraw') }}">@lang('Withdraw')</a></li>
+                        <li><a href="{{ route('user.referrals') }}">@lang('Bonuses')</a></li>
+                        <li><a href="{{ route('user.profile.setting') }}">@lang('Settings')</a></li>
+                    @else
+                        <li><a href="{{ route('user.login') }}">@lang('Login')</a></li>
+                        @if (gs('registration'))
+                            <li><a href="{{ route('user.register') }}">@lang('Create account')</a></li>
+                        @endif
+                    @endauth
+                </ul>
+            </div>
+            <div class="nocturne-footer-col">
+                <div class="nocturne-footer-support">
+                    <div class="nocturne-footer-support__head"><i class="las la-headset"></i> @lang('Support') <span>24/7</span></div>
+                    <p>@lang('Contact us if you have questions')</p>
+                    <a class="btn-write" href="{{ route('contact') }}"><i class="las la-envelope"></i>@lang('Write Us')</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="payment-method">
         <div class="container">
             <h4 class="payment-method__title">{{ __(@$payment->data_values->heading) }}</h4>
             <div class="payment-slider">
@@ -26,10 +89,10 @@
         </div>
     </div>
 
-    <div class="footer-bottom py-50">
+    <div class="footer-bottom">
         <div class="container">
             <div class="footer-bottom__wrapper">
-                <a href="" class="footer-bottom__logo">
+                <a href="{{ route('home') }}" class="footer-bottom__logo">
                     <img src="{{ siteLogo() }}" alt="@lang('image')">
                 </a>
 

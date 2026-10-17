@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Settings')</h1>
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card custom--card">
@@ -69,6 +73,8 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

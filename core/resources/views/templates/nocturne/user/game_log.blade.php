@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Game History')</h1>
     <section class="transection-section">
         <div class="latest-transection">
             <ul class="d-flex align-items-center gap-3 gap-sm-4 mb-3 mb-sm-4" id="myTab" role="tablist">
@@ -89,6 +93,8 @@
             </div>
         </div>
     </section>
+        </div>
+    </div>
 @endsection
 
 @push('style')

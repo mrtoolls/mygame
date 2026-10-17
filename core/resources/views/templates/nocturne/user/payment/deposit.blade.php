@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Deposit')</h1>
     <div class="row justify-content-center">
         <div class="col-lg-9">
             <form action="{{ route('user.deposit.insert') }}" method="post" class="deposit-form">
@@ -133,6 +137,8 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

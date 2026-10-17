@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Balance Transfer')</h1>
     <section class="transection-section">
         <div class="d-flex justify-content-between flex-wrap gap-3 my-3">
             <button type="button" class="btn btn--gradient triggerConfirmModal">
@@ -133,6 +137,8 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

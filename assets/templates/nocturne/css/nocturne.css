@@ -159,6 +159,7 @@ a:hover { color: var(--nocturne-green); }
 
 @media (max-width: 1199.98px) {
     .nocturne-topbar { height: 76px; padding: 10px 18px; gap: 14px; }
+    .nocturne-brand-group { width: auto; min-width: 56px; flex: 1; }
     .nocturne-brand { width: auto; min-width: 56px; flex: 1; }
     .nocturne-brand img { max-width: 140px; max-height: 46px; }
     .nocturne-menu-toggle { display: grid; order: -1; width: 42px; height: 42px; background: var(--nocturne-raised); font-size: 23px; }
@@ -181,6 +182,7 @@ a:hover { color: var(--nocturne-green); }
 }
 @media (max-width: 575.98px) {
     .nocturne-topbar { height: 68px; padding: 8px 10px; gap: 7px; }
+    .nocturne-brand-group { min-width: 35px; }
     .nocturne-brand { min-width: 35px; }
     .nocturne-brand img { max-width: 94px; max-height: 39px; }
     .nocturne-menu-toggle { width: 36px; height: 36px; }
@@ -210,4 +212,359 @@ a:hover { color: var(--nocturne-green); }
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* =========================================================================
+   Nocturne v2 — reference-matched shell, account area, game cards, footer
+   ========================================================================= */
+:root {
+    --nocturne-radius-lg: 20px;
+    --nocturne-radius-md: 14px;
+    --nocturne-sidebar-w: 316px;
+    --nocturne-sidebar-w-collapsed: 92px;
+}
+
+/* ---- Header: collapse button + tighter top row ---- */
+.nocturne-brand-group { display: flex; align-items: center; gap: 10px; width: var(--nocturne-sidebar-w); min-width: 150px; }
+.nocturne-brand-group .nocturne-brand { width: auto; flex: 1; min-width: 0; }
+.nocturne-collapse {
+    display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border: 0; border-radius: 12px;
+    background: var(--nocturne-raised); color: var(--nocturne-text); font-size: 18px; cursor: pointer; transition: background .16s ease, transform .18s ease;
+}
+.nocturne-collapse:hover { background: #303958; }
+.nocturne-shell.sidebar-collapsed .nocturne-collapse { transform: rotate(180deg); }
+
+/* ---- Sidebar: tabs + reward card ---- */
+.nocturne-game-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.nocturne-game-tabs button {
+    display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; border: 0; border-radius: 13px;
+    background: var(--nocturne-raised); color: var(--nocturne-muted); text-decoration: none; font-size: 12.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+    cursor: pointer; transition: background .16s ease, color .16s ease;
+}
+.nocturne-game-tabs button.is-active { background: var(--nocturne-text); color: #0b0d1e; }
+.nocturne-reward {
+    position: relative; display: flex; min-height: 118px; flex-direction: column; justify-content: center; gap: 10px; overflow: hidden;
+    margin-bottom: 14px; padding: 16px 18px; border-radius: var(--nocturne-radius-md);
+    background: radial-gradient(ellipse at 100% 100%, rgba(0,239,135,.28), transparent 55%), linear-gradient(135deg,#1c2342,#161c37 55%,#0f2a36);
+    color: var(--nocturne-text); text-decoration: none;
+}
+.nocturne-reward-title { font-size: 15px; font-weight: 800; line-height: 1.25; max-width: 175px; }
+.nocturne-reward-icon {
+    position: absolute; right: 14px; bottom: 10px; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px;
+    background: rgba(0,239,135,.14); color: var(--nocturne-green); font-size: 22px; transform: rotate(-8deg);
+}
+.nocturne-reward-badge {
+    align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: rgba(0,239,135,.16); color: var(--nocturne-green);
+    font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* ---- Sidebar collapsed (desktop mini-rail) state ---- */
+@media (min-width: 1200px) {
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar { width: var(--nocturne-sidebar-w-collapsed); padding-left: 10px; padding-right: 10px; }
+    .nocturne-shell.sidebar-collapsed .nocturne-main { margin-left: var(--nocturne-sidebar-w-collapsed); }
+    .nocturne-shell.sidebar-collapsed .nocturne-game-tabs,
+    .nocturne-shell.sidebar-collapsed .nocturne-reward,
+    .nocturne-shell.sidebar-collapsed .nocturne-menu-group h6,
+    .nocturne-shell.sidebar-collapsed .nocturne-menu-group a span,
+    .nocturne-shell.sidebar-collapsed .nocturne-language,
+    .nocturne-shell.sidebar-collapsed .nocturne-logout span { display: none; }
+    .nocturne-shell.sidebar-collapsed .nocturne-menu-group a { justify-content: center; }
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover { width: var(--nocturne-sidebar-w); }
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-game-tabs,
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-reward,
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-menu-group h6,
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-menu-group a span,
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-language,
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-logout span { display: revert; }
+    .nocturne-shell.sidebar-collapsed .nocturne-sidebar:hover .nocturne-menu-group a { justify-content: flex-start; }
+}
+
+/* =========================================================================
+   Account shell — left profile nav + content column (Profile / Deposit /
+   Withdraw / Bonuses / Verification / Settings / Transactions)
+   ========================================================================= */
+.nocturne-account { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+.nocturne-account-nav { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 104px; }
+.nocturne-account-card { padding: 10px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-account-id { display: flex; align-items: center; gap: 12px; padding: 12px 10px 16px; }
+.nocturne-account-avatar { display: grid; flex: 0 0 46px; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 26px; }
+.nocturne-account-id div { min-width: 0; }
+.nocturne-account-id strong { display: block; overflow: hidden; color: var(--nocturne-text); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.nocturne-account-id small { display: block; overflow: hidden; color: var(--nocturne-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.nocturne-account-links { display: flex; flex-direction: column; gap: 3px; }
+.nocturne-account-links a { display: flex; align-items: center; gap: 12px; min-height: 45px; padding: 8px 12px; border-radius: 12px; color: var(--nocturne-text); text-decoration: none; font-size: 14px; font-weight: 700; transition: background .16s ease, color .16s ease; }
+.nocturne-account-links a i { width: 20px; color: var(--nocturne-muted); text-align: center; font-size: 19px; }
+.nocturne-account-links a:hover, .nocturne-account-links a.is-active { background: var(--nocturne-raised); color: #fff; }
+.nocturne-account-links a:hover i, .nocturne-account-links a.is-active i { color: var(--nocturne-green); }
+.nocturne-account-support { padding: 18px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-account-support strong { display: block; margin-bottom: 4px; color: var(--nocturne-text); font-size: 15px; }
+.nocturne-account-support p { margin-bottom: 14px; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-account-support-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 12px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-size: 13px; font-weight: 700; transition: background .16s ease; }
+.nocturne-account-support-btn:hover { background: #303958; color: var(--nocturne-green); }
+.nocturne-account-content { min-width: 0; }
+@media (max-width: 1199.98px) {
+    .nocturne-account { grid-template-columns: 1fr; }
+    .nocturne-account-nav { position: static; flex-direction: row; flex-wrap: wrap; }
+    .nocturne-account-card { flex: 1 1 100%; }
+    .nocturne-account-support { flex: 1 1 100%; }
+}
+@media (max-width: 575.98px) {
+    .nocturne-account-links a { font-size: 13px; }
+}
+
+/* ---- Profile summary row (Balance / KYC / quick actions) ---- */
+.nocturne-profile-summary { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
+.nocturne-balance-card, .nocturne-kyc-card {
+    padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
+}
+.nocturne-balance-card__head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.nocturne-balance-card__head img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.nocturne-balance-card__head strong { display: block; color: var(--nocturne-text); font-size: 15px; }
+.nocturne-balance-card__head span { color: var(--nocturne-muted); font-size: 12px; }
+.nocturne-balance-card__amount { margin-bottom: 18px; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-balance-card__amount strong { display: block; margin-top: 2px; color: var(--nocturne-text); font-size: 30px; font-weight: 800; }
+.nocturne-balance-card__actions { display: flex; gap: 10px; }
+.nocturne-balance-card__actions a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border-radius: 13px; text-decoration: none; font-weight: 800; font-size: 14px; }
+.nocturne-balance-card__actions a:first-child { background: var(--nocturne-green); color: #073c2a; }
+.nocturne-balance-card__actions a:last-child { background: var(--nocturne-raised); color: var(--nocturne-text); }
+.nocturne-kyc-card { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+.nocturne-kyc-card__top { display: flex; align-items: center; justify-content: space-between; color: var(--nocturne-muted); font-size: 13px; font-weight: 700; }
+.nocturne-kyc-card__top i { font-size: 16px; }
+.nocturne-kyc-card__status { font-size: 17px; font-weight: 800; }
+.nocturne-kyc-card__status.is-unverified { color: #ff6b81; }
+.nocturne-kyc-card__status.is-pending { color: #ffc24b; }
+.nocturne-kyc-card__status.is-verified { color: var(--nocturne-green); }
+.nocturne-kyc-card__icon { align-self: flex-end; color: var(--nocturne-raised); font-size: 54px; }
+@media (max-width: 991.98px) { .nocturne-profile-summary { grid-template-columns: 1fr; } }
+
+/* ---- Generic page heading used across account pages ---- */
+.nocturne-page-title { margin: 0 0 18px; color: var(--nocturne-text); font-size: 26px; font-weight: 800; letter-spacing: -.02em; text-transform: uppercase; }
+
+/* =========================================================================
+   Payment / withdraw gateway cards (deposit.blade.php, withdraw forms)
+   ========================================================================= */
+.nocturne-main .gateway-card .custom--card { border-radius: var(--nocturne-radius-lg); }
+.nocturne-main .payment-system-list.is-scrollable { max-height: 420px; overflow-y: auto; }
+.nocturne-main .payment-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--nocturne-line); cursor: pointer; transition: background .15s ease; }
+.nocturne-main .payment-item:last-child { border-bottom: 0; }
+.nocturne-main .payment-item:hover { background: rgba(255,255,255,.02); }
+.nocturne-main .payment-item__info { display: flex; align-items: center; gap: 10px; }
+.nocturne-main .payment-item__check { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--nocturne-line); border-radius: 50%; }
+.nocturne-main .payment-item__radio:checked ~ .payment-item__info .payment-item__check { border-color: var(--nocturne-green); background: radial-gradient(circle, var(--nocturne-green) 46%, transparent 50%); }
+.nocturne-main .payment-item__radio:checked ~ .payment-item__info .payment-item__name { color: var(--nocturne-green); }
+.nocturne-main .payment-item__name { color: var(--nocturne-text); font-size: 14px; font-weight: 700; }
+.nocturne-main .payment-item__thumb-img { max-height: 28px; object-fit: contain; }
+.nocturne-main .payment-item__btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 16px; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 13px; font-weight: 700; cursor: pointer; }
+.nocturne-main .deposit-info { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; }
+.nocturne-main .deposit-info__title .text { color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-main .deposit-info__input .text { color: var(--nocturne-text); font-size: 14px; font-weight: 700; }
+.nocturne-main .deposit-info.total-amount .text { font-size: 16px; }
+.nocturne-main .deposit-info__input-group { border-radius: 13px; overflow: hidden; }
+.nocturne-main .deposit-info__input-group-text { display: flex; align-items: center; padding: 0 14px; background: #0d1023; border: 1px solid #2c3453; border-right: 0; color: var(--nocturne-muted); font-weight: 800; }
+.nocturne-main .deposit-info__input-group .form--control { border-left: 0; border-radius: 0 13px 13px 0 !important; }
+.nocturne-main hr { border-color: var(--nocturne-line); opacity: 1; }
+.nocturne-main .info-text .text { color: var(--nocturne-muted); font-size: 12.5px; }
+
+/* =========================================================================
+   Game cards — catalogue, home sections, search results
+   ========================================================================= */
+.games-section-wrapper, .game-list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 16px; }
+.game-item {
+    position: relative; overflow: hidden; border-radius: var(--nocturne-radius-md); background: var(--nocturne-panel);
+    border: 1px solid var(--nocturne-line); transition: transform .18s ease, border-color .18s ease;
+}
+.game-item:hover { transform: translateY(-4px); border-color: rgba(0,239,135,.35); }
+.game-item__image { position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
+.game-item__image img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.game-item:hover .game-item__image img { transform: scale(1.06); }
+.game-item__play {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(180deg, rgba(10,13,28,.1), rgba(7,9,20,.86)); opacity: 0; transition: opacity .2s ease;
+}
+.game-item:hover .game-item__play { opacity: 1; }
+.game-item__play .btn { min-width: 108px; border: 0; border-radius: 11px; font-weight: 800; }
+.game-item__play .btn:first-child { background: var(--nocturne-green); color: #073c2a; }
+.game-item__play .btn:last-child { background: rgba(255,255,255,.12); color: #fff; }
+.game-item__title { margin: 0; padding: 11px 12px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =========================================================================
+   Footer — CTA bar, link grid, support box, payment/trust logos, socket bar
+   ========================================================================= */
+.footer-area { margin-top: 40px; padding-top: 0; border-top: 0; }
+.nocturne-footer-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+    margin-bottom: 30px; padding: 20px 26px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
+}
+.nocturne-footer-cta__text strong { display: block; color: var(--nocturne-text); font-size: 17px; }
+.nocturne-footer-cta__text span { color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-footer-cta__btn { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border-radius: 13px; background: var(--nocturne-green); color: #073c2a; text-decoration: none; font-weight: 800; }
+.nocturne-footer-grid { display: grid; grid-template-columns: repeat(4, 1fr) 1.3fr; gap: 24px; padding-bottom: 28px; border-bottom: 1px solid var(--nocturne-line); }
+.nocturne-footer-col h6 { margin-bottom: 14px; color: var(--nocturne-text); font-size: 13px; font-weight: 800; }
+.nocturne-footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.nocturne-footer-col a { color: var(--nocturne-muted); text-decoration: none; font-size: 13.5px; }
+.nocturne-footer-col a:hover { color: var(--nocturne-green); }
+.nocturne-footer-support { padding: 16px; background: var(--nocturne-raised); border-radius: var(--nocturne-radius-md); }
+.nocturne-footer-support__head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; color: var(--nocturne-text); font-weight: 800; font-size: 13px; }
+.nocturne-footer-support__head span { padding: 2px 8px; border-radius: 999px; background: rgba(0,239,135,.16); color: var(--nocturne-green); font-size: 10.5px; }
+.nocturne-footer-support p { margin-bottom: 12px; color: var(--nocturne-muted); font-size: 12.5px; }
+.nocturne-footer-support a.btn-write { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; background: var(--nocturne-panel); color: var(--nocturne-text); text-decoration: none; font-size: 12.5px; font-weight: 700; }
+.payment-method { padding: 28px 0 !important; }
+.payment-method__title { margin-bottom: 14px; color: var(--nocturne-muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.payment-single-item { opacity: .65; filter: grayscale(1); transition: opacity .18s ease, filter .18s ease; }
+.payment-single-item:hover { opacity: 1; filter: grayscale(0); }
+.payment-item__image img { max-height: 30px; width: auto; object-fit: contain; }
+.footer-bottom { padding: 18px 0 !important; }
+.footer-bottom__wrapper { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.newsletter__wrapper { display: flex; gap: 10px; }
+.newsletter__input .form--control { min-width: 220px; }
+.newsletter__btn { min-height: 48px; padding: 0 18px; border: 0; border-radius: 13px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; }
+.socket-area { padding: 16px 0; border-top: 1px solid var(--nocturne-line); }
+.socket-area__wrapper { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.socket-area__text { margin: 0; font-size: 12.5px; }
+.social-list, .socket-nav { list-style: none; display: flex; flex-wrap: wrap; gap: 14px; margin: 0; padding: 0; }
+.social-list__link { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-text); }
+.socket-nav__link { color: var(--nocturne-muted); text-decoration: none; font-size: 12.5px; }
+.socket-nav__link:hover { color: var(--nocturne-green); }
+@media (max-width: 991.98px) {
+    .nocturne-footer-grid { grid-template-columns: repeat(2, 1fr); }
+    .nocturne-footer-grid .nocturne-footer-col:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 575.98px) {
+    .nocturne-footer-cta { flex-direction: column; align-items: flex-start; }
+    .nocturne-footer-grid { grid-template-columns: 1fr; }
+    .footer-bottom__wrapper { flex-direction: column; align-items: flex-start; }
+}
+
+/* =========================================================================
+   Auth pages (login / register / password reset)
+   ========================================================================= */
+.account.accout-bg { position: relative; padding: 60px 0; }
+.account-inner { display: flex; justify-content: center; }
+.account-form {
+    width: 100%; max-width: 460px; padding: 34px 32px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 22px;
+}
+.account-form__content { margin-bottom: 22px; text-align: center; }
+.account-form__logo img { max-height: 44px; margin-bottom: 14px; }
+.account-form__desc { color: var(--nocturne-muted); font-size: 14px; }
+.account-form .input-inner { position: relative; }
+.account-form .input-inner__icon { position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: var(--nocturne-muted); }
+.account-form .input-inner .form--control { padding-left: 44px; }
+.account-form .forgot-password { color: var(--nocturne-muted); font-size: 13px; text-decoration: none; }
+.account-form .forgot-password:hover { color: var(--nocturne-green); }
+.account-form .form--check { display: flex; align-items: center; gap: 8px; }
+.account-form .account-note { color: var(--nocturne-muted); font-size: 13.5px; }
+.account-form .account-note a { color: var(--nocturne-green); font-weight: 700; text-decoration: none; }
+.registration-inner .account-form, .registration .account-form { max-width: 620px; }
+.registration .lock-icon { display: block; margin: 0 auto 18px; text-align: center; }
+
+/* ---- Shared input-group (referral link, copy boxes) ---- */
+.nocturne-main .input-group { border-radius: 13px; overflow: hidden; }
+.nocturne-main .input-group .form--control { border-radius: 0 !important; border-right: 0; }
+.nocturne-main .input-group-text {
+    display: inline-flex; align-items: center; gap: 6px; padding: 0 18px; background: var(--nocturne-green); color: #073c2a;
+    border: 1px solid var(--nocturne-green); font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.nocturne-main .input-group-text.copied { background: #303958; border-color: #303958; color: var(--nocturne-text); }
+
+/* ---- Verification step indicator ---- */
+.nocturne-steps { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+.nocturne-step { display: flex; align-items: center; gap: 9px; padding: 10px 16px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 13px; color: var(--nocturne-muted); font-size: 13px; font-weight: 700; }
+.nocturne-step i { font-size: 17px; }
+.nocturne-step.is-active { border-color: rgba(0,239,135,.4); color: var(--nocturne-text); }
+.nocturne-step.is-active i { color: var(--nocturne-green); }
+
+/* ---- Compact breadcrumb (Home > Page Name) ---- */
+.nocturne-main .breadcrumb { position: relative; margin-bottom: 22px; padding: 0; background: transparent; min-height: 0; }
+.nocturne-main .breadcrumb__overlay { display: none; }
+.nocturne-main .breadcrumb .container, .nocturne-main .breadcrumb .row, .nocturne-main .breadcrumb .col-lg-8 { all: unset; display: block; }
+.nocturne-main .breadcrumb__wrapper { display: flex; flex-direction: column; gap: 2px; }
+.nocturne-main .breadcrumb__title { display: none; }
+.nocturne-main .breadcrumb__list { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.nocturne-main .breadcrumb__item { color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-main .breadcrumb__link { color: var(--nocturne-muted); text-decoration: none; font-weight: 600; }
+.nocturne-main .breadcrumb__link:hover { color: var(--nocturne-green); }
+.nocturne-main .breadcrumb__item-text { color: var(--nocturne-text); font-weight: 700; }
+
+/* =========================================================================
+   Informational CMS pages — About / Licenses / Sponsorships / Promotions / VIP
+   ========================================================================= */
+.nocturne-page-hero { display: flex; align-items: center; justify-content: space-between; gap: 32px; margin-bottom: 40px; padding: 36px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-page-hero__text { max-width: 640px; }
+.nocturne-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--nocturne-green); font-size: 24px; font-weight: 800; }
+.nocturne-page-hero__text p { margin: 0; color: var(--nocturne-muted); font-size: 15px; line-height: 1.7; }
+.nocturne-page-hero__media { flex: 0 0 auto; max-width: 380px; }
+.nocturne-page-hero__media img { width: 100%; border-radius: var(--nocturne-radius-md); object-fit: cover; }
+.nocturne-outline-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; padding: 11px 20px; border: 1px solid var(--nocturne-line); border-radius: 12px; color: var(--nocturne-text); text-decoration: none; font-weight: 700; font-size: 13.5px; }
+.nocturne-outline-btn:hover { border-color: var(--nocturne-green); color: var(--nocturne-green); }
+@media (max-width: 767.98px) { .nocturne-page-hero { flex-direction: column; } }
+
+.nocturne-section { margin-bottom: 44px; }
+.nocturne-section__head { margin-bottom: 22px; }
+.nocturne-section__head h2 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 22px; font-weight: 800; }
+.nocturne-section__head p { margin: 0; color: var(--nocturne-muted); font-size: 14px; }
+
+.nocturne-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.nocturne-feature-card { padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-feature-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; margin-bottom: 14px; border-radius: 12px; background: var(--nocturne-raised); }
+.nocturne-feature-card__icon img { max-width: 22px; max-height: 22px; }
+.nocturne-feature-card h5 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 15px; font-weight: 800; }
+.nocturne-feature-card p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+
+.nocturne-award-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.nocturne-award-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-award-card img { width: 64px; height: 64px; object-fit: contain; }
+.nocturne-award-card strong { color: var(--nocturne-text); font-size: 14px; }
+.nocturne-award-card span { color: var(--nocturne-muted); font-size: 12.5px; }
+
+.nocturne-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.nocturne-stat-card { padding: 26px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-stat-card strong { display: block; margin-bottom: 6px; color: var(--nocturne-text); font-size: 28px; font-weight: 800; }
+.nocturne-stat-card span { color: var(--nocturne-muted); font-size: 13px; }
+
+.nocturne-review-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.nocturne-review-card { padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-review-card__head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.nocturne-review-card__head img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+.nocturne-review-card__head strong { display: block; color: var(--nocturne-text); font-size: 14px; }
+.nocturne-review-card__stars i { color: #ffc24b; font-size: 12px; }
+.nocturne-review-card p { margin: 0; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.6; }
+
+.nocturne-license-list { display: flex; flex-direction: column; gap: 10px; }
+.nocturne-license-row { display: flex; align-items: center; gap: 20px; padding: 20px 24px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-license-row img { flex: 0 0 auto; max-width: 90px; max-height: 44px; object-fit: contain; }
+.nocturne-license-row strong { display: block; margin-bottom: 4px; color: var(--nocturne-text); font-size: 15px; }
+.nocturne-license-row p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+@media (max-width: 575.98px) { .nocturne-license-row { flex-direction: column; align-items: flex-start; } }
+
+.nocturne-sponsor-wrap { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.nocturne-sponsor-list { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-sponsor-tab { display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; color: var(--nocturne-muted); font-weight: 700; font-size: 13.5px; text-align: left; cursor: pointer; }
+.nocturne-sponsor-tab img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+.nocturne-sponsor-tab.is-active { background: var(--nocturne-raised); color: var(--nocturne-text); }
+.nocturne-sponsor-panel { display: none; padding: 28px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-sponsor-panel.is-active { display: block; }
+.nocturne-sponsor-panel img { width: 64px; height: 64px; margin-bottom: 14px; border-radius: 16px; object-fit: cover; }
+.nocturne-sponsor-panel h4 { margin: 0 0 10px; color: var(--nocturne-text); }
+.nocturne-sponsor-panel p { margin: 0; color: var(--nocturne-muted); line-height: 1.7; }
+@media (max-width: 767.98px) { .nocturne-sponsor-wrap { grid-template-columns: 1fr; } .nocturne-sponsor-list { flex-direction: row; overflow-x: auto; } }
+
+.nocturne-promo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.nocturne-promo-card { overflow: hidden; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-promo-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.nocturne-promo-card__body { padding: 18px; }
+.nocturne-promo-card__body h4 { margin: 0 0 8px; color: var(--nocturne-text); font-size: 16px; }
+.nocturne-promo-card__body p { margin: 0 0 12px; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.6; }
+.nocturne-promo-card__body a { color: var(--nocturne-green); text-decoration: none; font-weight: 700; font-size: 13px; }
+
+.nocturne-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.nocturne-tier-card { padding: 24px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
+.nocturne-tier-card img { width: 56px; height: 56px; margin-bottom: 14px; object-fit: contain; }
+.nocturne-tier-card h5 { margin: 0 0 8px; color: var(--nocturne-text); }
+.nocturne-tier-card p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+
+/* =========================================================================
+   Mobile bottom nav — icon + label tab bar
+   ========================================================================= */
+@media (max-width: 1199.98px) {
+    .nocturne-mobile-nav a.is-active, .nocturne-mobile-nav button.is-active { color: var(--nocturne-green); }
 }

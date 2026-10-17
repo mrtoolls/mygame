@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Withdraw')</h1>
     <div class="row justify-content-center">
         <div class="col-lg-9">
             <form action="{{ route('user.withdraw.money') }}" method="post" class="withdraw-form">
@@ -128,6 +132,8 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

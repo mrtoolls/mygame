@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Two-Factor Authentication')</h1>
     <div class="row justify-content-center gy-4">
         @if (!$user->ts)
             <div class="col-md-6">
@@ -73,6 +77,8 @@
                     </form>
                 </div>
             @endif
+        </div>
+    </div>
         </div>
     </div>
 @endsection

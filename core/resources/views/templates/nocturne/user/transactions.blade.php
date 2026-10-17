@@ -1,5 +1,9 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Transactions')</h1>
     <div class="transection-section">
         <div class="show-filter text-end mb-3">
             <button class="btn btn--base showFilterBtn btn--sm" type="button"><i class="las la-filter"></i>
@@ -82,6 +86,8 @@
                     {{ paginateLinks($transactions) }}
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

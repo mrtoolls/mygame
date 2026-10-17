@@ -1,5 +1,8 @@
 @extends('Template::layouts.master')
 @section('content')
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
     <div class="transection-section">
         <div class="latest-transection">
             <div class="transection-table-scroller">
@@ -50,6 +53,8 @@
                     {{ paginateLinks($supports) }}
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection

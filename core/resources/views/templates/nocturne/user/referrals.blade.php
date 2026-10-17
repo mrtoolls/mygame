@@ -1,20 +1,26 @@
 @extends('Template::layouts.master')
 @section('content')
-    <div class="row">
-        @if (auth()->user()->referrer)
-            <h4 class="mb-2">@lang('You are referred by') {{ auth()->user()->referrer->fullname }}</h4>
-        @endif
-        <div class="col-md-12">
-            <div class="form-group">
-                <div class="input-group">
-                    <input class="form-control form--control referralURL" type="text"
-                        value="{{ route('home') }}?reference={{ auth()->user()->username }}" readonly>
-                    <button class="input-group-text copytext" id="copyBoard" type="button"><i
-                            class="fas fa-copy"></i></button>
-                </div>
+    <div class="nocturne-account">
+        @include('Template::partials.account_nav')
+        <div class="nocturne-account-content">
+    <h1 class="nocturne-page-title">@lang('Bonuses')</h1>
+
+    <div class="card custom--card mb-4">
+        <div class="card-body">
+            @if (auth()->user()->referrer)
+                <p class="mb-3">@lang('You are referred by') <strong>{{ auth()->user()->referrer->fullname }}</strong></p>
+            @endif
+            <label class="form--label">@lang('Your Personal Referral Link')</label>
+            <div class="input-group">
+                <input class="form-control form--control referralURL" type="text"
+                    value="{{ route('home') }}?reference={{ auth()->user()->username }}" readonly>
+                <button class="input-group-text copytext" id="copyBoard" type="button"><i
+                        class="fas fa-copy"></i> @lang('Copy')</button>
             </div>
         </div>
     </div>
+
+    <h4 class="mb-3">@lang('Referred Users')</h4>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card custom--card">
@@ -38,6 +44,8 @@
                     @endif
                 </div>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 @endsection
