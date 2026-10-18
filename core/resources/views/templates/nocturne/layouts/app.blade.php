@@ -30,6 +30,7 @@
     <link
         href="{{ asset(activeTemplate(true) . 'css/color.php') }}?color={{ gs('base_color') }}&secondColor={{ gs('secondary_color') }}"
         rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/global/css/mobile-inputs.css') }}?v={{ @filemtime(public_path('assets/global/css/mobile-inputs.css')) }}">
 </head>
 
 @php echo loadExtension('google-analytics') @endphp

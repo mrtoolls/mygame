@@ -20,6 +20,7 @@
     <link rel="manifest" href="{{ route('pwa.configuration') }}">
     @stack('style')
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/color.php') }}?color={{ gs('base_color') }}">
+    <link rel="stylesheet" href="{{ asset('assets/global/css/mobile-inputs.css') }}?v={{ @filemtime(public_path('assets/global/css/mobile-inputs.css')) }}">
 </head>
 
 @php echo loadExtension('google-analytics') @endphp

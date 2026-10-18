@@ -1,0 +1,11 @@
+/* Prevent iOS Safari from zooming the page when a form control receives focus.
+   Keeping pinch zoom enabled preserves user accessibility controls. */
+@media (max-width: 767.98px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="hidden"]),
+    select,
+    textarea,
+    .select2-container .select2-selection,
+    .select2-container .select2-search__field {
+        font-size: 16px !important;
+    }
+}
