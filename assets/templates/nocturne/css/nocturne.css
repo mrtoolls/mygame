@@ -465,6 +465,21 @@ a:hover { color: var(--nocturne-green); }
 }
 .nocturne-main .gateway-card .btn.btn--base:hover:not(:disabled) { filter: brightness(1.08); }
 .nocturne-main .gateway-card .btn.btn--base:disabled { background: var(--nocturne-raised); color: var(--nocturne-muted); opacity: 1; }
+.nocturne-pay-step { margin: 0; padding: 16px 16px 0; color: var(--nocturne-muted); font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.nocturne-pay-tabs { display: flex; gap: 8px; margin: 10px 16px 0; padding: 4px; background: var(--nocturne-raised); border-radius: 13px; }
+.nocturne-pay-tab { flex: 1; min-height: 38px; border: 0; border-radius: 10px; background: transparent; color: var(--nocturne-muted); font-size: 12.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.nocturne-pay-tab.is-active { background: var(--nocturne-panel); color: var(--nocturne-text); }
+.nocturne-pay-selected { display: flex; align-items: center; gap: 10px; padding: 16px 16px 0; }
+.nocturne-pay-selected__thumb { width: 26px; height: 26px; object-fit: contain; }
+.nocturne-pay-selected__name { color: var(--nocturne-text); font-size: 14px; font-weight: 800; }
+.nocturne-pay-selected__badge { margin-left: auto; padding: 3px 10px; border-radius: 999px; background: rgba(0,239,135,.14); color: var(--nocturne-green); font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.nocturne-pay-history-link {
+    display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 14px 18px; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md);
+    background: var(--nocturne-panel); color: var(--nocturne-text); text-decoration: none; font-size: 13.5px; font-weight: 700;
+}
+.nocturne-pay-history-link i:first-child { color: var(--nocturne-green); font-size: 17px; }
+.nocturne-pay-history-link i:last-child { margin-left: auto; color: var(--nocturne-muted); font-size: 15px; }
+.nocturne-pay-history-link:hover { border-color: rgba(0,239,135,.35); }
 
 /* =========================================================================
    Game cards — catalogue, home sections, search results

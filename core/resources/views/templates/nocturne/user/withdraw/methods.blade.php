@@ -13,6 +13,7 @@
                         <div class="col-lg-6">
                             <div class="card custom--card">
                                 <div class="card-body p-0">
+                                    <h4 class="nocturne-pay-step">1. @lang('Select a Withdraw Method')</h4>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
                                         @foreach ($withdrawMethod as $data)
                                             <label for="{{ titleToKey($data->name) }}"
@@ -49,6 +50,11 @@
                         <div class="col-lg-6">
                             <div class="card custom--card">
                                 <div class="card-body p-0">
+                                    <div class="nocturne-pay-selected">
+                                        <img class="nocturne-pay-selected__thumb" src="" alt="">
+                                        <span class="nocturne-pay-selected__name"></span>
+                                        <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
+                                    </div>
                                     <div class="payment-system-list p-3">
                                         <div class="deposit-info">
                                             <div class="deposit-info__title">
@@ -132,6 +138,7 @@
                     </div>
                 </div>
             </form>
+            <a href="{{ route('user.withdraw.history') }}" class="nocturne-pay-history-link"><i class="ph-bold ph-clock-counter-clockwise"></i>@lang('View Withdraw History')<i class="ph-bold ph-caret-right"></i></a>
         </div>
     </div>
         </div>
@@ -183,6 +190,8 @@
                 let processingFeeInfo =
                     `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for processing fees`
                 $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
+                $(".nocturne-pay-selected__thumb").attr('src', gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src'));
+                $(".nocturne-pay-selected__name").text(gatewayElement.closest('.payment-item').find('.payment-item__name').text());
 
                 calculation();
             }

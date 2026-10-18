@@ -4,6 +4,10 @@
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Deposit')</h1>
+    @php
+        $hasCrypto = $gatewayCurrency->contains(fn($g) => $g->method->crypto == 1);
+        $hasCard   = $gatewayCurrency->contains(fn($g) => $g->method->crypto != 1);
+    @endphp
     <div class="row justify-content-center">
         <div class="col-lg-9">
             <form action="{{ route('user.deposit.insert') }}" method="post" class="deposit-form">
@@ -14,9 +18,18 @@
                         <div class="col-lg-6">
                             <div class="card custom--card">
                                 <div class="card-body p-0">
+                                    <h4 class="nocturne-pay-step">1. @lang('Select a Deposit Method')</h4>
+                                    @if ($hasCrypto && $hasCard)
+                                        <div class="nocturne-pay-tabs">
+                                            <button type="button" class="nocturne-pay-tab is-active" data-filter="1">@lang('Crypto')</button>
+                                            <button type="button" class="nocturne-pay-tab" data-filter="0">@lang('Bank Card')</button>
+                                        </div>
+                                    @endif
+                                    <h4 class="nocturne-pay-step">2. @lang('Select Method to Deposit')</h4>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
                                         @foreach ($gatewayCurrency as $data)
                                             <label for="{{ titleToKey($data->name) }}"
+                                                data-crypto="{{ $data->method->crypto }}"
                                                 class="payment-item @if ($loop->index > 4) d-none @endif gateway-option">
                                                 <div class="payment-item__info">
                                                     <span class="payment-item__check"></span>
@@ -50,6 +63,11 @@
                         <div class="col-lg-6">
                             <div class="card custom--card">
                                 <div class="card-body p-0">
+                                    <div class="nocturne-pay-selected">
+                                        <img class="nocturne-pay-selected__thumb" src="" alt="">
+                                        <span class="nocturne-pay-selected__name"></span>
+                                        <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
+                                    </div>
                                     <div class="payment-system-list p-3">
                                         <div class="deposit-info">
                                             <div class="deposit-info__title">
@@ -137,6 +155,7 @@
                     </div>
                 </div>
             </form>
+            <a href="{{ route('user.deposit.history') }}" class="nocturne-pay-history-link"><i class="ph-bold ph-clock-counter-clockwise"></i>@lang('View Deposit History')<i class="ph-bold ph-caret-right"></i></a>
         </div>
     </div>
         </div>
@@ -192,6 +211,8 @@
                 let processingFeeInfo =
                     `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for payment gateway processing fees`
                 $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
+                $(".nocturne-pay-selected__thumb").attr('src', gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src'));
+                $(".nocturne-pay-selected__name").text(gatewayElement.closest('.payment-item').find('.payment-item__name').text());
                 calculation();
             }
 
@@ -204,6 +225,18 @@
                 paymentList.animate({
                     scrollTop: (paymentList.height() - 60)
                 }, 'slow');
+            });
+
+            $(".nocturne-pay-tab").on("click", function(e) {
+                let filter = $(this).data('filter');
+                $(".nocturne-pay-tab").removeClass('is-active');
+                $(this).addClass('is-active');
+                $(".gateway-option").each(function() {
+                    $(this).toggleClass('d-none', String($(this).data('crypto')) !== String(filter));
+                });
+                let firstVisible = $(".gateway-option:not(.d-none)").first();
+                firstVisible.find('.gateway-input').prop('checked', true);
+                gatewayChange();
             });
 
             function calculation() {
@@ -260,7 +293,13 @@
             var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             })
-            $('.gateway-input').change();
+
+            if ($(".nocturne-pay-tab").length) {
+                let checkedCrypto = $('.gateway-input:checked').closest('.gateway-option').data('crypto');
+                $(".nocturne-pay-tab").filter(`[data-filter="${checkedCrypto}"]`).trigger('click');
+            } else {
+                $('.gateway-input').change();
+            }
         })(jQuery);
     </script>
 @endpush
