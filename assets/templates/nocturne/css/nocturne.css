@@ -171,6 +171,7 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-main .pagination .page-item.active .page-link { color: #063b29; background: var(--nocturne-green); border-color: var(--nocturne-green); }
 .nocturne-main .modal-content { color: var(--nocturne-text); background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: 18px; }
 .nocturne-main .modal-header, .nocturne-main .modal-footer { border-color: var(--nocturne-line); }
+.nocturne-main .modal-icon i { color: var(--nocturne-green) !important; border-color: var(--nocturne-green) !important; }
 .nocturne-main .dropdown-menu { color: var(--nocturne-text); background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); }
 .nocturne-main .dropdown-item { color: var(--nocturne-text); }
 .nocturne-main .dropdown-item:hover { color: var(--nocturne-green); background: var(--nocturne-raised); }
