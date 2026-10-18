@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/iconmoon.css') }}">
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/main.css') }}">
     <link href="{{ asset(activeTemplate(true) . 'css/custom.css') }}" rel="stylesheet">
-    <link href="{{ asset(activeTemplate(true) . 'css/nocturne.css') }}" rel="stylesheet">
+    <link href="{{ asset(activeTemplate(true) . 'css/nocturne.css') }}?v={{ @filemtime(public_path(activeTemplate(true) . 'css/nocturne.css')) }}" rel="stylesheet">
 
     @stack('style-lib')
     <link rel="manifest" href="{{ route('pwa.configuration') }}">

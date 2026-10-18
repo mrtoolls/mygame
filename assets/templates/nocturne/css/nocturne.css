@@ -452,9 +452,17 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-kyc-card__status.is-verified { color: var(--nocturne-green); }
 .nocturne-kyc-card__icon { align-self: flex-end; color: var(--nocturne-raised); font-size: 54px; }
 @media (max-width: 991.98px) { .nocturne-profile-summary { grid-template-columns: 1fr; } }
+@media (max-width: 575.98px) {
+    .nocturne-profile-summary { gap: 12px; margin-bottom: 16px; }
+    .nocturne-balance-card, .nocturne-kyc-card { padding: 18px; }
+    .nocturne-balance-card__amount strong { font-size: 25px; }
+    .nocturne-balance-card__actions a { min-height: 44px; font-size: 13px; }
+    .nocturne-kyc-card__icon { font-size: 42px; }
+}
 
 /* ---- Generic page heading used across account pages ---- */
 .nocturne-page-title { margin: 0 0 18px; color: var(--nocturne-text); font-size: 26px; font-weight: 800; letter-spacing: -.02em; text-transform: uppercase; }
+@media (max-width: 575.98px) { .nocturne-page-title { font-size: 21px; margin-bottom: 14px; } }
 
 /* =========================================================================
    Payment / withdraw gateway cards (deposit.blade.php, withdraw forms)
@@ -546,6 +554,17 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-play-btn--play { background: var(--nocturne-green); color: #073c2a; box-shadow: 0 8px 18px rgba(0,239,135,.3); }
 .nocturne-play-btn--demo { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.22); backdrop-filter: blur(4px); }
 .game-item__title { margin: 0; padding: 11px 12px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Touch devices have no reliable :hover - the full-cover reveal above is unreachable there, so
+   replace it with an always-visible compact bar pinned to the card's bottom edge instead of
+   permanently darkening the artwork. */
+@media (hover: none) {
+    .game-item__play {
+        inset: auto 0 0; flex-direction: row; gap: 6px; padding: 8px; opacity: 1; visibility: visible;
+        background: linear-gradient(0deg, rgba(7,9,20,.92), rgba(7,9,20,0)) !important;
+    }
+    .nocturne-play-btn { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 10.5px; }
+    .nocturne-play-btn i { font-size: 12px; }
+}
 
 /* ---- Promo banner row (reuses admin-managed Promotions content) ---- */
 .nocturne-promo-banners { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 26px; }
@@ -578,11 +597,17 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-game-scroller { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity; }
 .nocturne-game-scroller::-webkit-scrollbar { height: 6px; }
 .nocturne-game-scroller::-webkit-scrollbar-thumb { background: var(--nocturne-raised); border-radius: 999px; }
-.nocturne-game-scroller__item { flex: 0 0 168px; scroll-snap-align: start; }
+/* This element also carries .game-item, whose own `width: 100% !important` (needed to fix the
+   grid-collapse bug elsewhere) would otherwise fight the fixed card width a horizontal scroll
+   strip needs - win that fight with a selector specific to this context instead of removing
+   either !important. */
+.nocturne-game-scroller .nocturne-game-scroller__item {
+    flex: 0 0 168px !important; width: 168px !important; max-width: 168px !important; scroll-snap-align: start;
+}
 .nocturne-game-scroller__item .game-item__title { padding-bottom: 2px; }
 .game-item__tag { display: block; padding: 0 12px 12px; color: var(--nocturne-muted); font-size: 10.5px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: .05em; }
 @media (max-width: 575.98px) {
-    .nocturne-game-scroller__item { flex-basis: 136px; }
+    .nocturne-game-scroller .nocturne-game-scroller__item { flex-basis: 136px !important; width: 136px !important; max-width: 136px !important; }
 }
 
 /* =========================================================================

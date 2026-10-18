@@ -84,64 +84,6 @@
         </div>
     @endif
 
-    <h4 class="mb-3">@lang('Account Overview')</h4>
-    <div class="info-wrapper">
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-Money-Bag"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Balance')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_balance']) }}</h4>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-Deposit-1"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Deposit')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_deposit']) }}</h4>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-withdraw-1"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Withdraw')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_withdrawn']) }}</h4>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-Group-86"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Invest')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_invest']) }}</h4>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-trophy"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Win')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_win']) }}</h4>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card__icon">
-                <i class="icon icon-Layer-21"></i>
-            </div>
-            <div class="info-card__content">
-                <p class="info-card__desc mb-2">@lang('Total Loss')</p>
-                <h4 class="info-card__title mb-0">{{ showAmount($widget['total_loss']) }}</h4>
-            </div>
-        </div>
-    </div>
-
     @if ($user->kv == Status::KYC_UNVERIFIED && $user->kyc_rejection_reason)
         <div class="modal custom--modal fade" id="kycRejectionReason">
             <div class="modal-dialog" role="document">
