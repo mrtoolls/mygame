@@ -442,19 +442,23 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-account-support p { margin-bottom: 14px; color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-account-support-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 12px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-size: 13px; font-weight: 700; transition: background .16s ease; }
 .nocturne-account-support-btn:hover { background: #303958; color: var(--nocturne-green); }
-.nocturne-account-content { min-width: 0; }
+.nocturne-account,
+.nocturne-account-nav,
+.nocturne-account-card,
+.nocturne-account-content { min-width: 0; max-width: 100%; }
 @media (max-width: 1199.98px) {
     .nocturne-account { grid-template-columns: 1fr; gap: 14px; }
     .nocturne-account-nav { position: static; flex-direction: column; gap: 12px; order: -1; }
     .nocturne-account-card { padding: 0; background: transparent; border: 0; border-radius: 0; }
     .nocturne-account-id { display: none; }
     .nocturne-account-links {
-        display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
-        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; width: 100%; min-width: 0; max-width: 100%;
+        overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; touch-action: pan-x;
+        -webkit-overflow-scrolling: touch; overscroll-behavior-inline: contain; scrollbar-width: none;
     }
     .nocturne-account-links::-webkit-scrollbar { display: none; }
     .nocturne-account-links a {
-        flex: 0 0 auto; min-height: 42px; padding: 0 16px; border: 1px solid var(--nocturne-line); border-radius: 999px;
+        flex: 0 0 auto; min-height: 44px; padding: 0 16px; border: 1px solid var(--nocturne-line); border-radius: 999px;
         background: var(--nocturne-panel); white-space: nowrap; font-size: 13px;
     }
     .nocturne-account-links a i { width: auto; font-size: 16px; }
@@ -463,6 +467,13 @@ a:hover { color: var(--nocturne-green); }
 }
 @media (max-width: 575.98px) {
     .nocturne-account-links a { font-size: 12.5px; padding: 0 13px; }
+    .nocturne-account { gap: 12px; }
+    .nocturne-profile-summary { grid-template-columns: minmax(0, 1fr); }
+    .nocturne-balance-card__head > div { min-width: 0; }
+    .nocturne-balance-card__head strong,
+    .nocturne-balance-card__head span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nocturne-balance-card__actions { width: 100%; }
+    .nocturne-balance-card__actions a { min-width: 0; white-space: nowrap; }
 }
 
 /* ---- Profile summary row (Balance / KYC / Rakeback / Active Bonuses) ---- */
@@ -588,7 +599,7 @@ a:hover { color: var(--nocturne-green); }
 .game-item:hover .game-item__play { opacity: 1; visibility: visible; }
 .nocturne-play-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 92px; min-height: 34px;
-    padding: 0 16px; border: 0; border-radius: 999px; text-decoration: none; font-size: 12px; font-weight: 800;
+    padding: 0 16px; border: 0; border-radius: 999px; text-decoration: none; font-size: 12px; font-weight: 800; white-space: nowrap;
     letter-spacing: .01em; text-transform: uppercase; transition: transform .15s ease, filter .15s ease;
 }
 .nocturne-play-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
@@ -606,6 +617,14 @@ a:hover { color: var(--nocturne-green); }
     }
     .nocturne-play-btn { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 10.5px; }
     .nocturne-play-btn i { font-size: 12px; }
+}
+@media (max-width: 420px) and (hover: none) {
+    .game-item__play { gap: 8px; padding: 8px 10px; }
+    .nocturne-play-btn {
+        flex: 0 0 38px; width: 38px; min-width: 38px; min-height: 38px; padding: 0;
+        font-size: 0; gap: 0; border-radius: 50%;
+    }
+    .nocturne-play-btn i { font-size: 15px; }
 }
 
 /* ---- Promo banner row (reuses admin-managed Promotions content) ---- */
