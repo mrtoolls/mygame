@@ -1,0 +1,97 @@
+.winx-support-widget,
+.winx-support-widget * { box-sizing: border-box; }
+.winx-support-widget [hidden] { display: none !important; }
+.winx-support-widget {
+    --support-bg: #0b0d1e; --support-panel: #151a31; --support-raised: #232a47;
+    --support-line: rgba(145,156,205,.2); --support-text: #f5f6ff; --support-muted: #929abc;
+    --support-green: #00ef87; --support-ink: #063b29;
+    position: fixed; z-index: 1090; right: max(22px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom));
+    color: var(--support-text); font-family: "Mulish", Inter, system-ui, sans-serif; line-height: 1.45;
+}
+.winx-support-launcher {
+    position: relative; display: grid; place-items: center; width: 78px; height: 78px; padding: 16px;
+    border: 0; border-radius: 50%; background: var(--support-green); color: var(--support-ink);
+    box-shadow: 0 14px 38px rgba(0,239,135,.25), 0 5px 20px rgba(0,0,0,.28); cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.winx-support-launcher:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 18px 44px rgba(0,239,135,.32), 0 5px 20px rgba(0,0,0,.28); }
+.winx-support-launcher svg,.winx-support-header__mark svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.winx-support-unread { position: absolute; top: -2px; right: -1px; min-width: 22px; height: 22px; display: grid; place-items: center; padding: 0 5px; border: 2px solid var(--support-bg); border-radius: 999px; background: #ff5578; color: #fff; font: 800 11px/1 system-ui; }
+.winx-support-panel {
+    position: absolute; right: 0; bottom: 94px; display: flex; flex-direction: column; width: min(392px, calc(100vw - 28px));
+    height: min(640px, calc(100dvh - 118px)); min-height: 450px; overflow: hidden; border: 1px solid rgba(145,156,205,.25);
+    border-radius: 25px; background: var(--support-bg); box-shadow: 0 30px 90px rgba(0,0,0,.52); animation: winx-support-enter .22s ease-out;
+}
+@keyframes winx-support-enter { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+.winx-support-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 19px 20px; background: linear-gradient(135deg,#172a40,#151a31 66%); border-bottom: 1px solid var(--support-line); }
+.winx-support-header__identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.winx-support-header__mark { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; padding: 9px; border-radius: 15px; background: var(--support-green); color: var(--support-ink); }
+.winx-support-header__identity strong { display: block; font-size: 15px; font-weight: 850; }
+.winx-support-header__identity span { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--support-muted); font-size: 11px; }
+.winx-support-header__identity span i { width: 7px; height: 7px; border-radius: 50%; background: var(--support-green); box-shadow: 0 0 9px rgba(0,239,135,.8); }
+.winx-support-close { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border: 1px solid var(--support-line); border-radius: 13px; background: rgba(255,255,255,.04); color: var(--support-muted); font: 300 27px/1 system-ui; cursor: pointer; }
+.winx-support-close:hover { background: rgba(255,255,255,.1); color: #fff; }
+.winx-support-discovery { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 20px 18px; }
+.winx-support-intro { margin-bottom: 19px; }
+.winx-support-eyebrow { color: var(--support-green); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.winx-support-intro h2 { margin: 5px 0 3px; color: var(--support-text); font-size: 22px; line-height: 1.2; font-weight: 850; letter-spacing: -.03em; }
+.winx-support-intro p { margin: 0; color: var(--support-muted); font-size: 12px; }
+.winx-support-agent-list { display: grid; gap: 8px; margin-bottom: 12px; }
+.winx-support-agent { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 60px; padding: 8px 11px; border: 1px solid var(--support-line); border-radius: 16px; background: var(--support-panel); color: var(--support-text); text-align: left; cursor: pointer; transition: border-color .16s ease, transform .16s ease, background .16s ease; }
+.winx-support-agent:hover { transform: translateY(-1px); border-color: rgba(0,239,135,.48); background: #19203a; }
+.winx-support-agent__photo { position: relative; flex: 0 0 42px; width: 42px; height: 42px; overflow: hidden; display: grid; place-items: center; border-radius: 50%; background: var(--support-raised); color: var(--support-green); font-size: 15px; font-weight: 900; }
+.winx-support-agent__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.winx-support-agent__info { min-width: 0; flex: 1; }
+.winx-support-agent__info strong { display: block; overflow: hidden; font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.winx-support-agent__info small { display: block; color: var(--support-muted); font-size: 10.5px; }
+.winx-support-agent__online { margin-left: auto; color: var(--support-green); font-size: 10px; font-weight: 800; }
+.winx-support-loading,.winx-support-empty { padding: 13px; border: 1px dashed var(--support-line); border-radius: 14px; color: var(--support-muted); font-size: 11.5px; text-align: center; }
+.winx-support-assistant { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 65px; padding: 11px 13px; border: 1px solid rgba(0,239,135,.26); border-radius: 16px; background: linear-gradient(115deg,rgba(0,239,135,.12),rgba(21,26,49,.95) 55%); color: var(--support-text); text-align: left; cursor: pointer; }
+.winx-support-assistant:hover { border-color: rgba(0,239,135,.6); }
+.winx-support-assistant__icon { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 13px; background: rgba(0,239,135,.16); color: var(--support-green); font-size: 21px; }
+.winx-support-assistant strong,.winx-support-assistant small { display: block; }
+.winx-support-assistant strong { font-size: 12px; font-weight: 850; }
+.winx-support-assistant small { margin-top: 2px; color: var(--support-muted); font-size: 10px; }
+.winx-support-assistant b { margin-left: auto; color: var(--support-green); font-size: 24px; font-weight: 400; }
+.winx-support-contact { margin-top: 14px; color: var(--support-muted); font-size: 10.5px; }
+.winx-support-contact summary { cursor: pointer; }
+.winx-support-contact summary span { opacity: .7; }
+.winx-support-contact div { display: grid; gap: 8px; margin-top: 9px; }
+.winx-support-contact input { width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--support-line); border-radius: 11px; outline: 0; background: #101429; color: var(--support-text); font: 500 13px/1.4 "Mulish", Inter, system-ui, sans-serif; }
+.winx-support-contact input:focus { border-color: var(--support-green); }
+.winx-support-privacy { margin-top: 15px; color: #71799d; font-size: 9.5px; text-align: center; }
+.winx-support-chat { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; background: #f4f6fb; color: #27314b; }
+.winx-support-chat-status { display: flex; justify-content: space-between; align-items: center; flex: 0 0 auto; padding: 8px 16px; background: #e8edf6; color: #55617d; font-size: 10px; }
+.winx-support-ticket { color: #7984a0; }
+.winx-support-messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 14px 10px; overscroll-behavior: contain; }
+.winx-support-message { display: flex; align-items: flex-end; gap: 8px; margin: 0 0 13px; }
+.winx-support-message.is-user { justify-content: flex-end; }
+.winx-support-message__avatar { display: grid; place-items: center; flex: 0 0 31px; width: 31px; height: 31px; overflow: hidden; border-radius: 50%; background: #073b2a; color: var(--support-green); font-size: 13px; font-weight: 900; }
+.winx-support-message__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.winx-support-message__content { max-width: 84%; min-width: 0; }
+.winx-support-message__bubble { padding: 11px 13px; border-radius: 16px 16px 16px 5px; background: #fff; color: #36405a; box-shadow: 0 4px 14px rgba(25,37,70,.07); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-wrap; }
+.winx-support-message.is-user .winx-support-message__bubble { border-radius: 16px 16px 5px 16px; background: #c9ffea; color: #124a37; }
+.winx-support-message__meta { display: flex; align-items: center; gap: 7px; margin: 4px 3px 0; color: #8a94aa; font-size: 9px; }
+.winx-support-message.is-user .winx-support-message__meta { justify-content: flex-end; }
+.winx-support-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.winx-support-suggestion { padding: 7px 9px; border: 1px solid rgba(0,169,98,.28); border-radius: 999px; background: #fff; color: #007c4d; font: 800 10px/1.2 "Mulish", Inter, system-ui, sans-serif; cursor: pointer; }
+.winx-support-suggestion:hover { background: #e3fff3; }
+.winx-support-composer { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin: 8px 13px 7px; padding: 6px 7px 6px 13px; border: 1px solid #c4ccdc; border-radius: 999px; background: #fff; box-shadow: 0 4px 18px rgba(25,37,70,.08); }
+.winx-support-composer:focus-within { border-color: #00b76b; box-shadow: 0 0 0 3px rgba(0,183,107,.1); }
+.winx-support-composer textarea { flex: 1 1 auto; min-width: 0; max-height: 90px; resize: none; padding: 7px 0; border: 0; outline: 0; background: transparent; color: #26314b; font: 500 13px/1.4 "Mulish", Inter, system-ui, sans-serif; }
+.winx-support-composer textarea::placeholder { color: #99a2b4; }
+.winx-support-composer button { display: grid; place-items: center; flex: 0 0 37px; width: 37px; height: 37px; border: 0; border-radius: 50%; background: var(--support-green); color: #06412c; cursor: pointer; }
+.winx-support-composer button:disabled { background: #d8deea; color: #8590a5; cursor: not-allowed; }
+.winx-support-composer button svg { width: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.winx-support-back { align-self: flex-start; flex: 0 0 auto; margin: 0 0 10px 19px; padding: 4px 0; border: 0; background: transparent; color: #77829c; font: 700 10px/1.4 "Mulish", Inter, system-ui, sans-serif; cursor: pointer; }
+.winx-support-back:hover { color: #008f58; }
+.winx-support-footer { flex: 0 0 auto; padding: 9px 12px; background: var(--support-bg); color: #737b9b; font-size: 9px; text-align: center; letter-spacing: .02em; }
+.winx-support-footer span { padding: 0 3px; color: var(--support-green); }
+@media (max-width: 575.98px) {
+    .winx-support-widget { right: max(12px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); }
+    .winx-support-launcher { width: 62px; height: 62px; padding: 13px; }
+    .winx-support-panel { position: fixed; inset: auto 12px max(88px, calc(env(safe-area-inset-bottom) + 74px)); width: auto; height: min(690px, calc(100dvh - 110px)); min-height: min(510px, calc(100dvh - 110px)); border-radius: 22px; }
+    .winx-support-header { padding: 15px 16px; }
+    .winx-support-discovery { padding: 19px 16px 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .winx-support-launcher,.winx-support-agent,.winx-support-panel { animation: none; transition: none; } }

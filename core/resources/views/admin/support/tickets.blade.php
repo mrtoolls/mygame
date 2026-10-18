@@ -22,6 +22,7 @@
                                     <tr>
                                         <td>
                                             <a href="{{ route('admin.ticket.view', $item->id) }}" class="fw-bold"> [@lang('Ticket')#{{ $item->ticket }}] {{ strLimit($item->subject, 30) }} </a>
+                                            @if($item->channel === 'live')<span class="badge badge--success ms-1">Live chat</span>@endif
                                         </td>
 
                                         <td>

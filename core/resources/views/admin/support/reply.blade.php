@@ -11,7 +11,9 @@
                         <div class="row align-items-center">
                             <div class="col-sm-8 col-md-6">
                                 @php echo $ticket->statusBadge; @endphp
+                                @if($ticket->channel === 'live') <span class="badge badge--success ms-1">Live chat</span> @endif
                                 [@lang('Ticket#'){{ $ticket->ticket }}] {{ $ticket->subject }}
+                                @if($ticket->supportAgent)<small class="d-block text-muted mt-1">Assigned to {{ $ticket->supportAgent->name }}</small>@endif
                             </div>
                             <div class="col-sm-4  col-md-6 text-sm-end mt-sm-0 mt-3">
                                 @if ($ticket->status != Status::TICKET_CLOSE)
@@ -51,7 +53,8 @@
 
 
                     @foreach ($messages as $message)
-                        @if ($message->admin_id == 0)
+                        @php $messageSender = $message->sender_type ?: ($message->admin_id ? 'admin' : 'user'); @endphp
+                        @if ($messageSender === 'user')
                             <div class="row border border--primary border-radius-3 my-3 mx-0">
 
                                 <div class="col-md-3 border-end text-md-end text-start">
@@ -85,8 +88,8 @@
                             <div class="row border border-warning border-radius-3 my-3 mx-0 admin-bg-reply">
 
                                 <div class="col-md-3 border-end text-md-end text-start">
-                                    <h5 class="my-3">{{ @$message->admin->name }}</h5>
-                                    <p class="lead text-muted">@lang('Staff')</p>
+                                    <h5 class="my-3">{{ $message->supportAgent?->name ?: ($message->admin?->name ?: ($messageSender === 'bot' ? 'Winxpot Assistant' : 'Winxpot Support')) }}</h5>
+                                    <p class="lead text-muted">{{ $messageSender === 'agent' ? 'Live support agent' : ($messageSender === 'bot' ? 'Support assistant' : 'Staff') }}</p>
                                     <button class="btn btn--danger btn-sm my-3 confirmationBtn" data-question="@lang('Are you sure to delete this message?')" data-action="{{ route('admin.ticket.delete', $message->id) }}"><i class="la la-trash"></i> @lang('Delete')</button>
                                 </div>
 

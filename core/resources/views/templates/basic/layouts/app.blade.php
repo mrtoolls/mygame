@@ -187,6 +187,7 @@
             registerSW();
         });
     </script>
+    @include('partials.support_chat_widget')
 </body>
 
 </html>

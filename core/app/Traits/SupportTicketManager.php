@@ -83,7 +83,9 @@ trait SupportTicketManager
         $ticket->save();
 
         $message->support_ticket_id = $ticket->id;
+        $message->sender_type       = 'user';
         $message->message           = $request->message;
+        $message->is_read           = false;
         $message->save();
 
         $adminNotification            = new AdminNotification();
@@ -153,7 +155,7 @@ trait SupportTicketManager
             }
             abort(404);
         }
-        $messages = SupportMessage::where('support_ticket_id', $myTicket->id)->with('ticket', 'admin', 'attachments')->orderBy('id', 'desc')->get();
+        $messages = SupportMessage::where('support_ticket_id', $myTicket->id)->with('ticket', 'admin', 'supportAgent', 'attachments')->orderBy('id')->get();
 
         if ($this->apiRequest) {
             $notify[] = 'Support ticket view';
@@ -208,9 +210,13 @@ trait SupportTicketManager
         $message->support_ticket_id = $ticket->id;
         if ($this->userType == 'admin') {
             $message->admin_id = $user->id;
+            $message->sender_type = 'admin';
+        } else {
+            $message->sender_type = 'user';
         }
 
         $message->message = $request->message;
+        $message->is_read = false;
         $message->save();
 
         if ($request->hasFile('attachments')) {

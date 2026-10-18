@@ -8,6 +8,28 @@ Route::get('/clear', function () {
 
 Route::get('cron', 'CronController@cron')->name('cron');
 
+Route::prefix('support-chat')->name('support-chat.')->controller('SupportChatController')->group(function () {
+    Route::get('active', 'active')->name('active')->middleware('throttle:30,1');
+    Route::get('agents', 'agents')->name('agents')->middleware('throttle:60,1');
+    Route::post('start', 'start')->name('start')->middleware('throttle:15,1');
+    Route::get('{uuid}/messages', 'messages')->name('messages')->middleware('throttle:60,1');
+    Route::post('{uuid}/messages', 'send')->name('send')->middleware('throttle:20,1');
+});
+
+Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgentController')->group(function () {
+    Route::get('login', 'loginForm')->name('login');
+    Route::post('login', 'login')->middleware('throttle:6,1')->name('login.submit');
+    Route::middleware('support.agent')->group(function () {
+        Route::post('logout', 'logout')->name('logout');
+        Route::get('/', 'dashboard')->name('dashboard');
+        Route::get('conversations', 'conversations')->name('conversations')->middleware('throttle:60,1');
+        Route::post('conversations/{uuid}/claim', 'claim')->name('claim');
+        Route::get('conversations/{uuid}/messages', 'messages')->name('messages')->middleware('throttle:60,1');
+        Route::post('conversations/{uuid}/messages', 'reply')->name('reply')->middleware('throttle:20,1');
+        Route::post('conversations/{uuid}/close', 'close')->name('close');
+    });
+});
+
 // User Support Ticket
 Route::controller('TicketController')->prefix('ticket')->name('ticket.')->group(function () {
     Route::get('/', 'supportTicket')->name('index');

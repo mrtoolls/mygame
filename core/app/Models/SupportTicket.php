@@ -63,6 +63,11 @@ class SupportTicket extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function supportAgent()
+    {
+        return $this->belongsTo(SupportAgent::class, 'support_agent_id');
+    }
+
     public function supportMessage(){
         return $this->hasMany(SupportMessage::class);
     }

@@ -460,6 +460,12 @@
             }
         ]
     },
+    "live_support_agents": {
+        "title": "Live Support Agents",
+        "icon": "la la-headset",
+        "route_name": "admin.support.agents.index",
+        "menu_active": "admin.support.agents*"
+    },
     "reports": {
         "title": "Report",
         "icon": "la la-list",
