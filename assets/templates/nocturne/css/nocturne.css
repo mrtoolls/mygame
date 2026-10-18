@@ -557,6 +557,10 @@ a:hover { color: var(--nocturne-green); }
    Game cards — catalogue, home sections, search results
    ========================================================================= */
 .games-section-wrapper, .game-list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+@media (max-width: 575.98px) {
+    .games-section-wrapper, .game-list { grid-template-columns: repeat(3, 1fr) !important; gap: 10px; }
+    .game-item__title { padding: 8px 6px; font-size: 11px; }
+}
 .game-item {
     /* The base theme sets `.game-item { width: calc(25% - 30px) }` sized for its
        own flex-wrap layout. Under our grid that percentage resolves against the
