@@ -121,7 +121,7 @@
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn--base w-100 mt-3"
-                                            disabled>@lang('Confirm Withdraw')</button>
+                                            disabled><i class="ph-bold ph-money-wavy"></i>@lang('Confirm Withdraw')</button>
                                         <div class="info-text pt-3">
                                             <p class="text">@lang('Safely withdraw your funds using our highly secure process and various withdrawal method')</p>
                                         </div>

@@ -126,7 +126,7 @@
                                             @lang('Conversion with') <span class="gateway-currency"></span> @lang('and final value will Show on next step')
                                         </div>
                                         <button type="submit" class="btn btn--base w-100 mt-3"
-                                            disabled>@lang('Deposit Confirm')</button>
+                                            disabled><i class="ph-bold ph-wallet"></i>@lang('Deposit Confirm')</button>
                                         <div class="info-text pt-3">
                                             <p class="text">@lang('Ensuring your funds grow safely through our secure deposit process with world-class payment options.')</p>
                                         </div>

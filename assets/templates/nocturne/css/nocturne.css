@@ -413,7 +413,9 @@ a:hover { color: var(--nocturne-green); }
 /* =========================================================================
    Payment / withdraw gateway cards (deposit.blade.php, withdraw forms)
    ========================================================================= */
-.nocturne-main .gateway-card .custom--card { border-radius: var(--nocturne-radius-lg); }
+.nocturne-main .gateway-card .custom--card { background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); padding: 0; }
+.nocturne-main .gateway-card .card-body { padding: 0; }
+.nocturne-main .gateway-card .payment-system-list.p-3 { padding: 22px !important; }
 .nocturne-main .payment-system-list.is-scrollable { max-height: 420px; overflow-y: auto; }
 .nocturne-main .payment-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--nocturne-line); cursor: pointer; transition: background .15s ease; }
 .nocturne-main .payment-item:last-child { border-bottom: 0; }
@@ -425,15 +427,24 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-main .payment-item__name { color: var(--nocturne-text); font-size: 14px; font-weight: 700; }
 .nocturne-main .payment-item__thumb-img { max-height: 28px; object-fit: contain; }
 .nocturne-main .payment-item__btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 16px; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 13px; font-weight: 700; cursor: pointer; }
-.nocturne-main .deposit-info { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; }
+.nocturne-main .payment-item__btn:hover { color: var(--nocturne-green); }
+.nocturne-main .deposit-info { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; }
 .nocturne-main .deposit-info__title .text { color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-main .deposit-info__input .text { color: var(--nocturne-text); font-size: 14px; font-weight: 700; }
-.nocturne-main .deposit-info.total-amount .text { font-size: 16px; }
+.nocturne-main .deposit-info.total-amount .text { font-size: 17px; font-weight: 800; }
 .nocturne-main .deposit-info__input-group { border-radius: 13px; overflow: hidden; }
 .nocturne-main .deposit-info__input-group-text { display: flex; align-items: center; padding: 0 14px; background: #0d1023; border: 1px solid #2c3453; border-right: 0; color: var(--nocturne-muted); font-weight: 800; }
-.nocturne-main .deposit-info__input-group .form--control { border-left: 0; border-radius: 0 13px 13px 0 !important; }
+.nocturne-main .deposit-info__input-group .form--control.amount { border-left: 0; border-radius: 0 13px 13px 0 !important; background: #0d1023 !important; color: var(--nocturne-text); font-size: 18px; font-weight: 800; padding: 13px 16px; }
 .nocturne-main hr { border-color: var(--nocturne-line); opacity: 1; }
 .nocturne-main .info-text .text { color: var(--nocturne-muted); font-size: 12.5px; }
+.nocturne-main .proccessing-fee-info { color: var(--nocturne-muted); }
+.nocturne-main .crypto-message { margin-top: 4px; padding: 10px 14px; border-radius: 10px; background: rgba(0,239,135,.08); color: var(--nocturne-green); font-size: 12.5px; font-weight: 600; }
+.nocturne-main .gateway-card .btn.btn--base {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; border: 0; border-radius: 999px;
+    background: var(--nocturne-green); color: #073c2a; font-weight: 800; font-size: 14.5px; letter-spacing: .02em; text-transform: uppercase; transition: filter .15s ease;
+}
+.nocturne-main .gateway-card .btn.btn--base:hover:not(:disabled) { filter: brightness(1.08); }
+.nocturne-main .gateway-card .btn.btn--base:disabled { background: var(--nocturne-raised); color: var(--nocturne-muted); opacity: 1; }
 
 /* =========================================================================
    Game cards — catalogue, home sections, search results
