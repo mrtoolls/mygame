@@ -51,22 +51,58 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-balance { display: grid; gap: 1px; padding: 9px 15px; background: #0c0f22; border-radius: 14px; min-width: 116px; }
 .nocturne-balance span { color: var(--nocturne-muted); font-size: 12px; font-weight: 700; }
 .nocturne-balance strong { color: var(--nocturne-text); font-size: 17px; line-height: 1.2; }
-.nocturne-deposit, .nocturne-login {
+.nocturne-deposit, .nocturne-login, .nocturne-register {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-height: 50px; padding: 0 22px; border-radius: 15px;
     background: var(--nocturne-green); color: #073c2a !important; text-decoration: none;
     font-size: 16px; font-weight: 800; transition: transform .18s ease, filter .18s ease;
 }
-.nocturne-deposit:hover, .nocturne-login:hover { transform: translateY(-1px); filter: brightness(1.06); }
-.nocturne-deposit i { font-size: 20px; }
+.nocturne-deposit:hover, .nocturne-login:hover, .nocturne-register:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.nocturne-deposit i, .nocturne-login i, .nocturne-register i { font-size: 20px; }
+.nocturne-register { background: var(--nocturne-raised); color: var(--nocturne-text) !important; }
 .nocturne-avatar, .nocturne-notifications, .nocturne-menu-toggle {
     display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 15px;
     background: transparent; color: var(--nocturne-muted); text-decoration: none; font-size: 27px;
 }
-.nocturne-avatar { background: var(--nocturne-raised); border-radius: 50%; }
+.nocturne-avatar { background: var(--nocturne-raised); border-radius: 50%; cursor: pointer; }
 .nocturne-notifications { position: relative; }
 .nocturne-notifications:after { content: ""; position: absolute; top: 8px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--nocturne-green); }
 .nocturne-menu-toggle { display: none; cursor: pointer; }
+
+/* ---- Authenticated header avatar dropdown ---- */
+.nocturne-user-menu { position: relative; }
+.nocturne-user-menu.is-open .nocturne-avatar { color: var(--nocturne-green); }
+.nocturne-user-dropdown {
+    position: absolute; top: calc(100% + 12px); right: 0; z-index: 1060; width: min(290px, calc(100vw - 24px));
+    padding: 10px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
+    box-shadow: 0 24px 60px rgba(0,0,0,.4); opacity: 0; visibility: hidden; transform: translateY(-10px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+.nocturne-user-menu.is-open .nocturne-user-dropdown { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+.nocturne-user-dropdown__head { display: flex; align-items: center; gap: 12px; padding: 8px 10px 14px; }
+.nocturne-user-dropdown__head .nocturne-account-avatar { flex: 0 0 auto; width: 42px; height: 42px; font-size: 24px; }
+.nocturne-user-dropdown__head strong { display: block; overflow: hidden; color: var(--nocturne-text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.nocturne-user-dropdown__head span { color: var(--nocturne-green); font-size: 12.5px; font-weight: 700; }
+.nocturne-user-dropdown__deposit {
+    display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; margin-bottom: 8px; border-radius: 13px;
+    background: var(--nocturne-green); color: #073c2a; text-decoration: none; font-size: 14px; font-weight: 800;
+}
+.nocturne-user-dropdown__deposit:hover { filter: brightness(1.06); }
+.nocturne-user-dropdown__deposit i { font-size: 18px; }
+.nocturne-user-dropdown__links { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px solid var(--nocturne-line); }
+.nocturne-user-dropdown__links a {
+    display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 10px; border-radius: 11px;
+    color: var(--nocturne-text); text-decoration: none; font-size: 13.5px; font-weight: 700; transition: background .15s ease, color .15s ease;
+}
+.nocturne-user-dropdown__links a i { width: 18px; color: var(--nocturne-muted); text-align: center; font-size: 17px; }
+.nocturne-user-dropdown__links a:hover { background: var(--nocturne-raised); color: var(--nocturne-green); }
+.nocturne-user-dropdown__links a:hover i { color: var(--nocturne-green); }
+.nocturne-user-dropdown__logout {
+    display: flex; align-items: center; gap: 12px; min-height: 42px; margin-top: 6px; padding: 0 10px; border-top: 1px solid var(--nocturne-line);
+    border-radius: 0 0 11px 11px; color: #ff6b81; text-decoration: none; font-size: 13.5px; font-weight: 700;
+}
+.nocturne-user-dropdown__logout i { width: 18px; text-align: center; font-size: 17px; }
+.nocturne-user-dropdown__logout:hover { color: #ff93a3; }
 
 .nocturne-sidebar {
     position: fixed; z-index: 1030; top: 88px; bottom: 0; left: 0; width: 316px;
@@ -262,7 +298,7 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-balance { min-width: 82px; padding: 7px 10px; }
     .nocturne-balance span { font-size: 10px; }
     .nocturne-balance strong { font-size: 14px; }
-    .nocturne-deposit, .nocturne-login { min-height: 42px; padding: 0 14px; border-radius: 12px; font-size: 13px; }
+    .nocturne-deposit, .nocturne-login, .nocturne-register { min-height: 42px; padding: 0 14px; border-radius: 12px; font-size: 13px; }
     .nocturne-avatar, .nocturne-notifications { width: 38px; height: 38px; font-size: 23px; }
     .nocturne-sidebar { top: 76px; width: min(320px, 86vw); transform: translateX(-105%); transition: transform .24s ease; box-shadow: 18px 0 50px rgba(0,0,0,.28); }
     .nocturne-sidebar-backdrop { position: fixed; z-index: 1025; inset: 76px 0 0; background: rgba(4,6,16,.7); opacity: 0; visibility: hidden; transition: opacity .2s ease,visibility .2s ease; }
@@ -284,9 +320,11 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-balance { min-width: auto; padding: 5px 8px; border-radius: 10px; }
     .nocturne-balance span { font-size: 9px; }
     .nocturne-balance strong { font-size: 12px; }
-    .nocturne-deposit { width: 40px; min-height: 40px; padding: 0; font-size: 0; }
-    .nocturne-deposit i { font-size: 19px; }
+    .nocturne-deposit, .nocturne-login, .nocturne-register { width: 40px; min-height: 40px; padding: 0; gap: 0; }
+    .nocturne-deposit span, .nocturne-login span, .nocturne-register span { display: none; }
+    .nocturne-deposit i, .nocturne-login i, .nocturne-register i { font-size: 19px; }
     .nocturne-avatar, .nocturne-notifications { width: 32px; height: 36px; font-size: 21px; }
+    .nocturne-user-dropdown { right: -4px; }
     .nocturne-main { padding: 82px 12px 86px; }
     .nocturne-main .py-100 { padding-top: 12px !important; padding-bottom: 30px !important; }
     .nocturne-main h1 { font-size: 25px; }

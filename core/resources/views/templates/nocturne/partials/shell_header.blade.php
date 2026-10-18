@@ -23,14 +23,54 @@
     <div class="nocturne-actions">
         @auth
             <div class="nocturne-balance"><span>@lang('Your Balance')</span><strong>{{ showAmount(auth()->user()->balance) }}</strong></div>
-            <a class="nocturne-deposit" href="{{ route('user.deposit.index') }}"><i class="ph-bold ph-wallet"></i><span>@lang('Deposit')</span></a>
-            <a class="nocturne-avatar" href="{{ route('user.profile.setting') }}" aria-label="@lang('Profile')"><i class="ph-bold ph-user-circle"></i></a>
-            <a class="nocturne-notifications" href="{{ route('user.transactions') }}" aria-label="@lang('Transactions')"><i class="ph-bold ph-bell"></i></a>
+            <div class="nocturne-user-menu">
+                <button class="nocturne-avatar" type="button" aria-haspopup="true" aria-expanded="false" aria-label="@lang('Account menu')">
+                    <i class="ph-bold ph-user-circle"></i>
+                </button>
+                <div class="nocturne-user-dropdown" role="menu">
+                    <div class="nocturne-user-dropdown__head">
+                        <span class="nocturne-account-avatar"><i class="ph-bold ph-user-circle"></i></span>
+                        <div>
+                            <strong>{{ auth()->user()->username }}</strong>
+                            <span>{{ showAmount(auth()->user()->balance) }}</span>
+                        </div>
+                    </div>
+                    <a class="nocturne-user-dropdown__deposit" href="{{ route('user.deposit.index') }}"><i class="ph-bold ph-plus-circle"></i>@lang('Deposit')</a>
+                    <div class="nocturne-user-dropdown__links">
+                        <a href="{{ route('user.home') }}"><i class="ph-bold ph-squares-four"></i>@lang('Dashboard')</a>
+                        <a href="{{ route('games') }}"><i class="ph-bold ph-dice-five"></i>@lang('Games')</a>
+                        <a href="{{ route('user.referrals') }}"><i class="ph-bold ph-gift"></i>@lang('Bonuses')</a>
+                        <a href="{{ route('user.vip.index') }}"><i class="ph-bold ph-crown"></i>@lang('VIP Club')</a>
+                        <a href="{{ route('user.transactions') }}"><i class="ph-bold ph-bell"></i>@lang('Notifications')</a>
+                        <a href="{{ route('user.profile.setting') }}"><i class="ph-bold ph-gear"></i>@lang('Settings')</a>
+                    </div>
+                    <a class="nocturne-user-dropdown__logout" href="{{ route('user.logout') }}"><i class="ph-bold ph-sign-out"></i>@lang('Log out')</a>
+                </div>
+            </div>
         @else
-            <a class="nocturne-login" href="{{ route('user.login') }}">@lang('Login')</a>
+            <a class="nocturne-login" href="{{ route('user.login') }}"><i class="ph-bold ph-sign-in"></i><span>@lang('Login')</span></a>
             @if (gs('registration'))
-                <a class="nocturne-deposit" href="{{ route('user.register') }}">@lang('Create account')</a>
+                <a class="nocturne-register" href="{{ route('user.register') }}"><i class="ph-bold ph-user-plus"></i><span>@lang('Register')</span></a>
             @endif
         @endauth
     </div>
 </header>
+@auth
+    @push('script')
+        <script>
+            (() => {
+                const menu = document.querySelector('.nocturne-user-menu');
+                const toggle = menu?.querySelector('.nocturne-avatar');
+                if (!menu || !toggle) return;
+                const close = () => { menu.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); };
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const open = menu.classList.toggle('is-open');
+                    toggle.setAttribute('aria-expanded', String(open));
+                });
+                document.addEventListener('click', (e) => { if (!menu.contains(e.target)) close(); });
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+            })();
+        </script>
+    @endpush
+@endauth
