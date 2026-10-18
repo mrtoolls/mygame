@@ -453,6 +453,167 @@
             "modal": true
         }
     },
+    "about_hero": {
+        "builder": true,
+        "name": "About Us - Hero",
+        "content": {
+            "images": {
+                "hero_image": { "size": "1400x450" }
+            },
+            "heading": "text",
+            "description": "textarea"
+        }
+    },
+    "about_story": {
+        "builder": true,
+        "name": "About Us - Story and Feature Cards",
+        "content": {
+            "heading": "text",
+            "subheading": "text",
+            "description": "textarea",
+            "expanded_description": "textarea",
+            "read_more_label": "text",
+            "read_less_label": "text"
+        },
+        "element": {
+            "images": {
+                "icon_image": { "size": "96x96" }
+            },
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "about_priority": {
+        "builder": true,
+        "name": "About Us - Player Safety and License",
+        "content": {
+            "images": {
+                "founder_image": { "size": "160x160" },
+                "signature_image": { "size": "500x180" },
+                "license_document": { "size": "900x1200" }
+            },
+            "heading": "text",
+            "founder_name": "text",
+            "founder_role": "text",
+            "founder_message": "textarea",
+            "license_label": "text",
+            "license_number": "text"
+        }
+    },
+    "about_team": {
+        "builder": true,
+        "name": "About Us - Team",
+        "content": {
+            "images": {
+                "map_image": { "size": "1400x460" }
+            },
+            "heading": "text",
+            "subheading": "text",
+            "description": "textarea"
+        },
+        "element": {
+            "images": {
+                "team_image": { "size": "180x180" }
+            },
+            "title": "text",
+            "description": "text",
+            "modal": true
+        }
+    },
+    "about_awards": {
+        "builder": true,
+        "name": "About Us - Awards",
+        "content": {
+            "images": {
+                "feature_image": { "size": "1400x420" }
+            },
+            "heading": "text",
+            "subheading": "textarea"
+        },
+        "element": {
+            "images": {
+                "award_image": { "size": "140x140" }
+            },
+            "title": "text",
+            "description": "text",
+            "modal": true
+        }
+    },
+    "about_reviews": {
+        "builder": true,
+        "name": "About Us - Player Reviews",
+        "content": {
+            "heading": "text",
+            "button_name": "text",
+            "button_url": "text"
+        },
+        "element": {
+            "images": {
+                "avatar_image": { "size": "96x96" },
+                "review_image": { "size": "240x180" }
+            },
+            "name": "text",
+            "player_since": "text",
+            "quote": "textarea",
+            "modal": true
+        }
+    },
+    "about_statistics": {
+        "builder": true,
+        "name": "About Us - Statistics",
+        "content": { "heading": "text" },
+        "element": {
+            "title": "text",
+            "amount": "text",
+            "modal": true
+        }
+    },
+    "about_links": {
+        "builder": true,
+        "name": "About Us - Other Pages",
+        "content": { "heading": "text" },
+        "element": {
+            "title": "text",
+            "button_url": "text",
+            "modal": true
+        }
+    },
+    "about_news": {
+        "builder": true,
+        "name": "About Us - Latest News",
+        "content": {
+            "heading": "text",
+            "button_name": "text",
+            "button_url": "text"
+        },
+        "element": {
+            "images": {
+                "news_image": { "size": "500x300" }
+            },
+            "title": "text",
+            "description": "textarea",
+            "button_url": "text",
+            "modal": true
+        }
+    },
+    "about_support": {
+        "builder": true,
+        "name": "About Us - Support Callout",
+        "content": {
+            "images": {
+                "agent_one": { "size": "64x64" },
+                "agent_two": { "size": "64x64" },
+                "agent_three": { "size": "64x64" },
+                "agent_four": { "size": "64x64" }
+            },
+            "heading": "text",
+            "subheading": "text",
+            "reply_time": "text",
+            "button_name": "text",
+            "button_url": "text"
+        }
+    },
     "slider": {
         "builder": true,
         "name": "App Slider Section",
