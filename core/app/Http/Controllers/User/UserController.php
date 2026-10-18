@@ -35,7 +35,9 @@ class UserController extends Controller {
         $widget['total_invest'] = GameLog::where('user_id', $user->id)->sum('invest');
         $widget['total_win']    = GameLog::win()->where('user_id', $user->id)->sum('invest');
         $widget['total_loss']   = GameLog::loss()->where('user_id', $user->id)->sum('invest');
-        return view('Template::user.dashboard', compact('pageTitle', 'games', 'widget', 'user'));
+        $claimable              = $user->rakebackClaimable();
+        $activeBonuses          = BonusCodeRedemption::where('user_id', $user->id)->with('bonusCode')->orderByDesc('id')->take(5)->get();
+        return view('Template::user.dashboard', compact('pageTitle', 'games', 'widget', 'user', 'claimable', 'activeBonuses'));
     }
 
     public function depositHistory(Request $request) {

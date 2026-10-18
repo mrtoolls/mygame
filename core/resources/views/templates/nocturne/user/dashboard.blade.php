@@ -4,7 +4,6 @@
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Profile')</h1>
-    @include('Template::partials.promo_banner_row')
     <div class="notice"></div>
     @php
         $kyc = getContent('user_kyc.content', true);
@@ -33,6 +32,20 @@
             <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="ph-bold ph-caret-right"></i></div>
             <div class="nocturne-kyc-card__status {{ $kycStatusClass }}">{{ $kycStatusText }}</div>
             <i class="nocturne-kyc-card__icon ph-bold ph-lock"></i>
+        </a>
+        <a class="nocturne-kyc-card" href="{{ route('user.referrals') }}">
+            <div class="nocturne-kyc-card__top">@lang('Available Rakeback') <i class="ph-bold ph-caret-right"></i></div>
+            <div class="nocturne-kyc-card__status is-verified">{{ showAmount($claimable) }}</div>
+            <i class="nocturne-kyc-card__icon ph-bold ph-percent"></i>
+        </a>
+        <a class="nocturne-kyc-card" href="{{ route('user.referrals') }}">
+            <div class="nocturne-kyc-card__top">@lang('Active Bonuses') <i class="ph-bold ph-caret-right"></i></div>
+            @if($activeBonuses->count())
+                <div class="nocturne-kyc-card__status is-verified">{{ $activeBonuses->count() }} @lang('Active')</div>
+            @else
+                <div class="nocturne-kyc-card__status is-unverified">@lang('None yet')</div>
+            @endif
+            <i class="nocturne-kyc-card__icon ph-bold ph-gift"></i>
         </a>
     </div>
 

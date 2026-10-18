@@ -71,6 +71,13 @@
                                                         </select>
                                                     </div>
                                                 </div>
+                                            @elseif($item == 'datetime')
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label>{{ __(keyToTitle($k)) }}</label>
+                                                        <input type="datetime-local" class="form-control" name="{{ $k }}" value="{{ @$content->data_values->$k ? date('Y-m-d\TH:i', strtotime(@$content->data_values->$k)) : '' }}">
+                                                    </div>
+                                                </div>
                                             @else
                                                 <div class="col-md-12">
                                                     <div class="form-group">

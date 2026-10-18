@@ -353,7 +353,7 @@
         "content": {
             "heading": "text",
             "badge": "text",
-            "end_at": "text",
+            "end_at": "datetime",
             "button_text": "text",
             "button_url": "text"
         }
