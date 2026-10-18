@@ -27,5 +27,19 @@
             </div>
         </div>
     </div>
+
+    <div class="row justify-content-center mt-4">
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-2">@lang('Create Missing Nocturne Pages')</h6>
+                    <p class="mb-0">@lang('Creates the About Us, Promotions, Sponsorships, Licenses & Security, VIP-Club and Feedback About Us pages for the Nocturne theme if they do not already exist yet, with their sections attached and pre-filled with placeholder text. It never overwrites a page that already exists - safe to run more than once. After running, open each page under Frontend > Manage Pages to add your own images and copy.')</p>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn--primary w-100 h-45 confirmationBtn" data-question="@lang('Create the missing Nocturne pages now?')" data-action="{{ route('admin.system.seed.nocturne.pages') }}">@lang('Create Missing Pages')</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <x-confirmation-modal />
 @endsection

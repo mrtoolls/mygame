@@ -336,6 +336,7 @@ Route::middleware('admin')->group(function () {
         Route::get('optimize-clear', 'optimizeClear')->name('optimize.clear');
         Route::get('database-update', 'databaseUpdate')->name('database.update');
         Route::post('database-update/run', 'databaseUpdateRun')->name('database.update.run');
+        Route::post('seed-nocturne-pages', 'seedNocturnePages')->name('seed.nocturne.pages');
     });
 
     // SEO
