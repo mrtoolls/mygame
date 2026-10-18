@@ -4,11 +4,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <p>
-                        @php
-                            echo $policy->data_values->details;
-                        @endphp
-                    </p>
+                    <article class="nocturne-policy-content">
+                        {!! $policy->data_values->details !!}
+                    </article>
                 </div>
             </div>
         </div>

@@ -285,6 +285,20 @@
             "email_address": "text"
         }
     },
+    "footer_partners": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Footer Partner Logos",
+        "element": {
+            "partner_name": "text",
+            "images": {
+                "image": {
+                    "size": "180x80"
+                }
+            },
+            "modal": true
+        }
+    },
     "policy_pages": {
         "builder": true,
         "no_selection": true,

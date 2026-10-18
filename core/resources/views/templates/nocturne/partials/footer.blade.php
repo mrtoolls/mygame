@@ -1,11 +1,10 @@
 @php
-    $payment = getContent('payment_method.content', true);
-    $payments = getContent('payment_method.element', false, null, true);
     $policyPages = getContent('policy_pages.element', false, null, true);
     $socialIcon = getContent('social_icon.element', false, null, true);
+    $partnerLogos = getContent('footer_partners.element', false, null, true);
     $footer = getContent('footer.content', true);
 @endphp
-<footer class="footer-area">
+<footer class="footer-area nocturne-site-footer">
     @if ($footer && @$footer->data_values->image)
         <div class="footer-area__thumb">
             <img src="{{ getImage('assets/images/frontend/footer/' . $footer->data_values->image, '1110x420') }}" alt="@lang('image')">
@@ -13,14 +12,6 @@
     @endif
 
     <div class="container">
-        <div class="nocturne-footer-cta">
-            <div class="nocturne-footer-cta__text">
-                <strong>@lang('Do you have a question?')</strong>
-                <span>@lang('Write us and our support team will help you')</span>
-            </div>
-            <a class="nocturne-footer-cta__btn" href="{{ route('ticket.index') }}"><i class="ph-bold ph-headset"></i>@lang('Live Support')</a>
-        </div>
-
         <div class="nocturne-footer-grid">
             <div class="nocturne-footer-col">
                 <h6>@lang('Main')</h6>
@@ -36,7 +27,7 @@
                 <ul>
                     <li><a href="{{ route('pages', 'about-us') }}">@lang('About Us')</a></li>
                     <li><a href="{{ route('pages', 'sponsorships') }}">@lang('Sponsorships')</a></li>
-                    <li><a href="{{ route('pages', 'licenses-security') }}">@lang('Licenses & Security')</a></li>
+                    <li><a href="{{ route('pages', 'feedback-about-us') }}">@lang('Feedback about us')</a></li>
                     <li><a href="{{ route('contact') }}">@lang('Contact')</a></li>
                 </ul>
             </div>
@@ -44,7 +35,7 @@
                 <h6>@lang('Info')</h6>
                 <ul>
                     @foreach ($policyPages as $policy)
-                        <li><a href="{{ route('policy.pages', @$policy->slug) }}">{{ __(@$policy->data_values->title) }}</a></li>
+                        <li><a href="{{ route('policy.pages', $policy->slug) }}">{{ __($policy->data_values->title) }}</a></li>
                     @endforeach
                 </ul>
             </div>
@@ -68,68 +59,66 @@
                 <div class="nocturne-footer-support">
                     <div class="nocturne-footer-support__head"><i class="ph-bold ph-headset"></i> @lang('Support') <span>24/7</span></div>
                     <p>@lang('Contact us if you have questions')</p>
-                    <a class="btn-write" href="{{ route('contact') }}"><i class="ph-bold ph-envelope"></i>@lang('Write Us')</a>
+                    <a class="btn-write" href="mailto:support@winxpot.com"><i class="ph-bold ph-envelope"></i>support@winxpot.com</a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="payment-method">
-        <div class="container">
-            <h4 class="payment-method__title">{{ __(@$payment->data_values->heading) }}</h4>
-            <div class="payment-slider">
-                @foreach ($payments as $item)
-                    <div class="payment-single-item">
-                        <div class="payment-item__image">
-                            <img src="{{ getImage('assets/images/frontend/payment_method/' . $item->data_values->image, '90x65') }}" alt="@lang('image')">
-                        </div>
+        <div class="nocturne-footer-brandline">
+            <a href="{{ route('home') }}" class="nocturne-footer-brand" aria-label="Winxpot home">
+                <img src="{{ siteLogo() }}" alt="Winxpot">
+            </a>
+            <div class="nocturne-footer-newsletter">
+                <div class="nocturne-footer-newsletter__copy"><strong>@lang('A little more Winxpot')</strong><span>@lang('Get updates and new offers in your inbox.')</span></div>
+                <form class="newsletter__wrapper nocturne-footer-newsletter__form">
+                    <label class="nocturne-footer-newsletter__input"><i class="ph ph-envelope-simple"></i><input class="form--control" name="email" type="email" placeholder="@lang('Your email address')" autocomplete="email" aria-label="@lang('Your email address')" required></label>
+                    <button type="submit" class="newsletter__btn subscribe-btn">@lang('Subscribe') <i class="ph-bold ph-arrow-right"></i></button>
+                </form>
+            </div>
+        </div>
+
+        <div class="nocturne-footer-aboutline">
+            <div class="nocturne-footer-copyright">
+                <p>&copy; {{ date('Y') }} <a href="{{ route('home') }}">Winxpot</a>. @lang('All rights reserved').</p>
+                <span>@lang('Winxpot is an online gaming platform. Availability, features and payment options may vary by location. Please play responsibly and review the terms that apply to you.')</span>
+            </div>
+            @if ($socialIcon->count())
+                <ul class="nocturne-footer-socials">
+                    @foreach ($socialIcon as $social)
+                        <li><a href="{{ @$social->data_values->url }}" aria-label="{{ strip_tags(@$social->data_values->social_icon) }}" target="_blank" rel="noopener noreferrer">{!! $social->data_values->social_icon !!}</a></li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+
+        <div class="nocturne-footer-trust">
+            <div class="nocturne-footer-contacts">
+                <a href="mailto:support@winxpot.com"><span>@lang('Support')</span> support@winxpot.com</a>
+                <a href="mailto:partners@winxpot.com"><span>@lang('Partners')</span> partners@winxpot.com</a>
+                <a href="mailto:press@winxpot.com"><span>@lang('Press')</span> press@winxpot.com</a>
+            </div>
+            <div class="nocturne-footer-trustmarks" aria-label="@lang('Player safety and partner logos')">
+                <div class="nocturne-footer-responsible"><i class="ph-bold ph-shield-check"></i><span>@lang('Gamble')<br>@lang('Responsibly')</span></div>
+                <div class="nocturne-footer-age" aria-label="18 plus"><span>18</span><b>+</b></div>
+                @foreach ($partnerLogos as $partner)
+                    <div class="nocturne-footer-partner" title="{{ __($partner->data_values->partner_name ?: 'Partner logo') }}">
+                        @if (!empty($partner->data_values->image))
+                            <img src="{{ frontendImage('footer_partners', $partner->data_values->image, '180x80') }}" alt="{{ __($partner->data_values->partner_name ?: 'Partner logo') }}" loading="lazy">
+                        @else
+                            <span>@lang('Partner logo')</span>
+                        @endif
                     </div>
                 @endforeach
             </div>
         </div>
-    </div>
 
-    <div class="footer-bottom">
-        <div class="container">
-            <div class="footer-bottom__wrapper">
-                <a href="{{ route('home') }}" class="footer-bottom__logo">
-                    <img src="{{ siteLogo() }}" alt="@lang('image')">
-                </a>
-
-                <div class="newsletter">
-                    <form class="newsletter__wrapper">
-                        <div class="newsletter__input">
-                            <input class="form--control" name="email" type="email" placeholder="@lang('Enter email address')" autocomplete="off">
-                        </div>
-                        <button type="submit" class="newsletter__btn subscribe-btn">@lang('Subscribe')</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="socket-area">
-        <div class="container">
-            <div class="socket-area__wrapper">
-                <p class="socket-area__text"> &copy; @lang('Copyright') @php echo date('Y') @endphp
-                    <a href="{{ route('home') }}" class="text--base">{{ gs('site_name') }}</a>. @lang('All rights reserved').</p>
-                <ul class="social-list">
-                    @foreach ($socialIcon as $social)
-                        <li class="social-list__item">
-                            <a href="{{ @$social->data_values->url }}" class="social-list__link flex-center" target="_blank">
-                                @php echo $social->data_values->social_icon @endphp
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-                <ul class="flex-align socket-nav">
-                    @foreach ($policyPages as $policy)
-                        <li class="socket-nav__item">
-                            <a class="socket-nav__link" href="{{ route('policy.pages', @$policy->slug) }}">{{ __(@$policy->data_values->title) }}</a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+        <div class="nocturne-footer-legalnav">
+            <span>@lang('Play for entertainment. Set limits that work for you.')</span>
+            <ul>
+                @foreach ($policyPages as $policy)
+                    <li><a href="{{ route('policy.pages', $policy->slug) }}">{{ __($policy->data_values->title) }}</a></li>
+                @endforeach
+            </ul>
         </div>
     </div>
 </footer>
@@ -137,21 +126,19 @@
     <script>
         (function($) {
             "use strict";
-            $('.subscribe-btn').on('click', function(e) {
-                e.preventDefault()
-                var email = $('[name=email]').val();
+            $('.nocturne-footer-newsletter__form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                if (form[0] && !form[0].reportValidity()) return;
+                var email = form.find('[name=email]').val();
                 $.ajax({
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    },
+                    headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}" },
                     url: "{{ route('subscribe.post') }}",
                     method: "POST",
-                    data: {
-                        email: email
-                    },
+                    data: { email: email },
                     success: function(response) {
                         if (response.success) {
-                            $('[name=email]').val('')
+                            form.find('[name=email]').val('');
                             notify('success', response.success);
                         } else {
                             notify('error', response.error);
@@ -159,6 +146,6 @@
                     }
                 });
             });
-        })(jQuery)
+        })(jQuery);
     </script>
 @endpush

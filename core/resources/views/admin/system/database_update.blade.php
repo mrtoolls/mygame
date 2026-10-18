@@ -32,11 +32,11 @@
         <div class="col-xl-8">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="mb-2">@lang('Seed Nocturne Pages and About Us Content')</h6>
-                    <p class="mb-0">@lang('Creates any missing Nocturne information pages and prepares the full About Us section layout with editable sample copy and image placeholders. Existing About Us content and uploaded images are kept. After running, open Frontend > Manage Pages > About Us, then edit each section to upload your artwork, awards, license document and signature. This is safe to run again if any About Us sections are missing.')</p>
+                    <h6 class="mb-2">@lang('Seed Nocturne Pages, Policies and About Us Content')</h6>
+                    <p class="mb-0">@lang('Creates missing Nocturne information pages, editable Privacy Policy, Terms of Service, Licenses & Security, and AML Policy pages, plus partner-logo upload slots and the About Us layout. Existing policy edits, About Us content, and uploaded images are kept. After running, edit the policy items under Frontend > Policy Pages and upload footer partner marks under Frontend > Footer Partner Logos. Manage About Us artwork under Frontend > Manage Pages > About Us.')</p>
                 </div>
                 <div class="card-footer">
-                    <button type="button" class="btn btn--primary w-100 h-45 confirmationBtn" data-question="@lang('Create missing Nocturne pages and prepare the About Us sections now? Existing content and images will be kept.')" data-action="{{ route('admin.system.seed.nocturne.pages') }}">@lang('Seed / Refresh Nocturne Pages')</button>
+                    <button type="button" class="btn btn--primary w-100 h-45 confirmationBtn" data-question="@lang('Create missing Nocturne pages, policy content and partner logo slots? Existing content and images will be kept.')" data-action="{{ route('admin.system.seed.nocturne.pages') }}">@lang('Seed / Refresh Nocturne Pages')</button>
                 </div>
             </div>
         </div>
