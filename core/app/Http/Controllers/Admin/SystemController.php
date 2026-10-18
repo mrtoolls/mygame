@@ -104,27 +104,41 @@ class SystemController extends Controller
         $created = [];
         $skipped = [];
 
+        // Page.tempname and Frontend.tempname use two different conventions in this codebase:
+        // PageBuilderController stores Page.tempname as activeTemplate() (dotted, e.g.
+        // "templates.nocturne.") since that is what SiteController::pages()/index() query
+        // against, while FrontendController/getContent() store and read Frontend.tempname as
+        // the plain activeTemplateName() ("nocturne"). Using the wrong one for either model
+        // means the row exists in the database but nothing can ever match it.
+        $pageTempname = activeTemplate();
+        $contentTempname = activeTemplateName();
+
+        // Clean up rows an earlier, buggy version of this action created with the wrong
+        // (plain, non-dotted) tempname - they can never be matched by any route, so they
+        // were just dead clutter sitting in the pages table.
+        Page::where('tempname', $contentTempname)->whereIn('slug', array_column($pages, 'slug'))->delete();
+
         foreach ($pages as $data) {
-            if (Page::where('tempname', 'nocturne')->where('slug', $data['slug'])->exists()) {
+            if (Page::where('tempname', $pageTempname)->where('slug', $data['slug'])->exists()) {
                 $skipped[] = $data['name'];
                 continue;
             }
 
             $page            = new Page();
-            $page->tempname  = 'nocturne';
+            $page->tempname  = $pageTempname;
             $page->name      = $data['name'];
             $page->slug      = $data['slug'];
             $page->secs      = json_encode($data['secs']);
             $page->save();
 
             foreach ($data['content'] as $sectionKey => $values) {
-                $contentExists = Frontend::where('data_keys', $sectionKey . '.content')->where('tempname', 'nocturne')->exists();
+                $contentExists = Frontend::where('data_keys', $sectionKey . '.content')->where('tempname', $contentTempname)->exists();
                 if ($contentExists) {
                     continue;
                 }
                 $content             = new Frontend();
                 $content->data_keys  = $sectionKey . '.content';
-                $content->tempname   = 'nocturne';
+                $content->tempname   = $contentTempname;
                 $content->data_values = $values;
                 $content->save();
             }
