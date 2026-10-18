@@ -140,6 +140,31 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-main .sound--btn { border: 1px solid var(--nocturne-line); border-radius: 50%; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; background: var(--nocturne-panel); color: var(--nocturne-muted); }
 .nocturne-main .sound--btn:hover { color: var(--nocturne-green); border-color: var(--nocturne-green); }
 .nocturne-main .form-submit .btn, .nocturne-main .game-playbtn .btn { min-height: 50px; }
+/* ---- Head/Tail-style boards (dice rolling, head/tail, number guess/slot, rock-paper-scissors,
+   spin wheel, andar bahar, blackjack, keno sidebar) - same old-theme accent-color shapes as
+   .game--card, but on a different wrapper family ---- */
+.nocturne-main .headtail-wrapper, .nocturne-main .headtail-body, .nocturne-main .game-details-left,
+.nocturne-main .keno-history-content, .nocturne-main .game-contet__sm {
+    background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
+}
+.nocturne-main .headtail-wrapper::before, .nocturne-main .headtail-wrapper::after,
+.nocturne-main .game-contet__sm::before, .nocturne-main .game-contet__sm::after,
+.nocturne-main .keno-history-content::before, .nocturne-main .keno-history-content::after {
+    content: none !important; display: none !important;
+}
+/* The stock ornate hex-frame illustration behind the dice/coin board clashes with the flat,
+   minimal Nocturne panel language used everywhere else. It is also load-bearing for layout:
+   .headtail-body has no explicit height anywhere, so it is sized by this SVG's own intrinsic
+   aspect ratio (viewBox) at render time - display:none would collapse the whole board to zero
+   height. visibility:hidden keeps that same sizing while hiding the artwork, and the panel
+   background set above on .headtail-body carries the board instead. */
+.nocturne-main .headtail-body__shape { visibility: hidden !important; }
+.nocturne-main .game-contet-title .text, .nocturne-main .keno-history__count {
+    background: none !important; -webkit-text-fill-color: var(--nocturne-green) !important; color: var(--nocturne-green) !important;
+}
+.nocturne-main .game-select-box.active { border-color: var(--nocturne-green) !important; }
+.nocturne-main .game-select-box::after { background-color: rgba(0,239,135,.16) !important; }
+.nocturne-main .diceroll-selct.active { border-color: var(--nocturne-green) !important; }
 .nocturne-main .text--base, .nocturne-main .text--primary, .nocturne-main a.text--base { color: var(--nocturne-green) !important; }
 .nocturne-main .bg--base { background: var(--nocturne-green) !important; }
 .nocturne-main .pagination .page-link { color: var(--nocturne-text); background: var(--nocturne-panel); border-color: var(--nocturne-line); }
