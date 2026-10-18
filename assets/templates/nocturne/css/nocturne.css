@@ -115,11 +115,31 @@ a:hover { color: var(--nocturne-green); }
 }
 .nocturne-main .form--control::placeholder, .nocturne-main .form-control::placeholder, .nocturne-main textarea::placeholder { color: #777fa7; }
 .nocturne-main .form--control:focus, .nocturne-main .form-control:focus, .nocturne-main select:focus, .nocturne-main textarea:focus { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
-.nocturne-main .btn--base, .nocturne-main .btn--gradient, .nocturne-main .btn--primary, .nocturne-main .btn--success {
-    border: 0; border-radius: 13px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; box-shadow: none;
+.nocturne-main .btn--base, .nocturne-main .btn--gradient, .nocturne-main .btn--gradient-success, .nocturne-main .btn--primary, .nocturne-main .btn--success {
+    border: 0; border-radius: 13px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; font-size: 15px; box-shadow: none;
 }
-.nocturne-main .btn--base:hover, .nocturne-main .btn--gradient:hover, .nocturne-main .btn--primary:hover, .nocturne-main .btn--success:hover { background: #31ff9e; color: #073c2a; }
+.nocturne-main .btn--base:hover, .nocturne-main .btn--gradient:hover, .nocturne-main .btn--gradient-success:hover, .nocturne-main .btn--primary:hover, .nocturne-main .btn--success:hover { background: #31ff9e; color: #073c2a; }
+/* Base theme paints an inset gradient fill via ::after on top of .btn--gradient's own
+   background (negative z-index inside the button's own stacking context still paints
+   above the box's background) - kills the stray old-theme gradient on every bet/cashout
+   button across all game pages, not just the auth forms. */
+.nocturne-main .btn--gradient::after, .nocturne-main .btn--gradient-success::after { content: none !important; display: none !important; }
 .nocturne-main .btn--dark, .nocturne-main .btn--secondary { border: 0; border-radius: 13px; color: var(--nocturne-text); background: var(--nocturne-raised); }
+/* ---- Game play pages: shared bet panel/card used by all provably-fair mini-games ---- */
+.nocturne-main .game--card {
+    background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
+    padding: 26px 22px;
+}
+.nocturne-main .game-contet-title { color: var(--nocturne-text); font-size: 15px; font-weight: 700; }
+.nocturne-main .game-contet-title .balance { color: var(--nocturne-green); font-weight: 800; }
+.nocturne-main .bet-input .input-group, .nocturne-main .mines-input .form--control { border-radius: 13px; }
+.nocturne-main .minmax-btn { background: var(--nocturne-raised) !important; color: var(--nocturne-muted) !important; border: 0 !important; font-weight: 700; font-size: 12px; cursor: pointer; }
+.nocturne-main .minmax-btn:hover { color: var(--nocturne-green) !important; }
+.nocturne-main .minmax-btn::after { background-color: var(--nocturne-line) !important; }
+.nocturne-main .input-inner-note, .nocturne-main .input-inner-note small { color: var(--nocturne-muted); }
+.nocturne-main .sound--btn { border: 1px solid var(--nocturne-line); border-radius: 50%; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; background: var(--nocturne-panel); color: var(--nocturne-muted); }
+.nocturne-main .sound--btn:hover { color: var(--nocturne-green); border-color: var(--nocturne-green); }
+.nocturne-main .form-submit .btn, .nocturne-main .game-playbtn .btn { min-height: 50px; }
 .nocturne-main .text--base, .nocturne-main .text--primary, .nocturne-main a.text--base { color: var(--nocturne-green) !important; }
 .nocturne-main .bg--base { background: var(--nocturne-green) !important; }
 .nocturne-main .pagination .page-link { color: var(--nocturne-text); background: var(--nocturne-panel); border-color: var(--nocturne-line); }
