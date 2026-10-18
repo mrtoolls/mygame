@@ -5,6 +5,89 @@
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Bonuses')</h1>
 
+    <div class="nocturne-activate-card">
+        <div class="nocturne-activate-card__body">
+            <h4><i class="ph-bold ph-gift"></i> @lang('Activate Code for Bonus')</h4>
+            <p>@lang('Enter the promo code and receive an exclusive reward from us and our partners. Offer is limited.')</p>
+            <form action="{{ route('user.bonus.code.activate') }}" method="POST" class="disableSubmission nocturne-activate-card__form">
+                @csrf
+                <input type="text" name="code" placeholder="@lang('Enter Bonus Code')" required>
+                <button type="submit" class="btn btn--base"><i class="ph-bold ph-gift"></i> @lang('Activate')</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="nocturne-rakeback-card">
+        <div class="nocturne-rakeback-card__head">
+            <h4>@lang('Rakeback')</h4>
+        </div>
+        <div class="nocturne-rakeback-card__stats">
+            <div>
+                <span>@lang('Bets placed in 24 hours')</span>
+                <strong>{{ showAmount($wagered24h) }}</strong>
+            </div>
+            <div>
+                <span>@lang('Your rakeback percent')</span>
+                <strong>{{ $currentTier ? showAmount($currentTier->rakeback_percent, currencyFormat: false) . '%' : __('None yet') }}</strong>
+            </div>
+        </div>
+        @if ($rakebackTiers->count())
+            <div class="nocturne-rakeback-scale">
+                @foreach ($rakebackTiers as $tier)
+                    <div class="nocturne-rakeback-scale__point {{ $currentTier?->id === $tier->id ? 'is-current' : '' }}">
+                        <span class="nocturne-rakeback-scale__dot"></span>
+                        <small>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}%</small>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+        <div class="nocturne-rakeback-card__claim">
+            <div>
+                <span>@lang('Available to receive')</span>
+                <strong>{{ showAmount($claimable) }}</strong>
+            </div>
+            <form action="{{ route('user.vip.claim.rakeback') }}" method="POST" class="disableSubmission">
+                @csrf
+                <button type="submit" class="btn btn--base" {{ $claimable > 0 ? '' : 'disabled' }}><i class="ph-bold ph-coins"></i> @lang('Claim')</button>
+            </form>
+        </div>
+    </div>
+
+    <h4 class="mb-3"><i class="ph-bold ph-gift"></i> @lang('Active Bonuses')</h4>
+    @if ($activeBonuses->isEmpty())
+        <div class="card custom--card mb-4">
+            <div class="card-body text-center">
+                <h5 class="mb-0">@lang('You do not have any active bonuses yet')</h5>
+            </div>
+        </div>
+    @else
+        <div class="card custom--card mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table transection-table">
+                        <thead>
+                            <tr>
+                                <th>@lang('Code')</th>
+                                <th>@lang('Amount')</th>
+                                <th>@lang('Date')</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($activeBonuses as $redemption)
+                                <tr>
+                                    <td>{{ $redemption->bonusCode?->code ?? '-' }}</td>
+                                    <td class="text--success">{{ showAmount($redemption->amount) }}</td>
+                                    <td>{{ showDateTime($redemption->created_at) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <h4 class="mb-3">@lang('Affiliate Program')</h4>
     <div class="card custom--card mb-4">
         <div class="card-body">
             @if (auth()->user()->referrer)

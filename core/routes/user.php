@@ -66,6 +66,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::any('deposit/history', 'depositHistory')->name('deposit.history');
                 Route::get('transactions', 'transactions')->name('transactions');
                 Route::get('referral', 'referrals')->name('referrals');
+                Route::post('bonus-code/activate', 'activateBonusCode')->name('bonus.code.activate');
 
                 Route::post('add-device-token', 'addDeviceToken')->name('add.device.token');
 

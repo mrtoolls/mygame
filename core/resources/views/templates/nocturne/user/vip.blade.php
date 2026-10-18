@@ -38,18 +38,9 @@
         </div>
 
         <div class="card custom--card mb-4">
-            <div class="card-body nocturne-rakeback-claim">
-                <div>
-                    <strong>@lang('Available Rakeback')</strong>
-                    <p class="mb-0">{{ $currentTier ? showAmount($currentTier->rakeback_percent, currencyFormat: false) . '% of your lifetime wagering' : __('Reach a VIP tier to start earning rakeback') }}</p>
-                </div>
-                <div class="nocturne-rakeback-claim__amount">
-                    <span>{{ showAmount($claimable) }}</span>
-                    <form action="{{ route('user.vip.claim.rakeback') }}" method="POST" class="disableSubmission">
-                        @csrf
-                        <button type="submit" class="btn btn--base" {{ $claimable > 0 ? '' : 'disabled' }}><i class="ph-bold ph-coins"></i> @lang('Claim')</button>
-                    </form>
-                </div>
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <p class="mb-0">@lang('Your rakeback accrues as you play and can be claimed from the Bonuses page.')</p>
+                <a href="{{ route('user.referrals') }}" class="btn btn--dark btn--sm">@lang('Go to Bonuses')</a>
             </div>
         </div>
 

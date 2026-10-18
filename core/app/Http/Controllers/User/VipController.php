@@ -47,6 +47,7 @@ class VipController extends Controller
 
             $user->balance                 += $claimable;
             $user->rakeback_claimed_total  += $claimable;
+            $user->last_rakeback_claim_at   = now();
             $user->save();
 
             $transaction               = new Transaction();

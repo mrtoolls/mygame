@@ -88,6 +88,22 @@
                 "title": "Rakeback Claims",
                 "route_name": "admin.vip.claims",
                 "menu_active": "admin.vip.claims"
+            },
+            {
+                "keyword": [
+                    "Bonus Code",
+                    "Promo Code",
+                    "Coupon",
+                    "Voucher"
+                ],
+                "title": "Bonus Codes",
+                "route_name": "admin.bonus.code.index",
+                "menu_active": "admin.bonus.code.index,admin.bonus.code.create,admin.bonus.code.edit"
+            },
+            {
+                "title": "Bonus Code Redemptions",
+                "route_name": "admin.bonus.code.redemptions",
+                "menu_active": "admin.bonus.code.redemptions"
             }
         ]
     },

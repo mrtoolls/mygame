@@ -791,6 +791,40 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-rakeback-claim__amount .btn--base { display: inline-flex; align-items: center; gap: 8px; }
 .nocturne-rakeback-claim__amount .btn--base:disabled { opacity: .45; cursor: not-allowed; }
 
+/* ---- Activate Code + Rakeback (user.referrals / Bonuses page) ---- */
+.nocturne-activate-card {
+    position: relative; overflow: hidden; margin-bottom: 20px; padding: 26px; border-radius: var(--nocturne-radius-lg);
+    background: radial-gradient(ellipse at 100% 100%, rgba(0,239,135,.18), transparent 55%), linear-gradient(135deg,#1c2342,#161c37 55%,#102b33);
+    border: 1px solid var(--nocturne-line);
+}
+.nocturne-activate-card__body { position: relative; z-index: 1; max-width: 560px; }
+.nocturne-activate-card__body h4 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--nocturne-text); font-size: 18px; font-weight: 800; }
+.nocturne-activate-card__body h4 i { color: var(--nocturne-green); }
+.nocturne-activate-card__body p { margin: 0 0 18px; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+.nocturne-activate-card__form { display: flex; gap: 10px; flex-wrap: wrap; }
+.nocturne-activate-card__form input { flex: 1 1 220px; min-width: 200px; min-height: 50px; padding: 0 16px; border-radius: 13px; border: 1px solid var(--nocturne-line); background: #0d1023; color: var(--nocturne-text); font-size: 14px; }
+.nocturne-activate-card__form input::placeholder { color: #6b7399; }
+.nocturne-activate-card__form input:focus { outline: 0; border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
+.nocturne-activate-card__form .btn--base { min-height: 50px; padding: 0 22px; border-radius: 13px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+.nocturne-rakeback-card { margin-bottom: 24px; padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
+.nocturne-rakeback-card__head h4 { margin: 0 0 16px; color: var(--nocturne-text); font-weight: 800; }
+.nocturne-rakeback-card__stats { display: flex; gap: 36px; flex-wrap: wrap; margin-bottom: 20px; }
+.nocturne-rakeback-card__stats span { display: block; color: var(--nocturne-muted); font-size: 12.5px; margin-bottom: 4px; }
+.nocturne-rakeback-card__stats strong { font-size: 18px; color: var(--nocturne-text); }
+.nocturne-rakeback-scale { position: relative; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding: 0 4px; }
+.nocturne-rakeback-scale::before { content: ""; position: absolute; left: 4px; right: 4px; top: 6px; height: 2px; background: var(--nocturne-raised); z-index: 0; }
+.nocturne-rakeback-scale__point { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.nocturne-rakeback-scale__dot { width: 13px; height: 13px; border-radius: 50%; background: var(--nocturne-raised); border: 2px solid var(--nocturne-panel); }
+.nocturne-rakeback-scale__point.is-current .nocturne-rakeback-scale__dot { background: var(--nocturne-green); box-shadow: 0 0 0 4px rgba(0,239,135,.18); }
+.nocturne-rakeback-scale__point small { color: var(--nocturne-muted); font-size: 11px; font-weight: 700; }
+.nocturne-rakeback-scale__point.is-current small { color: var(--nocturne-green); }
+.nocturne-rakeback-card__claim { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-top: 18px; border-top: 1px solid var(--nocturne-line); }
+.nocturne-rakeback-card__claim span { display: block; color: var(--nocturne-muted); font-size: 12.5px; margin-bottom: 4px; }
+.nocturne-rakeback-card__claim strong { font-size: 20px; color: var(--nocturne-green); }
+.nocturne-rakeback-card__claim .btn--base { display: inline-flex; align-items: center; gap: 8px; }
+.nocturne-rakeback-card__claim .btn--base:disabled { opacity: .45; cursor: not-allowed; }
+
 /* =========================================================================
    Mobile bottom nav — icon + label tab bar
    ========================================================================= */

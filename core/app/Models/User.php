@@ -112,9 +112,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Rakeback is computed against the user's current tier rate applied to
-     * lifetime wagering, minus whatever has already been claimed - never
-     * trust a claimed amount from the client, always recompute here.
+     * Wagering in the trailing 24 hours - the figure the Bonuses page shows
+     * next to the rakeback slider.
+     */
+    public function wageredLast24Hours()
+    {
+        return (float) $this->gameLogs()->where('demo_play', 0)->where('created_at', '>=', now()->subDay())->sum('invest');
+    }
+
+    /**
+     * Rakeback accrues on wagering since the user's last claim (not lifetime
+     * wagering) so it behaves like the "daily" rakeback it's presented as,
+     * without double-paying out the same wagering on a second claim. Never
+     * trust a claimed amount from the client - always recompute here.
      */
     public function rakebackClaimable()
     {
@@ -122,8 +132,12 @@ class User extends Authenticatable
         if (!$tier || $tier->rakeback_percent <= 0) {
             return 0.0;
         }
-        $accrued = $this->totalWagered() * ((float) $tier->rakeback_percent / 100);
-        return max(0, round($accrued - (float) $this->rakeback_claimed_total, 8));
+        $query = $this->gameLogs()->where('demo_play', 0);
+        if ($this->last_rakeback_claim_at) {
+            $query->where('created_at', '>', $this->last_rakeback_claim_at);
+        }
+        $wageredSinceClaim = (float) $query->sum('invest');
+        return max(0, round($wageredSinceClaim * ((float) $tier->rakeback_percent / 100), 8));
     }
 
     public function fullname(): Attribute

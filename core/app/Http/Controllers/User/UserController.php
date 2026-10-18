@@ -6,6 +6,8 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
 use App\Lib\GoogleAuthenticator;
+use App\Models\BonusCode;
+use App\Models\BonusCodeRedemption;
 use App\Models\CommissionLog;
 use App\Models\Deposit;
 use App\Models\DeviceToken;
@@ -17,6 +19,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -260,10 +263,86 @@ class UserController extends Controller {
     }
 
     public function referrals() {
-        $pageTitle = 'Referrals';
-        $user      = User::where('id', auth()->id())->with('allReferrals')->firstOrFail();
-        $maxLevel  = Referral::max('level');
-        return view('Template::user.referrals', compact('pageTitle', 'user', 'maxLevel'));
+        $pageTitle      = 'Referrals';
+        $user           = User::where('id', auth()->id())->with('allReferrals')->firstOrFail();
+        $maxLevel       = Referral::max('level');
+        $currentTier    = $user->vipTier();
+        $wagered24h     = $user->wageredLast24Hours();
+        $claimable      = $user->rakebackClaimable();
+        $rakebackTiers  = \App\Models\VipTier::active()->orderBy('min_wagered')->get();
+        $activeBonuses  = BonusCodeRedemption::where('user_id', $user->id)->with('bonusCode')->orderByDesc('id')->take(10)->get();
+        return view('Template::user.referrals', compact('pageTitle', 'user', 'maxLevel', 'currentTier', 'wagered24h', 'claimable', 'rakebackTiers', 'activeBonuses'));
+    }
+
+    public function activateBonusCode(Request $request) {
+        $request->validate([
+            'code' => 'required|string|max:60',
+        ]);
+
+        $notify = [];
+        DB::beginTransaction();
+        try {
+            $code = BonusCode::where('code', $request->code)->lockForUpdate()->first();
+
+            if (!$code || $code->status != Status::ENABLE) {
+                DB::rollBack();
+                $notify[] = ['error', 'This code is invalid'];
+                return back()->withNotify($notify);
+            }
+            if ($code->isExpired()) {
+                DB::rollBack();
+                $notify[] = ['error', 'This code has expired'];
+                return back()->withNotify($notify);
+            }
+            if ($code->isExhausted()) {
+                DB::rollBack();
+                $notify[] = ['error', 'This code has reached its usage limit'];
+                return back()->withNotify($notify);
+            }
+
+            $alreadyUsed = BonusCodeRedemption::where('user_id', auth()->id())->where('bonus_code_id', $code->id)->exists();
+            if ($alreadyUsed) {
+                DB::rollBack();
+                $notify[] = ['error', 'You have already used this code'];
+                return back()->withNotify($notify);
+            }
+
+            $user = User::where('id', auth()->id())->lockForUpdate()->first();
+            $trx  = getTrx();
+
+            $user->balance += $code->amount;
+            $user->save();
+
+            $code->used_count += 1;
+            $code->save();
+
+            $redemption                = new BonusCodeRedemption();
+            $redemption->user_id       = $user->id;
+            $redemption->bonus_code_id = $code->id;
+            $redemption->amount        = $code->amount;
+            $redemption->trx           = $trx;
+            $redemption->save();
+
+            $transaction               = new Transaction();
+            $transaction->user_id      = $user->id;
+            $transaction->amount       = $code->amount;
+            $transaction->charge       = 0;
+            $transaction->trx_type     = '+';
+            $transaction->details      = 'Bonus code activated - ' . $code->code;
+            $transaction->remark       = 'bonus_code';
+            $transaction->trx          = $trx;
+            $transaction->post_balance = $user->balance;
+            $transaction->save();
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $notify[] = ['error', 'Something went wrong, please try again'];
+            return back()->withNotify($notify);
+        }
+
+        $notify[] = ['success', 'Bonus code activated successfully'];
+        return back()->withNotify($notify);
     }
 
     public function gameLog() {
