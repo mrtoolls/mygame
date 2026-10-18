@@ -360,17 +360,30 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-account-support-btn:hover { background: #303958; color: var(--nocturne-green); }
 .nocturne-account-content { min-width: 0; }
 @media (max-width: 1199.98px) {
-    .nocturne-account { grid-template-columns: 1fr; }
-    .nocturne-account-nav { position: static; flex-direction: row; flex-wrap: wrap; }
-    .nocturne-account-card { flex: 1 1 100%; }
-    .nocturne-account-support { flex: 1 1 100%; }
+    .nocturne-account { grid-template-columns: 1fr; gap: 14px; }
+    .nocturne-account-nav { position: static; flex-direction: column; gap: 12px; order: -1; }
+    .nocturne-account-card { padding: 0; background: transparent; border: 0; border-radius: 0; }
+    .nocturne-account-id { display: none; }
+    .nocturne-account-links {
+        display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .nocturne-account-links::-webkit-scrollbar { display: none; }
+    .nocturne-account-links a {
+        flex: 0 0 auto; min-height: 42px; padding: 0 16px; border: 1px solid var(--nocturne-line); border-radius: 999px;
+        background: var(--nocturne-panel); white-space: nowrap; font-size: 13px;
+    }
+    .nocturne-account-links a i { width: auto; font-size: 16px; }
+    .nocturne-account-links a:hover, .nocturne-account-links a.is-active { border-color: transparent; }
+    .nocturne-account-support { display: none; }
 }
 @media (max-width: 575.98px) {
-    .nocturne-account-links a { font-size: 13px; }
+    .nocturne-account-links a { font-size: 12.5px; padding: 0 13px; }
 }
 
-/* ---- Profile summary row (Balance / KYC / quick actions) ---- */
-.nocturne-profile-summary { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px; }
+/* ---- Profile summary row (Balance / KYC / Rakeback / Active Bonuses) ---- */
+.nocturne-profile-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.nocturne-balance-card { grid-column: 1 / -1; }
 .nocturne-balance-card, .nocturne-kyc-card {
     padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg);
 }
