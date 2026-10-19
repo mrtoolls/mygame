@@ -36,6 +36,24 @@
                     @endforelse
                 </tbody>
             </table></div>
+
+            @php
+                $precisionExamples = collect($report['fields'])->flatMap(function ($field) {
+                    return collect($field['precision_issue_examples'] ?? [])->map(fn ($example) => ['table' => $field['table'], 'column' => $field['column']] + $example);
+                });
+            @endphp
+            @if($precisionExamples->isNotEmpty())
+                <h6 class="mt-4">@lang('Over-precision records (up to 10 per field)')</h6>
+                <p class="text-muted">@lang('These values are shown for investigation only. Correct them only after checking the original game or payment record.')</p>
+                <div class="table-responsive"><table class="table table--light style--two">
+                    <thead><tr><th>@lang('Table')</th><th>@lang('Amount field')</th><th>@lang('Record ID')</th><th>@lang('User ID')</th><th>@lang('Amount')</th><th>@lang('Currency')</th><th>@lang('Decimals')</th></tr></thead>
+                    <tbody>
+                        @foreach($precisionExamples as $example)
+                            <tr><td>{{ $example['table'] }}</td><td>{{ $example['column'] }}</td><td>{{ $example['id'] ?? '—' }}</td><td>{{ $example['user_id'] ?? '—' }}</td><td><code>{{ $example['amount_value'] }}</code></td><td>{{ $example['currency_code'] ?? __('Unknown') }}</td><td>{{ $example['currency_decimals'] ?? '—' }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table></div>
+            @endif
         </div>
     </div>
 @endsection

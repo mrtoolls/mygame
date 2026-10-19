@@ -27,6 +27,8 @@ $find = static fn ($table, $column) => collect($report['fields'])->firstWhere(fn
 $userBalance = collect($report['fields'])->first(fn ($row) => $row['table'] === 'users' && $row['column'] === 'balance');
 $txAmount = collect($report['fields'])->first(fn ($row) => $row['table'] === 'transactions' && $row['column'] === 'amount');
 if ($userBalance['fractional_precision_issues'] !== 1 || $txAmount['fractional_precision_issues'] !== 1 || $txAmount['currency_unassigned'] !== 1) throw new RuntimeException('Money conversion audit detected unexpected precision or assignment counts.');
+$balanceExamples = collect($userBalance['precision_issue_examples']);
+if ($balanceExamples->count() !== 1 || $balanceExamples->first()['id'] != 2 || $balanceExamples->first()['amount_value'] != '1.001' || $balanceExamples->first()['currency_code'] !== 'USD') throw new RuntimeException('Money conversion audit did not identify the precision issue record details.');
 DB::disconnect();
 unlink($dbPath);
 echo "Money conversion audit precision and missing-currency checks passed.\n";
