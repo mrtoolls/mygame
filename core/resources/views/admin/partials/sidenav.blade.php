@@ -11,19 +11,6 @@
         </div>
         <div class="sidebar__menu-wrapper">
             <ul class="sidebar__menu">
-                <li class="sidebar-menu-item {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}"><a href="{{ route('admin.feedback.index') }}" class="nav-link"><i class="menu-icon las la-star"></i><span class="menu-title">@lang('Feedback Moderation')</span></a></li>
-                <li class="sidebar-menu-item {{ request()->routeIs('admin.currency-country.*') ? 'active' : '' }}">
-                    <a href="{{ route('admin.currency-country.index') }}" class="nav-link">
-                        <i class="menu-icon las la-globe"></i>
-                        <span class="menu-title">@lang('Currencies & Countries')</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item {{ request()->routeIs('admin.business-promotions.*') ? 'active' : '' }}">
-                    <a href="{{ route('admin.business-promotions.index') }}" class="nav-link">
-                        <i class="menu-icon las la-bullhorn"></i>
-                        <span class="menu-title">@lang('Business Promotions')</span>
-                    </a>
-                </li>
                 @foreach ($sideBarLinks as $key => $data)
                     @if (@$data->header)
                         <li class="sidebar__menu-header">{{ __($data->header) }}</li>
@@ -91,6 +78,9 @@
                         </li>
                     @endif
                 @endforeach
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}"><a href="{{ route('admin.feedback.index') }}" class="nav-link"><i class="menu-icon las la-star"></i><span class="menu-title">@lang('Feedback Moderation')</span></a></li>
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.currency-country.*') ? 'active' : '' }}"><a href="{{ route('admin.currency-country.index') }}" class="nav-link"><i class="menu-icon las la-globe"></i><span class="menu-title">@lang('Currencies & Countries')</span></a></li>
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.business-promotions.*') ? 'active' : '' }}"><a href="{{ route('admin.business-promotions.index') }}" class="nav-link"><i class="menu-icon las la-bullhorn"></i><span class="menu-title">@lang('Business Promotions')</span></a></li>
             </ul>
         </div>
         <div class="version-info text-center text-uppercase">

@@ -13,7 +13,8 @@ class FeedbackAdminController extends Controller
     {
         $status = in_array($request->query('status'), ['pending', 'approved', 'rejected'], true) ? $request->query('status') : 'pending';
         $feedbacks = UserFeedback::with(['user', 'moderator'])->where('status', $status)->latest()->paginate(20)->withQueryString();
-        return view('admin.feedback.index', compact('feedbacks', 'status'));
+        $pageTitle = 'Feedback Moderation';
+        return view('admin.feedback.index', compact('pageTitle', 'feedbacks', 'status'));
     }
 
     public function approve($id)
