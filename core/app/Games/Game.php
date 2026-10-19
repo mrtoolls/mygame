@@ -9,7 +9,9 @@ use App\Models\GameplayBonusLog;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 abstract class Game {
     private $globalValidationRule = [
@@ -39,7 +41,6 @@ abstract class Game {
     }
 
     public function play() {
-        $user = $this->user;
         if (!$this->game) {
             if ($this->fromApi) {
                 $notify[] = 'Game not found';
@@ -56,19 +57,43 @@ abstract class Game {
             return response()->json(['errors' => $validator->errors()->all()]);
         }
 
-        $fallback = $this->fallback();
+        try {
+            $playData = DB::transaction(function () {
+                $lockedUser = User::whereKey($this->user->id)->lockForUpdate()->first();
+                if (!$lockedUser) {
+                    return ['error' => 'User account not found'];
+                }
 
-        if (@$fallback['error']) {
+                $this->user = $lockedUser;
+                $fallback = $this->fallback();
+                if (@$fallback['error']) {
+                    return $fallback;
+                }
+
+                $gameResult = $this->gameResult();
+                $investment = $this->invest($gameResult);
+
+                return ['game_result' => $gameResult, 'investment' => $investment];
+            }, 3);
+        } catch (Throwable $exception) {
+            report($exception);
+            $message = 'The game could not be started. Your balance was not changed.';
             if ($this->fromApi) {
-                return responseError('fallback_error', $fallback['error']);
+                return responseError('game_error', [$message]);
             }
-            return response()->json($fallback);
+            return response()->json(['error' => $message], 500);
         }
 
-        $gameResult = $this->gameResult();
+        if (@$playData['error']) {
+            if ($this->fromApi) {
+                return responseError('fallback_error', [$playData['error']]);
+            }
+            return response()->json($playData);
+        }
 
-        $invest             = $this->invest($gameResult);
-        $balance            = $this->demoPlay ? @$user->demo_balance : @$user->balance;
+        $gameResult = $playData['game_result'];
+        $invest     = $playData['investment'];
+        $balance            = $this->demoPlay ? @$this->user->demo_balance : @$this->user->balance;
         $res['game_log_id'] = @$invest['game_log']->id;
         $res['balance']     = showAmount($balance, currencyFormat: false);
 
@@ -108,8 +133,24 @@ abstract class Game {
             return response()->json(['error' => 'Game not found']);
         }
 
-        $gameLog = GameLog::where('user_id', $this->user->id)->where('id', $this->request->game_log_id)->first();
+        try {
+        DB::beginTransaction();
+        $lockedUser = User::whereKey($this->user->id)->lockForUpdate()->first();
+        if (!$lockedUser) {
+            DB::rollBack();
+            if ($this->fromApi) {
+                return responseError('not_found', ['User account not found']);
+            }
+            return response()->json(['error' => 'User account not found']);
+        }
+        $this->user = $lockedUser;
+
+        $gameLog = GameLog::where('user_id', $this->user->id)
+            ->where('id', $this->request->game_log_id)
+            ->lockForUpdate()
+            ->first();
         if (!$gameLog) {
+            DB::commit();
             if ($this->fromApi) {
                 $notify[] = 'Game Logs not found';
                 return responseError('not_found', $notify);
@@ -118,6 +159,7 @@ abstract class Game {
         }
 
         if ($gameLog->status == Status::YES) {
+            DB::commit();
             if ($this->fromApi) {
                 $notify[] = 'Game Log already completed';
                 return responseError('game_completed', $notify);
@@ -131,6 +173,7 @@ abstract class Game {
             $customCompleteLogic = $this->customCompleteLogic($gameLog);
 
             if ($customCompleteLogic['should_return']) {
+                DB::commit();
                 if ($this->fromApi) {
                     if (@$customCompleteLogic['data']['error']) {
                         $notify[] = @$customCompleteLogic['data']['error'];
@@ -216,12 +259,16 @@ abstract class Game {
         $res['result']      = in_array($this->game->alias, ['keno']) ? json_decode($gameLog->result) : $gameLog->result;
         $res['user_choose'] = in_array($this->game->alias, ['keno']) ? json_decode($gameLog->user_select) : $gameLog->user_select;
         $res['win_status']  = $gameLog->win_status;
+        $res['win_amount']  = $gameLog->win_status == Status::WIN ? $winBon + $investBack : 0;
+        $res['invest_amount'] = $gameLog->invest;
         $res['bal']         = showAmount($balance, currencyFormat: false);
 
         $gameLog->status = Status::GAME_FINISHED;
         $gameLog->save();
 
         $this->checkAndGiveBonus($this->user->id, $this->game->id);
+
+        DB::commit();
 
         if ($this->fromApi) {
             $notify[] = $this->game->name . ' result data';
@@ -233,6 +280,17 @@ abstract class Game {
         }
 
         return $res;
+        } catch (Throwable $exception) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            report($exception);
+            $message = 'The game result could not be saved. Please refresh your balance before retrying.';
+            if ($this->fromApi) {
+                return responseError('game_error', [$message]);
+            }
+            return response()->json(['error' => $message], 500);
+        }
     }
 
     private function getValidationRules() {

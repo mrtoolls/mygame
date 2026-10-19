@@ -12,7 +12,9 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider {
     /**
@@ -26,18 +28,20 @@ class AppServiceProvider extends ServiceProvider {
      * Bootstrap any application services.
      */
     public function boot(): void {
-        if (!cache()->get('SystemInstalled')) {
-            $envFilePath = base_path('.env');
-            if (!file_exists($envFilePath)) {
-                header('Location: install');
-                exit;
-            }
-            $envContents = file_get_contents($envFilePath);
-            if (empty($envContents)) {
-                header('Location: install');
-                exit;
-            } else {
-                cache()->put('SystemInstalled', true);
+        // Never query the configured cache store during application boot: a fresh
+        // install may not have database cache tables yet, and Artisan must still
+        // be able to run the migration that creates them.
+        $envFilePath = base_path('.env');
+        $isInstalled = is_file($envFilePath) && filesize($envFilePath) > 0;
+        if (!$isInstalled && !$this->app->runningInConsole()) {
+            header('Location: install');
+            exit;
+        }
+        if (!$this->app->runningInConsole() && config('session.driver') === 'database') {
+            try {
+                if (!Schema::hasTable(config('session.table', 'sessions'))) config(['session.driver' => 'file']);
+            } catch (Throwable) {
+                config(['session.driver' => 'file']);
             }
         }
         $viewShare['emptyMessage'] = 'Data not found';
@@ -70,7 +74,7 @@ class AppServiceProvider extends ServiceProvider {
             ]);
         });
 
-        if (gs('force_ssl')) {
+        if (!$this->app->runningInConsole() && gs('force_ssl')) {
             \URL::forceScheme('https');
         }
 

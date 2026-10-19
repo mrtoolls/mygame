@@ -64,6 +64,18 @@
                 "title": "Game Log",
                 "route_name": "admin.game.log",
                 "menu_active": "admin.game.log"
+            },
+            {
+                "keyword": [
+                    "Live Tables",
+                    "Player Tables",
+                    "Table Settings",
+                    "Table History",
+                    "Game Rooms"
+                ],
+                "title": "Live Table Games",
+                "route_name": "admin.table-games.index",
+                "menu_active": "admin.table-games*"
             }
         ]
     },

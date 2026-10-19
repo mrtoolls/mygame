@@ -72,7 +72,11 @@ function playGame(data, music) {
 // permanent code
 // --------------------------------
 function setPopup(data) {
-    $(".win-loss-popup").addClass("active");
+    const popup = $(".win-loss-popup");
+    popup.attr("data-win-amount", Number(data.win_amount || 0));
+    popup.attr("data-invest-amount", Number(data.invest_amount || 0));
+    popup.attr("data-result-status", Number(data.win_status || 0));
+    popup.addClass("active");
     $(".win-loss-popup__body").find("img").addClass("d-none");
     if (data.win_status == 0) {
         $(".win-loss-popup__body").find(".lose").removeClass("d-none");

@@ -393,10 +393,19 @@ function dateSorting($arr) {
 }
 
 function gs($key = null) {
-    $general = Cache::get('GeneralSetting');
+    try {
+        $general = Cache::get('GeneralSetting');
+    } catch (\Throwable) {
+        // A fresh install may not have the configured database cache table yet.
+        $general = null;
+    }
     if (!$general) {
         $general = GeneralSetting::first();
-        Cache::put('GeneralSetting', $general);
+        try {
+            Cache::put('GeneralSetting', $general);
+        } catch (\Throwable) {
+            // Keep settings available while the admin's Database Update creates cache tables.
+        }
     }
     if ($key) {
         return @$general->$key;

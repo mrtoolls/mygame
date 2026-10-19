@@ -10,6 +10,7 @@ use App\Models\GameLog;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class CronController extends Controller
 {
@@ -18,6 +19,14 @@ class CronController extends Controller
         $general            = gs();
         $general->last_cron = now();
         $general->save();
+
+        if (Schema::hasTable('table_games')) {
+            try {
+                app(\App\Games\TableGames\TableGameService::class)->sweepExpired();
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
 
         $crons = CronJob::with('schedule');
 

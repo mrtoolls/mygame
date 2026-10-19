@@ -112,6 +112,23 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('invest/{alias}/{demo?}', 'investGame')->name('invest');
                 Route::post('end/{alias}/{demo?}', 'gameEnd')->name('end');
             });
+
+            Route::controller('TableGameController')->prefix('tables')->name('tables.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'create')->name('create');
+                Route::get('{id}', 'show')->whereUuid('id')->name('show');
+                Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');
+                  Route::get('{id}/chat', 'messages')->whereUuid('id')->middleware('throttle:120,1')->name('chat');
+                  Route::post('{id}/chat', 'sendMessage')->whereUuid('id')->middleware('throttle:20,1')->name('chat.send');
+                  Route::post('{id}/chat/{message}/reaction', 'react')->whereUuid('id')->whereNumber('message')->middleware('throttle:60,1')->name('chat.react');
+                  Route::get('{id}/chat/{message}/attachment', 'attachment')->whereUuid('id')->whereNumber('message')->name('chat.attachment');
+                Route::post('{id}/join', 'join')->whereUuid('id')->name('join');
+                Route::post('{id}/invites', 'invite')->whereUuid('id')->name('invite');
+                Route::post('invites/{invite}/accept', 'acceptInvite')->whereNumber('invite')->name('invite.accept');
+                Route::post('{id}/start', 'start')->whereUuid('id')->name('start');
+                Route::post('{id}/move', 'move')->whereUuid('id')->name('move');
+                Route::post('{id}/leave', 'leave')->whereUuid('id')->name('leave');
+            });
         });
 
         // Payment

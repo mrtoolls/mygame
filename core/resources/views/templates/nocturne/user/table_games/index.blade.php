@@ -1,0 +1,99 @@
+﻿@extends('Template::layouts.master')
+@section('content')
+    <section class="table-lobby" data-create-url="{{ route('user.tables.create') }}" data-csrf="{{ csrf_token() }}">
+        <header class="table-lobby__hero">
+            <span class="table-lobby__eyebrow">@lang('Play together')</span>
+            <h1>@lang('Live Tables')</h1>
+            <p>@lang('Choose a game and take your seat. Moves and table balances are confirmed by the game server.')</p>
+        </header>
+
+        @if ($invites->isNotEmpty())
+            <section class="table-card table-invitations"><div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-envelope-open-text"></i></span><div><h2>@lang('Your Table Invitations')</h2><p>@lang('A player invited you to join a live table.')</p></div></div><div class="table-list">
+                @foreach ($invites as $invite)
+                    <article class="table-list-item"><div class="table-list-item__game"><span class="table-game-badge">{{ strtoupper(substr($invite->table->game_type, 0, 2)) }}</span><div><strong>{{ __($catalog[array_search($invite->table->game_type, array_column($catalog, 'key'))]['name'] ?? $invite->table->game_type) }}</strong><small>{{ __('Invited by :name', ['name' => $invite->inviter?->username ?? __('Player')]) }} · {{ $invite->table->players->where('status', 'seated')->count() }}/{{ $invite->table->player_limit }} @lang('seats')</small></div></div><div class="table-list-item__stake"><small>@lang('Stake per player')</small><strong>{{ gs('cur_sym') }}{{ showAmount($invite->table->stake) }}</strong></div><form method="post" action="{{ route('user.tables.invite.accept', $invite->id) }}" class="accept-invite-form">@csrf<button type="submit" class="table-join-button">@lang('Accept invite')</button></form></article>
+                @endforeach
+            </div></section>
+        @endif
+
+        <div class="table-lobby__layout">
+            <form class="table-card" id="create-table-form">
+                <div class="table-card__heading"><span class="table-card__icon"><i class="las la-plus"></i></span><div><h2>@lang('Create a Table')</h2><p>@lang('Set the game and stake for your table.')</p></div></div>
+                <label class="table-field"><span>@lang('Game type')</span>
+                    <select name="game_type" id="table-game-select" required>
+                        @foreach ($catalog as $game)
+                            <option value="{{ $game['key'] }}" data-min="{{ $game['min_players'] }}" data-max="{{ $game['max_players'] }}" data-commission="{{ $game['commission_percent'] }}" data-min-stake="{{ $game['min_stake'] }}" data-max-stake="{{ $game['max_stake'] }}" @disabled(!$game['enabled'] || !$game['available']) @selected($game['key'] === 'tic_tac_toe')>
+                                {{ __($game['name']) }}{{ !$game['available'] ? ' — Coming soon' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+                <div class="table-field-row">
+                    <label class="table-field"><span>@lang('Seats')</span><select name="player_limit" id="table-player-limit" required></select></label>
+                    <label class="table-field"><span>@lang('Stake per player')</span><div class="table-field__money"><span>{{ gs('cur_sym') }}</span><input type="number" name="stake" id="table-stake" min="0.01" step="any" value="1" required></div></label>
+                </div>
+                <div class="table-cost-preview"><div><span>@lang('Total pot')</span><strong id="table-pot">—</strong></div><div><span>@lang('Commission')</span><strong id="table-commission">—</strong></div><div class="table-cost-preview__net"><span>@lang('Winner receives')</span><strong id="table-winner-net">—</strong></div></div>
+                <p class="table-rules-note" id="table-rules-note"></p>
+                <p class="table-disclaimer" id="table-disclaimer"></p>
+                <button class="table-create-button" type="submit"><span>@lang('Create table')</span><i class="las la-arrow-right"></i></button>
+                <p class="table-form-message" id="table-form-message" aria-live="polite"></p>
+            </form>
+
+            <section class="table-card table-card--live">
+                <div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-satellite-dish"></i></span><div><h2>@lang('Live Games')</h2><p>@lang('Tables currently waiting for players or in progress.')</p></div><span class="table-live-count">{{ count($tables) }} @lang('live')</span></div>
+                <div class="table-list" id="live-table-list">
+                    @forelse ($tables as $table)
+                        <article class="table-list-item" data-table-id="{{ $table['id'] }}">
+                            @php($isSeated = collect($table['players'])->contains('id', (int) auth()->id()))
+                            <div class="table-list-item__game"><span class="table-game-badge">{{ strtoupper(substr($table['game'], 0, 2)) }}</span><div><strong>{{ __($catalog[array_search($table['game'], array_column($catalog, 'key'))]['name'] ?? $table['game']) }}</strong><small>{{ __(ucfirst($table['status'])) }} · {{ count($table['players']) }}/{{ $table['player_limit'] }} @lang('seats')</small></div></div>
+                            <div class="table-list-item__stake"><small>@lang('Stake')</small><strong>{{ gs('cur_sym') }}{{ showAmount($table['stake']) }}</strong></div>
+                            @if ($table['status'] === 'waiting' && !$isSeated)
+                                <form method="post" action="{{ route('user.tables.join', $table['id']) }}" class="join-table-form">@csrf<button type="submit" class="table-join-button">@lang('Join')</button></form>
+                            @elseif ($isSeated)
+                                <a class="table-join-button table-join-button--open" href="{{ route('user.tables.show', $table['id']) }}">@lang('Open')</a>
+                            @else
+                                <span class="table-join-button table-join-button--open table-join-button--disabled">@lang('In progress')</span>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="table-empty"><span><i class="las la-dice"></i></span><strong>@lang('No live tables yet')</strong><p>@lang('Create the first table and invite someone to play.')</p></div>
+                    @endforelse
+                </div>
+                <a class="table-history-link" href="{{ route('user.tables.index') }}">@lang('Refresh live tables') <i class="las la-sync"></i></a>
+            </section>
+        </div>
+    </section>
+@endsection
+
+@push('style')
+    <style>
+        .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);max-width:1120px;margin:auto;color:var(--tg-text)}
+        .table-lobby__hero{position:relative;overflow:hidden;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
+        .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
+        .table-lobby__layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:16px;align-items:start}.table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
+        .table-card__heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}.table-card__icon{display:grid;flex:0 0 44px;width:44px;height:44px;place-items:center;border-radius:14px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:23px}.table-card__icon--live{background:rgba(122,151,255,.14);color:#a7bbff}.table-card__heading h2{margin:0;font-size:18px;font-weight:900}.table-card__heading p{margin:3px 0 0;color:var(--tg-muted);font-size:11px}.table-live-count{margin-left:auto;padding:7px 10px;border:1px solid rgba(0,239,135,.2);border-radius:20px;color:var(--tg-green);font-size:10px;font-weight:900;white-space:nowrap}
+        .table-field{display:grid;gap:7px;min-width:0;margin-bottom:14px}.table-field>span{color:#b5bdd8;font-size:11px;font-weight:850}.table-field select,.table-field input{width:100%;height:47px;min-width:0;padding:0 13px;border:1px solid var(--tg-line);border-radius:12px;background:#11162c;color:var(--tg-text);font:inherit;font-size:13px;outline:none}.table-field select:focus,.table-field input:focus{border-color:rgba(0,239,135,.6);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.table-field option:disabled{color:#778}.table-field-row{display:grid;grid-template-columns:.7fr 1.3fr;gap:12px}.table-field__money{position:relative}.table-field__money>span{position:absolute;top:50%;left:12px;transform:translateY(-50%);color:var(--tg-muted);font-size:12px}.table-field__money input{padding-left:31px}
+        .table-cost-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:3px 0 13px;padding:13px;border:1px solid var(--tg-line);border-radius:15px;background:rgba(10,13,28,.55)}.table-cost-preview>div{display:grid;gap:5px;min-width:0}.table-cost-preview span{color:var(--tg-muted);font-size:9px}.table-cost-preview strong{font-size:12px;font-weight:900;overflow-wrap:anywhere}.table-cost-preview__net strong{color:var(--tg-green)}.table-rules-note{margin:0 0 10px;color:#a8b4d6;font-size:10px;line-height:1.5}.table-disclaimer{margin:0;padding:12px;border-left:2px solid rgba(0,239,135,.65);border-radius:0 10px 10px 0;background:rgba(0,239,135,.045);color:#929abc;font-size:10px;line-height:1.6}
+        .table-create-button,.table-join-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:0 16px;border:0;border-radius:13px;background:linear-gradient(105deg,#00ef87,#00d77a);color:#062b1d;font-size:12px;font-weight:950;text-decoration:none}.table-create-button{width:100%;margin-top:14px}.table-create-button i{font-size:17px}.table-form-message{min-height:15px;margin:8px 0 0;color:#ff9eab;font-size:11px}.table-list{display:grid;gap:9px}.table-list-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--tg-line);border-radius:15px;background:rgba(35,42,71,.46)}.table-list-item__game{display:flex;align-items:center;gap:10px;min-width:0}.table-game-badge{display:grid;flex:0 0 39px;width:39px;height:39px;place-items:center;border-radius:12px;background:linear-gradient(145deg,rgba(0,239,135,.18),rgba(0,239,135,.04));color:var(--tg-green);font-size:12px;font-weight:950}.table-list-item__game div{display:grid;gap:4px;min-width:0}.table-list-item__game strong{overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.table-list-item small{color:var(--tg-muted);font-size:9px}.table-list-item__stake{display:grid;gap:4px;text-align:right;white-space:nowrap}.table-list-item__stake strong{font-size:11px}.join-table-form{margin:0}.table-join-button{min-height:36px;padding:0 13px;border-radius:10px;font-size:10px}.table-join-button--open{border:1px solid var(--tg-line);background:var(--tg-raised);color:var(--tg-text)}.table-empty{display:grid;justify-items:center;gap:6px;padding:28px 14px;text-align:center}.table-empty>span{display:grid;width:45px;height:45px;place-items:center;border-radius:50%;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:22px}.table-empty strong{font-size:13px}.table-empty p{margin:0;color:var(--tg-muted);font-size:10px}.table-history-link{display:flex;justify-content:center;gap:7px;margin-top:14px;color:var(--tg-muted);font-size:10px;font-weight:800;text-decoration:none}
+        .table-join-button--disabled{display:inline-flex;align-items:center;justify-content:center;opacity:.6;cursor:not-allowed}@media(max-width:850px){.table-lobby__layout{grid-template-columns:1fr}.table-card--live{order:2}}@media(max-width:575px){.table-lobby__hero{margin-inline:-2px;padding:20px;border-radius:19px}.table-lobby__layout{gap:12px}.table-card{padding:16px;border-radius:18px}.table-field-row{grid-template-columns:1fr 1fr;gap:9px}.table-cost-preview{padding:10px 8px;gap:5px}.table-cost-preview span{font-size:8px}.table-cost-preview strong{font-size:10px}.table-list-item{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:10px}.table-list-item__stake{grid-column:2;grid-row:1;text-align:right}.join-table-form,.table-join-button--open{grid-column:1/-1;width:100%}.table-list-item__game{grid-column:1;grid-row:1}.table-card__heading{gap:9px}.table-live-count{font-size:9px}}
+    </style>
+@endpush
+
+@push('script')
+    <script>
+        (() => {
+            const root = document.querySelector('.table-lobby'); if (!root) return;
+            const catalog = @json($catalog); const gameSelect = document.querySelector('#table-game-select');
+            const seats = document.querySelector('#table-player-limit'); const stake = document.querySelector('#table-stake');
+            const createKey = sessionStorage.getItem('table-create-key') || crypto.randomUUID(); sessionStorage.setItem('table-create-key', createKey);
+            const currency = @json(gs('cur_sym')); const scale = 100000000n;
+            const toUnits = value => { const [whole, fraction = ''] = String(value || '0').split('.'); return BigInt(whole || '0') * scale + BigInt((fraction + '00000000').slice(0,8)); };
+            const fmt = units => { const cents = (units + 500000n) / 1000000n; return `${currency}${(cents / 100n).toLocaleString()}.${String(cents % 100n).padStart(2,'0')}`; };
+            function updateOptions(){const item=catalog.find(game=>game.key===gameSelect.value);if(!item)return;const option=gameSelect.selectedOptions[0];const min=Number(option.dataset.min),max=Number(option.dataset.max);const previous=Number(seats.value)||min;seats.replaceChildren();for(let n=min;n<=max;n++){const node=document.createElement('option');node.value=n;node.textContent=`${n} players`;seats.append(node);}seats.value=Math.min(max,Math.max(min,previous));stake.min=option.dataset.minStake;stake.max=option.dataset.maxStake;document.querySelector('#table-rules-note').textContent=item.draw_rule;updateTotals();}
+            function updateTotals(){const option=gameSelect.selectedOptions[0];const players=Number(seats.value)||2;const per=toUnits(stake.value);const pot=BigInt(players)*per;const rateText=option.dataset.commission||'5.00';const [rateWhole,rateFraction='']=rateText.split('.');const rateBps=BigInt(rateWhole||0)*100n+BigInt((rateFraction+'00').slice(0,2));const commission=pot*rateBps/10000n;const rate=Number(rateText);document.querySelector('#table-pot').textContent=fmt(pot);document.querySelector('#table-commission').textContent=`${fmt(commission)} (${rate}%)`;document.querySelector('#table-winner-net').textContent=fmt(pot-commission);document.querySelector('#table-disclaimer').textContent=`Each player puts in ${fmt(per)}; the winner takes the ${fmt(pot)} pot less ${rate}% commission (${fmt(commission)}). A draw refunds every stake. It starts when all ${players} seats are full, or the creator starts it early with 2 or more players. Leaving or missing two turns puts you out; your stake stays in the pot. Game money only.`;document.querySelector('#create-table-form button[type="submit"] span').textContent=`Create for ${players} players - ${fmt(per)}`;}
+            if(gameSelect.selectedOptions[0]?.disabled){const first=Array.from(gameSelect.options).find(option=>!option.disabled);if(first)gameSelect.value=first.value;}gameSelect.addEventListener('change',updateOptions);seats.addEventListener('change',updateTotals);stake.addEventListener('input',updateTotals);updateOptions();
+            document.querySelectorAll('.join-table-form').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;button.textContent='Joining...';try{const response=await fetch(form.action,{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':form.querySelector('[name="_token"]').value}});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to join this table.');location.href=form.action.replace(/\/join$/, '');}catch(error){button.disabled=false;button.textContent='Join';window.alert(error.message);}}));
+            document.querySelectorAll('.accept-invite-form').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;try{const response=await fetch(form.action,{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':form.querySelector('[name="_token"]').value}});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to accept this invitation.');location.href=`{{ url('/user/tables') }}/${result.table.id}`;}catch(error){button.disabled=false;window.alert(error.message);}}));
+            document.querySelector('#create-table-form').addEventListener('submit',async event=>{event.preventDefault();const message=document.querySelector('#table-form-message');const button=event.currentTarget.querySelector('button[type=submit]');button.disabled=true;message.textContent='';try{const response=await fetch(root.dataset.createUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({game_type:gameSelect.value,player_limit:Number(seats.value),stake:stake.value,idempotency_key:createKey})});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to create table.');sessionStorage.removeItem('table-create-key');location.href=`{{ url('/user/tables') }}/${result.table.id}`;}catch(error){message.textContent=error.message;}finally{button.disabled=false;} });
+        })();
+    </script>
+@endpush

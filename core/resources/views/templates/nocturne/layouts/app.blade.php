@@ -50,25 +50,36 @@
 
     @yield('app')
 
-    <div class="win-loss-popup">
-        <div class="win-loss-popup__bg">
-            <div class="win-loss-popup__inner">
+    <div class="win-loss-popup" aria-hidden="true" data-currency="{{ gs('cur_text') }}">
+        <div class="win-loss-popup__bg" data-popup-backdrop>
+            <section class="win-loss-popup__inner" role="dialog" aria-modal="true" aria-labelledby="game-result-title" aria-describedby="game-result-amount">
+                <button type="button" class="win-loss-popup__close" aria-label="@lang('Close result')"><i class="ph-bold ph-x"></i></button>
                 <div class="win-loss-popup__body">
-                    <img class="img-glow lose d-none"
-                        src="{{ asset(activeTemplate(true) . 'images/play/lose-message.png') }}"
-                        alt="lose message image">
-                    <img class="img-glow win d-none"
-                        src="{{ asset(activeTemplate(true) . 'images/play/win-message.png') }}"
-                        alt="win message image">
-                          <img class="img-glow push d-none"
-                        src="{{ asset(activeTemplate(true) . 'images/play/push-message.png') }}"
-                        alt="push message image">
+                    <div class="win-loss-popup__art" aria-hidden="true">
+                        <span class="win-loss-popup__orbit"></span>
+                        <span class="win-loss-popup__coin win-loss-popup__coin--one">✦</span>
+                        <span class="win-loss-popup__coin win-loss-popup__coin--two">✦</span>
+                        <svg class="win-loss-popup__icon win-loss-popup__icon--win" viewBox="0 0 96 96" fill="none"><path d="M28 18h40v19c0 16-9 27-20 27S28 53 28 37V18Z"/><path d="M28 26H15v8c0 12 7 18 18 19M68 26h13v8c0 12-7 18-18 19M48 64v12m-16 7h32M38 82l3-6h14l3 6"/><path d="m41 40 5 5 10-12"/></svg>
+                        <svg class="win-loss-popup__icon win-loss-popup__icon--loss" viewBox="0 0 96 96" fill="none"><path d="M48 12 80 70H16L48 12Z"/><path d="M48 35v16m0 9v1"/></svg>
+                        <svg class="win-loss-popup__icon win-loss-popup__icon--push" viewBox="0 0 96 96" fill="none"><path d="M20 28h56v40H20z"/><path d="M31 48h34M48 37l-11 11 11 11"/></svg>
+                        <span class="win-loss-popup__spark win-loss-popup__spark--one"></span><span class="win-loss-popup__spark win-loss-popup__spark--two"></span><span class="win-loss-popup__spark win-loss-popup__spark--three"></span><span class="win-loss-popup__spark win-loss-popup__spark--four"></span>
+                    </div>
+                    <h2 id="game-result-title" class="win-loss-popup__title">@lang('Round complete')</h2>
+                    <p id="game-result-amount" class="win-loss-popup__amount" aria-live="polite"></p>
+                    <p class="win-loss-popup__message">@lang('Your result has been added to your balance.')</p>
+                    <div class="win-loss-popup__legacy" aria-hidden="true">
+                        <img class="img-glow lose d-none" src="{{ asset(activeTemplate(true) . 'images/play/lose-message.png') }}" alt="">
+                        <img class="img-glow win d-none" src="{{ asset(activeTemplate(true) . 'images/play/win-message.png') }}" alt="">
+                        <img class="img-glow push d-none" src="{{ asset(activeTemplate(true) . 'images/play/push-message.png') }}" alt="">
+                        <h2 class="result-text">@lang('The result is') <span class="data-result"></span></h2>
+                        <h5></h5>
+                    </div>
                 </div>
-                <div class="win-loss-popup__footer">
-                    <h2 class="result-text">@lang('The result is') <span class="data-result"></span></h2>
-                    <h5></h5>
+                <div class="win-loss-popup__actions">
+                    <button type="button" class="win-loss-popup__again">@lang('Play Again') <i class="ph-bold ph-arrow-right"></i></button>
+                    <button type="button" class="win-loss-popup__dismiss">@lang('Close')</button>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 
@@ -110,6 +121,74 @@
     <script src="{{ asset(activeTemplate(true) . 'js/main.js') }}"></script>
 
     @stack('script')
+
+    <script>
+        (function ($) {
+            'use strict';
+            const popup = document.querySelector('.win-loss-popup');
+            if (!popup) return;
+            const title = popup.querySelector('.win-loss-popup__title');
+            const amount = popup.querySelector('.win-loss-popup__amount');
+            const message = popup.querySelector('.win-loss-popup__message');
+            const currency = popup.dataset.currency || '';
+            const formatAmount = value => `${currency} ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
+
+            function syncPopup() {
+                const opened = popup.classList.contains('active');
+                popup.setAttribute('aria-hidden', opened ? 'false' : 'true');
+                if (!opened) return;
+                const state = popup.querySelector('.push:not(.d-none)') ? 'push' :
+                    popup.querySelector('.win:not(.d-none)') ? 'win' :
+                    popup.querySelector('.lose:not(.d-none)') ? 'loss' :
+                    (Number(popup.dataset.resultStatus || 0) === 1 ? 'win' : 'loss');
+                popup.classList.remove('is-win', 'is-loss', 'is-push');
+                popup.classList.add(`is-${state}`);
+                const winAmount = Number(popup.dataset.winAmount || 0);
+                const investAmount = Number(popup.dataset.investAmount || 0);
+                if (state === 'win') {
+                    title.textContent = @json(__('You won!'));
+                    amount.textContent = `+${formatAmount(winAmount)}`;
+                    message.textContent = @json(__('Your payout has been added to your balance.'));
+                } else if (state === 'push') {
+                    title.textContent = @json(__('It’s a tie'));
+                    amount.textContent = investAmount ? formatAmount(investAmount) : '';
+                    message.textContent = @json(__('Your stake has been returned.'));
+                } else {
+                    title.textContent = @json(__('Round over'));
+                    amount.textContent = investAmount ? `−${formatAmount(investAmount)}` : '';
+                    message.textContent = @json(__('Better luck on your next round.'));
+                }
+            }
+
+            new MutationObserver(syncPopup).observe(popup, { attributes: true, subtree: true, attributeFilter: ['class', 'data-win-amount', 'data-invest-amount', 'data-result-status'] });
+            syncPopup();
+            $(document).on('ajaxSuccess', function (_event, _xhr, settings, response) {
+                if (!response || typeof response !== 'object') return;
+                const data = response.data && typeof response.data === 'object' ? response.data : response;
+                if (data.win_amount !== undefined) popup.dataset.winAmount = data.win_amount;
+                if (data.invest_amount !== undefined) popup.dataset.investAmount = data.invest_amount;
+                if (data.win_status !== undefined) popup.dataset.resultStatus = data.win_status;
+            });
+            function closePopup() { popup.classList.remove('active'); }
+            popup.querySelectorAll('.win-loss-popup__close, .win-loss-popup__dismiss').forEach(button => button.addEventListener('click', closePopup));
+            popup.querySelector('[data-popup-backdrop]').addEventListener('click', event => {
+                if (event.target === event.currentTarget) closePopup();
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && popup.classList.contains('active')) closePopup();
+            });
+            popup.querySelector('.win-loss-popup__again').addEventListener('click', function () {
+                const specificAgain = document.querySelector('.play-again-btn:not(.d-none), .resetBtn:not(.d-none)');
+                if (specificAgain) specificAgain.click();
+                else {
+                    const playButton = document.querySelector('.nocturne-game-page .game-playbtn button:not(:disabled)');
+                    if (playButton && !playButton.classList.contains('disabled')) playButton.click();
+                }
+                closePopup();
+            });
+            syncPopup();
+        })(jQuery);
+    </script>
 
     <script>
         (function($) {

@@ -65,6 +65,13 @@ Route::middleware('admin')->group(function () {
         Route::post('dream-catcher/{id}', 'dreamCatcherUpdate')->name('dream.catcher.update');
     });
 
+    Route::controller('TableGameAdminController')->name('table-games.')->prefix('table-games')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('settings', 'settings')->name('settings');
+        Route::post('{id}/force-close', 'forceClose')->whereUuid('id')->name('force-close');
+        Route::post('user-limit', 'userLimit')->name('user-limit');
+    });
+
     // VIP Tiers
     Route::controller('VipTierController')->name('vip.')->prefix('vip')->group(function () {
         Route::get('/', 'index')->name('index');

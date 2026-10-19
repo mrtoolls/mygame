@@ -35,4 +35,5 @@
 
     @include('Template::sections.trending_games')
     @include('Template::sections.featured_games')
+    @include('Template::sections.live_table_games')
 @endsection

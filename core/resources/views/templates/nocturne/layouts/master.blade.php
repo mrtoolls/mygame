@@ -3,7 +3,7 @@
     <div class="nocturne-shell">
         @include('Template::partials.shell_header')
         @include('Template::partials.shell_sidebar')
-        <main class="nocturne-main">
+        <main class="nocturne-main {{ request()->routeIs('user.play.game') ? 'nocturne-game-page' : '' }}">
             @if (!request()->routeIs('home') && !request()->routeIs('user.*'))
                 @include('Template::partials.breadcrumb')
             @endif
@@ -18,12 +18,3 @@
         </main>
     </div>
 @endsection
-
-@push('script')
-    <script>
-        "use strict";
-        $(document).on('click touchstart', function(e) {
-            $('.win-loss-popup').removeClass('active');
-        });
-    </script>
-@endpush
