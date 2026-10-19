@@ -21,23 +21,23 @@
         $hasCard   = $gatewayCurrency->contains(fn($g) => $g->method->crypto != 1);
     @endphp
     <div class="row justify-content-center">
-        <div class="col-lg-9">
+        <div class="col-12">
             <form action="{{ route('user.deposit.insert') }}" method="post" class="deposit-form">
                 @csrf
                 <input type="hidden" name="currency">
                 <div class="gateway-card">
                     <div class="row justify-content-center gy-sm-4 gy-3 payment-workspace">
-                        <div class="col-lg-6 payment-method-column">
+                        <div class="col-lg-5 payment-method-column">
                             <div class="card custom--card payment-method-panel">
                                 <div class="card-body p-0">
                                     <h4 class="nocturne-pay-step">1. @lang('Select a Deposit Method')</h4>
                                     @if ($hasCrypto && $hasCard)
                                         <div class="nocturne-pay-tabs">
-                                            <button type="button" class="nocturne-pay-tab is-active" data-filter="1">@lang('Crypto')</button>
-                                            <button type="button" class="nocturne-pay-tab" data-filter="0">@lang('Bank Card')</button>
+                                            <button type="button" class="nocturne-pay-tab is-active" data-filter="1"><i class="lab la-bitcoin"></i><span><strong>@lang('Crypto')</strong><small>@lang('Choose a coin and network')</small></span><b>{{ $gatewayCurrency->where('method.crypto', 1)->count() }}</b></button>
+                                            <button type="button" class="nocturne-pay-tab" data-filter="0"><i class="las la-credit-card"></i><span><strong>@lang('Bank Card')</strong><small>@lang('Pay with a supported method')</small></span><b>{{ $gatewayCurrency->where('method.crypto', '!=', 1)->count() }}</b></button>
                                         </div>
                                     @endif
-                                    <h4 class="nocturne-pay-step">2. @lang('Select Method to Deposit')</h4>
+                                    <div class="nocturne-pay-list-heading"><div><span class="nocturne-pay-kicker">@lang('STEP 02')</span><h4 class="nocturne-pay-step">@lang('Select a payment option')</h4></div><span class="nocturne-pay-secure"><i class="las la-lock"></i> @lang('Secure')</span></div>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
                                         @foreach ($gatewayCurrency as $data)
                                             <label for="{{ titleToKey($data->name) }}"
@@ -72,9 +72,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6 payment-summary-column">
+                        <div class="col-lg-7 payment-summary-column">
                             <div class="card custom--card payment-summary-panel">
                                 <div class="card-body p-0">
+                                    <div class="nocturne-pay-detail-heading"><div><span class="nocturne-pay-kicker">@lang('PAYMENT DETAILS')</span><h3>@lang('Complete your deposit')</h3><p>@lang('Enter the amount you want to add. You will review the payment instructions on the next step.')</p></div><span class="nocturne-pay-detail-icon"><i class="las la-wallet"></i></span></div>
                                     <div class="nocturne-pay-selected">
                                         <img class="nocturne-pay-selected__thumb" src="" alt="">
                                         <span class="nocturne-pay-selected__name"></span>
@@ -231,6 +232,35 @@
         .nocturne-payment-page .nocturne-pay-history-link i:last-child{margin-left:5px;color:var(--pay-accent)}
         @media(max-width:767.98px){.nocturne-payment-page{padding-bottom:calc(24px + env(safe-area-inset-bottom))}.nocturne-payment-page .nocturne-page-title{font-size:24px}.nocturne-payment-hero{align-items:flex-start;flex-direction:column;gap:17px;margin-bottom:16px;padding:20px;border-radius:20px}.nocturne-payment-hero__balance{width:100%;min-width:0;padding:12px 48px 12px 14px}.nocturne-payment-hero__balance strong{font-size:19px}.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px;border-radius:19px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:repeat(2,minmax(0,1fr));max-height:265px;gap:8px}.nocturne-payment-page .payment-item{min-height:62px;padding:9px}.nocturne-payment-page .payment-item__thumb{width:30px;height:25px}.nocturne-payment-page .payment-item__name{font-size:12px}.nocturne-payment-page .deposit-info__input-group{min-height:58px}.nocturne-payment-page .deposit-info__input-group .amount{height:54px;font-size:22px}.nocturne-payment-page .nocturne-pay-history-link{width:100%;justify-content:center;margin-top:12px}.nocturne-payment-page .nocturne-pay-step{margin-bottom:12px}}
         @media(max-width:360px){.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr}.nocturne-payment-page .payment-item{min-height:58px}}
+        .nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{min-height:100%;padding:26px;background:linear-gradient(155deg,#171d36 0%,#13182e 72%);border-color:rgba(133,142,175,.18)}
+        .nocturne-payment-page .payment-method-column{flex:0 0 auto;width:41.666667%}
+        .nocturne-payment-page .payment-summary-column{flex:0 0 auto;width:58.333333%}
+        .nocturne-payment-page .nocturne-pay-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:transparent;padding:0;margin-bottom:25px}
+        .nocturne-payment-page .nocturne-pay-tab{display:flex;align-items:center;gap:11px;min-height:76px;padding:12px;border:1px solid rgba(133,142,175,.19);border-radius:16px;text-align:left;background:#10152a;color:#f4f5fd}
+        .nocturne-payment-page .nocturne-pay-tab>i{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;background:rgba(0,231,138,.12);color:var(--pay-accent);font-size:23px}
+        .nocturne-payment-page .nocturne-pay-tab>span{display:grid;gap:3px;min-width:0}
+        .nocturne-payment-page .nocturne-pay-tab strong{font-size:13px;font-weight:850}
+        .nocturne-payment-page .nocturne-pay-tab small{color:var(--pay-muted);font-size:10px;line-height:1.3}
+        .nocturne-payment-page .nocturne-pay-tab>b{margin-left:auto;color:var(--pay-muted);font-size:10px}
+        .nocturne-payment-page .nocturne-pay-tab.is-active{border-color:var(--pay-accent);background:linear-gradient(135deg,rgba(0,231,138,.13),#151a31 76%);color:#fff}
+        .nocturne-payment-page .nocturne-pay-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+        .nocturne-payment-page .nocturne-pay-kicker{display:block;margin-bottom:5px;color:var(--pay-accent);font-size:9px;font-weight:850;letter-spacing:.15em}
+        .nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{margin:0;font-size:17px}
+        .nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step:before{display:none}
+        .nocturne-payment-page .nocturne-pay-secure{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid rgba(0,231,138,.16);border-radius:10px;color:var(--pay-accent);font-size:10px;font-weight:750}
+        .nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:440px;gap:9px}
+        .nocturne-payment-page .payment-item{min-height:72px;padding:13px 15px;border-radius:15px;background:linear-gradient(110deg,#10152a,#141a32)}
+        .nocturne-payment-page .payment-item__check{width:18px;height:18px}
+        .nocturne-payment-page .payment-item__name{font-size:14px}
+        .nocturne-payment-page .payment-item__thumb{width:48px;height:38px;border-radius:10px}
+        .nocturne-payment-page .nocturne-pay-detail-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 22px;padding:4px 2px 19px;border-bottom:1px solid rgba(133,142,175,.14)}
+        .nocturne-payment-page .nocturne-pay-detail-heading h3{margin:0 0 6px;color:#f5f6ff;font-size:clamp(19px,2vw,25px);font-weight:850;letter-spacing:-.035em}
+        .nocturne-payment-page .nocturne-pay-detail-heading p{max-width:500px;margin:0;color:var(--pay-muted);font-size:12px;line-height:1.55}
+        .nocturne-payment-page .nocturne-pay-detail-icon{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:17px;background:rgba(0,231,138,.1);color:var(--pay-accent);font-size:27px}
+        .nocturne-payment-page .nocturne-pay-selected{min-height:58px}
+        .nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0!important}
+        @media(max-width:991.98px){.nocturne-payment-page .payment-method-column,.nocturne-payment-page .payment-summary-column{width:100%}.nocturne-payment-page .payment-system-list.is-scrollable{max-height:360px}}
+        @media(max-width:767.98px){.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px}.nocturne-payment-page .nocturne-pay-tabs{grid-template-columns:1fr 1fr;gap:8px}.nocturne-payment-page .nocturne-pay-tab{min-height:70px;padding:9px}.nocturne-payment-page .nocturne-pay-tab>i{width:32px;height:32px;font-size:20px}.nocturne-payment-page .nocturne-pay-tab small{font-size:9px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:300px}.nocturne-payment-page .nocturne-pay-detail-heading{align-items:flex-start;margin-bottom:17px;padding-bottom:15px}.nocturne-payment-page .nocturne-pay-detail-icon{width:44px;height:44px;border-radius:14px;font-size:22px}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{font-size:15px}}
         .btn:disabled {
             border: unset;
         }
