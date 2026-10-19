@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
 use App\Models\WithdrawMethod;
+use App\Models\SupportAgent;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
 use App\Lib\RequiredConfig;
@@ -12,13 +13,14 @@ use App\Lib\RequiredConfig;
 class WithdrawMethodController extends Controller {
     public function methods() {
         $pageTitle = 'Withdrawal Methods';
-        $methods   = WithdrawMethod::orderBy('name')->orderBy('id')->get();
+        $methods   = WithdrawMethod::with('supportAgent:id,name')->orderBy('name')->orderBy('id')->get();
         return view('admin.withdraw.index', compact('pageTitle', 'methods'));
     }
 
     public function create() {
         $pageTitle = 'New Withdrawal Method';
-        return view('admin.withdraw.create', compact('pageTitle'));
+        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        return view('admin.withdraw.create', compact('pageTitle', 'paymentAgents'));
     }
 
     public function store(Request $request) {
@@ -32,6 +34,7 @@ class WithdrawMethodController extends Controller {
             'max_limit'      => 'required|numeric|gt:min_limit',
             'image'          => ['required', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
             'instruction'    => 'required',
+            'payment_agent_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('support_agents', 'id')->where(fn ($query) => $query->where('is_active', true)->where('is_payment_agent', true))],
         ];
 
         $formProcessor       = new FormProcessor();
@@ -62,6 +65,7 @@ class WithdrawMethodController extends Controller {
         $method->percent_charge = $request->percent_charge;
         $method->currency       = $request->currency;
         $method->description    = $request->instruction;
+        $method->support_agent_id = $request->input('payment_agent_id');
         $method->save();
 
         RequiredConfig::configured('withdrawal_method');
@@ -74,7 +78,8 @@ class WithdrawMethodController extends Controller {
         $pageTitle = 'Update Withdrawal Method';
         $method    = WithdrawMethod::with('form')->findOrFail($id);
         $form      = $method->form;
-        return view('admin.withdraw.edit', compact('pageTitle', 'method', 'form'));
+        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        return view('admin.withdraw.edit', compact('pageTitle', 'method', 'form', 'paymentAgents'));
     }
 
     public function update(Request $request, $id) {
@@ -88,6 +93,7 @@ class WithdrawMethodController extends Controller {
             'percent_charge' => 'required|numeric|between:0,100',
             'currency'       => 'required',
             'instruction'    => 'required',
+            'payment_agent_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('support_agents', 'id')->where(fn ($query) => $query->where('is_active', true)->where('is_payment_agent', true))],
         ];
 
         $formProcessor       = new FormProcessor();
@@ -118,6 +124,7 @@ class WithdrawMethodController extends Controller {
         $method->percent_charge = $request->percent_charge;
         $method->description    = $request->instruction;
         $method->currency       = $request->currency;
+        $method->support_agent_id = $request->input('payment_agent_id');
         $method->save();
 
         $notify[] = ['success', 'Withdrawal method updated successfully'];

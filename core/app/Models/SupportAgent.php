@@ -6,7 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class SupportAgent extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'is_active', 'is_payment_agent', 'last_seen_at'];
+    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'payment_details', 'is_active', 'is_payment_agent', 'last_seen_at'];
 
     protected $hidden = ['password', 'remember_token'];
 

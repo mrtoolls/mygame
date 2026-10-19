@@ -42,6 +42,9 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4">
+                                            <div class="form-group"><label>@lang('Payment agent (optional)')</label><select class="form-control" name="payment_agent_id"><option value="">@lang('General manual payment')</option>@foreach($paymentAgents as $agent)<option value="{{ $agent->id }}" @selected(old('payment_agent_id', $method->singleCurrency->support_agent_id) == $agent->id)>{{ $agent->name }} — {{ $agent->email }}</option>@endforeach</select><small class="text-muted">Only agents explicitly designated by an administrator appear here.</small></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -112,6 +115,7 @@
                                                 <button type="button" class="btn btn-sm btn-outline-light float-end form-generate-btn"> <i class="la la-fw la-plus"></i>@lang('Add New')</button>
                                             </div>
                                             <div class="card-body">
+                                                <p class="text-muted">When this method is assigned to a payment agent, add a <strong>required File Upload</strong> field so users must attach their payment receipt.</p>
                                                 <x-generated-form :form=$form />
                                             </div>
                                         </div>

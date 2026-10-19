@@ -10,7 +10,8 @@ class Deposit extends Model
 {
 
     protected $casts = [
-        'detail' => 'object'
+        'detail' => 'object',
+        'payment_agent_snapshot' => 'object',
     ];
 
     protected $hidden = ['detail'];

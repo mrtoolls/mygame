@@ -23,6 +23,7 @@
                                                 <input type="text" class="form-control" name="name" value="{{ $method->name }}" required />
                                             </div>
                                         </div>
+                                        <div class="col-12"><div class="form-group"><label>@lang('Payment agent (optional)')</label><select class="form-control" name="payment_agent_id"><option value="">@lang('General withdrawal method')</option>@foreach($paymentAgents as $agent)<option value="{{ $agent->id }}" @selected(old('payment_agent_id', $method->support_agent_id) == $agent->id)>{{ $agent->name }} ({{ $agent->email }})</option>@endforeach</select><small class="text-muted">Only admin-designated payment agents can be assigned here.</small></div></div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>@lang('Currency')</label>

@@ -8,7 +8,9 @@ use App\Lib\FormProcessor;
 use Illuminate\Http\Request;
 use App\Models\GatewayCurrency;
 use App\Models\AdminNotification;
+use App\Models\SupportAgent;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Gateway\PaymentController as GatewayPaymentController;
 
@@ -18,7 +20,10 @@ class PaymentController extends Controller
     {
         $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
-        })->with('method')->orderby('name')->get();
+        })->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+        })->with(['method', 'supportAgent:id,name'])->orderby('name')->get();
         $notify[] = 'Payment Methods';
         return responseSuccess('deposit_methods', $notify, [
             'methods' => $gatewayCurrency,
@@ -41,6 +46,9 @@ class PaymentController extends Controller
         $user = auth()->user();
         $gate = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
+        })->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
         })->where('method_code', $request->method_code)->where('currency', $request->currency)->first();
         if (!$gate) {
             $notify[] = 'Invalid gateway';
@@ -56,22 +64,35 @@ class PaymentController extends Controller
         $payable     = $request->amount + $charge;
         $finalAmount = $payable * $gate->rate;
 
-        $data                  = new Deposit();
-        $data->from_api        = 1;
-        $data->is_web          = @$request->is_web ? 1 : 0;
-        $data->user_id         = $user->id;
-        $data->method_code     = $gate->method_code;
-        $data->method_currency = strtoupper($gate->currency);
-        $data->amount          = $request->amount;
-        $data->charge          = $charge;
-        $data->rate            = $gate->rate;
-        $data->final_amount    = $finalAmount;
-        $data->btc_amount      = 0;
-        $data->btc_wallet      = "";
-        $data->success_url     = $request->success_url ?? route('user.deposit.history');
-        $data->failed_url      = $request->failed_url ?? route('user.deposit.history');
-        $data->trx             = getTrx();
-        $data->save();
+        $data = DB::transaction(function () use ($request, $gate, $user, $charge, $finalAmount) {
+            $deposit = new Deposit();
+            $deposit->from_api = 1;
+            $deposit->is_web = $request->boolean('is_web') ? 1 : 0;
+            $deposit->user_id = $user->id;
+            $deposit->method_code = $gate->method_code;
+            if ($gate->support_agent_id) {
+                $agent = SupportAgent::paymentAgents()->findOrFail($gate->support_agent_id);
+                $deposit->payment_agent_snapshot = [
+                    'id' => $agent->id,
+                    'name' => $agent->name,
+                    'email' => $agent->email,
+                    'photo' => $agent->photo,
+                    'payment_details' => $agent->payment_details,
+                ];
+            }
+            $deposit->method_currency = strtoupper($gate->currency);
+            $deposit->amount = $request->amount;
+            $deposit->charge = $charge;
+            $deposit->rate = $gate->rate;
+            $deposit->final_amount = $finalAmount;
+            $deposit->btc_amount = 0;
+            $deposit->btc_wallet = '';
+            $deposit->success_url = $request->success_url ?? route('user.deposit.history');
+            $deposit->failed_url = $request->failed_url ?? route('user.deposit.history');
+            $deposit->trx = getTrx();
+            $deposit->save();
+            return $deposit;
+        });
 
         $notify[] = 'Deposit inserted';
 
@@ -188,7 +209,8 @@ class PaymentController extends Controller
     public function manualDepositConfirm(Request $request)
     {
         $track = $request->track;
-        $data = Deposit::with('gateway')->where('status', Status::PAYMENT_INITIATE)->where('trx', $track)->first();
+        $data = Deposit::with('gateway')->where('user_id', auth()->id())
+            ->where('status', Status::PAYMENT_INITIATE)->where('trx', $track)->first();
 
         if (!$data) {
             $notify[] = 'Invalid request';
@@ -204,15 +226,28 @@ class PaymentController extends Controller
         $request->validate($validationRule);
         $userData = $formProcessor->processFormData($request, $formData);
 
-        $data->detail = $userData;
-        $data->status = Status::PAYMENT_PENDING;
-        $data->save();
+        $pendingDeposit = DB::transaction(function () use ($data, $userData) {
+            $lockedDeposit = Deposit::whereKey($data->id)->lockForUpdate()->first();
+            if (!$lockedDeposit || (int) $lockedDeposit->status !== Status::PAYMENT_INITIATE) {
+                return null;
+            }
+            $lockedDeposit->detail = $userData;
+            $lockedDeposit->status = Status::PAYMENT_PENDING;
+            $lockedDeposit->save();
 
-        $adminNotification            = new AdminNotification();
-        $adminNotification->user_id   = $data->user->id;
-        $adminNotification->title     = 'Deposit request from ' . $data->user->username;
-        $adminNotification->click_url = urlPath('admin.deposit.details', $data->id);
-        $adminNotification->save();
+            $adminNotification = new AdminNotification();
+            $adminNotification->user_id = $lockedDeposit->user_id;
+            $adminNotification->title = 'Deposit request from ' . $lockedDeposit->user->username;
+            $adminNotification->click_url = urlPath('admin.deposit.details', $lockedDeposit->id);
+            $adminNotification->save();
+            return $lockedDeposit->load('user');
+        });
+
+        if (!$pendingDeposit) {
+            $notify[] = 'This deposit request has already been submitted';
+            return responseError('duplicate_request', $notify);
+        }
+        $data = $pendingDeposit;
 
         notify($data->user, 'DEPOSIT_REQUEST', [
             'method_name'     => $data->gatewayCurrency()->name,

@@ -76,6 +76,9 @@
                 <div class="card overflow-hidden box--shadow1">
                     <div class="card-body">
                         <h5 class="card-title border-bottom pb-2">@lang('User Deposit Information')</h5>
+                        @if($deposit->payment_agent_snapshot)
+                            <div class="alert alert-info"><strong>@lang('Payment agent')</strong><div>{{ $deposit->payment_agent_snapshot->name }} · {{ $deposit->payment_agent_snapshot->email }}</div><div class="mt-2">{!! nl2br(e($deposit->payment_agent_snapshot->payment_details ?? '')) !!}</div></div>
+                        @endif
                         @if ($details != null)
                             @foreach (json_decode($details) as $val)
                                 @if ($deposit->method_code >= 1000)

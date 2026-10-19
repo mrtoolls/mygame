@@ -18,6 +18,11 @@ class GatewayCurrency extends Model {
         return $this->belongsTo(Gateway::class, 'method_code', 'code');
     }
 
+    public function supportAgent()
+    {
+        return $this->belongsTo(SupportAgent::class, 'support_agent_id');
+    }
+
     public function currencyIdentifier() {
         return $this->name ?? $this->method->name . ' ' . $this->currency;
     }

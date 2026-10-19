@@ -9,6 +9,7 @@
                             <thead>
                                 <tr>
                                     <th>@lang('Method')</th>
+                                    <th>@lang('Payment agent')</th>
                                     <th>@lang('Currency')</th>
                                     <th>@lang('Charge')</th>
                                     <th>@lang('Withdraw Limit')</th>
@@ -25,6 +26,8 @@
                                                 <span class="name">{{ __($method->name) }}</span>
                                             </div>
                                         </td>
+
+                                        <td>{{ $method->supportAgent?->name ?? __('General method') }}</td>
 
                                         <td class="fw-bold">{{ __($method->currency) }}</td>
                                         <td class="fw-bold">{{ showAmount($method->fixed_charge) }} {{ 0 < $method->percent_charge ? ' + ' . showAmount($method->percent_charge, currencyFormat: false) . ' %' : '' }} </td>

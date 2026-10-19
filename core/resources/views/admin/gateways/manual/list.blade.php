@@ -12,6 +12,7 @@
                             <thead>
                             <tr>
                                 <th>@lang('Gateway')</th>
+                                <th>@lang('Payment agent')</th>
                                 <th>@lang('Status')</th>
                                 <th>@lang('Action')</th>
                             </tr>
@@ -22,6 +23,7 @@
                                     <td>
                                         {{__($gateway->name)}}
                                     </td>
+                                    <td>{{ $gateway->singleCurrency?->supportAgent?->name ?? __('General manual payment') }}</td>
 
                                     <td>
                                         @php

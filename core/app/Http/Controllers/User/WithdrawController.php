@@ -16,7 +16,11 @@ class WithdrawController extends Controller
 
     public function withdrawMoney()
     {
-        $withdrawMethod = WithdrawMethod::with('form')->active()->get();
+        $withdrawMethod = WithdrawMethod::with(['form', 'supportAgent:id,name,is_active,is_payment_agent'])
+            ->where(function ($query) {
+                $query->whereNull('support_agent_id')
+                    ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+            })->active()->get();
         $withdraws = Withdrawal::where('user_id', auth()->id())->where('status', '!=', Status::PAYMENT_INITIATE)
             ->with('method')->latest('id')->paginate(5, ['*'], 'withdraw_page');
         $pageTitle = 'Withdraw Money';
@@ -29,7 +33,11 @@ class WithdrawController extends Controller
             'method_code' => 'required',
             'amount' => 'required|numeric'
         ]);
-        $method = WithdrawMethod::with('form')->where('id', $request->method_code)->active()->firstOrFail();
+        $method = WithdrawMethod::with('form')->where('id', $request->method_code)
+            ->where(function ($query) {
+                $query->whereNull('support_agent_id')
+                    ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+            })->active()->firstOrFail();
         $formData = $method->form?->form_data ?? [];
         $formProcessor = new FormProcessor();
         $request->validate($formProcessor->valueValidation($formData));

@@ -10,13 +10,18 @@ use App\Models\Deposit;
 use App\Models\GatewayCurrency;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\SupportAgent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller {
     public function deposit() {
         $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
-        })->with('method')->orderby('name')->get();
+        })->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+        })->with(['method', 'supportAgent:id,name'])->orderby('name')->get();
         $deposits = auth()->user()->deposits()->where('status', '!=', Status::PAYMENT_INITIATE)
             ->with('gateway')->latest('id')->paginate(5, ['*'], 'deposit_page');
         $pageTitle = 'Deposit Methods';
@@ -33,6 +38,9 @@ class PaymentController extends Controller {
         $user = auth()->user();
         $gate = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
+        })->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
         })->where('method_code', $request->gateway)->where('currency', $request->currency)->first();
         if (!$gate) {
             $notify[] = ['error', 'Invalid gateway'];
@@ -51,6 +59,16 @@ class PaymentController extends Controller {
         $data                  = new Deposit();
         $data->user_id         = $user->id;
         $data->method_code     = $gate->method_code;
+        if ($gate->support_agent_id) {
+            $agent = SupportAgent::paymentAgents()->findOrFail($gate->support_agent_id);
+            $data->payment_agent_snapshot = [
+                'id' => $agent->id,
+                'name' => $agent->name,
+                'email' => $agent->email,
+                'photo' => $agent->photo,
+                'payment_details' => $agent->payment_details,
+            ];
+        }
         $data->method_currency = strtoupper($gate->currency);
         $data->amount          = $request->amount;
         $data->charge          = $charge;
@@ -112,51 +130,63 @@ class PaymentController extends Controller {
     }
 
     public static function userDataUpdate($deposit, $isManual = null) {
-        if ($deposit->status == Status::PAYMENT_INITIATE || $deposit->status == Status::PAYMENT_PENDING) {
-            $deposit->status = Status::PAYMENT_SUCCESS;
-            $deposit->save();
+        $result = DB::transaction(function () use ($deposit, $isManual) {
+            $lockedDeposit = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
+            if (!$lockedDeposit || !in_array((int) $lockedDeposit->status, [Status::PAYMENT_INITIATE, Status::PAYMENT_PENDING], true)) {
+                return null;
+            }
 
-            $user = User::find($deposit->user_id);
-            $user->balance += $deposit->amount;
+            $user = User::whereKey($lockedDeposit->user_id)->lockForUpdate()->firstOrFail();
+            $methodName = $lockedDeposit->methodName();
+            $user->balance += $lockedDeposit->amount;
             $user->save();
 
-            $methodName = $deposit->methodName();
+            $lockedDeposit->status = Status::PAYMENT_SUCCESS;
+            $lockedDeposit->save();
 
-            $transaction               = new Transaction();
-            $transaction->user_id      = $deposit->user_id;
-            $transaction->amount       = $deposit->amount;
+            $transaction = new Transaction();
+            $transaction->user_id = $user->id;
+            $transaction->amount = $lockedDeposit->amount;
             $transaction->post_balance = $user->balance;
-            $transaction->charge       = $deposit->charge;
-            $transaction->trx_type     = '+';
-            $transaction->details      = 'Deposit Via ' . $methodName;
-            $transaction->trx          = $deposit->trx;
-            $transaction->remark       = 'deposit';
+            $transaction->charge = $lockedDeposit->charge;
+            $transaction->trx_type = '+';
+            $transaction->details = 'Deposit Via ' . $methodName;
+            $transaction->trx = $lockedDeposit->trx;
+            $transaction->remark = 'deposit';
             $transaction->save();
 
             if (!$isManual) {
-                $adminNotification            = new AdminNotification();
-                $adminNotification->user_id   = $user->id;
-                $adminNotification->title     = 'Deposit successful via ' . $methodName;
+                $adminNotification = new AdminNotification();
+                $adminNotification->user_id = $user->id;
+                $adminNotification->title = 'Deposit successful via ' . $methodName;
                 $adminNotification->click_url = urlPath('admin.deposit.successful');
                 $adminNotification->save();
             }
 
             $general = gs();
             if ($general->dc) {
-                levelCommission($user->id, $deposit->amount, 'Deposit Commission');
+                levelCommission($user->id, $lockedDeposit->amount, 'Deposit Commission');
             }
 
-            notify($user, $isManual ? 'DEPOSIT_APPROVE' : 'DEPOSIT_COMPLETE', [
-                'method_name'     => $methodName,
-                'method_currency' => $deposit->method_currency,
-                'method_amount'   => showAmount($deposit->final_amount, currencyFormat: false),
-                'amount'          => showAmount($deposit->amount, currencyFormat: false),
-                'charge'          => showAmount($deposit->charge, currencyFormat: false),
-                'rate'            => showAmount($deposit->rate, currencyFormat: false),
-                'trx'             => $deposit->trx,
-                'post_balance'    => showAmount($user->balance),
-            ]);
+            return ['user' => $user, 'deposit' => $lockedDeposit, 'method_name' => $methodName];
+        });
+
+        if (!$result) {
+            return;
         }
+
+        $user = $result['user'];
+        $approvedDeposit = $result['deposit'];
+        notify($user, $isManual ? 'DEPOSIT_APPROVE' : 'DEPOSIT_COMPLETE', [
+            'method_name'     => $result['method_name'],
+            'method_currency' => $approvedDeposit->method_currency,
+            'method_amount'   => showAmount($approvedDeposit->final_amount, currencyFormat: false),
+            'amount'          => showAmount($approvedDeposit->amount, currencyFormat: false),
+            'charge'          => showAmount($approvedDeposit->charge, currencyFormat: false),
+            'rate'            => showAmount($approvedDeposit->rate, currencyFormat: false),
+            'trx'             => $approvedDeposit->trx,
+            'post_balance'    => showAmount($user->balance),
+        ]);
     }
 
     public function manualDepositConfirm() {
@@ -178,31 +208,45 @@ class PaymentController extends Controller {
         abort_if(!$data, 404);
         $gatewayCurrency = $data->gatewayCurrency();
         $gateway         = $gatewayCurrency->method;
-        $formData        = $gateway->form->form_data;
+        $formData        = $gateway->form?->form_data ?? [];
 
         $formProcessor  = new FormProcessor();
         $validationRule = $formProcessor->valueValidation($formData);
         $request->validate($validationRule);
         $userData = $formProcessor->processFormData($request, $formData);
 
-        $data->detail = $userData;
-        $data->status = Status::PAYMENT_PENDING;
-        $data->save();
+        $pendingDeposit = DB::transaction(function () use ($data, $userData) {
+            $lockedDeposit = Deposit::whereKey($data->id)->lockForUpdate()->first();
+            if (!$lockedDeposit || (int) $lockedDeposit->status !== Status::PAYMENT_INITIATE) {
+                return null;
+            }
 
-        $adminNotification            = new AdminNotification();
-        $adminNotification->user_id   = $data->user->id;
-        $adminNotification->title     = 'Deposit request from ' . $data->user->username;
-        $adminNotification->click_url = urlPath('admin.deposit.details', $data->id);
-        $adminNotification->save();
+            $lockedDeposit->detail = $userData;
+            $lockedDeposit->status = Status::PAYMENT_PENDING;
+            $lockedDeposit->save();
 
-        notify($data->user, 'DEPOSIT_REQUEST', [
-            'method_name'     => $data->gatewayCurrency()->name,
-            'method_currency' => $data->method_currency,
-            'method_amount'   => showAmount($data->final_amount, currencyFormat: false),
-            'amount'          => showAmount($data->amount, currencyFormat: false),
-            'charge'          => showAmount($data->charge, currencyFormat: false),
-            'rate'            => showAmount($data->rate, currencyFormat: false),
-            'trx'             => $data->trx,
+            $adminNotification = new AdminNotification();
+            $adminNotification->user_id = $lockedDeposit->user_id;
+            $adminNotification->title = 'Deposit request from ' . $lockedDeposit->user->username;
+            $adminNotification->click_url = urlPath('admin.deposit.details', $lockedDeposit->id);
+            $adminNotification->save();
+
+            return $lockedDeposit->load('user');
+        });
+
+        if (!$pendingDeposit) {
+            $notify[] = ['error', 'This deposit request has already been submitted.'];
+            return to_route('user.deposit.history')->withNotify($notify);
+        }
+
+        notify($pendingDeposit->user, 'DEPOSIT_REQUEST', [
+            'method_name'     => $pendingDeposit->gatewayCurrency()->name,
+            'method_currency' => $pendingDeposit->method_currency,
+            'method_amount'   => showAmount($pendingDeposit->final_amount, currencyFormat: false),
+            'amount'          => showAmount($pendingDeposit->amount, currencyFormat: false),
+            'charge'          => showAmount($pendingDeposit->charge, currencyFormat: false),
+            'rate'            => showAmount($pendingDeposit->rate, currencyFormat: false),
+            'trx'             => $pendingDeposit->trx,
         ]);
 
         $notify[] = ['success', 'You have deposit request has been taken'];

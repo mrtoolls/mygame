@@ -17,4 +17,9 @@ class WithdrawMethod extends Model
     {
         return $this->belongsTo(Form::class);
     }
+
+    public function supportAgent()
+    {
+        return $this->belongsTo(SupportAgent::class, 'support_agent_id');
+    }
 }
