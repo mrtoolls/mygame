@@ -1,6 +1,8 @@
 @php
     $content = getContent('licenses.content', true);
-    $licenses = getContent('licenses.element', orderById: true);
+    $licenses = getContent('licenses.element', orderById: true)->reject(function ($item) {
+        return strcasecmp(trim((string) ($item->data_values->title ?? '')), 'Blockchain') === 0;
+    });
     $licenseContent = $content?->data_values;
     $aboutPriority = getContent('about_priority.content', true)?->data_values;
     $certificateImage = $aboutPriority->license_document ?? null;

@@ -36,7 +36,7 @@
                     <p class="mb-0">@lang('Creates missing Nocturne information pages, editable Privacy Policy, Terms of Service, Licenses & Security, and AML Policy pages, plus partner-logo upload slots and the About Us layout. Existing policy edits, About Us content, and uploaded images are kept. After running, edit the policy items under Frontend > Policy Pages and upload footer partner marks under Frontend > Footer Partner Logos. Manage About Us artwork under Frontend > Manage Pages > About Us.')</p>
                 </div>
                 <div class="card-footer">
-                    <button type="button" class="btn btn--primary w-100 h-45 confirmationBtn" data-question="@lang('Create missing Nocturne pages, policy content and partner logo slots? Existing content and images will be kept.')" data-action="{{ route('admin.system.seed.nocturne.pages') }}">@lang('Seed / Refresh Nocturne Pages')</button>
+                    <button type="button" class="btn btn--primary w-100 h-45 confirmationBtn" data-question="@lang('Create missing Nocturne pages and editable content. Legacy license samples will be changed to neutral placeholders so you can add verified details and upload authorized logos.')" data-action="{{ route('admin.system.seed.nocturne.pages') }}">@lang('Seed / Refresh Nocturne Pages')</button>
                 </div>
             </div>
         </div>

@@ -258,6 +258,81 @@ class SystemController extends Controller
             $content->save();
         }
 
+        // Ensure existing installations have the editable license hero fields,
+        // while preserving any image and copy already entered by an administrator.
+        $licensePage = Page::firstOrNew(['tempname' => $pageTempname, 'slug' => 'licenses-security']);
+        if (!$licensePage->exists) {
+            $licensePage->name = 'Licenses & Security';
+            $licensePage->secs = json_encode(['licenses']);
+            $licensePage->save();
+        } else {
+            $licenseSections = json_decode($licensePage->secs, true) ?: [];
+            if (!in_array('licenses', $licenseSections, true)) {
+                $licenseSections[] = 'licenses';
+                $licensePage->secs = json_encode(array_values(array_unique($licenseSections)));
+                $licensePage->save();
+            }
+        }
+
+        $licenseContent = Frontend::firstOrNew(['data_keys' => 'licenses.content', 'tempname' => $contentTempname]);
+        $licenseValues = (array) ($licenseContent->data_values ?? []);
+        $licenseValues += [
+            'heading' => 'Licenses & Security',
+            'subheading' => 'Your privacy, account security and clear information are at the heart of the Winxpot experience.',
+            'hero_image' => null,
+        ];
+        if (($licenseValues['subheading'] ?? null) === 'Licensed, audited and built on provably-fair technology') {
+            $licenseValues['subheading'] = 'Your privacy, account security and clear information are at the heart of the Winxpot experience.';
+        }
+        $licenseContent->data_keys = 'licenses.content';
+        $licenseContent->tempname = $contentTempname;
+        $licenseContent->data_values = $licenseValues;
+        $licenseContent->save();
+
+        // Turn legacy sample claims into neutral, editable rows with empty logo
+        // slots. Admins can add verified names, copy, and artwork before publishing.
+        $licensePlaceholders = [
+            'Regulatory information' => 'Add the verified operator, jurisdiction and license details here. Upload the regulator or license logo after confirming the details against the official register.',
+            'Gaming authority' => 'Add the verified regulator name, jurisdiction and public register reference. Upload the official logo after checking its permitted use.',
+            'AML and financial crime' => 'Describe the controls and responsible team that apply to Winxpot. Add only verified information and authorized logos.',
+            'Platform security' => 'Describe the security measures actually used by Winxpot. Upload a supporting security mark only when its use is authorized and current.',
+            'Privacy and data' => 'Summarize the privacy practices that apply to Winxpot. Upload a relevant organization logo only where the relationship is verified.',
+            'Identity checks' => 'Describe the identity verification process and provider used by Winxpot. Upload its logo only after confirming the current relationship.',
+            'Transaction security' => 'Describe the transaction security provider or controls used by Winxpot. Upload a logo only after confirming it is current and authorized.',
+            'Connection security' => 'Describe the connection protection in use. Keep this information current and avoid implying certification without verified evidence.',
+            'Responsible play' => 'Describe the responsible play tools available to players and add verified support details or resources.',
+        ];
+        $legacyLicenseTitles = [
+            'crypto gambling' => 'Regulatory information', 'curacao gaming authority' => 'Gaming authority',
+            'gcb' => 'Gaming authority', 'ukgc' => 'Gaming authority', 'fincen' => 'AML and financial crime',
+            'gdpr' => 'Privacy and data', 'sumsub' => 'Identity checks', 'blockchain' => 'Transaction security',
+            'ssl secured' => 'Connection security', 'ssl' => 'Connection security',
+        ];
+        $licenseRows = Frontend::where('data_keys', 'licenses.element')->where('tempname', $contentTempname)->get();
+        foreach ($licenseRows as $item) {
+            $values = (array) ($item->data_values ?? []);
+            $oldTitle = strtolower(trim((string) ($values['title'] ?? '')));
+            foreach ($legacyLicenseTitles as $legacy => $replacement) {
+                if ($oldTitle !== $legacy) continue;
+                $values['title'] = $replacement;
+                $values['description'] = $licensePlaceholders[$replacement];
+                $values['image'] = null;
+                $item->data_values = $values;
+                $item->save();
+                break;
+            }
+        }
+        $existingLicenseTitles = Frontend::where('data_keys', 'licenses.element')->where('tempname', $contentTempname)->get()
+            ->map(fn (Frontend $item) => strtolower((string) ($item->data_values->title ?? '')))->all();
+        foreach ($licensePlaceholders as $title => $description) {
+            if (in_array(strtolower($title), $existingLicenseTitles, true)) continue;
+            $element = new Frontend();
+            $element->data_keys = 'licenses.element';
+            $element->tempname = $contentTempname;
+            $element->data_values = ['title' => $title, 'description' => $description, 'image' => null];
+            $element->save();
+        }
+
         $aboutElements = [
             'licenses' => [
                 ['title' => 'Regulatory information', 'description' => 'Operator, jurisdiction and license details are maintained by Winxpot and published here only after they have been verified.'],
