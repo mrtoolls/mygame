@@ -1,4 +1,8 @@
-@php $priority = getContent('about_priority.content', true)?->data_values; @endphp
+@php
+    $priority = getContent('about_priority.content', true)?->data_values;
+    $licenseNumber = $priority->license_number ?? null;
+    if (is_string($licenseNumber) && str_starts_with($licenseNumber, 'Add verified license details')) $licenseNumber = null;
+@endphp
 <section class="nocturne-about-section">
     <div class="nocturne-about-section-title"><i class="ph-fill ph-seal-check"></i><h2>{{ __($priority->heading ?? 'Our Priority') }}</h2></div>
     <div class="nocturne-about-priority">
@@ -17,26 +21,24 @@
         </div>
         <div class="nocturne-about-priority__art">
             <span class="nocturne-about-priority__decoration"><i class="ph-fill ph-lock-key"></i></span>
+            @if(!empty($priority->license_document))
             <div class="nocturne-about-license-card">
-                @if(!empty($priority->license_document))
                     <button type="button" class="nocturne-about-license-card__preview" data-license-open aria-label="View license document">
-                        <img src="{{ frontendImage('about_priority', $priority->license_document, '900x1200') }}" alt="{{ __($priority->license_label ?? 'License document') }}">
+                        <img src="{{ frontendImage('about_priority', $priority->license_document, '900x1200') }}" alt="@lang('Certificate of Cooperation')">
                         <span class="nocturne-about-license-card__hover"><i class="ph-bold ph-eye"></i><b>View document</b></span>
                     </button>
                     <button type="button" class="nocturne-about-license-card__expand" data-license-open aria-label="Open license document larger"><i class="ph-bold ph-arrows-out-simple"></i></button>
-                @else
-                    <div class="nocturne-about-license-card__empty"><i class="ph-bold ph-file-image"></i><strong>License document image here</strong><span>Upload the document in the About Us page content.</span></div>
-                @endif
-                <div class="nocturne-about-license-card__meta"><strong>{{ __($priority->license_label ?? 'License document') }}</strong><span>{{ __($priority->license_number ?? 'License details editable in Admin') }}</span></div>
+                <div class="nocturne-about-license-card__meta"><strong>@lang('Certificate of Cooperation')</strong>@if($licenseNumber)<span>{{ __($licenseNumber) }}</span>@endif</div>
             </div>
+            @endif
             <span class="nocturne-about-priority__pen"><i class="ph-fill ph-pen-nib"></i></span>
         </div>
     </div>
     @if(!empty($priority->license_document))
         <dialog class="nocturne-about-license-dialog" aria-label="License document viewer">
             <button type="button" class="nocturne-about-license-dialog__close" aria-label="Close license document"><i class="ph-bold ph-x"></i></button>
-            <img src="{{ frontendImage('about_priority', $priority->license_document, '900x1200') }}" alt="{{ __($priority->license_label ?? 'License document') }}">
-            <span>{{ __($priority->license_label ?? 'License document') }} @if(!empty($priority->license_number))<small> · {{ __($priority->license_number) }}</small>@endif</span>
+            <img src="{{ frontendImage('about_priority', $priority->license_document, '900x1200') }}" alt="@lang('Certificate of Cooperation')">
+            <span>@lang('Certificate of Cooperation') @if($licenseNumber)<small> · {{ __($licenseNumber) }}</small>@endif</span>
         </dialog>
     @endif
 </section>

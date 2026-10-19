@@ -1,31 +1,36 @@
 @php
     $content = getContent('licenses.content', true);
     $licenses = getContent('licenses.element', orderById: true);
+    $licenseContent = $content?->data_values;
+    $aboutPriority = getContent('about_priority.content', true)?->data_values;
+    $certificateImage = $aboutPriority->license_document ?? null;
 @endphp
-<section class="nocturne-page-hero">
-    <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="ph-bold ph-shield-check"></i> {{ __(@$content->data_values->heading ?: 'Licenses and Security') }}</span>
-        <p>{{ __(@$content->data_values->subheading) }}</p>
-        @if (@$content->data_values->image)
-            <a class="nocturne-outline-btn" href="{{ getImage('assets/images/frontend/licenses/' . $content->data_values->image, '800x1000') }}" target="_blank" rel="noopener">
-                <i class="ph-bold ph-file-text"></i> @lang('Certificate of Cooperation')
-            </a>
+<section class="nocturne-security-hero">
+    <div class="nocturne-security-hero__copy">
+        <span class="nocturne-eyebrow"><i class="ph-bold ph-shield-check"></i> @lang('Trust & protection')</span>
+        <h1>{{ __($licenseContent->heading ?? 'Licenses & Security') }}</h1>
+        <p>{{ __($licenseContent->subheading ?? 'Explore the organizations, safeguards and standards that support a safer Winxpot experience.') }}</p>
+        @if ($certificateImage)
+            <button class="nocturne-outline-btn" type="button" data-cooperation-open><i class="ph-bold ph-file-text"></i> @lang('Certificate of Cooperation')</button>
         @endif
+        <div class="nocturne-security-hero__signals"><span><i class="ph-fill ph-lock-key"></i> @lang('Account protection')</span><span><i class="ph-fill ph-eye"></i> @lang('Clear information')</span><span><i class="ph-fill ph-shield-check"></i> @lang('Responsible operations')</span></div>
     </div>
+    @if (!empty($licenseContent->hero_image))<div class="nocturne-security-hero__image"><img src="{{ frontendImage('licenses', $licenseContent->hero_image, '1400x500') }}" alt="{{ __($licenseContent->heading ?? 'Licenses and security') }}"></div>@else<div class="nocturne-security-hero__art" aria-hidden="true"><i class="ph-fill ph-shield-check"></i><span class="nocturne-security-orbit nocturne-security-orbit--one"></span><span class="nocturne-security-orbit nocturne-security-orbit--two"></span></div>@endif
 </section>
 
-@if ($licenses->count())
-    <section class="nocturne-section">
-        <div class="nocturne-license-list">
-            @foreach ($licenses as $license)
-                <div class="nocturne-license-row">
-                    <img src="{{ getImage('assets/images/frontend/licenses/' . @$license->data_values->image, '120x60') }}" alt="@lang('image')">
-                    <div>
-                        <strong>{{ __(@$license->data_values->title) }}</strong>
-                        <p>{{ __(@$license->data_values->description) }}</p>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </section>
+<section class="nocturne-security-section"><header class="nocturne-security-heading"><span class="nocturne-eyebrow">@lang('Our standards')</span><h2>@lang('Built around trust')</h2><p>@lang('Learn more about the policies and protections that shape your experience. Details shown here are maintained by our team.')</p></header>
+    @if ($licenses->count())<div class="nocturne-security-grid">@foreach ($licenses as $license)@php($licenseData = $license->data_values)<article class="nocturne-security-card"><div class="nocturne-security-card__top"><span class="nocturne-security-card__logo">@if(!empty($licenseData->image))<img src="{{ getImage('assets/images/frontend/licenses/' . $licenseData->image, '180x90') }}" alt="{{ __($licenseData->title ?? 'Organization logo') }}">@else<i class="ph-bold ph-seal-check"></i>@endif</span><span class="nocturne-security-card__badge"><i class="ph-fill ph-check-circle"></i> @lang('Information')</span></div><h3>{{ __($licenseData->title ?? '') }}</h3><p>{{ __($licenseData->description ?? '') }}</p></article>@endforeach</div>
+    @else<div class="nocturne-security-empty"><i class="ph-bold ph-seal-check"></i><h3>@lang('Details are being prepared')</h3><p>@lang('Our team will publish verified organization and security information here.')</p></div>@endif
+</section>
+
+<section class="nocturne-security-note"><span><i class="ph-fill ph-lock-key"></i></span><div><h2>@lang('Protect your account')</h2><p>@lang('Use a unique password, keep your sign-in details private and contact support if you notice activity you do not recognize. Review our privacy and AML policies for more information.')</p><div><a href="{{ route('policy.pages','privacy-policy') }}">@lang('Privacy Policy') <i class="ph-bold ph-arrow-up-right"></i></a><a href="{{ route('policy.pages','aml-policy') }}">@lang('AML Policy') <i class="ph-bold ph-arrow-up-right"></i></a></div></div></section>
+
+@if($certificateImage)
+    <dialog class="nocturne-cooperation-dialog" aria-label="@lang('Certificate of Cooperation')"><button type="button" class="nocturne-cooperation-dialog__close" aria-label="@lang('Close')"><i class="ph-bold ph-x"></i></button><img src="{{ frontendImage('about_priority', $certificateImage, '900x1200') }}" alt="@lang('Certificate of Cooperation')"><span>@lang('Certificate of Cooperation')</span></dialog>
+    @push('script')<script>(()=>{const d=document.querySelector('.nocturne-cooperation-dialog');const b=document.querySelector('[data-cooperation-open]');if(!d||!b)return;b.addEventListener('click',()=>d.showModal());d.querySelector('.nocturne-cooperation-dialog__close').addEventListener('click',()=>d.close());d.addEventListener('click',e=>{if(e.target===d)d.close()})})();</script>@endpush
 @endif
+
+<style>
+.nocturne-security-hero,.nocturne-security-note,.nocturne-security-card,.nocturne-security-empty{box-sizing:border-box;border:1px solid rgba(140,155,206,.12);background:#151b31;color:#f5f6ff}.nocturne-security-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:28px;min-height:300px;margin:26px auto 36px;padding:clamp(24px,4vw,42px);border-radius:28px;overflow:hidden;background:radial-gradient(ellipse at 78% 50%,rgba(0,232,139,.2),transparent 38%),linear-gradient(110deg,#171d35 52%,#101a2d)}.nocturne-security-hero__copy{position:relative;z-index:1;max-width:670px}.nocturne-security-hero h1{margin:12px 0;font-size:clamp(30px,4vw,48px);font-weight:800;letter-spacing:-.04em}.nocturne-security-hero p,.nocturne-security-heading p,.nocturne-security-card p,.nocturne-security-note p{color:#969fbe;line-height:1.7}.nocturne-security-hero__copy>p{max-width:580px}.nocturne-security-hero .nocturne-outline-btn{display:inline-flex;align-items:center;gap:10px;margin-top:10px;border:0;cursor:pointer}.nocturne-security-hero__signals{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nocturne-security-hero__signals span,.nocturne-security-card__badge{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:rgba(0,232,139,.09);color:#00e88b;font-size:12px;font-weight:700}.nocturne-security-hero__art,.nocturne-security-hero__image{position:relative;display:grid;place-items:center;width:min(36%,430px);min-width:200px;aspect-ratio:1.25}.nocturne-security-hero__art>i{z-index:1;color:#00e88b;font-size:clamp(90px,15vw,180px);filter:drop-shadow(0 12px 30px rgba(0,232,139,.28))}.nocturne-security-orbit{position:absolute;width:90%;aspect-ratio:1;border:1px solid rgba(0,232,139,.24);border-radius:50%}.nocturne-security-orbit--two{width:65%}.nocturne-security-hero__image img{width:100%;height:100%;object-fit:contain;border-radius:18px}.nocturne-security-section{margin:34px auto}.nocturne-security-heading{margin-bottom:20px}.nocturne-security-heading h2,.nocturne-security-note h2{margin:8px 0;font-size:clamp(24px,3vw,34px)}.nocturne-security-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.nocturne-security-card{padding:24px;border-radius:22px;transition:transform .2s ease,border-color .2s ease}.nocturne-security-card:hover{transform:translateY(-3px);border-color:rgba(0,232,139,.35)}.nocturne-security-card__top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.nocturne-security-card__logo{display:grid;place-items:center;width:86px;height:64px;padding:8px;border-radius:15px;background:#202744;color:#00e88b;font-size:32px}.nocturne-security-card__logo img{max-width:100%;max-height:100%;object-fit:contain}.nocturne-security-card h3{margin:0 0 8px;font-size:20px}.nocturne-security-card p{margin:0;overflow-wrap:anywhere}.nocturne-security-empty{padding:45px 20px;border-radius:22px;text-align:center}.nocturne-security-empty>i{font-size:40px;color:#00e88b}.nocturne-security-empty p{color:#969fbe}.nocturne-security-note{display:flex;gap:18px;align-items:flex-start;margin:34px auto;padding:26px;border-radius:22px}.nocturne-security-note>span{display:grid;place-items:center;width:52px;height:52px;flex:0 0 52px;border-radius:16px;background:rgba(0,232,139,.12);color:#00e88b;font-size:25px}.nocturne-security-note h2{margin-top:0}.nocturne-security-note>div>div{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}.nocturne-security-note a{color:#00e88b;font-weight:700;text-decoration:none}.nocturne-cooperation-dialog{width:min(92vw,760px);max-height:92vh;padding:22px;border:1px solid #2a3454;border-radius:22px;background:#11172b;color:#fff}.nocturne-cooperation-dialog::backdrop{background:rgba(5,8,18,.84);backdrop-filter:blur(5px)}.nocturne-cooperation-dialog img{display:block;max-width:100%;max-height:78vh;margin:auto;object-fit:contain;border-radius:10px}.nocturne-cooperation-dialog>span{display:block;margin-top:12px;text-align:center}.nocturne-cooperation-dialog__close{position:sticky;top:0;float:right;z-index:2;width:40px;height:40px;border:0;border-radius:50%;background:#242c48;color:#fff;cursor:pointer}
+@media(max-width:680px){.nocturne-security-hero{align-items:flex-start;min-height:0;padding:23px 19px;border-radius:22px}.nocturne-security-hero__art,.nocturne-security-hero__image{display:none}.nocturne-security-grid{grid-template-columns:1fr}.nocturne-security-card{padding:19px}.nocturne-security-note{padding:20px;gap:13px}.nocturne-security-note>span{width:44px;height:44px;flex-basis:44px}.nocturne-security-hero__signals{gap:7px}.nocturne-security-hero__signals span{font-size:11px}}
+</style>

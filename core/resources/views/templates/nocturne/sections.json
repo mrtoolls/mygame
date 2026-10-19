@@ -374,12 +374,10 @@
         "name": "Licenses & Security",
         "content": {
             "images": {
-                "image": {
-                    "size": "800x1000"
-                }
+                "hero_image": { "size": "1400x500" }
             },
             "heading": "text",
-            "subheading": "text"
+            "subheading": "textarea"
         },
         "element": {
             "images": {

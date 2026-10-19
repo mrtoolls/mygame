@@ -89,7 +89,7 @@ class SystemController extends Controller
             ],
             [
                 'slug' => 'licenses-security', 'name' => 'Licenses & Security', 'secs' => ['licenses'],
-                'content' => ['licenses' => ['heading' => 'Licenses & Security', 'subheading' => 'Licensed, audited and built on provably-fair technology']],
+                'content' => ['licenses' => ['heading' => 'Licenses & Security', 'subheading' => 'Explore the policies, organizations and safeguards that support a safer Winxpot experience.']],
             ],
             [
                 'slug' => 'vip-club', 'name' => 'VIP-Club', 'secs' => ['vip_club', 'vip_member_privileges', 'vip_member_faq'],
@@ -181,6 +181,10 @@ class SystemController extends Controller
         }
 
         $aboutContent = [
+            'licenses' => [
+                'heading' => 'Licenses & Security',
+                'subheading' => 'Explore the policies, organizations and safeguards that support a safer Winxpot experience.',
+            ],
             'about_hero' => [
                 'heading' => 'About Us',
                 'description' => 'Winxpot brings games, rewards and player support together in one clear, welcoming experience. Our goal is to make every visit enjoyable, transparent and easy to navigate.',
@@ -198,8 +202,8 @@ class SystemController extends Controller
                 'founder_name' => 'Winxpot Leadership Team',
                 'founder_role' => 'A team focused on player experience',
                 'founder_message' => 'Our work is guided by a simple principle: put players first. We aim to build a welcoming, clear and thoughtful gaming experience, and to make it easy to reach our team whenever you need help.',
-                'license_label' => 'Official License Document',
-                'license_number' => 'Add verified license details in the admin',
+                'license_label' => 'Certificate of Cooperation',
+                'license_number' => '',
             ],
             'about_team' => [
                 'heading' => 'Our Team',
@@ -255,6 +259,12 @@ class SystemController extends Controller
         }
 
         $aboutElements = [
+            'licenses' => [
+                ['title' => 'Regulatory information', 'description' => 'Operator, jurisdiction and license details are maintained by Winxpot and published here only after they have been verified.'],
+                ['title' => 'Platform security', 'description' => 'Use a unique password, keep your sign-in details private and contact support if you notice activity you do not recognize.'],
+                ['title' => 'Privacy and data', 'description' => 'Read the Privacy Policy to learn how account information is handled and how to contact us with a privacy request.'],
+                ['title' => 'Responsible play', 'description' => 'Play only if you meet the legal age where you live. Take breaks and contact support if you need help with your account.'],
+            ],
             'about_story' => [
                 ['title' => 'Get Your Earnings in Seconds', 'description' => 'Follow payment requests and check their latest status from your account.'],
                 ['title' => 'Crypto and Bank Deposits', 'description' => 'Explore the payment methods available to you at checkout. Options may vary by location.'],
