@@ -16,7 +16,7 @@ class WithdrawController extends Controller
 
     public function withdrawMoney()
     {
-        $withdrawMethod = WithdrawMethod::active()->get();
+        $withdrawMethod = WithdrawMethod::with('form')->active()->get();
         $pageTitle = 'Withdraw Money';
         return view('Template::user.withdraw.methods', compact('pageTitle', 'withdrawMethod'));
     }
@@ -27,7 +27,11 @@ class WithdrawController extends Controller
             'method_code' => 'required',
             'amount' => 'required|numeric'
         ]);
-        $method = WithdrawMethod::where('id', $request->method_code)->active()->firstOrFail();
+        $method = WithdrawMethod::with('form')->where('id', $request->method_code)->active()->firstOrFail();
+        $formData = $method->form?->form_data ?? [];
+        $formProcessor = new FormProcessor();
+        $request->validate($formProcessor->valueValidation($formData));
+        $withdrawInformation = $formProcessor->processFormData($request, $formData);
         $user = auth()->user();
         if ($request->amount < $method->min_limit) {
             $notify[] = ['error', 'Your requested amount is smaller than minimum amount'];
@@ -69,6 +73,7 @@ class WithdrawController extends Controller
         $withdraw->charge = $charge;
         $withdraw->final_amount = $finalAmount;
         $withdraw->after_charge = $afterCharge;
+        $withdraw->withdraw_information = $withdrawInformation;
         $withdraw->trx = getTrx();
         $withdraw->save();
         session()->put('wtrx', $withdraw->trx);
@@ -91,12 +96,13 @@ class WithdrawController extends Controller
             abort(404);
         }
 
-        $formData = @$method->form->form_data ?? [];
-
-        $formProcessor = new FormProcessor();
-        $validationRule = $formProcessor->valueValidation($formData);
-        $request->validate($validationRule);
-        $userData = $formProcessor->processFormData($request, $formData);
+        $userData = $withdraw->withdraw_information;
+        if ($userData === null) {
+            $formData = @$method->form->form_data ?? [];
+            $formProcessor = new FormProcessor();
+            $request->validate($formProcessor->valueValidation($formData));
+            $userData = $formProcessor->processFormData($request, $formData);
+        }
 
         $user = auth()->user();
         if ($user->ts) {

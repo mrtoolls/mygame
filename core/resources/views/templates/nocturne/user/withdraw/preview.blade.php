@@ -28,7 +28,16 @@
                             @endphp
                         </div>
 
-                        <x-viser-form identifier="id" identifierValue="{{ $withdraw->method->form_id }}" />
+                        @if ($withdraw->withdraw_information)
+                            <div class="withdraw-payout-details">
+                                <h6>@lang('Payout details provided')</h6>
+                                @foreach ($withdraw->withdraw_information as $item)
+                                    <div class="withdraw-payout-details__row"><span>{{ __($item->name ?? __('Detail')) }}</span><strong>{{ is_array($item->value ?? null) ? implode(', ', $item->value) : ($item->value ?? '—') }}</strong></div>
+                                @endforeach
+                            </div>
+                        @else
+                            <x-viser-form identifier="id" identifierValue="{{ $withdraw->method->form_id }}" />
+                        @endif
 
                         @if (auth()->user()->ts)
                             <div class="form-group">
@@ -61,6 +70,12 @@
         .withdraw-review-card .alert-info b{color:#00e78a}
         .withdraw-review-card .form-group{margin-bottom:16px}
         .withdraw-review-card .form-control{min-height:48px;border-radius:12px}
+        .withdraw-payout-details{margin:18px 0;padding:16px;border:1px solid rgba(133,142,175,.18);border-radius:15px;background:#10152a}
+        .withdraw-payout-details h6{margin:0 0 10px;color:#f5f6ff;font-weight:800}
+        .withdraw-payout-details__row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid rgba(133,142,175,.12);font-size:13px}
+        .withdraw-payout-details__row:last-child{border-bottom:0}
+        .withdraw-payout-details__row span{color:#858eaf}
+        .withdraw-payout-details__row strong{max-width:65%;color:#f5f6ff;text-align:right;overflow-wrap:anywhere}
         .withdraw-review-card button[type=submit]{min-height:52px;border-radius:14px;font-weight:800}
         @media(max-width:767.98px){.withdraw-review-hero{padding:20px;border-radius:19px}.withdraw-review-card{border-radius:19px}.nocturne-withdraw-preview{padding-bottom:calc(24px + env(safe-area-inset-bottom))}}
     </style>
