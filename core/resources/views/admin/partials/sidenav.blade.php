@@ -11,6 +11,12 @@
         </div>
         <div class="sidebar__menu-wrapper">
             <ul class="sidebar__menu">
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.currency-country.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.currency-country.index') }}" class="nav-link">
+                        <i class="menu-icon las la-globe"></i>
+                        <span class="menu-title">@lang('Currencies & Countries')</span>
+                    </a>
+                </li>
                 @foreach ($sideBarLinks as $key => $data)
                     @if (@$data->header)
                         <li class="sidebar__menu-header">{{ __($data->header) }}</li>
@@ -78,14 +84,6 @@
                         </li>
                     @endif
                 @endforeach
-                @if (\Illuminate\Support\Facades\Route::has('admin.currency-country.index'))
-                    <li class="sidebar-menu-item {{ menuActive('admin.currency-country.*') }}">
-                        <a href="{{ route('admin.currency-country.index') }}" class="nav-link">
-                            <i class="menu-icon las la-globe"></i>
-                            <span class="menu-title">@lang('Currencies & Countries')</span>
-                        </a>
-                    </li>
-                @endif
             </ul>
         </div>
         <div class="version-info text-center text-uppercase">
