@@ -19,9 +19,17 @@
         <p class="nocturne-game-search__empty d-none">@lang('No games match your search.')</p>
     </section>
 
+    @include('Template::sections.recent_big_wins')
+    @include('Template::sections.winxpot_partners')
+    @include('Template::sections.last_games')
+    @include('Template::sections.vip_club')
+    @include('Template::sections.about_reviews')
+
     @if (@$sections->secs != null)
         @foreach (json_decode($sections->secs) as $sec)
-            @include('Template::sections.' . $sec)
+            @unless(in_array($sec, ['live_table_games', 'recent_big_wins', 'winxpot_partners', 'last_games', 'vip_club', 'about_reviews']))
+                @include('Template::sections.' . $sec)
+            @endunless
         @endforeach
     @endif
 @endsection

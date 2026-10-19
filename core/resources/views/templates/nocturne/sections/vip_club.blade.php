@@ -1,45 +1,16 @@
 @php
-    $content = getContent('vip_club.content', true);
+    $content = getContent('vip_club.content', true)?->data_values;
     $tiers = \App\Models\VipTier::active()->orderBy('min_wagered')->get();
-    $authUser = auth()->user();
 @endphp
-<section class="nocturne-page-hero">
-    <div class="nocturne-page-hero__text">
-        <span class="nocturne-eyebrow"><i class="ph-bold ph-crown"></i> {{ __(@$content->data_values->heading ?: 'VIP Club') }}</span>
-        <p>{{ __(@$content->data_values->subheading) }}</p>
-        @if ($authUser)
-            <a class="nocturne-outline-btn" href="{{ route('user.vip.index') }}"><i class="ph-bold ph-chart-line-up"></i> @lang('View your progress')</a>
-        @endif
+<section class="nocturne-vip-public-hero">
+    <div class="nocturne-vip-public-hero__art">
+        @if(!empty($content->hero_image))<img src="{{ frontendImage('vip_club', $content->hero_image, '1400x500') }}" alt="{{ __($content->heading ?? 'VIP Club') }}" loading="lazy">
+        @else<div class="nocturne-vip-public-hero__placeholder"><i class="ph-fill ph-image"></i><span>@lang('VIP hero image here')</span><small>@lang('Upload the artwork in Admin → Frontend → Manage Sections → VIP Club')</small></div>@endif
     </div>
+    <div class="nocturne-vip-public-hero__shade"></div>
+    <div class="nocturne-vip-public-hero__copy"><span class="nocturne-vip-kicker"><i class="ph-fill ph-crown-simple"></i>@lang('THE WINXPOT VIP EXPERIENCE')</span><h1>{{ __($content->heading ?? 'Welcome to VIP Club') }}</h1><p>{{ __($content->subheading ?? 'Become part of the Winxpot VIP community and discover the rewards available at every level.') }}</p>@auth<a href="{{ route('user.vip.index') }}" class="nocturne-vip-claim"><i class="ph-fill ph-chart-line-up"></i>@lang('View your VIP progress')</a>@else<a href="{{ route('user.register') }}" class="nocturne-vip-claim"><i class="ph-fill ph-sparkle"></i>@lang('Join Winxpot')</a>@endauth</div>
+    <div class="nocturne-vip-public-hero__tiers"><small>@lang('EXPLORE THE TIERS')</small><div>@forelse($tiers->take(5) as $index => $tier)<span class="nocturne-vip-public-tier"><i class="ph-fill {{ ['ph-medal', 'ph-shield-star', 'ph-diamond', 'ph-crown', 'ph-trophy'][$index % 5] }}"></i><b>{{ __($tier->name) }}</b></span>@empty<span class="nocturne-vip-public-tier"><i class="ph-fill ph-medal"></i><b>@lang('VIP tiers coming soon')</b></span>@endforelse</div></div>
 </section>
-
-@if ($tiers->count())
-    <section class="nocturne-section">
-        <div class="nocturne-tier-grid">
-            @foreach ($tiers as $tier)
-                <div class="nocturne-tier-card">
-                    <i class="ph-bold ph-crown nocturne-tier-card__icon"></i>
-                    <h5>{{ __($tier->name) }}</h5>
-                    <ul>
-                        <li>{{ showAmount($tier->min_wagered) }} @lang('wagered to unlock')</li>
-                        @if ($tier->bonus_amount > 0)
-                            <li>{{ showAmount($tier->bonus_amount) }} @lang('welcome bonus')</li>
-                        @endif
-                        <li>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('daily rakeback')</li>
-                        @if ($tier->max_bet)
-                            <li>{{ showAmount($tier->max_bet) }} @lang('max bet limit')</li>
-                        @endif
-                    </ul>
-                </div>
-            @endforeach
-        </div>
-    </section>
-@else
-    <section class="nocturne-section">
-        <div class="card custom--card">
-            <div class="card-body text-center">
-                <h5 class="mb-0">@lang('VIP tiers have not been configured yet.')</h5>
-            </div>
-        </div>
-    </section>
+@if($tiers->isNotEmpty())
+    <section class="nocturne-vip-public-levels"><div class="nocturne-community-heading"><div><span class="nocturne-community-kicker">@lang('YOUR NEXT MILESTONE')</span><h2><i class="ph-fill ph-medal"></i>@lang('VIP Tiers')</h2><p>@lang('See the thresholds and benefits configured for each Winxpot VIP level.')</p></div></div><div class="nocturne-vip-tier-rail">@foreach($tiers as $index => $tier)<article class="nocturne-vip-level-card"><div class="nocturne-vip-level-card__top"><span class="nocturne-vip-level-card__badge"><i class="ph-fill {{ ['ph-medal', 'ph-shield-star', 'ph-diamond', 'ph-crown', 'ph-trophy'][$index % 5] }}"></i></span><span class="nocturne-vip-level-card__rank">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span></div><h3>{{ __($tier->name) }}</h3><span class="nocturne-vip-level-card__threshold">{{ showAmount($tier->min_wagered) }} <small>@lang('wagered to unlock')</small></span><ul>@if($tier->bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->bonus_amount) }} @lang('tier bonus')</span></li>@endif<li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('daily rakeback')</span></li>@if($tier->max_bet > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Max bet') {{ showAmount($tier->max_bet) }}</span></li>@endif</ul></article>@endforeach</div></section>
 @endif

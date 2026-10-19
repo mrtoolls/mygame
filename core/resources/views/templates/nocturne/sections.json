@@ -443,10 +443,43 @@
     },
     "vip_club": {
         "builder": true,
-        "name": "VIP Club (tier benefits managed under VIP Club > VIP Tiers in the admin menu)",
+        "name": "VIP Club - Public Page Hero (tiers are managed under VIP Club > VIP Tiers)",
         "content": {
+            "images": { "hero_image": { "size": "1400x500" } },
             "heading": "text",
-            "subheading": "text"
+            "subheading": "textarea"
+        }
+    },
+    "vip_member_hero": {
+        "builder": true,
+        "name": "VIP Club - Member Hero",
+        "content": {
+            "images": { "hero_image": { "size": "1400x500" } },
+            "heading": "text",
+            "subheading": "text",
+            "description": "textarea",
+            "partner_label": "text"
+        }
+    },
+    "vip_member_privileges": {
+        "builder": true,
+        "name": "VIP Club - Privileges",
+        "content": { "heading": "text" },
+        "element": {
+            "images": { "icon_image": { "size": "180x180" } },
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "vip_member_faq": {
+        "builder": true,
+        "name": "VIP Club - FAQs",
+        "content": { "heading": "text" },
+        "element": {
+            "question": "text",
+            "answer": "textarea",
+            "modal": true
         }
     },
     "awards": {

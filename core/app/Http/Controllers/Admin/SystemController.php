@@ -92,7 +92,7 @@ class SystemController extends Controller
                 'content' => ['licenses' => ['heading' => 'Licenses & Security', 'subheading' => 'Licensed, audited and built on provably-fair technology']],
             ],
             [
-                'slug' => 'vip-club', 'name' => 'VIP-Club', 'secs' => ['vip_club'],
+                'slug' => 'vip-club', 'name' => 'VIP-Club', 'secs' => ['vip_club', 'vip_member_privileges', 'vip_member_faq'],
                 'content' => ['vip_club' => ['heading' => 'VIP Club', 'subheading' => 'Climb the tiers, unlock real rakeback and privileges']],
             ],
             [
@@ -163,6 +163,23 @@ class SystemController extends Controller
             }
         }
 
+        // Existing installations already have a VIP page, so merge new editable
+        // sections into it instead of relying on the create-only page seed above.
+        $vipSections = ['vip_club', 'vip_member_privileges', 'vip_member_faq'];
+        $vipPage = Page::firstOrNew(['tempname' => $pageTempname, 'slug' => 'vip-club']);
+        if (!$vipPage->exists) {
+            $vipPage->name = 'VIP-Club';
+            $vipPage->secs = json_encode($vipSections);
+            $vipPage->save();
+        } else {
+            $currentSections = json_decode($vipPage->secs, true) ?: [];
+            $mergedSections = array_values(array_unique(array_merge($currentSections, $vipSections)));
+            if ($mergedSections !== $currentSections) {
+                $vipPage->secs = json_encode($mergedSections);
+                $vipPage->save();
+            }
+        }
+
         $aboutContent = [
             'about_hero' => [
                 'heading' => 'About Us',
@@ -212,6 +229,18 @@ class SystemController extends Controller
                 'button_name' => 'Live Support',
                 'button_url' => '#support',
             ],
+            'vip_member_hero' => [
+                'heading' => 'Welcome to VIP Club',
+                'subheading' => 'A little extra for every step of your journey.',
+                'description' => 'Progress through the tiers, explore the benefits available to you and see what is next.',
+                'partner_label' => 'VIP PARTNER',
+            ],
+            'vip_club' => [
+                'heading' => 'Unlock Exclusive VIP Rewards at Winxpot',
+                'subheading' => 'Join the VIP Club to explore rewards, progression and exclusive monthly experiences. Benefits depend on your current tier and the terms shown in your account.',
+            ],
+            'vip_member_privileges' => ['heading' => 'VIP Club Privileges'],
+            'vip_member_faq' => ['heading' => 'VIP Club FAQ'],
         ];
 
         foreach ($aboutContent as $sectionKey => $values) {
@@ -261,6 +290,20 @@ class SystemController extends Controller
                 ['title' => 'A Fresh Look at Your Gaming Experience', 'description' => 'Explore updates, discover games and find helpful account information across Winxpot.', 'button_url' => '/blog'],
                 ['title' => 'Discover Games for Every Mood', 'description' => 'Browse slots, table games and originals from the Games area.', 'button_url' => '/games'],
                 ['title' => 'Stay Close to the Action', 'description' => 'Visit the news page for platform updates and announcements from the Winxpot team.', 'button_url' => '/blog'],
+            ],
+            'vip_member_privileges' => [
+                ['title' => 'Tier Rewards', 'description' => 'Unlock tier rewards as you progress through the VIP levels.'],
+                ['title' => 'Daily Rakeback', 'description' => 'Earn rakeback based on the rate configured for your current tier.'],
+                ['title' => 'Exclusive Promotions', 'description' => 'Discover promotions made available to VIP members.'],
+                ['title' => 'Priority Support', 'description' => 'Get help from the support team when you need it.'],
+                ['title' => 'Higher Limits', 'description' => 'Eligible tiers may include different betting and withdrawal limits.'],
+                ['title' => 'VIP Events', 'description' => 'Look out for special events and experiences for VIP members.'],
+            ],
+            'vip_member_faq' => [
+                ['question' => 'How do I progress to the next VIP tier?', 'answer' => 'Your eligible wagering activity counts toward the next tier. Your progress bar shows the amount remaining.'],
+                ['question' => 'How is rakeback calculated?', 'answer' => 'Rakeback is calculated from eligible activity using the rate shown for your current tier. Terms and eligibility may apply.'],
+                ['question' => 'When can I claim rakeback?', 'answer' => 'Available rakeback appears in your account when it is ready to claim. Open the Bonuses area to review your available rewards.'],
+                ['question' => 'Do VIP tiers guarantee winnings?', 'answer' => 'No. VIP status provides the listed benefits only; it does not change game outcomes or guarantee winnings.'],
             ],
         ];
 
