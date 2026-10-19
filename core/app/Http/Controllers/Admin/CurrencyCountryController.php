@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\User;
+use App\Support\MoneyConversionAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +15,14 @@ use Illuminate\Validation\Rule;
 
 class CurrencyCountryController extends Controller
 {
+    public function moneyAudit(MoneyConversionAudit $audit)
+    {
+        return view('admin.currency_country.money_audit', [
+            'pageTitle' => 'Money Conversion Audit',
+            'report' => $audit->run(),
+        ]);
+    }
+
     public function index()
     {
         abort_unless(Schema::hasTable('currencies') && Schema::hasTable('countries'), 503, 'Run the database updater to enable currency and country controls.');

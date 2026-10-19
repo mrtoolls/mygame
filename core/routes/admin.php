@@ -28,6 +28,7 @@ Route::namespace('Auth')->group(function () {
 Route::middleware('admin')->group(function () {
     Route::controller('CurrencyCountryController')->prefix('currency-country')->name('currency-country.')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('money-audit', 'moneyAudit')->name('money-audit');
         Route::post('currency/{currency}', 'updateCurrency')->name('currency.update');
         Route::post('country/{country}', 'updateCountry')->name('country.update');
         Route::post('override', 'addOverride')->name('override.create');

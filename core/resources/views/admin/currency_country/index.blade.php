@@ -2,6 +2,7 @@
 @section('panel')
     <div class="row"><div class="col-12"><div class="card"><div class="card-body">
         <h5>@lang('Currency and country controls')</h5>
+        <a class="btn btn-sm btn-outline--primary mb-3" href="{{ route('admin.currency-country.money-audit') }}"><i class="las la-search-dollar"></i> @lang('Run read-only money conversion audit')</a>
         <p class="text-muted">@lang('Currencies and countries control wallet assignment and access rules. Conversion rates are used for estimated USD reporting only; they never convert or alter wallet balances. Existing legacy balances remain in the current site currency until a separately reviewed migration plan is approved.')</p>
         <div class="table-responsive"><table class="table table--responsive--md align-middle"><thead><tr><th>@lang('Code')</th><th>@lang('Currency')</th><th>@lang('Wallet precision')</th><th>@lang('USD reporting rate')</th><th>@lang('Enabled')</th><th>@lang('Settings')</th></tr></thead><tbody>
             @foreach ($currencies as $currency)

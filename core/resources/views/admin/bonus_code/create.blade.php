@@ -14,6 +14,9 @@
                                     <input type="text" class="form-control text-uppercase" name="code" value="{{ old('code') }}" placeholder="@lang('e.g. WELCOME50')" required>
                                 </div>
                             </div>
+                            @if($currencies->isNotEmpty())
+                                <div class="col-md-6"><div class="form-group"><label>@lang('Wallet Currency')</label><select class="form-control" name="currency_id" required>@foreach($currencies as $currency)<option value="{{ $currency->id }}" @selected(old('currency_id') == $currency->id)>{{ $currency->code }} · {{ $currency->name }}</option>@endforeach</select></div></div>
+                            @endif
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Bonus Amount')</label>

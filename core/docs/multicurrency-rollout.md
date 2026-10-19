@@ -24,3 +24,9 @@ Do not enable non-legacy wallet currencies for real-money activity until the int
 7. Keep a tested rollback plan and retain original decimal values until post-cutover reconciliation is signed off.
 
 The current admin currency screen states this boundary. Its rates are for reporting only. Do not treat the present `currency_id` tags or formatter as proof that the integer conversion is complete.
+
+## Current preflight tooling
+
+After the currency-control migration is installed, an admin can open **Currencies & Countries → Run read-only money conversion audit**. It inventories known money columns, shows their database type and row counts, counts non-zero amounts without a currency tag, and counts amounts whose fractional digits exceed the assigned currency precision. It never updates rows. It does not replace balance-to-ledger reconciliation, gateway settlement reconciliation, or a review of unlisted configuration fields.
+
+Known wallet and ledger paths include `users.balance`, `transactions.amount/charge/post_balance`, deposits, withdrawals, house-game logs, table-game stakes and commissions, bonus-code redemptions, commissions, gameplay bonuses, and VIP rakeback. Amount-bearing fields in gateway configuration, VIP tiers, table-game settings, and extension-specific tables also need explicit currency semantics before cutover.

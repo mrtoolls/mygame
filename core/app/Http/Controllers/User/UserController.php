@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -310,6 +311,11 @@ class UserController extends Controller {
             }
 
             $user = User::where('id', auth()->id())->lockForUpdate()->first();
+            if (Schema::hasColumn('bonus_codes', 'currency_id') && $code->currency_id && (int) $code->currency_id !== (int) $user->currency_id) {
+                DB::rollBack();
+                $notify[] = ['error', 'This bonus code is only valid for the matching wallet currency.'];
+                return back()->withNotify($notify);
+            }
             $trx  = getTrx();
 
             $user->balance += $code->amount;
@@ -322,6 +328,7 @@ class UserController extends Controller {
             $redemption->user_id       = $user->id;
             $redemption->bonus_code_id = $code->id;
             $redemption->amount        = $code->amount;
+            if (Schema::hasColumn('bonus_code_redemptions', 'currency_id')) $redemption->currency_id = $user->currency_id;
             $redemption->trx           = $trx;
             $redemption->save();
 
@@ -334,6 +341,7 @@ class UserController extends Controller {
             $transaction->remark       = 'bonus_code';
             $transaction->trx          = $trx;
             $transaction->post_balance = $user->balance;
+            if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
             $transaction->save();
 
             DB::commit();

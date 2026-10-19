@@ -8,6 +8,8 @@ use App\Models\BonusCode;
 use App\Models\BonusCodeRedemption;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
+use App\Models\Currency;
 
 class BonusCodeController extends Controller
 {
@@ -21,21 +23,25 @@ class BonusCodeController extends Controller
     public function create()
     {
         $pageTitle = 'Add Bonus Code';
-        return view('admin.bonus_code.create', compact('pageTitle'));
+        $currencies = Schema::hasTable('currencies') ? Currency::where('enabled', true)->orderBy('code')->get() : collect();
+        return view('admin.bonus_code.create', compact('pageTitle', 'currencies'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'code'       => 'required|string|max:60|unique:bonus_codes,code',
             'amount'     => 'required|numeric|gt:0',
             'max_uses'   => 'nullable|integer|min:1',
             'expires_at' => 'nullable|date',
-        ]);
+        ];
+        if (Schema::hasColumn('bonus_codes', 'currency_id')) $rules['currency_id'] = ['required', 'integer', Rule::exists('currencies', 'id')->where(fn ($query) => $query->where('enabled', true))];
+        $request->validate($rules);
 
         $code             = new BonusCode();
         $code->code       = strtoupper($request->code);
         $code->amount     = $request->amount;
+        if (Schema::hasColumn('bonus_codes', 'currency_id')) $code->currency_id = $request->integer('currency_id');
         $code->max_uses   = $request->max_uses ?: null;
         $code->expires_at = $request->expires_at ?: null;
         $code->status     = Status::ENABLE;
@@ -49,22 +55,29 @@ class BonusCodeController extends Controller
     {
         $code      = BonusCode::findOrFail($id);
         $pageTitle = 'Update ' . $code->code;
-        return view('admin.bonus_code.edit', compact('pageTitle', 'code'));
+        $currencies = Schema::hasTable('currencies') ? Currency::where('enabled', true)->orderBy('code')->get() : collect();
+        return view('admin.bonus_code.edit', compact('pageTitle', 'code', 'currencies'));
     }
 
     public function update(Request $request, $id)
     {
         $code = BonusCode::findOrFail($id);
 
-        $request->validate([
+        $rules = [
             'code'       => ['required', 'string', 'max:60', Rule::unique('bonus_codes', 'code')->ignore($code->id)],
             'amount'     => 'required|numeric|gt:0',
             'max_uses'   => 'nullable|integer|min:1',
             'expires_at' => 'nullable|date',
-        ]);
+        ];
+        if (Schema::hasColumn('bonus_codes', 'currency_id')) $rules['currency_id'] = ['required', 'integer', Rule::exists('currencies', 'id')->where(fn ($query) => $query->where('enabled', true))];
+        $request->validate($rules);
+        if (Schema::hasColumn('bonus_codes', 'currency_id') && $code->used_count > 0 && (int) $code->currency_id !== $request->integer('currency_id')) {
+            return back()->withErrors(['currency_id' => 'The currency cannot change after this code has been redeemed.'])->withInput();
+        }
 
         $code->code       = strtoupper($request->code);
         $code->amount     = $request->amount;
+        if (Schema::hasColumn('bonus_codes', 'currency_id')) $code->currency_id = $request->integer('currency_id');
         $code->max_uses   = $request->max_uses ?: null;
         $code->expires_at = $request->expires_at ?: null;
         $code->save();
