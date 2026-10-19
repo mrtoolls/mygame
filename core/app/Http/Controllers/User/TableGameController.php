@@ -48,10 +48,12 @@ class TableGameController extends Controller
         $data = $request->validate([
             'game_type' => 'required|string|max:40',
             'player_limit' => 'required|integer|min:2|max:4',
-            'stake' => 'required|numeric|gt:0|decimal:0,8',
+            'play_mode' => 'required|in:friendly,staked',
+            'stake' => 'required_if:play_mode,staked|nullable|numeric|gt:0|decimal:0,8',
             'idempotency_key' => 'required|string|alpha_dash|min:12|max:64',
         ]);
-        return $this->run(fn () => $service->create($request->user(), $data['game_type'], (int) $data['player_limit'], (string) $data['stake'], $data['idempotency_key']));
+        $stake = $data['play_mode'] === 'friendly' ? '0.00000000' : (string) $data['stake'];
+        return $this->run(fn () => $service->create($request->user(), $data['game_type'], (int) $data['player_limit'], $stake, $data['idempotency_key']));
     }
 
     public function join(Request $request, string $id, TableGameService $service)

@@ -2,6 +2,7 @@
 @section('content')
 
     @include('Template::partials.promo_banner_row')
+    @include('Template::sections.live_table_games')
 
     <div class="nocturne-game-search">
         <i class="ph-bold ph-magnifying-glass"></i>

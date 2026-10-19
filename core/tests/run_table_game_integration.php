@@ -76,6 +76,17 @@ $service->move($creator, $table->id, ['cell' => 2], 'move_key_000005', (int) $ta
 $assertBalance($creator, '109.00000000', 'Replaying a completed move paid twice.');
 if (DB::table('transactions')->count() !== 3 || DB::table('table_game_commissions')->count() !== 1) throw new RuntimeException('Stake, payout, and commission ledger records are incomplete.');
 
+$friendlyTable = $service->create($creator, 'tic_tac_toe', 2, '0.00000000', 'friendly_key_0001');
+$friendlyTable = $service->join($opponent, $friendlyTable->id);
+$friendlyMoves = [[$creator, ['cell' => 0]], [$opponent, ['cell' => 3]], [$creator, ['cell' => 1]], [$opponent, ['cell' => 4]], [$creator, ['cell' => 2]]];
+foreach ($friendlyMoves as $index => [$user, $action]) {
+    $friendlyTable = $service->move($user, $friendlyTable->id, $action, sprintf('friendly_move_%06d', $index + 1), (int) $friendlyTable->version);
+}
+if ($friendlyTable->status !== 'finished' || $friendlyTable->result !== 'winner:0') throw new RuntimeException('A friendly game did not finish normally.');
+$assertBalance($creator, '109.00000000', 'A friendly game changed the winner balance.');
+$assertBalance($opponent, '90.00000000', 'A friendly game changed the other player balance.');
+if (DB::table('transactions')->count() !== 3 || DB::table('table_game_commissions')->count() !== 1) throw new RuntimeException('A friendly game created a wallet transaction or commission.');
+
 $refundUser = $insertUser('table_refund', '20.00000000');
 $waiting = $service->create($refundUser, 'tic_tac_toe', 2, '5.00000000', 'create_key_000002');
 $service->forceClose($waiting->id);

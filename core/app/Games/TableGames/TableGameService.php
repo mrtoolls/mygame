@@ -383,7 +383,7 @@ class TableGameService
         if (!$definition || !$setting->enabled) throw new InvalidArgumentException('This game is currently unavailable.');
         if (!in_array($gameType, TableGameRules::AVAILABLE, true)) throw new InvalidArgumentException('This game is not yet enabled for tables.');
         if ($playerLimit < $definition['min'] || $playerLimit > $definition['max']) throw new InvalidArgumentException('Select a supported player count.');
-        if (bccomp($stake, (string) $setting->min_stake, 8) < 0 || bccomp($stake, (string) $setting->max_stake, 8) > 0) throw new InvalidArgumentException('The stake is outside the allowed limits.');
+        if (bccomp($stake, '0', 8) < 0 || (bccomp($stake, '0', 8) > 0 && bccomp($stake, (string) $setting->min_stake, 8) < 0) || bccomp($stake, (string) $setting->max_stake, 8) > 0) throw new InvalidArgumentException('The stake is outside the allowed limits.');
         $userLimit = TableGameUserLimit::where('user_id', $user->id)->first();
         if ($userLimit?->banned) throw new InvalidArgumentException('Your access to live tables is restricted.');
         $userMax = $userLimit?->max_open_tables ?? $setting->max_open_tables_per_user;
@@ -410,6 +410,7 @@ class TableGameService
     private function debit(User $user, TableGame $table, string $reason): void
     {
         $amount = (string) $table->stake;
+        if (bccomp($amount, '0', 8) === 0) return;
         if (bccomp((string) $user->balance, $amount, 8) < 0) throw new InvalidArgumentException('Your available balance is too low for this stake.');
         $user->balance = bcsub((string) $user->balance, $amount, 8);
         $user->save();
@@ -432,6 +433,7 @@ class TableGameService
 
     private function settle(TableGame $table, ?int $winnerSeat, ?array $winnerSeats = null): void
     {
+        if (bccomp((string) $table->stake, '0', 8) === 0) return;
         $players = $table->players()->lockForUpdate()->get();
         if ($winnerSeat === null) {
             foreach (TableGameSettlementMath::refunds($players->mapWithKeys(fn ($player) => [$player->user_id => (string) $player->stake])->all()) as $userId => $amount) {
@@ -484,6 +486,7 @@ class TableGameService
 
     private function creditPlayer(TableGame $table, TableGamePlayer $player, string $amount, string $remark, string $reason): void
     {
+        if (bccomp($amount, '0', 8) <= 0) return;
         if ($player->settlement_key) return;
         $user = User::whereKey($player->user_id)->lockForUpdate()->firstOrFail();
         $user->balance = bcadd((string) $user->balance, $amount, 8);
