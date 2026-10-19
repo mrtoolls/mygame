@@ -40,11 +40,13 @@ class SupportAgentController extends Controller
             'bio' => ['nullable', 'string', 'max:500'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'is_active' => ['nullable', 'boolean'],
+            'is_payment_agent' => ['nullable', 'boolean'],
         ]);
 
         $agent = new SupportAgent($data);
         $agent->password = Hash::make($data['password']);
         $agent->is_active = $request->boolean('is_active', true);
+        $agent->is_payment_agent = $request->boolean('is_payment_agent');
         if ($request->hasFile('photo')) {
             $agent->photo = $this->savePhoto($request);
         }
@@ -73,10 +75,12 @@ class SupportAgentController extends Controller
             'bio' => ['nullable', 'string', 'max:500'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'is_active' => ['nullable', 'boolean'],
+            'is_payment_agent' => ['nullable', 'boolean'],
         ]);
 
         $agent->fill(collect($data)->except(['password', 'photo'])->all());
         $agent->is_active = $request->boolean('is_active');
+        $agent->is_payment_agent = $request->boolean('is_payment_agent');
         if (!empty($data['password'])) {
             $agent->password = Hash::make($data['password']);
         }

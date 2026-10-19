@@ -19,7 +19,7 @@
                     <div class="table-responsive">
                         <table class="table table--light mb-0">
                             <thead>
-                                <tr><th>Agent</th><th>Login</th><th>Open chats</th><th>Availability</th><th>Account</th><th>Actions</th></tr>
+                                <tr><th>Agent</th><th>Login</th><th>Open chats</th><th>Availability</th><th>Payment role</th><th>Account</th><th>Actions</th></tr>
                             </thead>
                             <tbody>
                                 @forelse($agents as $agent)
@@ -44,6 +44,7 @@
                                                 <span class="badge badge--danger">Disabled</span>
                                             @endif
                                         </td>
+                                        <td>@if($agent->is_payment_agent)<span class="badge badge--success">Payment agent</span>@else<span class="badge badge--secondary">Support only</span>@endif</td>
                                         <td>{{ $agent->created_at->format('M j, Y') }}</td>
                                         <td class="text-nowrap">
                                             <a href="{{ route('admin.support.agents.edit', $agent->id) }}" class="btn btn-sm btn-outline--primary"><i class="las la-pen"></i> Edit</a>
@@ -52,7 +53,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-center py-5 text-muted">No support agents yet. Add your first agent to open live chat.</td></tr>
+                                    <tr><td colspan="7" class="text-center py-5 text-muted">No support agents yet. Add your first agent to open live chat.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
