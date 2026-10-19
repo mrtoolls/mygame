@@ -490,9 +490,9 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-balance { min-width: auto; padding: 5px 8px; border-radius: 10px; }
     .nocturne-balance span { font-size: 9px; }
     .nocturne-balance strong { font-size: 12px; }
-    .nocturne-deposit, .nocturne-login, .nocturne-register { width: 40px; min-height: 40px; padding: 0; gap: 0; }
-    .nocturne-deposit span, .nocturne-login span, .nocturne-register span { display: none; }
-    .nocturne-deposit i, .nocturne-login i, .nocturne-register i { font-size: 19px; }
+    .nocturne-actions .nocturne-deposit, .nocturne-actions .nocturne-login, .nocturne-actions .nocturne-register { width: 40px; min-height: 40px; padding: 0; gap: 0; }
+    .nocturne-actions .nocturne-deposit span, .nocturne-actions .nocturne-login span, .nocturne-actions .nocturne-register span { display: none; }
+    .nocturne-actions .nocturne-deposit i, .nocturne-actions .nocturne-login i, .nocturne-actions .nocturne-register i { font-size: 19px; }
     .nocturne-avatar, .nocturne-notifications { width: 32px; height: 36px; font-size: 21px; }
     .nocturne-user-dropdown { right: -4px; }
     .nocturne-main { padding: 82px 12px 86px; }
@@ -502,11 +502,15 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-main h3 { font-size: 19px; }
     .nocturne-main .card, .nocturne-main .custom--card { border-radius: 15px; }
     .nocturne-main .card-body { padding: 16px; }
-    .nocturne-welcome { min-height: 335px; align-items: flex-start; padding: 28px 22px; }
+    .nocturne-welcome { min-height: 390px; align-items: flex-start; padding: 28px 22px; }
     .nocturne-welcome-copy { max-width: 100%; }
     .nocturne-welcome-copy h1 { max-width: 400px; font-size: 34px; }
     .nocturne-welcome-copy p { max-width: 330px; font-size: 14px; }
     .nocturne-welcome-art { width: 58%; opacity: .42; }
+    .nocturne-welcome-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: min(100%, 270px); gap: 10px; margin-top: 20px; }
+    .nocturne-welcome-actions .nocturne-deposit { width: 100%; min-height: 48px; padding: 0 16px; gap: 8px; font-size: 14px; white-space: nowrap; }
+    .nocturne-welcome-actions .nocturne-deposit i { font-size: 18px; }
+    .nocturne-welcome-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid rgba(145,156,205,.2); border-radius: 13px; background: rgba(12,15,34,.42); font-size: 14px; white-space: nowrap; }
     .nocturne-home-cards { grid-template-columns: 1fr; gap: 10px; }
     .nocturne-home-cards > a { min-height: 76px; padding: 13px; }
     .footer-area .payment-method { padding-bottom: 8px; }
