@@ -83,10 +83,6 @@
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.business-promotions.*') ? 'active' : '' }}"><a href="{{ route('admin.business-promotions.index') }}" class="nav-link"><i class="menu-icon las la-bullhorn"></i><span class="menu-title">@lang('Business Promotions')</span></a></li>
             </ul>
         </div>
-        <div class="version-info text-center text-uppercase">
-            <span class="text--primary">{{ __(systemDetails()['name']) }}</span>
-            <span class="text--success">@lang('V'){{ systemDetails()['version'] }} </span>
-        </div>
     </div>
 </div>
 <!-- sidebar end -->
