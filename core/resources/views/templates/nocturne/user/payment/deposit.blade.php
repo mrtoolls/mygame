@@ -17,8 +17,10 @@
         </div>
     </section>
     @php
-        $hasCrypto = $gatewayCurrency->contains(fn($g) => $g->method->crypto == 1);
-        $hasCard   = $gatewayCurrency->contains(fn($g) => $g->method->crypto != 1);
+        $cryptoCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto === 1)->count();
+        $cardCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1)->count();
+        $hasCrypto = $cryptoCount > 0;
+        $hasCard = $cardCount > 0;
     @endphp
     <div class="row justify-content-center">
         <div class="col-12">
@@ -31,15 +33,13 @@
                             <div class="card custom--card payment-method-panel">
                                 <div class="card-body p-0">
                                     <h4 class="nocturne-pay-step">1. @lang('Select a Deposit Method')</h4>
-                                    @if ($hasCrypto && $hasCard)
-                                        <div class="nocturne-pay-tabs">
-                                            <button type="button" class="nocturne-pay-tab is-active" data-filter="1"><i class="lab la-bitcoin"></i><span><strong>@lang('Crypto')</strong><small>@lang('Choose a coin and network')</small></span><b>{{ $gatewayCurrency->where('method.crypto', 1)->count() }}</b></button>
-                                            <button type="button" class="nocturne-pay-tab" data-filter="0"><i class="las la-credit-card"></i><span><strong>@lang('Bank Card')</strong><small>@lang('Pay with a supported method')</small></span><b>{{ $gatewayCurrency->where('method.crypto', '!=', 1)->count() }}</b></button>
-                                        </div>
-                                    @endif
+                                    <div class="nocturne-pay-tabs">
+                                        <button type="button" class="nocturne-pay-tab @if ($hasCrypto && !$hasCard) is-active @endif" data-filter="1" @disabled(!$hasCrypto)><i class="lab la-bitcoin"></i><span><strong>@lang('Crypto')</strong><small>@lang('Choose a coin and network')</small></span><b>{{ $cryptoCount }}</b></button>
+                                        <button type="button" class="nocturne-pay-tab @if ($hasCard && !$hasCrypto) is-active @endif" data-filter="0" @disabled(!$hasCard)><i class="las la-credit-card"></i><span><strong>@lang('Bank Card')</strong><small>@lang('Pay with a supported method')</small></span><b>{{ $cardCount }}</b></button>
+                                    </div>
                                     <div class="nocturne-pay-list-heading"><div><span class="nocturne-pay-kicker">@lang('STEP 02')</span><h4 class="nocturne-pay-step">@lang('Select a payment option')</h4></div><span class="nocturne-pay-secure"><i class="las la-lock"></i> @lang('Secure')</span></div>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
-                                        @foreach ($gatewayCurrency as $data)
+                                        @forelse ($gatewayCurrency as $data)
                                             <label for="{{ titleToKey($data->name) }}"
                                                 data-crypto="{{ $data->method->crypto }}"
                                                 class="payment-item @if ($loop->index > 4) d-none @endif gateway-option">
@@ -48,7 +48,7 @@
                                                     <span class="payment-item__name">{{ __($data->name) }}</span>
                                                 </div>
                                                 <div class="payment-item__thumb">
-                                                    <img class="payment-item__thumb-img"
+                                                <img class="payment-item__thumb-img" onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')"
                                                         src="{{ getImage(getFilePath('gateway') . '/' . $data->method->image) }}"
                                                         alt="@lang('payment-thumb')">
                                                 </div>
@@ -56,11 +56,13 @@
                                                     id="{{ titleToKey($data->name) }}" hidden
                                                     data-gateway='@json($data)' type="radio"
                                                     name="gateway" value="{{ $data->method_code }}"
-                                                    @checked(old('method_code', $loop->first) == $data->id)
+                                                    @checked(old('gateway', $loop->first ? $data->method_code : null) == $data->method_code)
                                                     data-min-amount="{{ showAmount($data->min_amount) }}"
                                                     data-max-amount="{{ showAmount($data->max_amount) }}">
                                             </label>
-                                        @endforeach
+                                        @empty
+                                            <div class="nocturne-pay-empty"><i class="las la-wallet"></i><strong>@lang('No deposit methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
+                                        @endforelse
                                         @if ($gatewayCurrency->count() > 4)
                                             <button type="button" class="payment-item__btn more-gateway-option">
                                                 <p class="payment-item__btn-text">@lang('Show All Payment Options')</p>
@@ -77,7 +79,7 @@
                                 <div class="card-body p-0">
                                     <div class="nocturne-pay-detail-heading"><div><span class="nocturne-pay-kicker">@lang('PAYMENT DETAILS')</span><h3>@lang('Complete your deposit')</h3><p>@lang('Enter the amount you want to add. You will review the payment instructions on the next step.')</p></div><span class="nocturne-pay-detail-icon"><i class="las la-wallet"></i></span></div>
                                     <div class="nocturne-pay-selected">
-                                        <img class="nocturne-pay-selected__thumb" src="" alt="">
+                                        <img class="nocturne-pay-selected__thumb" src="" alt="" onerror="this.hidden=true">
                                         <span class="nocturne-pay-selected__name"></span>
                                         <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
                                     </div>
@@ -233,6 +235,13 @@
         @media(max-width:767.98px){.nocturne-payment-page{padding-bottom:calc(24px + env(safe-area-inset-bottom))}.nocturne-payment-page .nocturne-page-title{font-size:24px}.nocturne-payment-hero{align-items:flex-start;flex-direction:column;gap:17px;margin-bottom:16px;padding:20px;border-radius:20px}.nocturne-payment-hero__balance{width:100%;min-width:0;padding:12px 48px 12px 14px}.nocturne-payment-hero__balance strong{font-size:19px}.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px;border-radius:19px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:repeat(2,minmax(0,1fr));max-height:265px;gap:8px}.nocturne-payment-page .payment-item{min-height:62px;padding:9px}.nocturne-payment-page .payment-item__thumb{width:30px;height:25px}.nocturne-payment-page .payment-item__name{font-size:12px}.nocturne-payment-page .deposit-info__input-group{min-height:58px}.nocturne-payment-page .deposit-info__input-group .amount{height:54px;font-size:22px}.nocturne-payment-page .nocturne-pay-history-link{width:100%;justify-content:center;margin-top:12px}.nocturne-payment-page .nocturne-pay-step{margin-bottom:12px}}
         @media(max-width:360px){.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr}.nocturne-payment-page .payment-item{min-height:58px}}
         .nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{min-height:100%;padding:26px;background:linear-gradient(155deg,#171d36 0%,#13182e 72%);border-color:rgba(133,142,175,.18)}
+        .nocturne-payment-page .payment-item.d-none{display:none!important}
+        .nocturne-payment-page .payment-item__thumb.has-missing-image{position:relative;background:rgba(0,231,138,.1)}
+        .nocturne-payment-page .payment-item__thumb.has-missing-image:after{content:'◆';color:var(--pay-accent);font-size:15px}
+        .nocturne-payment-page .nocturne-pay-empty{display:grid;justify-items:center;align-content:center;gap:8px;min-height:180px;padding:24px;border:1px dashed rgba(133,142,175,.25);border-radius:16px;text-align:center;color:var(--pay-muted)}
+        .nocturne-payment-page .nocturne-pay-empty i{color:var(--pay-accent);font-size:27px}
+        .nocturne-payment-page .nocturne-pay-empty strong{color:#f4f5fd;font-size:14px}
+        .nocturne-payment-page .nocturne-pay-empty span{font-size:12px}
         .nocturne-payment-page .payment-method-column{flex:0 0 auto;width:41.666667%}
         .nocturne-payment-page .payment-summary-column{flex:0 0 auto;width:58.333333%}
         .nocturne-payment-page .nocturne-pay-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:transparent;padding:0;margin-bottom:25px}
@@ -299,6 +308,15 @@
 
             function gatewayChange() {
                 let gatewayElement = $('.gateway-input:checked');
+                if (!gatewayElement.length) {
+                    gateway = null;
+                    $('.nocturne-pay-selected__thumb').attr('src', '').hide();
+                    $('.nocturne-pay-selected__name').text("{{ __('Select a payment option') }}");
+                    $('.nocturne-pay-selected__badge').text("{{ __('Choose method') }}");
+                    $('.deposit-form button[type=submit]').prop('disabled', true);
+                    $('.gateway-limit, .processing-fee, .final-amount').text('0.00');
+                    return;
+                }
                 let methodCode = gatewayElement.val();
 
                 gateway = gatewayElement.data('gateway');
@@ -308,7 +326,8 @@
                 let processingFeeInfo =
                     `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for payment gateway processing fees`
                 $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
-                $(".nocturne-pay-selected__thumb").attr('src', gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src'));
+                let selectedImage = gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src');
+                if (selectedImage) $('.nocturne-pay-selected__thumb').attr('src', selectedImage).prop('hidden', false).show();
                 $(".nocturne-pay-selected__name").text(gatewayElement.closest('.payment-item').find('.payment-item__name').text());
                 calculation();
             }
@@ -332,7 +351,8 @@
                     $(this).toggleClass('d-none', String($(this).data('crypto')) !== String(filter));
                 });
                 let firstVisible = $(".gateway-option:not(.d-none)").first();
-                firstVisible.find('.gateway-input').prop('checked', true);
+                if (firstVisible.length) firstVisible.find('.gateway-input').prop('checked', true);
+                else $('.gateway-input').prop('checked', false);
                 gatewayChange();
             });
 
@@ -393,7 +413,8 @@
 
             if ($(".nocturne-pay-tab").length) {
                 let checkedCrypto = $('.gateway-input:checked').closest('.gateway-option').data('crypto');
-                $(".nocturne-pay-tab").filter(`[data-filter="${checkedCrypto}"]`).trigger('click');
+                let initialFilter = checkedCrypto === undefined ? $('.nocturne-pay-tab').first().data('filter') : checkedCrypto;
+                $(".nocturne-pay-tab").filter(`[data-filter="${initialFilter}"]`).trigger('click');
             } else {
                 $('.gateway-input').change();
             }

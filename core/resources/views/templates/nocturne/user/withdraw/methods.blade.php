@@ -27,7 +27,7 @@
                                 <div class="card-body p-0">
                                     <div class="nocturne-pay-list-heading"><div><span class="nocturne-pay-kicker">@lang('STEP 01')</span><h4 class="nocturne-pay-step">@lang('Select a withdrawal method')</h4></div><span class="nocturne-pay-secure"><i class="las la-lock"></i> @lang('Secure')</span></div>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
-                                        @foreach ($withdrawMethod as $data)
+                                        @forelse ($withdrawMethod as $data)
                                             <label for="{{ titleToKey($data->name) }}"
                                                 class="payment-item @if ($loop->index > 4) d-none @endif gateway-option">
                                                 <div class="payment-item__info">
@@ -35,7 +35,7 @@
                                                     <span class="payment-item__name">{{ __($data->name) }}</span>
                                                 </div>
                                                 <div class="payment-item__thumb">
-                                                    <img class="payment-item__thumb-img"
+                                                    <img class="payment-item__thumb-img" onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')"
                                                         src="{{ getImage(getFilePath('withdrawMethod') . '/' . $data->image) }}"
                                                         alt="@lang('payment-thumb')">
                                                 </div>
@@ -47,7 +47,9 @@
                                                     data-min-amount="{{ showAmount($data->min_limit) }}"
                                                     data-max-amount="{{ showAmount($data->max_limit) }}">
                                             </label>
-                                        @endforeach
+                                        @empty
+                                            <div class="nocturne-pay-empty"><i class="las la-money-check-alt"></i><strong>@lang('No withdrawal methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
+                                        @endforelse
                                         @if ($withdrawMethod->count() > 4)
                                             <button type="button" class="payment-item__btn more-gateway-option">
                                                 <p class="payment-item__btn-text">@lang('Show All Payment Options')</p>
@@ -64,7 +66,7 @@
                                 <div class="card-body p-0">
                                     <div class="nocturne-pay-detail-heading"><div><span class="nocturne-pay-kicker">@lang('PAYOUT DETAILS')</span><h3>@lang('Where should we send it?')</h3><p>@lang('Choose a method, provide your receiving details, then enter an amount.')</p></div><span class="nocturne-pay-detail-icon"><i class="las la-money-check-alt"></i></span></div>
                                     <div class="nocturne-pay-selected">
-                                        <img class="nocturne-pay-selected__thumb" src="" alt="">
+                                        <img class="nocturne-pay-selected__thumb" src="" alt="" onerror="this.hidden=true">
                                         <span class="nocturne-pay-selected__name"></span>
                                         <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
                                     </div>
@@ -215,6 +217,13 @@
         @media(max-width:767.98px){.nocturne-payment-page{padding-bottom:calc(24px + env(safe-area-inset-bottom))}.nocturne-payment-page .nocturne-page-title{font-size:24px}.nocturne-payment-hero{align-items:flex-start;flex-direction:column;gap:17px;margin-bottom:16px;padding:20px;border-radius:20px}.nocturne-payment-hero__balance{width:100%;min-width:0;padding:12px 48px 12px 14px}.nocturne-payment-hero__balance strong{font-size:19px}.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px;border-radius:19px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:repeat(2,minmax(0,1fr));max-height:265px;gap:8px}.nocturne-payment-page .payment-item{min-height:62px;padding:9px}.nocturne-payment-page .payment-item__thumb{width:30px;height:25px}.nocturne-payment-page .payment-item__name{font-size:12px}.nocturne-payment-page .deposit-info__input-group{min-height:58px}.nocturne-payment-page .deposit-info__input-group .amount{height:54px;font-size:22px}.nocturne-payment-page .nocturne-pay-history-link{width:100%;justify-content:center;margin-top:12px}.nocturne-payment-page .nocturne-pay-step{margin-bottom:12px}}
         @media(max-width:360px){.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr}.nocturne-payment-page .payment-item{min-height:58px}}
         .nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{min-height:100%;padding:26px;background:linear-gradient(155deg,#171d36 0%,#13182e 72%);border-color:rgba(133,142,175,.18)}
+        .nocturne-payment-page .payment-item.d-none{display:none!important}
+        .nocturne-payment-page .payment-item__thumb.has-missing-image{position:relative;background:rgba(0,231,138,.1)}
+        .nocturne-payment-page .payment-item__thumb.has-missing-image:after{content:'◆';color:var(--pay-accent);font-size:15px}
+        .nocturne-payment-page .nocturne-pay-empty{display:grid;justify-items:center;align-content:center;gap:8px;min-height:180px;padding:24px;border:1px dashed rgba(133,142,175,.25);border-radius:16px;text-align:center;color:var(--pay-muted)}
+        .nocturne-payment-page .nocturne-pay-empty i{color:var(--pay-accent);font-size:27px}
+        .nocturne-payment-page .nocturne-pay-empty strong{color:#f4f5fd;font-size:14px}
+        .nocturne-payment-page .nocturne-pay-empty span{font-size:12px}
         .nocturne-payment-page .payment-method-column{flex:0 0 auto;width:41.666667%}
         .nocturne-payment-page .payment-summary-column{flex:0 0 auto;width:58.333333%}
         .nocturne-payment-page .nocturne-pay-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
@@ -270,6 +279,15 @@
 
             function gatewayChange() {
                 let gatewayElement = $('.gateway-input:checked');
+                if (!gatewayElement.length) {
+                    gateway = null;
+                    $('.nocturne-pay-selected__thumb').attr('src', '').hide();
+                    $('.nocturne-pay-selected__name').text("{{ __('Select a withdrawal method') }}");
+                    $('.nocturne-pay-selected__badge').text("{{ __('Choose method') }}");
+                    $('.withdraw-form button[type=submit]').prop('disabled', true);
+                    $('.gateway-limit, .processing-fee, .final-amount').text('0.00');
+                    return;
+                }
                 let methodCode = gatewayElement.val();
 
                 gateway = gatewayElement.data('gateway');
@@ -279,7 +297,8 @@
                 let processingFeeInfo =
                     `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for processing fees`
                 $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
-                $(".nocturne-pay-selected__thumb").attr('src', gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src'));
+                let selectedImage = gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src');
+                if (selectedImage) $('.nocturne-pay-selected__thumb').attr('src', selectedImage).prop('hidden', false).show();
                 $(".nocturne-pay-selected__name").text(gatewayElement.closest('.payment-item').find('.payment-item__name').text());
 
                 calculation();
