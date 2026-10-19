@@ -202,15 +202,8 @@
             $('.back-blackjack').removeClass('d-none');
             gameLogId = data.game_log_id;
 
-            $(".win-loss-popup").addClass("active");
-            $(".win-loss-popup__body").find("img").addClass("d-none");
-
-            if (data.win_status == 0) {
-                $(".win-loss-popup__body").find(".lose").removeClass("d-none");
-            } else {
-                $(".win-loss-popup__body").find(".win").removeClass("d-none");
-            }
-            $(".win-loss-popup__footer").find(".data-result").text(data.userSum);
+            data.result = data.userSum;
+            setPopup(data);
         }
 
         $('.play-again-btn').on('click', function(e) {

@@ -777,24 +777,31 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-play-btn--play { background: var(--nocturne-green); color: #073c2a; box-shadow: 0 8px 18px rgba(0,239,135,.3); }
 .nocturne-play-btn--demo { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.22); backdrop-filter: blur(4px); }
 .game-item__title { margin: 0; padding: 11px 12px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Touch devices have no reliable :hover - the full-cover reveal above is unreachable there, so
-   replace it with an always-visible compact bar pinned to the card's bottom edge instead of
-   permanently darkening the artwork. */
-@media (hover: none) {
+/* Touch cards reveal their actions only after the user taps the card. */
+@media (hover: none), (pointer: coarse) {
     .game-item__play {
-        inset: auto 0 0; flex-direction: row; gap: 6px; padding: 8px; opacity: 1; visibility: visible;
-        background: linear-gradient(0deg, rgba(7,9,20,.92), rgba(7,9,20,0)) !important;
+        inset: 0; flex-direction: column; gap: 8px; padding: 12px; opacity: 0; visibility: hidden;
+        pointer-events: none; background: linear-gradient(180deg, rgba(10,13,28,.1), rgba(7,9,20,.86)) !important;
     }
-    .nocturne-play-btn { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 10.5px; }
+    .game-item.is-actions-visible .game-item__play { opacity: 1; visibility: visible; pointer-events: auto; }
+    .nocturne-play-btn { flex: 0 0 auto; min-width: 92px; padding: 0 16px; font-size: 12px; }
     .nocturne-play-btn i { font-size: 12px; }
 }
 @media (max-width: 420px) and (hover: none) {
-    .game-item__play { gap: 8px; padding: 8px 10px; }
+    .game-item__play { gap: 8px; padding: 12px; }
     .nocturne-play-btn {
         flex: 0 0 38px; width: 38px; min-width: 38px; min-height: 38px; padding: 0;
         font-size: 0; gap: 0; border-radius: 50%;
     }
     .nocturne-play-btn i { font-size: 15px; }
+}
+
+/* Keep labels legible when the generic anchor hover color meets a green action surface. */
+.nocturne-shell :is(.nocturne-main .btn--base, .nocturne-main .btn--gradient, .nocturne-main .btn--gradient-success, .nocturne-main .btn--primary, .nocturne-main .btn--success,
+    .newsletter__btn, .nocturne-about-support__button, .nocturne-vip-claim, .nocturne-live-table__button,
+    .win-loss-popup__again):is(:hover, :focus, :focus-visible) {
+    color: #073c2a !important;
+    -webkit-text-fill-color: #073c2a !important;
 }
 
 /* ---- Promo banner row (reuses admin-managed Promotions content) ---- */

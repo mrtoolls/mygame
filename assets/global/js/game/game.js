@@ -73,12 +73,15 @@ function playGame(data, music) {
 // --------------------------------
 function setPopup(data) {
     const popup = $(".win-loss-popup");
+    const status = Number(data.win_status || 0);
     popup.attr("data-win-amount", Number(data.win_amount || 0));
     popup.attr("data-invest-amount", Number(data.invest_amount || 0));
-    popup.attr("data-result-status", Number(data.win_status || 0));
+    popup.attr("data-result-status", status);
     popup.addClass("active");
     $(".win-loss-popup__body").find("img").addClass("d-none");
-    if (data.win_status == 0) {
+    if (status === 2) {
+        $(".win-loss-popup__body").find(".push").removeClass("d-none");
+    } else if (status === 0) {
         $(".win-loss-popup__body").find(".lose").removeClass("d-none");
         playAudio(audioAssetPath, "lose.wav");
     } else {
@@ -86,9 +89,7 @@ function setPopup(data) {
         playAudio(audioAssetPath, "win.wav");
     }
     if (data.result && winLossPopupFooterDisplay) {
-        $(".win-loss-popup__footer").find(".data-result").text(data.result);
-    }else{
-        $(".win-loss-popup__footer").addClass("d-none");
+        $(".win-loss-popup__legacy .data-result").text(data.result);
     }
 }
 

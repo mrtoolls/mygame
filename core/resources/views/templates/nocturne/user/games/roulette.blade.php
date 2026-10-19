@@ -402,16 +402,8 @@
                             $('input[name=invest]').val("{{ showAmount($game->min_limit) }}");
                             return false;
                         }
-                        $(".win-loss-popup").addClass("active");
-                        $(".win-loss-popup__body").find("img").addClass("d-none");
-                        if (response.win_status === 1) {
-                            playAudio(audioAssetPath, 'win.wav');
-                            $(".win-loss-popup__body").find(".win").removeClass("d-none");
-                        } else {
-                            playAudio(audioAssetPath, 'lose.wav');
-                            $(".win-loss-popup__body").find(".lose").removeClass("d-none");
-                        }
-                        $(".win-loss-popup__footer").find(".data-result").text(randomNumber);
+                        response.result = randomNumber;
+                        setPopup(response);
                         $('.user-balance').text(response.bal);
                         $('.roulette-game-spin').removeClass('spin-active');
                         $("td").removeClass("selected");

@@ -266,17 +266,8 @@
                 success: function(response) {
                     audio.pause();
                     totalSetTimeOut = 0;
-                    $(".win-loss-popup").addClass("active");
-                    $(".win-loss-popup__body").find("img").addClass("d-none");
-                    if (response.win_status == 0) {
-                        playAudio(audioAssetPath, 'lose.wav');
-                        $(".win-loss-popup__body").find(".lose").removeClass("d-none");
-                    } else {
-                        playAudio(audioAssetPath, 'win.wav');
-                        $(".win-loss-popup__body").find(".win").removeClass("d-none");
-                    }
-                    $(".win-loss-popup__footer").find("h2").addClass("d-none");
-                    $(".win-loss-popup__footer").find('h5').text(`@lang('Total ${totalMatched} number matched')`);
+                    response.result = `@lang('Total ${totalMatched} number matched')`;
+                    setPopup(response);
                     $('.bal').html(response.bal);
                     $("#playBtn").html("Play Now");
                     $("#playBtn").removeAttr("disabled");

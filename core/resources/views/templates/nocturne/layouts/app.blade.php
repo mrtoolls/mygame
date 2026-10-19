@@ -137,12 +137,16 @@
                 const opened = popup.classList.contains('active');
                 popup.setAttribute('aria-hidden', opened ? 'false' : 'true');
                 if (!opened) return;
-                const state = popup.querySelector('.push:not(.d-none)') ? 'push' :
+                const status = Number(popup.dataset.resultStatus || 0);
+                const state = status === 2 || popup.querySelector('.push:not(.d-none)') ? 'push' :
                     popup.querySelector('.win:not(.d-none)') ? 'win' :
                     popup.querySelector('.lose:not(.d-none)') ? 'loss' :
-                    (Number(popup.dataset.resultStatus || 0) === 1 ? 'win' : 'loss');
-                popup.classList.remove('is-win', 'is-loss', 'is-push');
-                popup.classList.add(`is-${state}`);
+                    (status === 1 ? 'win' : 'loss');
+                const stateClass = `is-${state}`;
+                if (!popup.classList.contains(stateClass)) {
+                    popup.classList.remove('is-win', 'is-loss', 'is-push');
+                    popup.classList.add(stateClass);
+                }
                 const winAmount = Number(popup.dataset.winAmount || 0);
                 const investAmount = Number(popup.dataset.investAmount || 0);
                 if (state === 'win') {
@@ -160,7 +164,9 @@
                 }
             }
 
-            new MutationObserver(syncPopup).observe(popup, { attributes: true, subtree: true, attributeFilter: ['class', 'data-win-amount', 'data-invest-amount', 'data-result-status'] });
+            // Observe only popup-owned state. Watching descendant classes caused syncPopup's
+            // own is-win/is-loss class update to retrigger itself continuously after a result.
+            new MutationObserver(syncPopup).observe(popup, { attributes: true, attributeFilter: ['class', 'data-win-amount', 'data-invest-amount', 'data-result-status'] });
             syncPopup();
             $(document).on('ajaxSuccess', function (_event, _xhr, settings, response) {
                 if (!response || typeof response !== 'object') return;
@@ -188,6 +194,37 @@
             });
             syncPopup();
         })(jQuery);
+    </script>
+
+    <script>
+        (function () {
+            'use strict';
+            const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)');
+            if (!coarsePointer.matches) return;
+
+            document.addEventListener('click', function (event) {
+                const card = event.target.closest('.game-item');
+                if (!card || event.target.closest('.game-item__play a, .game-item__play button')) return;
+
+                const wasOpen = card.classList.contains('is-actions-visible');
+                document.querySelectorAll('.game-item.is-actions-visible').forEach(function (openCard) {
+                    openCard.classList.remove('is-actions-visible');
+                    openCard.setAttribute('aria-expanded', 'false');
+                });
+                if (!wasOpen) {
+                    card.classList.add('is-actions-visible');
+                    card.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                if (event.target.closest('.game-item')) return;
+                document.querySelectorAll('.game-item.is-actions-visible').forEach(function (card) {
+                    card.classList.remove('is-actions-visible');
+                    card.setAttribute('aria-expanded', 'false');
+                });
+            });
+        })();
     </script>
 
     <script>

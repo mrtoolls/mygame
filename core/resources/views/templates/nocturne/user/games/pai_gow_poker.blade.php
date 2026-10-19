@@ -546,22 +546,9 @@
 
             $('.standBtn').addClass("d-none");
             $('.resetBtn').removeClass("d-none");
-            $(".win-loss-popup").addClass("active");
-
-            $(".win-loss-popup").addClass("active");
-            $(".win-loss-popup__body").find("img").addClass("d-none");
-
-            if (response.type == "success") {
-                $(".win-loss-popup__body").find(".win").removeClass("d-none");
-                $('.data-result').text('Player Win');
-            } else if (response.type == "push") {
-                $('.data-result').text('Draw');
-                $(".win-loss-popup__body").find(".push").removeClass("d-none");
-
-            } else {
-                $('.data-result').text('Dealer Win');
-                $(".win-loss-popup__body").find(".lose").removeClass("d-none");
-            }
+            response.win_status = response.win_status ?? (response.type === 'success' ? 1 : response.type === 'push' ? 2 : 0);
+            response.result = response.type === 'success' ? 'Player Win' : response.type === 'push' ? 'Draw' : 'Dealer Win';
+            setPopup(response);
 
         });
     </script>

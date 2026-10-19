@@ -295,19 +295,7 @@
                                 }
 
                                 $('.balance').val(updateResponse.bal);
-                                $(".win-loss-popup").addClass("active");
-                                $(".win-loss-popup__body").find("img").addClass("d-none");
-                                if (updateResponse.win_status == 0) {
-                                    $(".win-loss-popup__body").find(".lose").removeClass(
-                                        "d-none");
-                                    playAudio(audioAssetPath, "win.wav");
-                                } else {
-                                    $(".win-loss-popup__body").find(".win").removeClass(
-                                        "d-none");
-                                    playAudio(audioAssetPath, "lose.wav");
-                                }
-                                $(".win-loss-popup__footer").find(".data-result").text(
-                                    updateResponse.result);
+                                setPopup(updateResponse);
                                 resp = updateResponse;
                                 isRequest = false;
                             })
