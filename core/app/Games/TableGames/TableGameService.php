@@ -158,9 +158,9 @@ class TableGameService
         }, 3);
     }
 
-    public function pendingInvites(User $user): array
+    public function pendingInvites(User $user): \Illuminate\Support\Collection
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('table_game_invites')) return [];
+        if (!\Illuminate\Support\Facades\Schema::hasTable('table_game_invites')) return collect();
         return TableGameInvite::with(['table.players.user', 'inviter'])
             ->where('invitee_id', $user->id)
             ->where('status', 'pending')
@@ -168,8 +168,7 @@ class TableGameService
             ->whereHas('table', fn ($query) => $query->where('status', 'waiting'))
             ->latest()
             ->limit(20)
-            ->get()
-            ->all();
+            ->get();
     }
 
     public function acceptInvite(User $user, int $inviteId): TableGame

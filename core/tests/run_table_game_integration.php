@@ -125,7 +125,8 @@ $assertBalance($opponent, '90.00000000', 'A game-server failure did not refund t
 $invitee = $insertUser('table_invitee', '20.00000000');
 $inviteTable = $service->create($creator, 'tic_tac_toe', 2, '1.00000000', 'create_key_000008');
 $invite = $service->invite($creator, $inviteTable->id, 'table_invitee');
-if (count($service->pendingInvites($invitee)) !== 1) throw new RuntimeException('The table invitation did not appear in the invitee inbox.');
+$pendingInvites = $service->pendingInvites($invitee);
+if (!$pendingInvites instanceof Illuminate\Support\Collection || $pendingInvites->count() !== 1) throw new RuntimeException('The table invitation inbox did not return a collection with the expected invite.');
 $joinedByInvite = $service->acceptInvite($invitee, $invite->id);
 if ($joinedByInvite->status !== 'active') throw new RuntimeException('Accepting a table invitation did not join and start the table.');
 $assertBalance($invitee, '19.00000000', 'Accepting an invitation did not debit the agreed stake.');
