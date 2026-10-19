@@ -81,6 +81,12 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('claim-rakeback', 'claimRakeback')->name('claim.rakeback');
             });
 
+            // Paid business promotions
+            Route::controller('BusinessPromotionController')->prefix('business-promotions')->name('business-promotions.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+            });
+
             //Profile setting
             Route::controller('ProfileController')->group(function () {
                 Route::get('profile-setting', 'profile')->name('profile.setting');

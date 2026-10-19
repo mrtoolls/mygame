@@ -1119,6 +1119,100 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-promo-card__body p { margin: 0 0 12px; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.6; }
 .nocturne-promo-card__body a { color: var(--nocturne-green); text-decoration: none; font-weight: 700; font-size: 13px; }
 
+/* Promotions landing page */
+.nocturne-promotions-hero { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(280px, .78fr) minmax(0, 1.22fr); align-items: center; min-height: 275px; margin-bottom: 42px; overflow: hidden; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 78% 68%, rgba(0, 231, 143, .2), transparent 43%), linear-gradient(120deg, #171d36 0%, #171d36 40%, #241b38 100%); }
+.nocturne-promotions-hero__copy { position: relative; z-index: 2; padding: clamp(26px, 4vw, 54px); }
+.nocturne-promotions-hero__copy h1 { margin: 12px 0 10px; color: var(--nocturne-text); font-size: clamp(30px, 3.2vw, 46px); font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+.nocturne-promotions-hero__copy p { max-width: 480px; margin: 0; color: var(--nocturne-muted); font-size: 15px; line-height: 1.7; }
+.nocturne-promotions-hero__cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; padding: 12px 17px; border-radius: 12px; background: var(--nocturne-green); color: #062a23; font-weight: 800; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; }
+.nocturne-promotions-hero__cta:hover { color: #062a23; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 231, 143, .2); }
+.nocturne-promotions-hero__art { position: relative; align-self: stretch; min-height: 275px; overflow: hidden; }
+.nocturne-promotions-hero__art > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; mask-image: linear-gradient(90deg, transparent 0%, #000 27%); }
+.nocturne-promotions-hero__glow { position: absolute; inset: 10% 5% -45% 2%; border-radius: 50%; background: radial-gradient(ellipse, rgba(0, 231, 143, .27), transparent 68%); }
+.nocturne-promotions-hero__ticket,.nocturne-promotions-hero__gift { position: absolute; display: grid; place-items: center; color: rgba(238, 243, 255, .82); filter: drop-shadow(0 20px 34px rgba(0,0,0,.3)); }
+.nocturne-promotions-hero__ticket { top: 16%; left: 28%; font-size: clamp(100px, 15vw, 190px); transform: rotate(-13deg); color: var(--nocturne-green); }
+.nocturne-promotions-hero__gift { top: 27%; left: 61%; font-size: clamp(74px, 10vw, 125px); transform: rotate(10deg); }
+.nocturne-promotions-hero__orb { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--nocturne-green); box-shadow: 0 0 24px rgba(0, 231, 143, .9); }
+.nocturne-promotions-hero__orb--one { top: 25%; left: 19%; }.nocturne-promotions-hero__orb--two { right: 14%; bottom: 24%; width: 8px; height: 8px; }
+.nocturne-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.nocturne-section-heading > span { display: flex; align-items: center; gap: 10px; color: var(--nocturne-muted); }
+.nocturne-section-heading > span > i { font-size: 23px; }
+.nocturne-section-heading h2 { margin: 0; color: var(--nocturne-text); font-size: 25px; font-weight: 800; }
+.nocturne-section-heading > p { margin: 0; color: var(--nocturne-muted); font-size: 13px; }
+.nocturne-promotion-tabs { display: inline-flex; gap: 4px; margin: 0 0 20px; padding: 5px; border-radius: 14px; background: var(--nocturne-panel); }
+.nocturne-promotion-tabs button { min-height: 42px; padding: 0 19px; border: 0; border-radius: 10px; background: transparent; color: var(--nocturne-muted); font-weight: 750; cursor: pointer; transition: color .18s ease, background .18s ease; }
+.nocturne-promotion-tabs button:hover { color: var(--nocturne-text); }
+.nocturne-promotion-tabs button.is-active { background: var(--nocturne-panel-strong, #242b48); color: var(--nocturne-text); }
+.nocturne-promo-grid[hidden] { display: none; }
+.nocturne-promo-card { display: grid; grid-template-columns: 122px minmax(0, 1fr); align-items: center; gap: 18px; min-height: 184px; padding: 20px; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.nocturne-promo-card:hover { transform: translateY(-3px); border-color: rgba(0, 231, 143, .35); box-shadow: 0 16px 34px rgba(0,0,0,.16); }
+.nocturne-promo-card__image { width: 122px; height: 122px; overflow: hidden; border-radius: 16px; background: linear-gradient(145deg, rgba(0,231,143,.18), rgba(67,89,161,.42)); }
+.nocturne-promo-card__image img { display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; }
+.nocturne-promo-card__placeholder { display: grid; width: 100%; height: 100%; place-items: center; color: var(--nocturne-green); font-size: 48px; }
+.nocturne-promo-card__body { min-width: 0; padding: 0; }
+.nocturne-promo-card__tag { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 6px; color: var(--nocturne-green); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.nocturne-promo-card__body h3 { margin: 0 0 7px; color: var(--nocturne-text); font-size: 17px; font-weight: 800; line-height: 1.35; }
+.nocturne-promo-card__body p { margin: 0 0 10px; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.55; }
+.nocturne-promo-card__body a { display: inline-flex; align-items: center; gap: 6px; color: var(--nocturne-green); font-size: 13px; font-weight: 800; text-decoration: none; }
+.nocturne-promo-card__body a:hover { color: var(--nocturne-text); }
+.nocturne-promotion-empty { grid-column: 1 / -1; display: grid; justify-items: center; gap: 9px; min-height: 205px; align-content: center; padding: 24px; border: 1px dashed var(--nocturne-line); border-radius: var(--nocturne-radius-md); color: var(--nocturne-muted); text-align: center; }
+.nocturne-promotion-empty > i { color: var(--nocturne-green); font-size: 34px; }
+.nocturne-promotion-empty strong { color: var(--nocturne-text); font-size: 17px; }
+.nocturne-promotions-news { margin-top: 48px; }
+.nocturne-business-spotlight { margin-top: 42px; }
+.nocturne-business-spotlight-card { color: inherit; text-decoration: none; }
+.nocturne-business-spotlight-card:hover { color: inherit; }
+.nocturne-business-spotlight-card .nocturne-promo-card__body > p strong { color: var(--nocturne-text); }
+.nocturne-business-spotlight-link { display: inline-flex; align-items: center; gap: 6px; color: var(--nocturne-green); font-size: 13px; font-weight: 800; }
+.nocturne-business-promo-page { align-items: flex-start; }
+.nocturne-business-promo-hero { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 220px; margin-bottom: 24px; padding: clamp(24px, 4vw, 42px); overflow: hidden; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 88% 55%, rgba(0,231,143,.22), transparent 38%), linear-gradient(115deg,#171d36,#1b2545); }
+.nocturne-business-promo-hero > div { position: relative; z-index: 1; max-width: 620px; }
+.nocturne-business-promo-hero h1 { margin: 11px 0 8px; color: var(--nocturne-text); font-size: clamp(26px,3vw,38px); font-weight: 850; line-height: 1.15; }
+.nocturne-business-promo-hero p { margin: 0; color: var(--nocturne-muted); line-height: 1.65; }
+.nocturne-business-promo-hero__art { position: relative; display: grid; width: 150px; height: 150px; flex: 0 0 150px; place-items: center; border-radius: 38px; background: rgba(0,231,143,.1); color: var(--nocturne-green); transform: rotate(-7deg); }
+.nocturne-business-promo-hero__art .ph-storefront { font-size: 76px; }
+.nocturne-business-promo-hero__art .ph-sparkle { position: absolute; top: 5px; right: 3px; font-size: 30px; }
+.nocturne-business-promo-layout { display: grid; grid-template-columns: minmax(0,1fr) 270px; gap: 20px; align-items: start; }
+.nocturne-business-promo-form-card,.nocturne-business-promo-history,.nocturne-business-promo-side article { padding: clamp(18px,2.5vw,28px); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: var(--nocturne-panel); }
+.nocturne-business-promo-form-card .nocturne-vip-section-head,.nocturne-business-promo-history .nocturne-vip-section-head { margin-bottom: 20px; }
+.nocturne-business-promo-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.nocturne-business-promo-fields label { display: grid; gap: 8px; min-width: 0; color: var(--nocturne-text); font-size: 13px; font-weight: 750; }
+.nocturne-business-promo-fields label > span { display: flex; justify-content: space-between; gap: 8px; }
+.nocturne-business-promo-fields label small { color: var(--nocturne-muted); font-size: 11px; font-weight: 500; }
+.nocturne-business-promo-fields .is-wide { grid-column: 1/-1; }
+.nocturne-business-promo-fields input,.nocturne-business-promo-fields textarea,.nocturne-business-promo-fields select { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--nocturne-line); border-radius: 12px; outline: 0; background: #0d1122; color: var(--nocturne-text); font: inherit; }
+.nocturne-business-promo-fields textarea { min-height: 118px; resize: vertical; }
+.nocturne-business-promo-fields input:focus,.nocturne-business-promo-fields textarea:focus,.nocturne-business-promo-fields select:focus { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,231,143,.11); }
+.nocturne-business-promo-fields input[type=file] { padding: 9px; color: var(--nocturne-muted); }
+.nocturne-business-promo-price { display: grid; align-content: center; gap: 3px; min-height: 74px; padding: 12px 15px; border-radius: 12px; background: rgba(0,231,143,.08); }
+.nocturne-business-promo-price > span,.nocturne-business-promo-price > small { color: var(--nocturne-muted); font-size: 11px; }
+.nocturne-business-promo-price strong { color: var(--nocturne-green); font-size: 20px; }
+.nocturne-business-promo-consent { display: flex; align-items: flex-start; gap: 10px; margin-top: 17px; color: var(--nocturne-muted); font-size: 12px; line-height: 1.6; }
+.nocturne-business-promo-consent i { flex: 0 0 auto; color: var(--nocturne-green); font-size: 20px; }
+.nocturne-business-promo-submit { display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: center; gap: 9px; margin-top: 17px; border: 0; border-radius: 14px; background: var(--nocturne-green); color: #062a23; font: inherit; font-weight: 850; cursor: pointer; }
+.nocturne-business-promo-submit:hover { color: #062a23; filter: brightness(1.05); }
+.nocturne-business-promo-side { display: grid; gap: 14px; }
+.nocturne-business-promo-side article { display: grid; gap: 8px; }
+.nocturne-business-promo-side article > i { color: var(--nocturne-green); font-size: 26px; }
+.nocturne-business-promo-side article strong { color: var(--nocturne-text); }
+.nocturne-business-promo-side article p { margin: 0; color: var(--nocturne-muted); font-size: 12px; line-height: 1.6; }
+.nocturne-business-promo-history { margin-top: 22px; }
+.nocturne-business-promo-list { display: grid; gap: 10px; }
+.nocturne-business-promo-row { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 12px; border: 1px solid var(--nocturne-line); border-radius: 14px; background: rgba(9,13,28,.45); }
+.nocturne-business-promo-row > img { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 11px; object-fit: cover; }
+.nocturne-business-promo-row__copy { display: grid; min-width: 0; gap: 4px; flex: 1; }
+.nocturne-business-promo-row__copy strong { overflow: hidden; color: var(--nocturne-text); text-overflow: ellipsis; white-space: nowrap; }
+.nocturne-business-promo-row__copy span,.nocturne-business-promo-row__copy small { color: var(--nocturne-muted); font-size: 12px; }
+.nocturne-business-promo-status { flex: 0 0 auto; padding: 6px 10px; border-radius: 20px; background: rgba(135,145,180,.12); color: var(--nocturne-muted); font-size: 11px; font-weight: 800; }
+.nocturne-business-promo-status.is-active { background: rgba(0,231,143,.12); color: var(--nocturne-green); }.nocturne-business-promo-status.is-pending { background: rgba(255,190,65,.12); color: #ffca69; }.nocturne-business-promo-status.is-rejected { background: rgba(255,80,105,.12); color: #ff7185; }
+.nocturne-business-promo-empty { display: grid; justify-items: center; gap: 8px; padding: 26px; border: 1px dashed var(--nocturne-line); border-radius: 15px; color: var(--nocturne-muted); text-align: center; }
+.nocturne-business-promo-errors { margin-bottom: 16px; padding: 14px 16px; border: 1px solid rgba(255,113,133,.24); border-radius: 12px; background: rgba(255,80,105,.08); color: #ff9aaa; font-size: 13px; }.nocturne-business-promo-errors ul { margin: 7px 0 0; padding-left: 20px; }
+.nocturne-business-promo-empty i { color: var(--nocturne-green); font-size: 30px; }.nocturne-business-promo-empty strong { color: var(--nocturne-text); }
+@media(max-width: 1000px) { .nocturne-business-promo-layout { grid-template-columns: 1fr; }.nocturne-business-promo-side { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 600px) { .nocturne-business-promo-hero { min-height: 0; padding: 23px 19px; }.nocturne-business-promo-hero__art { width: 66px; height: 66px; flex-basis: 66px; border-radius: 20px; }.nocturne-business-promo-hero__art .ph-storefront { font-size: 36px; }.nocturne-business-promo-hero__art .ph-sparkle { top: -6px; right: -6px; font-size: 18px; }.nocturne-business-promo-fields { grid-template-columns: 1fr; gap: 13px; }.nocturne-business-promo-fields .is-wide { grid-column: auto; }.nocturne-business-promo-side { grid-template-columns: 1fr; }.nocturne-business-promo-row { flex-wrap: wrap; gap: 10px; }.nocturne-business-promo-row > img { width: 54px; height: 54px; flex-basis: 54px; }.nocturne-business-promo-status { margin-left: 64px; } }
+@media (max-width: 900px) { .nocturne-promotions-hero { grid-template-columns: 1fr 1fr; } .nocturne-promo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nocturne-promo-card { grid-template-columns: 100px minmax(0, 1fr); gap: 14px; padding: 16px; } .nocturne-promo-card__image { width: 100px; height: 100px; } }
+@media (max-width: 600px) { .nocturne-promotions-hero { grid-template-columns: 1fr; min-height: auto; } .nocturne-promotions-hero__copy { padding: 25px 22px 4px; } .nocturne-promotions-hero__copy h1 { font-size: 30px; } .nocturne-promotions-hero__copy p { font-size: 14px; } .nocturne-promotions-hero__cta { margin-top: 17px; } .nocturne-promotions-hero__art { min-height: 155px; } .nocturne-promotions-hero__art > img { mask-image: linear-gradient(180deg, transparent 0%, #000 28%); } .nocturne-promotions-hero__ticket { top: 2%; left: 22%; font-size: 115px; } .nocturne-promotions-hero__gift { top: 7%; left: 60%; font-size: 82px; } .nocturne-section-heading { display: block; } .nocturne-section-heading > p { margin: 7px 0 0 33px; } .nocturne-section-heading h2 { font-size: 22px; } .nocturne-promotion-tabs { display: flex; width: 100%; } .nocturne-promotion-tabs button { flex: 1; } .nocturne-promo-grid { grid-template-columns: 1fr; gap: 12px; } .nocturne-promo-card { grid-template-columns: 92px minmax(0, 1fr); min-height: 140px; padding: 13px; border-radius: 16px; } .nocturne-promo-card__image { width: 92px; height: 100px; border-radius: 13px; } .nocturne-promo-card__body h3 { font-size: 15px; } .nocturne-promo-card__body p { font-size: 12px; line-height: 1.45; } .nocturne-promotion-empty { min-height: 175px; } .nocturne-promotions-news { margin-top: 34px; } }
+
 .nocturne-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .nocturne-tier-card { position: relative; padding: 24px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
 .nocturne-tier-card.is-current { border-color: var(--nocturne-green); box-shadow: 0 0 0 1px rgba(0,239,135,.25); }

@@ -156,6 +156,9 @@ class CurrencyCountryController extends Controller
                 || DB::table('withdrawals')->where('user_id', $locked->id)->whereIn('status', [Status::PAYMENT_INITIATE, Status::PAYMENT_PENDING])->exists()) {
                 abort(422, 'Resolve pending payment orders before changing wallet currency.');
             }
+            if (Schema::hasTable('business_promotions') && DB::table('business_promotions')->where('user_id', $locked->id)->where('status', 'pending')->exists()) {
+                abort(422, 'Resolve pending paid business promotions before changing wallet currency.');
+            }
             if (Schema::hasTable('table_game_players') && DB::table('table_game_players')->where('user_id', $locked->id)->where('status', 'seated')->exists()) {
                 abort(422, 'The user must leave all live tables before changing wallet currency.');
             }

@@ -414,8 +414,11 @@
         "builder": true,
         "name": "Promotions",
         "content": {
+            "images": {
+                "hero_image": { "size": "1400x500" }
+            },
             "heading": "text",
-            "subheading": "text"
+            "subheading": "textarea"
         },
         "element": {
             "images": {
@@ -425,6 +428,13 @@
             },
             "title": "text",
             "description": "textarea",
+            "select": {
+                "name": "audience",
+                "options": {
+                    "current": "Current",
+                    "vip": "For VIP"
+                }
+            },
             "button_url": "text",
             "modal": true
         }

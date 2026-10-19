@@ -26,6 +26,14 @@ Route::namespace('Auth')->group(function () {
 });
 
 Route::middleware('admin')->group(function () {
+    Route::controller('BusinessPromotionController')->prefix('business-promotions')->name('business-promotions.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('rates', 'rates')->name('rates');
+        Route::post('rates', 'saveRates')->name('rates.save');
+        Route::post('{id}/approve', 'approve')->name('approve');
+        Route::post('{id}/reject', 'reject')->name('reject');
+    });
+
     Route::controller('CurrencyCountryController')->prefix('currency-country')->name('currency-country.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('money-audit', 'moneyAudit')->name('money-audit');

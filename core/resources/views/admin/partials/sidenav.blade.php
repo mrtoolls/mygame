@@ -17,6 +17,12 @@
                         <span class="menu-title">@lang('Currencies & Countries')</span>
                     </a>
                 </li>
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.business-promotions.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.business-promotions.index') }}" class="nav-link">
+                        <i class="menu-icon las la-bullhorn"></i>
+                        <span class="menu-title">@lang('Business Promotions')</span>
+                    </a>
+                </li>
                 @foreach ($sideBarLinks as $key => $data)
                     @if (@$data->header)
                         <li class="sidebar__menu-header">{{ __($data->header) }}</li>
