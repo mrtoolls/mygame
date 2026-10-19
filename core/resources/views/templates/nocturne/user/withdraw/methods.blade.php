@@ -33,7 +33,7 @@
                                     <div class="nocturne-pay-list-heading"><div><span class="nocturne-pay-kicker">@lang('STEP 01')</span><h4 class="nocturne-pay-step">@lang('Select a withdrawal method')</h4></div><span class="nocturne-pay-secure"><i class="las la-lock"></i> @lang('Secure')</span></div>
                                     <div class="nocturne-pay-tabs">
                                         <button type="button" class="nocturne-pay-tab" data-filter="1" @disabled($cryptoMethodCount === 0)><i class="lab la-bitcoin"></i><span><strong>@lang('Crypto')</strong><small>@lang('Digital asset payout')</small></span><b>{{ $cryptoMethodCount }}</b></button>
-                                        <button type="button" class="nocturne-pay-tab" data-filter="0" @disabled($bankMethodCount === 0)><i class="las la-credit-card"></i><span><strong>@lang('Bank Card')</strong><small>@lang('Bank and local payout')</small></span><b>{{ $bankMethodCount }}</b></button>
+                                        <button type="button" class="nocturne-pay-tab" data-filter="0" @disabled($bankMethodCount === 0)><i class="las la-wallet"></i><span><strong>@lang('Other Methods')</strong><small>@lang('Available supported methods')</small></span><b>{{ $bankMethodCount }}</b></button>
                                     </div>
                                     <div class="payment-system-list is-scrollable gateway-option-list">
                                         @forelse ($withdrawMethod as $data)
@@ -99,9 +99,9 @@
                                             <div class="deposit-info__input">
                                                 <div class="deposit-info__input-group input-group">
                                                     <span class="deposit-info__input-group-text">{{ gs('cur_sym') }}</span>
-                                                    <input type="text" class="form-control form--control amount"
+                                                    <input type="number" inputmode="decimal" min="0" step="any" class="form-control form--control amount"
                                                         name="amount" placeholder="@lang('00.00')"
-                                                        value="{{ old('amount') }}" autocomplete="off">
+                                                        value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Withdrawal amount')">
                                                 </div>
                                             </div>
                                         </div>
@@ -174,7 +174,16 @@
                     </div>
                 </div>
             </form>
-            <a href="{{ route('user.withdraw.history') }}" class="nocturne-pay-history-link"><i class="ph-bold ph-clock-counter-clockwise"></i>@lang('View Withdraw History')<i class="ph-bold ph-caret-right"></i></a>
+            <section class="nocturne-payment-history" aria-labelledby="withdraw-history-title">
+                <div class="nocturne-payment-history__heading"><div><span class="nocturne-pay-kicker">@lang('YOUR ACTIVITY')</span><h2 id="withdraw-history-title"><i class="las la-list-alt"></i> @lang('Withdrawal History')</h2></div><a href="{{ route('user.withdraw.history') }}">@lang('View all') <i class="las la-arrow-right"></i></a></div>
+                <div class="nocturne-payment-history__table-wrap"><table class="nocturne-payment-history__table"><thead><tr><th>@lang('Method / Reference')</th><th>@lang('Amount')</th><th>@lang('Status')</th><th>@lang('Date')</th></tr></thead><tbody>
+                    @forelse($withdraws as $withdraw)
+                        <tr><td data-label="@lang('Method / Reference')"><strong>{{ __($withdraw->method->name ?? 'Payout') }}</strong><small>{{ $withdraw->trx }}</small></td><td data-label="@lang('Amount')"><strong>{{ showAmount($withdraw->amount) }}</strong>@if($withdraw->charge > 0)<small>@lang('Fee'): {{ showAmount($withdraw->charge) }}</small>@endif</td><td data-label="@lang('Status')"><span class="nocturne-history-status">{!! $withdraw->statusBadge !!}</span></td><td data-label="@lang('Date')"><strong>{{ showDateTime($withdraw->created_at, 'M d, Y') }}</strong><small>{{ diffForHumans($withdraw->created_at) }}</small></td></tr>
+                    @empty
+                        <tr><td colspan="4"><div class="nocturne-history-empty"><i class="las la-money-bill-wave"></i><strong>@lang('No withdrawals yet')</strong><span>@lang('Your completed and pending withdrawals will appear here.')</span></div></td></tr>
+                    @endforelse
+                </tbody></table></div><div class="nocturne-payment-history__pagination">{{ paginateLinks($withdraws) }}</div>
+            </section>
         </div>
     </div>
         </div>
@@ -282,9 +291,14 @@
             border: unset;
         }
 
-        .form--control {
-            background: unset !important;
-        }
+        .form--control{background:unset!important}
+        .nocturne-payment-page .payment-method-panel .card-body{padding:2px!important}.nocturne-payment-page .payment-summary-panel .card-body{min-width:0}
+        .nocturne-payment-page .nocturne-pay-list-heading{align-items:flex-start}.nocturne-payment-page .nocturne-pay-list-heading>div{min-width:0;flex:1}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{line-height:1.35;overflow-wrap:anywhere}.nocturne-payment-page .nocturne-pay-secure{flex:none;white-space:nowrap;padding:8px 11px}.nocturne-payment-page .nocturne-pay-detail-heading{padding:10px 8px 20px}.nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0 8px 10px!important}
+        .nocturne-payment-page .deposit-info__input-group{display:flex;flex-wrap:nowrap;width:100%;min-width:0}.nocturne-payment-page .deposit-info__input-group-text{display:flex;align-items:center;justify-content:center;min-width:56px;padding:0 15px;border-right:1px solid rgba(133,142,175,.15)}.nocturne-payment-page .deposit-info__input-group .amount{flex:1;min-width:0;padding:0 18px;background:#0d1225!important;text-align:right;font-variant-numeric:tabular-nums}
+        .nocturne-payment-page .nocturne-payment-history{margin-top:28px;padding:24px;border:1px solid rgba(133,142,175,.14);border-radius:22px;background:linear-gradient(145deg,#151a31,#10152a);box-shadow:0 16px 42px rgba(0,0,0,.16)}.nocturne-payment-page .nocturne-payment-history__heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.nocturne-payment-page .nocturne-payment-history__heading h2{margin:0;color:#f4f5fd;font-size:21px;font-weight:850;letter-spacing:-.025em}.nocturne-payment-page .nocturne-payment-history__heading h2 i{margin-right:6px;color:#858eaf}.nocturne-payment-page .nocturne-payment-history__heading>a{display:inline-flex;align-items:center;gap:7px;flex:none;padding:11px 14px;border-radius:12px;background:#222a47;color:#f4f5fd;font-size:13px;font-weight:750;text-decoration:none}.nocturne-payment-page .nocturne-payment-history__heading>a i{color:var(--pay-accent)}
+        .nocturne-payment-history__table-wrap{overflow:auto;border:1px solid rgba(133,142,175,.1);border-radius:15px}.nocturne-payment-history__table{width:100%;border-collapse:collapse;color:#edf0fc}.nocturne-payment-history__table th{padding:14px 18px;background:#222a47;color:#e9ebf8;font-size:12px;font-weight:800;text-align:left;white-space:nowrap}.nocturne-payment-history__table td{padding:15px 18px;border-top:1px solid rgba(133,142,175,.1);vertical-align:middle;font-size:13px}.nocturne-payment-history__table td strong,.nocturne-payment-history__table td small{display:block}.nocturne-payment-history__table td small{margin-top:4px;color:#858eaf;font-size:11px;overflow-wrap:anywhere}.nocturne-payment-history__table td .badge{white-space:nowrap}.nocturne-history-empty{display:grid;justify-items:center;gap:5px;padding:30px 12px;text-align:center}.nocturne-history-empty i{color:var(--pay-accent);font-size:26px}.nocturne-history-empty strong{color:#f3f4fc;font-size:16px}.nocturne-history-empty span{color:var(--pay-muted);font-size:12px}.nocturne-payment-history__pagination{padding-top:14px}.nocturne-payment-history__pagination nav{margin:0}
+        @media(max-width:767.98px){.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:clamp(16px,5vw,22px);border-radius:20px}.nocturne-payment-page .payment-workspace{--bs-gutter-x:12px}.nocturne-payment-page .nocturne-pay-list-heading{gap:8px}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{font-size:14px}.nocturne-payment-page .nocturne-pay-secure{padding:7px 8px;font-size:9px}.nocturne-payment-page .nocturne-pay-detail-heading{padding:4px 2px 17px}.nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0!important}.nocturne-payment-page .deposit-info{gap:10px}.nocturne-payment-page .deposit-info__input-group .amount{font-size:21px}.nocturne-payment-page .nocturne-payment-history{margin-top:20px;padding:17px 14px;border-radius:19px}.nocturne-payment-page .nocturne-payment-history__heading{align-items:flex-start}.nocturne-payment-page .nocturne-payment-history__heading h2{font-size:18px}.nocturne-payment-page .nocturne-payment-history__heading>a{padding:9px 10px;font-size:11px}.nocturne-payment-history__table-wrap{overflow:visible;border:0}.nocturne-payment-history__table thead{display:none}.nocturne-payment-history__table,.nocturne-payment-history__table tbody{display:block;width:100%}.nocturne-payment-history__table tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:10px;padding:8px 12px;border:1px solid rgba(133,142,175,.13);border-radius:14px;background:#11162b}.nocturne-payment-history__table tbody tr:last-child{margin-bottom:0}.nocturne-payment-history__table td{min-width:0;padding:9px 4px;border:0;font-size:12px;overflow-wrap:anywhere}.nocturne-payment-history__table td:before{display:block;margin-bottom:4px;color:#858eaf;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;content:attr(data-label)}.nocturne-payment-history__table td[colspan]{grid-column:1/-1}.nocturne-payment-history__table td[colspan]:before{display:none}}
+        @media(max-width:360px){.nocturne-payment-page .nocturne-pay-tab{gap:7px;padding:8px}.nocturne-payment-page .nocturne-pay-tab strong{font-size:11px}.nocturne-payment-page .nocturne-pay-tab small{font-size:8px}}
     </style>
 @endpush
 

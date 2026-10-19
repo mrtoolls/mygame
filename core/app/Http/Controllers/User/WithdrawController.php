@@ -17,8 +17,10 @@ class WithdrawController extends Controller
     public function withdrawMoney()
     {
         $withdrawMethod = WithdrawMethod::with('form')->active()->get();
+        $withdraws = Withdrawal::where('user_id', auth()->id())->where('status', '!=', Status::PAYMENT_INITIATE)
+            ->with('method')->latest('id')->paginate(5, ['*'], 'withdraw_page');
         $pageTitle = 'Withdraw Money';
-        return view('Template::user.withdraw.methods', compact('pageTitle', 'withdrawMethod'));
+        return view('Template::user.withdraw.methods', compact('pageTitle', 'withdrawMethod', 'withdraws'));
     }
 
     public function withdrawStore(Request $request)
