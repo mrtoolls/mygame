@@ -26,13 +26,6 @@
         "route_name": "admin.dashboard",
         "menu_active": "admin.dashboard"
     },
-    "currency_country": {
-        "keyword": ["Currency", "Currencies", "Countries", "Access control", "Exchange rates"],
-        "title": "Currencies & Countries",
-        "icon": "las la-globe",
-        "route_name": "admin.currency-country.index",
-        "menu_active": "admin.currency-country*"
-    },
     "referral": {
         "keyword": [
             "Referral",
