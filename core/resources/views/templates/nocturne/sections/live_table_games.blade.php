@@ -21,9 +21,13 @@
             @foreach ($liveGameCatalog as $index => $game)
                 <article class="nocturne-live-table nocturne-live-table--{{ $index % 5 }}">
                     <div class="nocturne-live-table__art" aria-label="@lang('Game image placeholder')">
-                        <span class="nocturne-live-table__art-glow"></span>
-                        <i class="ph-fill {{ ['ph-dice-five', 'ph-cards', 'ph-spade', 'ph-circles-three-plus', 'ph-game-controller'][($index % 5)] }}"></i>
-                        <small>@lang('GAME IMAGE HERE')</small>
+                        @if (!empty($game['card_image']))
+                            <img src="{{ getImage(getFilePath('game') . '/' . $game['card_image'], getFileSize('game')) }}" alt="{{ __($game['name']) }}">
+                        @else
+                            <span class="nocturne-live-table__art-glow"></span>
+                            <i class="ph-fill {{ ['ph-dice-five', 'ph-cards', 'ph-spade', 'ph-circles-three-plus', 'ph-game-controller'][($index % 5)] }}"></i>
+                            <small>@lang('GAME IMAGE HERE')</small>
+                        @endif
                         <span class="nocturne-live-table__live"><i></i>@lang('LIVE TABLES')</span>
                     </div>
                     <div class="nocturne-live-table__body">

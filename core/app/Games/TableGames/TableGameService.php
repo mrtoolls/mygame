@@ -37,6 +37,7 @@ class TableGameService
                 'min_players' => $definition['min'],
                 'max_players' => $definition['max'],
                 'enabled' => (bool) $setting->enabled,
+                'card_image' => $setting->card_image ?? null,
                 'available' => in_array($key, TableGameRules::AVAILABLE, true),
                 'commission_percent' => (float) $setting->commission_percent,
                 'min_stake' => (string) $setting->min_stake,

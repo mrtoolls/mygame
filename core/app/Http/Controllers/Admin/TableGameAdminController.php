@@ -48,8 +48,26 @@ class TableGameAdminController extends Controller
             $rules["settings.$key.max_concurrent_tables"] = 'required|integer|min:1|max:100000';
         }
         $validated = Validator::make($request->all(), $rules)->validate();
+        Validator::make($request->all(), [
+            'game_images' => 'sometimes|array',
+            'game_images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ])->validate();
+
+        $imageUploads = $request->file('game_images', []);
+        if (!empty($imageUploads) && !Schema::hasColumn('table_game_settings', 'card_image')) {
+            return back()->withNotify([['error', 'Run the pending database update before uploading live game images.']]);
+        }
         foreach ($validated['settings'] as $game => $values) {
-            TableGameSetting::updateOrCreate(['game_type' => $game], $values);
+            $setting = TableGameSetting::updateOrCreate(['game_type' => $game], $values);
+            if ($game !== '*' && isset($imageUploads[$game])) {
+                try {
+                    $setting->card_image = fileUploader($imageUploads[$game], getFilePath('game'), getFileSize('game'), $setting->card_image);
+                    $setting->save();
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    return back()->withNotify([['error', 'Could not upload the live game image. Please try again.']]);
+                }
+            }
         }
         return back()->withNotify([['success', 'Table game settings saved.']]);
     }

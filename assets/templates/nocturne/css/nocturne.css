@@ -1674,6 +1674,7 @@ a:hover { color: var(--nocturne-green); }
 .nocturne-live-table--4 .nocturne-live-table__art { background:radial-gradient(ellipse at 50% 75%,rgba(222,82,149,.24),transparent 48%),linear-gradient(145deg,#211328,#40223e); color:#f49bd0; }
 .nocturne-live-table__art-glow { position:absolute; width:170px; height:100px; border:1px solid currentColor; border-radius:50%; opacity:.17; transform:rotate(-15deg); box-shadow:0 0 35px currentColor,inset 0 0 35px currentColor; }
 .nocturne-live-table__art>i { z-index:1; font-size:65px; filter:drop-shadow(0 12px 13px rgba(0,0,0,.45)); }
+.nocturne-live-table__art>img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .nocturne-live-table__art>small { z-index:1; margin-top:5px; color:rgba(240,244,255,.58); font-size:7px; font-weight:900; letter-spacing:.16em; }
 .nocturne-live-table__live { position:absolute; top:10px; left:10px; display:flex; align-items:center; gap:5px; padding:5px 7px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(7,11,23,.55); color:#e7ebfb; font-size:7px; font-weight:950; letter-spacing:.08em; }
 .nocturne-live-table__live i { width:6px; height:6px; border-radius:50%; background:var(--nocturne-green); box-shadow:0 0 8px var(--nocturne-green); }
