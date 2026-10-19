@@ -1,16 +1,4 @@
 {
-    "breadcrumb": {
-        "builder": true,
-        "no_selection": true,
-        "name": "Breadcrumb",
-        "content": {
-            "images": {
-                "image": {
-                    "size": "1920x445"
-                }
-            }
-        }
-    },
     "banner": {
         "builder": true,
         "no_selection": true,

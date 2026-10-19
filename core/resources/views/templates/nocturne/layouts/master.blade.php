@@ -4,9 +4,6 @@
         @include('Template::partials.shell_header')
         @include('Template::partials.shell_sidebar')
         <main class="nocturne-main {{ request()->routeIs('user.play.game') ? 'nocturne-game-page' : '' }}">
-            @if (!request()->routeIs('home') && !request()->routeIs('user.*'))
-                @include('Template::partials.breadcrumb')
-            @endif
             <div class="nocturne-content">
                 <section class="py-100">
                     <div class="container">

@@ -2,10 +2,6 @@
 @section('app')
     @include('Template::partials.user_header')
 
-    @if (!request()->routeIs('home'))
-        @include('Template::partials.breadcrumb')
-    @endif
-
     @yield('content')
 
     @include('Template::partials.footer')
