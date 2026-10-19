@@ -46,13 +46,16 @@ class TableGameController extends Controller
 
     public function create(Request $request, TableGameService $service)
     {
-        $data = $request->validate([
+        $rules = [
             'game_type' => 'required|string|max:40',
             'player_limit' => 'required|integer|min:2|max:4',
             'play_mode' => 'required|in:friendly,staked',
-            'stake' => 'required_if:play_mode,staked|nullable|numeric|gt:0|decimal:0,8',
             'idempotency_key' => 'required|string|alpha_dash|min:12|max:64',
-        ]);
+        ];
+        $rules['stake'] = $request->input('play_mode') === 'staked'
+            ? 'required|numeric|gt:0|decimal:0,8'
+            : 'nullable|numeric|decimal:0,8';
+        $data = $request->validate($rules);
         $stake = $data['play_mode'] === 'friendly' ? '0.00000000' : (string) $data['stake'];
         return $this->run(fn () => $service->create($request->user(), $data['game_type'], (int) $data['player_limit'], $stake, $data['idempotency_key']));
     }
