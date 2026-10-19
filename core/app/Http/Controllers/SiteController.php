@@ -9,6 +9,8 @@ use App\Models\Game;
 use App\Models\Language;
 use App\Models\Page;
 use App\Models\Subscriber;
+use App\Models\UserFeedback;
+use Illuminate\Support\Facades\Schema;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use Carbon\Carbon;
@@ -34,9 +36,14 @@ class SiteController extends Controller {
         $page        = Page::where('tempname', activeTemplate())->where('slug', $slug)->firstOrFail();
         $pageTitle   = $page->name;
         $sections    = $page->secs;
+        if ($slug === 'feedback-about-us') {
+            $sections = json_encode(['feedback_hero', 'feedback_form', 'feedback_reviews']);
+            $feedbacks = Schema::hasTable('user_feedback') ? UserFeedback::approved()->latest('approved_at')->paginate(9) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 9);
+            $feedbackStats = Schema::hasTable('user_feedback') ? ['count' => UserFeedback::approved()->count(), 'average' => round((float) UserFeedback::approved()->avg('rating'), 2)] : ['count' => 0, 'average' => 0];
+        }
         $seoContents = $page->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
-        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage'));
+        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage'), isset($feedbacks) ? compact('feedbacks', 'feedbackStats') : []);
     }
 
     public function games() {

@@ -41,7 +41,7 @@
             <a href="{{ route('pages', 'sponsorships') }}"><i class="ph-bold ph-shield-check"></i><span>@lang('Sponsorships')</span></a>
             <a href="{{ route('pages', 'licenses-security') }}"><i class="ph-bold ph-lock"></i><span>@lang('Licenses & Security')</span></a>
             <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-bold ph-crown"></i><span>@lang('VIP-Club')</span></a>
-            <a href="{{ route('pages', 'feedback-about-us') }}"><i class="ph-bold ph-chat-circle"></i><span>@lang('Feedback About Us')</span></a>
+            <a href="{{ route('feedback') }}"><i class="ph-bold ph-chat-circle"></i><span>@lang('Feedback About Us')</span></a>
             <a href="{{ route('blog') }}" class="{{ request()->routeIs('blog*') ? 'is-active' : '' }}"><i class="ph-bold ph-newspaper"></i><span>@lang('News')</span></a>
         </section>
         @if (gs('multi_language'))

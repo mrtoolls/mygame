@@ -26,6 +26,11 @@ Route::namespace('Auth')->group(function () {
 });
 
 Route::middleware('admin')->group(function () {
+    Route::controller('FeedbackAdminController')->prefix('feedback')->name('feedback.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('{id}/approve', 'approve')->name('approve');
+        Route::post('{id}/reject', 'reject')->name('reject');
+    });
     Route::controller('BusinessPromotionController')->prefix('business-promotions')->name('business-promotions.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('rates', 'rates')->name('rates');

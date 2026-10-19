@@ -143,7 +143,7 @@ class FrontendController extends Controller
         if ($imgJson) {
             foreach ($imgJson as $imgKey => $imgValue) {
                 $imgData = $request->image_input && array_key_exists($imgKey, $request->image_input) ? $request->image_input[$imgKey] : null;
-                $oldImage = isset($content?->data_values?->$imgKey) && $content?->data_values?->$imgKey ? $content?->data_values?->$imgKey : null;
+                $oldImage = data_get($content?->data_values, $imgKey);
                 if (is_file($imgData)) {
                     try {
                         $inputContentValue[$imgKey] = $this->storeImage($imgJson, $type, $key, $imgData, $imgKey, $oldImage);
@@ -151,7 +151,7 @@ class FrontendController extends Controller
                         $notify[] = ['error', 'Couldn\'t upload the image'];
                         return back()->withNotify($notify);
                     }
-                } else if ($content?->data_values?->$imgKey) {
+                } else if ($oldImage) {
                     $inputContentValue[$imgKey] = $oldImage;
                 }
             }

@@ -44,6 +44,8 @@ Route::controller('TicketController')->prefix('ticket')->name('ticket.')->group(
 Route::get('app/deposit/confirm/{hash}', 'Gateway\PaymentController@appDepositConfirm')->name('deposit.app.confirm');
 
 Route::controller('SiteController')->group(function () {
+    Route::post('feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->middleware(['auth', 'throttle:5,1'])->name('feedback.store');
+    Route::get('feedback', 'pages')->defaults('slug', 'feedback-about-us')->name('feedback');
     Route::get('/pwa/configuration', 'pwaConfiguration')->name('pwa.configuration');
     Route::get('/contact', 'contact')->name('contact');
     Route::post('/contact', 'contactSubmit');

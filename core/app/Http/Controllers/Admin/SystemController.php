@@ -96,7 +96,7 @@ class SystemController extends Controller
                 'content' => ['vip_club' => ['heading' => 'VIP Club', 'subheading' => 'Climb the tiers, unlock real rakeback and privileges']],
             ],
             [
-                'slug' => 'feedback-about-us', 'name' => 'Feedback About Us', 'secs' => ['testimonial'],
+                'slug' => 'feedback-about-us', 'name' => 'Feedback About Us', 'secs' => ['feedback_hero', 'feedback_form', 'feedback_reviews'],
                 'content' => ['testimonial' => ['heading' => 'What Players Say', 'description' => 'Real feedback from our community', 'button_name' => '', 'button_url' => '']],
             ],
         ];

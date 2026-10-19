@@ -659,6 +659,25 @@
             "button_url": "text"
         }
     },
+    "feedback_hero": {
+        "builder": true,
+        "name": "Feedback - Hero",
+        "content": {
+            "images": { "hero_image": { "size": "1400x500" } },
+            "heading": "text",
+            "description": "text"
+        }
+    },
+    "feedback_form": {
+        "builder": true,
+        "name": "Feedback - Submission Form",
+        "content": { "heading": "text", "description": "text" }
+    },
+    "feedback_reviews": {
+        "builder": true,
+        "name": "Feedback - Approved Reviews",
+        "content": { "heading": "text", "description": "text" }
+    },
     "slider": {
         "builder": true,
         "name": "App Slider Section",

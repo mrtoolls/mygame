@@ -11,6 +11,7 @@
         </div>
         <div class="sidebar__menu-wrapper">
             <ul class="sidebar__menu">
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}"><a href="{{ route('admin.feedback.index') }}" class="nav-link"><i class="menu-icon las la-star"></i><span class="menu-title">@lang('Feedback Moderation')</span></a></li>
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.currency-country.*') ? 'active' : '' }}">
                     <a href="{{ route('admin.currency-country.index') }}" class="nav-link">
                         <i class="menu-icon las la-globe"></i>

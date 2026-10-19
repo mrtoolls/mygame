@@ -27,7 +27,7 @@
                 <ul>
                     <li><a href="{{ route('pages', 'about-us') }}">@lang('About Us')</a></li>
                     <li><a href="{{ route('pages', 'sponsorships') }}">@lang('Sponsorships')</a></li>
-                    <li><a href="{{ route('pages', 'feedback-about-us') }}">@lang('Feedback about us')</a></li>
+                    <li><a href="{{ route('feedback') }}">@lang('Feedback about us')</a></li>
                     <li><a href="{{ route('contact') }}">@lang('Contact')</a></li>
                 </ul>
             </div>
