@@ -84,10 +84,8 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->shouldRenderJsonWhen(function () {
-            if (request()->is('api/*')) {
-                return true;
-            }
+        $exceptions->shouldRenderJsonWhen(function ($request) {
+            return $request->expectsJson() || $request->is('api/*');
         });
         $exceptions->respond(function (Response $response) {
             if ($response->getStatusCode() === 401) {
