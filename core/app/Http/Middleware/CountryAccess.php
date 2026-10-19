@@ -17,14 +17,6 @@ class CountryAccess
             return $next($request);
         }
 
-        $countryCode = strtoupper((string) $request->header('CF-IPCountry', ''));
-        if (!preg_match('/^[A-Z]{2}$/', $countryCode)) {
-            // Production traffic must pass through a trusted GeoIP source (for example
-            // Cloudflare). VPNs can still alter the detected location.
-            if (app()->environment('local', 'testing')) return $next($request);
-            return $this->blocked($request, null, null);
-        }
-
         $user = $request->user() ?? auth('sanctum')->user();
         if (Schema::hasTable('country_access_overrides')) {
             $override = DB::table('country_access_overrides')
@@ -49,6 +41,21 @@ class CountryAccess
                     ]);
                 }
                 return $this->blocked($request, $countryCode, $user?->id, 'Access is restricted.');
+            }
+        }
+
+        $countryCode = strtoupper(trim((string) $request->header('CF-IPCountry', '')));
+        // Cloudflare can send XX when IP geolocation is unavailable. Do not interpret
+        // an absent/unknown signal as a blocked country: that was denying all direct
+        // cPanel traffic. For signed-in users, use their registration country as a
+        // fallback; for guests, registration still limits the selected country to the
+        // admin-enabled allowlist. Configure a trusted GeoIP/CDN header for strict
+        // pre-authentication country enforcement. VPNs can still alter detected location.
+        if (!preg_match('/^[A-Z]{2}$/', $countryCode) || in_array($countryCode, ['XX', 'T1'], true)) {
+            if ($user?->country_id) {
+                $countryCode = strtoupper((string) DB::table('countries')->where('id', $user->country_id)->value('iso_code'));
+            } else {
+                return $next($request);
             }
         }
 
