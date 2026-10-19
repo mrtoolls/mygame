@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -204,6 +205,13 @@ class TableGameController extends Controller
             throw $exception;
         } catch (\RuntimeException $exception) {
             return response()->json(['success' => false, 'message' => $exception->getMessage()], 500);
+        } catch (\Throwable $exception) {
+            // Keep AJAX clients on the JSON contract while recording the real server-side cause.
+            Log::error('Live table request failed unexpectedly.', [
+                'exception' => $exception,
+                'user_id' => request()->user()?->id,
+            ]);
+            return response()->json(['success' => false, 'message' => 'The live game could not be created right now. Please try again or contact support.'], 500);
         }
     }
 }
