@@ -4,6 +4,13 @@
         <div class="col-lg-12">
             <div class="card ">
                 <div class="card-body p-0">
+                    @isset($reportCurrencies)
+                        <form method="get" class="p-3 d-flex flex-wrap gap-2 align-items-end">
+                            <div><label class="form-label">@lang('Currency')</label><select class="form-control" name="currency_id"><option value="">@lang('All currencies')</option>@foreach($reportCurrencies as $currency)<option value="{{ $currency->id }}" @selected(request('currency_id') == $currency->id)>{{ $currency->code }}</option>@endforeach</select></div>
+                            <div><label class="form-label">@lang('Country')</label><select class="form-control" name="country_id"><option value="">@lang('All countries')</option>@foreach($reportCountries as $country)<option value="{{ $country->id }}" @selected(request('country_id') == $country->id)>{{ $country->name }}</option>@endforeach</select></div>
+                            <button class="btn btn--primary" type="submit">@lang('Filter')</button>
+                        </form>
+                    @endisset
                     <div class="table-responsive--md table-responsive">
                         <table class="table--light style--two table">
                             <thead>

@@ -9,6 +9,8 @@ use App\Models\SupportAgent;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
 use App\Lib\RequiredConfig;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Schema;
 
 class WithdrawMethodController extends Controller {
     public function methods() {
@@ -19,7 +21,9 @@ class WithdrawMethodController extends Controller {
 
     public function create() {
         $pageTitle = 'New Withdrawal Method';
-        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        $query = SupportAgent::paymentAgents();
+        if (Schema::hasTable('countries')) $query->with('country.currency');
+        $paymentAgents = $query->orderBy('name')->get();
         return view('admin.withdraw.create', compact('pageTitle', 'paymentAgents'));
     }
 
@@ -41,6 +45,7 @@ class WithdrawMethodController extends Controller {
         $generatorValidation = $formProcessor->generatorValidation();
         $validation          = array_merge($validation, $generatorValidation['rules']);
         $request->validate($validation, $generatorValidation['messages']);
+        $this->validatePaymentAgentCurrency($request);
 
         $generate = $formProcessor->generate('withdraw_method');
 
@@ -78,7 +83,9 @@ class WithdrawMethodController extends Controller {
         $pageTitle = 'Update Withdrawal Method';
         $method    = WithdrawMethod::with('form')->findOrFail($id);
         $form      = $method->form;
-        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        $query = SupportAgent::paymentAgents();
+        if (Schema::hasTable('countries')) $query->with('country.currency');
+        $paymentAgents = $query->orderBy('name')->get();
         return view('admin.withdraw.edit', compact('pageTitle', 'method', 'form', 'paymentAgents'));
     }
 
@@ -100,6 +107,7 @@ class WithdrawMethodController extends Controller {
         $generatorValidation = $formProcessor->generatorValidation();
         $validation          = array_merge($validation, $generatorValidation['rules']);
         $request->validate($validation, $generatorValidation['messages']);
+        $this->validatePaymentAgentCurrency($request);
 
         $method = WithdrawMethod::findOrFail($id);
 
@@ -133,6 +141,15 @@ class WithdrawMethodController extends Controller {
 
     public function status($id) {
         return WithdrawMethod::changeStatus($id);
+    }
+
+    private function validatePaymentAgentCurrency(Request $request): void
+    {
+        if (!$request->filled('payment_agent_id') || !Schema::hasTable('countries')) return;
+        $agent = SupportAgent::paymentAgents()->with('country.currency')->findOrFail($request->integer('payment_agent_id'));
+        if (!$agent->country?->is_allowed || !$agent->country?->is_enabled || strtoupper((string) $agent->country?->currency?->code) !== strtoupper((string) $request->input('currency'))) {
+            throw ValidationException::withMessages(['payment_agent_id' => 'The payment agent country currency must match this withdrawal method currency.']);
+        }
     }
 
 }

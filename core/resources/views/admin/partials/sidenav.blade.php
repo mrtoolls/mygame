@@ -78,6 +78,14 @@
                         </li>
                     @endif
                 @endforeach
+                @if (\Illuminate\Support\Facades\Route::has('admin.currency-country.index'))
+                    <li class="sidebar-menu-item {{ menuActive('admin.currency-country.*') }}">
+                        <a href="{{ route('admin.currency-country.index') }}" class="nav-link">
+                            <i class="menu-icon las la-globe"></i>
+                            <span class="menu-title">@lang('Currencies & Countries')</span>
+                        </a>
+                    </li>
+                @endif
             </ul>
         </div>
         <div class="version-info text-center text-uppercase">

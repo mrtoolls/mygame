@@ -11,12 +11,20 @@ use App\Models\Withdrawal;
 use App\Models\WithdrawMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class WithdrawController extends Controller
 {
     public function withdrawMethod()
     {
-        $withdrawMethod = WithdrawMethod::active()->get();
+        $query = WithdrawMethod::active()->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+        });
+        if (auth()->user()?->currency?->code) $query->where('currency', auth()->user()->currency->code);
+        $user = auth()->user();
+        $withdrawMethod = $query->get()->filter(fn ($method) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$method->id, $method->name, $method->currency]))->values();
         $notify[]       = 'Withdrawals methods';
         return responseSuccess('withdraw_methods', $notify, [
             'withdrawMethod' => $withdrawMethod,
@@ -35,13 +43,21 @@ class WithdrawController extends Controller
             return responseError('validation_error', $validator->errors());
         }
 
-        $method = WithdrawMethod::where('id', $request->method_code)->active()->first();
+        $method = WithdrawMethod::where('id', $request->method_code)->where(function ($query) {
+            $query->whereNull('support_agent_id')
+                ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
+        })->active()->first();
         if (!$method) {
             $notify[] = 'Withdraw method not found.';
             return responseError('validation_error', $notify);
         }
 
         $user = auth()->user();
+        if ($user->currency?->code && strtoupper($user->currency->code) !== strtoupper((string) $method->currency)) {
+            return responseError('invalid_currency', ['Withdrawal currency must match your wallet currency.']);
+        }
+        app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$method->id, $method->name, $method->currency]);
+        app(\App\Support\CountryPaymentLimits::class)->assert($user, 'withdrawal', $request->input('amount'));
         if ($request->amount < $method->min_limit) {
             $notify[] = 'Your requested amount is smaller than minimum amount';
             return responseError('validation_error', $notify);
@@ -76,6 +92,7 @@ class WithdrawController extends Controller
         $withdraw               = new Withdrawal();
         $withdraw->method_id    = $method->id; // wallet method ID
         $withdraw->user_id      = $user->id;
+        if (Schema::hasColumn('withdrawals', 'currency_id')) $withdraw->currency_id = $user->currency_id;
         $withdraw->amount       = $request->amount;
         $withdraw->currency     = $method->currency;
         $withdraw->rate         = $method->rate;
@@ -142,33 +159,41 @@ class WithdrawController extends Controller
             }
         }
 
-        if ($withdraw->amount > $user->balance) {
-            $notify[] = 'Your request amount is larger then your current balance';
-            return responseError('validation_error', $notify);
+        try {
+            [$withdraw, $user] = DB::transaction(function () use ($withdraw, $userData, $user) {
+                $lockedWithdrawal = Withdrawal::whereKey($withdraw->id)->lockForUpdate()->firstOrFail();
+                if ((int) $lockedWithdrawal->status !== Status::PAYMENT_INITIATE) abort(409, 'This withdrawal has already been submitted.');
+                $lockedUser = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                if ($lockedWithdrawal->amount > $lockedUser->balance) abort(422, 'Insufficient balance for withdrawal.');
+                if ($lockedUser->currency_id && $lockedWithdrawal->currency_id && (int) $lockedUser->currency_id !== (int) $lockedWithdrawal->currency_id) abort(422, 'Withdrawal currency does not match your wallet.');
+
+                $lockedWithdrawal->status = Status::PAYMENT_PENDING;
+                $lockedWithdrawal->withdraw_information = $userData;
+                $lockedWithdrawal->save();
+                $lockedUser->balance -= $lockedWithdrawal->amount;
+                $lockedUser->save();
+                $transaction = new Transaction();
+                $transaction->user_id = $lockedUser->id;
+                $transaction->amount = $lockedWithdrawal->amount;
+                $transaction->post_balance = $lockedUser->balance;
+                $transaction->charge = $lockedWithdrawal->charge;
+                $transaction->trx_type = '-';
+                $transaction->details = 'Withdraw request via ' . $lockedWithdrawal->method->name;
+                $transaction->trx = $lockedWithdrawal->trx;
+                $transaction->remark = 'withdraw';
+                if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $lockedUser->currency_id;
+                $transaction->save();
+
+                $adminNotification = new AdminNotification();
+                $adminNotification->user_id = $lockedUser->id;
+                $adminNotification->title = 'New withdraw request from ' . $lockedUser->username;
+                $adminNotification->click_url = urlPath('admin.withdraw.data.details', $lockedWithdrawal->id);
+                $adminNotification->save();
+                return [$lockedWithdrawal, $lockedUser];
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+            return responseError('withdraw_submit_failed', [$exception->getMessage()]);
         }
-
-        $withdraw->status               = Status::PAYMENT_PENDING;
-        $withdraw->withdraw_information = $userData;
-        $withdraw->save();
-        $user->balance -= $withdraw->amount;
-        $user->save();
-
-        $transaction               = new Transaction();
-        $transaction->user_id      = $withdraw->user_id;
-        $transaction->amount       = $withdraw->amount;
-        $transaction->post_balance = $user->balance;
-        $transaction->charge       = $withdraw->charge;
-        $transaction->trx_type     = '-';
-        $transaction->details      = 'Withdraw request via ' . $withdraw->method->name;
-        $transaction->trx          = $withdraw->trx;
-        $transaction->remark       = 'withdraw';
-        $transaction->save();
-
-        $adminNotification            = new AdminNotification();
-        $adminNotification->user_id   = $user->id;
-        $adminNotification->title     = 'New withdraw request from ' . $user->username;
-        $adminNotification->click_url = urlPath('admin.withdraw.data.details', $withdraw->id);
-        $adminNotification->save();
 
         notify($user, 'WITHDRAW_REQUEST', [
             'method_name'     => $withdraw->method->name,

@@ -11,9 +11,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 abstract class Game {
+    private static array $columnCache = [];
     private $globalValidationRule = [
         'invest' => 'required|numeric|gt:0',
     ];
@@ -214,6 +216,7 @@ abstract class Game {
                     $transaction->remark       = 'invest_back';
                     $transaction->trx          = $trx;
                     $transaction->post_balance = $this->user->balance;
+                    if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $this->user->currency_id;
                     $transaction->save();
                 }
 
@@ -240,6 +243,7 @@ abstract class Game {
                 $transaction->remark       = 'Win_Bonus';
                 $transaction->trx          = $trx;
                 $transaction->post_balance = $this->user->balance;
+                if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $this->user->currency_id;
                 $transaction->save();
             }
 
@@ -335,11 +339,13 @@ abstract class Game {
             $transaction->remark       = 'invest';
             $transaction->trx          = getTrx();
             $transaction->post_balance = $user->balance;
+            if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $user->currency_id;
             $transaction->save();
         }
 
         $gameLog          = new GameLog();
         $gameLog->user_id = $user->id ?? 0;
+        if ($this->hasCurrencyColumn('game_logs')) $gameLog->currency_id = $user->currency_id;
         $gameLog->game_id = $this->game->id;
         if ($this->demoPlay) {
             $gameLog->demo_play = Status::YES;
@@ -400,12 +406,14 @@ abstract class Game {
             $transaction->remark       = 'gameplay_bonus';
             $transaction->trx          = getTrx();
             $transaction->post_balance = $user->balance;
+            if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $user->currency_id;
             $transaction->save();
 
             $bonusLog          = new GameplayBonusLog();
             $bonusLog->user_id = $userId;
             $bonusLog->game_id = $gameId;
             $bonusLog->amount  = $bonusAmount;
+            if ($this->hasCurrencyColumn('gameplay_bonus_logs')) $bonusLog->currency_id = $user->currency_id;
             $bonusLog->save();
 
             notify($user, 'GAMEPLAY_BONUS', [
@@ -414,6 +422,11 @@ abstract class Game {
                 'post_balance' => showAmount($user->balance, currencyFormat: false),
             ]);
         }
+    }
+
+    private function hasCurrencyColumn(string $table): bool
+    {
+        return self::$columnCache[$table] ??= Schema::hasColumn($table, 'currency_id');
     }
 
     public function setRequest(Request $request) {

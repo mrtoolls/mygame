@@ -130,6 +130,26 @@ function showAmount($amount, $decimal = 2, $separate = true, $exceptZeros = fals
     return $printAmount;
 }
 
+/** Format a legacy major-unit amount or an integer minor-unit amount using a wallet currency. */
+function formatCurrencyAmount($amount, $currency = null, bool $amountIsMinor = false, bool $includeCode = true): string {
+    if (!$currency && auth()->check()) {
+        $currency = auth()->user()->walletCurrency;
+    }
+    if (is_string($currency)) {
+        $currency = \App\Models\Currency::where('code', strtoupper($currency))->first();
+    }
+    if (!$currency instanceof \App\Models\Currency) {
+        return showAmount($amount);
+    }
+
+    $money = app(\App\Support\Money::class);
+    $minor = $amountIsMinor
+        ? (string) $amount
+        : $money->toMinor((string) $amount, (int) $currency->decimals);
+    $formatted = $currency->formatMinor($minor, false);
+    return $includeCode ? $formatted . ' ' . $currency->code : $formatted;
+}
+
 function removeElement($array, $value) {
     return array_diff($array, (is_array($value) ? $value : array($value)));
 }

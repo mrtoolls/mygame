@@ -21,6 +21,11 @@ class SupportAgent extends Authenticatable
         return $this->hasMany(SupportTicket::class);
     }
 
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
+
     public function scopePaymentAgents($query)
     {
         return $query->where('is_active', true)->where('is_payment_agent', true);

@@ -25,7 +25,7 @@
                                             </div>
                                         </div>
                                         <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4 mb-15">
-                                            <div class="form-group"><label>@lang('Payment agent (optional)')</label><select class="form-control" name="payment_agent_id"><option value="">@lang('General manual payment')</option>@foreach($paymentAgents as $agent)<option value="{{ $agent->id }}" @selected(old('payment_agent_id') == $agent->id)>{{ $agent->name }} — {{ $agent->email }}</option>@endforeach</select><small class="text-muted">Only agents explicitly designated by an administrator appear here.</small></div>
+                                            <div class="form-group"><label>@lang('Payment agent (optional)')</label><select class="form-control" name="payment_agent_id"><option value="">@lang('General manual payment')</option>@foreach($paymentAgents as $agent)<option value="{{ $agent->id }}" @selected(old('payment_agent_id') == $agent->id)>{{ $agent->name }} — {{ $agent->email }} · {{ $agent->country?->currency?->code }}</option>@endforeach</select><small class="text-muted">Only designated agents whose local currency matches this method appear here.</small></div>
                                         </div>
                                         <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4 mb-15">
 

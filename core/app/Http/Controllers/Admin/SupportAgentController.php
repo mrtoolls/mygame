@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Constants\Status;
 use App\Models\SupportAgent;
+use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SupportAgentController extends Controller
 {
@@ -25,12 +29,16 @@ class SupportAgentController extends Controller
     {
         $pageTitle = 'Add Support Agent';
         $agent = new SupportAgent();
+        $countries = Schema::hasTable('countries') ? Country::with('currency')->where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get() : collect();
 
-        return view('admin.support.agents.form', compact('pageTitle', 'agent'));
+        return view('admin.support.agents.form', compact('pageTitle', 'agent', 'countries'));
     }
 
     public function store(Request $request)
     {
+        $countryRules = Schema::hasTable('countries')
+            ? [Rule::requiredIf($request->boolean('is_payment_agent')), 'nullable', 'integer', Rule::exists('countries', 'id')->where(fn ($query) => $query->where('is_enabled', true)->where('is_allowed', true))]
+            : ['nullable', 'integer'];
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:support_agents,email'],
@@ -42,6 +50,7 @@ class SupportAgentController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'is_payment_agent' => ['nullable', 'boolean'],
             'payment_details' => ['required_if:is_payment_agent,1', 'nullable', 'string', 'max:5000'],
+            'country_id' => $countryRules,
         ]);
 
         $agent = new SupportAgent($data);
@@ -49,6 +58,12 @@ class SupportAgentController extends Controller
         $agent->is_active = $request->boolean('is_active', true);
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
         $agent->payment_details = $agent->is_payment_agent ? ($data['payment_details'] ?? null) : null;
+        if (!empty($data['country_id']) && Schema::hasTable('countries')) {
+            $country = Country::with('currency')->findOrFail($data['country_id']);
+            if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
+            $agent->country_id = $country->id;
+            $agent->currency_id = $country->currency_id;
+        }
         if ($request->hasFile('photo')) {
             $agent->photo = $this->savePhoto($request);
         }
@@ -62,12 +77,16 @@ class SupportAgentController extends Controller
         $agent = SupportAgent::findOrFail($id);
         $pageTitle = 'Edit Support Agent';
 
-        return view('admin.support.agents.form', compact('pageTitle', 'agent'));
+        $countries = Schema::hasTable('countries') ? Country::with('currency')->where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get() : collect();
+        return view('admin.support.agents.form', compact('pageTitle', 'agent', 'countries'));
     }
 
     public function update(Request $request, int $id)
     {
         $agent = SupportAgent::findOrFail($id);
+        $countryRules = Schema::hasTable('countries')
+            ? [Rule::requiredIf($request->boolean('is_payment_agent')), 'nullable', 'integer', Rule::exists('countries', 'id')->where(fn ($query) => $query->where('is_enabled', true)->where('is_allowed', true))]
+            : ['nullable', 'integer'];
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:support_agents,email,' . $agent->id],
@@ -79,12 +98,25 @@ class SupportAgentController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'is_payment_agent' => ['nullable', 'boolean'],
             'payment_details' => ['required_if:is_payment_agent,1', 'nullable', 'string', 'max:5000'],
+            'country_id' => $countryRules,
         ]);
 
         $agent->fill(collect($data)->except(['password', 'photo'])->all());
         $agent->is_active = $request->boolean('is_active');
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
         $agent->payment_details = $agent->is_payment_agent ? ($data['payment_details'] ?? null) : null;
+        if (!empty($data['country_id']) && Schema::hasTable('countries')) {
+            $country = Country::with('currency')->findOrFail($data['country_id']);
+            if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
+            if (Schema::hasColumn('gateway_currencies', 'support_agent_id') && DB::table('gateway_currencies')->where('support_agent_id', $agent->id)->whereRaw('UPPER(currency) <> ?', [strtoupper($country->currency->code)])->exists()) {
+                return back()->withErrors(['country_id' => 'Update or remove this agent’s deposit methods before changing their country currency.'])->withInput();
+            }
+            if (Schema::hasColumn('withdraw_methods', 'support_agent_id') && DB::table('withdraw_methods')->where('support_agent_id', $agent->id)->whereRaw('UPPER(currency) <> ?', [strtoupper($country->currency->code)])->exists()) {
+                return back()->withErrors(['country_id' => 'Update or remove this agent’s withdrawal methods before changing their country currency.'])->withInput();
+            }
+            $agent->country_id = $country->id;
+            $agent->currency_id = $country->currency_id;
+        }
         if (!empty($data['password'])) {
             $agent->password = Hash::make($data['password']);
         }

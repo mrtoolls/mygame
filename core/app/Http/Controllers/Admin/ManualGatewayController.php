@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use App\Lib\RequiredConfig;
+use Illuminate\Support\Facades\Schema;
 
 class ManualGatewayController extends Controller {
     public function index() {
@@ -23,7 +24,9 @@ class ManualGatewayController extends Controller {
 
     public function create() {
         $pageTitle = 'Add Manual Gateway';
-        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        $query = SupportAgent::paymentAgents();
+        if (Schema::hasTable('countries')) $query->with('country.currency');
+        $paymentAgents = $query->orderBy('name')->get();
         return view('admin.gateways.manual.create', compact('pageTitle', 'paymentAgents'));
     }
 
@@ -86,7 +89,9 @@ class ManualGatewayController extends Controller {
         $pageTitle = 'Edit Manual Gateway';
         $method    = Gateway::manual()->with('singleCurrency')->where('alias', $alias)->firstOrFail();
         $form      = $method->form;
-        $paymentAgents = SupportAgent::paymentAgents()->orderBy('name')->get();
+        $query = SupportAgent::paymentAgents();
+        if (Schema::hasTable('countries')) $query->with('country.currency');
+        $paymentAgents = $query->orderBy('name')->get();
         return view('admin.gateways.manual.edit', compact('pageTitle', 'method', 'form', 'paymentAgents'));
     }
 
@@ -154,7 +159,11 @@ class ManualGatewayController extends Controller {
         $validation          = array_merge($validation, $generatorValidation['rules']);
         $request->validate($validation, $generatorValidation['messages']);
 
-        if ($request->filled('payment_agent_id')) {
+        if ($request->filled('payment_agent_id') && Schema::hasTable('countries')) {
+            $agent = SupportAgent::paymentAgents()->with('country.currency')->findOrFail($request->integer('payment_agent_id'));
+            if (!$agent->country?->is_allowed || !$agent->country?->is_enabled || strtoupper((string) $agent->country?->currency?->code) !== strtoupper((string) $request->input('currency'))) {
+                throw ValidationException::withMessages(['payment_agent_id' => 'The payment agent country currency must match this manual deposit method currency.']);
+            }
             $formTypes = $request->input('form_generator.form_type', []);
             $required = $request->input('form_generator.is_required', []);
             $hasRequiredReceipt = collect($formTypes)->contains(fn ($type, $index) => $type === 'file' && ($required[$index] ?? null) === 'required');

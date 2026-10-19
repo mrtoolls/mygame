@@ -6,7 +6,11 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
+use App\Models\Currency;
+use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class WithdrawalController extends Controller {
     public function pending($userId = null) {
@@ -40,6 +44,10 @@ class WithdrawalController extends Controller {
     }
 
     protected function withdrawalData($scope = null, $summary = false, $userId = null) {
+        if (Schema::hasTable('currencies') && Schema::hasTable('countries')) {
+            view()->share('reportCurrencies', Currency::orderBy('code')->get());
+            view()->share('reportCountries', Country::orderBy('name')->get());
+        }
         if ($scope) {
             $withdrawals = Withdrawal::$scope();
         } else {
@@ -53,6 +61,8 @@ class WithdrawalController extends Controller {
         $withdrawals = $withdrawals->searchable(['trx', 'user:username'])->dateFilter();
 
         $request = request();
+        if (Schema::hasColumn('withdrawals', 'currency_id') && $request->filled('currency_id')) $withdrawals->where('currency_id', $request->integer('currency_id'));
+        if ($request->filled('country_id')) $withdrawals->whereHas('user', fn ($query) => $query->where('country_id', $request->integer('country_id')));
         if ($request->method) {
             $withdrawals = $withdrawals->where('method_id', $request->method);
         }
@@ -89,10 +99,14 @@ class WithdrawalController extends Controller {
 
     public function approve(Request $request) {
         $request->validate(['id' => 'required|integer']);
-        $withdraw                 = Withdrawal::where('id', $request->id)->where('status', Status::PAYMENT_PENDING)->with('user')->firstOrFail();
-        $withdraw->status         = Status::PAYMENT_SUCCESS;
-        $withdraw->admin_feedback = $request->details;
-        $withdraw->save();
+        $withdraw = DB::transaction(function () use ($request) {
+            $locked = Withdrawal::whereKey($request->id)->lockForUpdate()->firstOrFail();
+            abort_unless((int) $locked->status === Status::PAYMENT_PENDING, 409, 'This withdrawal has already been processed.');
+            $locked->status = Status::PAYMENT_SUCCESS;
+            $locked->admin_feedback = $request->details;
+            $locked->save();
+            return $locked->load(['user', 'method']);
+        });
 
         notify($withdraw->user, 'WITHDRAW_APPROVE', [
             'method_name'     => $withdraw->method->name,
@@ -111,26 +125,29 @@ class WithdrawalController extends Controller {
 
     public function reject(Request $request) {
         $request->validate(['id' => 'required|integer']);
-        $withdraw = Withdrawal::where('id', $request->id)->where('status', Status::PAYMENT_PENDING)->with('user')->firstOrFail();
-
-        $withdraw->status         = Status::PAYMENT_REJECT;
-        $withdraw->admin_feedback = $request->details;
-        $withdraw->save();
-
-        $user = $withdraw->user;
-        $user->balance += $withdraw->amount;
-        $user->save();
-
-        $transaction               = new Transaction();
-        $transaction->user_id      = $withdraw->user_id;
-        $transaction->amount       = $withdraw->amount;
-        $transaction->post_balance = $user->balance;
-        $transaction->charge       = 0;
-        $transaction->trx_type     = '+';
-        $transaction->remark       = 'withdraw_reject';
-        $transaction->details      = 'Refunded for withdrawal rejection';
-        $transaction->trx          = $withdraw->trx;
-        $transaction->save();
+        [$withdraw, $user] = DB::transaction(function () use ($request) {
+            $locked = Withdrawal::whereKey($request->id)->lockForUpdate()->firstOrFail();
+            abort_unless((int) $locked->status === Status::PAYMENT_PENDING, 409, 'This withdrawal has already been processed.');
+            $user = \App\Models\User::whereKey($locked->user_id)->lockForUpdate()->firstOrFail();
+            if ($user->currency_id && $locked->currency_id && (int) $user->currency_id !== (int) $locked->currency_id) abort(422, 'Withdrawal currency no longer matches the wallet currency.');
+            $locked->status = Status::PAYMENT_REJECT;
+            $locked->admin_feedback = $request->details;
+            $locked->save();
+            $user->balance += $locked->amount;
+            $user->save();
+            $transaction = new Transaction();
+            $transaction->user_id = $locked->user_id;
+            $transaction->amount = $locked->amount;
+            $transaction->post_balance = $user->balance;
+            $transaction->charge = 0;
+            $transaction->trx_type = '+';
+            $transaction->remark = 'withdraw_reject';
+            $transaction->details = 'Refunded for withdrawal rejection';
+            $transaction->trx = $locked->trx;
+            if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
+            $transaction->save();
+            return [$locked->load('method'), $user];
+        });
 
         notify($user, 'WITHDRAW_REJECT', [
             'method_name'     => $withdraw->method->name,

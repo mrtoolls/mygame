@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gateway\PaymentController;
 use App\Models\Deposit;
 use App\Models\Gateway;
+use App\Models\Currency;
+use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DepositController extends Controller {
     public function pending($userId = null) {
@@ -53,6 +56,10 @@ class DepositController extends Controller {
     }
 
     protected function depositData($scope = null, $summary = false, $userId = null) {
+        if (Schema::hasTable('currencies') && Schema::hasTable('countries')) {
+            view()->share('reportCurrencies', Currency::orderBy('code')->get());
+            view()->share('reportCountries', Country::orderBy('name')->get());
+        }
         if ($scope) {
             $deposits = Deposit::$scope()->with(['user', 'gateway']);
         } else {
@@ -66,6 +73,9 @@ class DepositController extends Controller {
         $deposits = $deposits->searchable(['trx', 'user:username'])->dateFilter();
 
         $request = request();
+
+        if (Schema::hasColumn('deposits', 'currency_id') && $request->filled('currency_id')) $deposits->where('currency_id', $request->integer('currency_id'));
+        if ($request->filled('country_id')) $deposits->whereHas('user', fn ($query) => $query->where('country_id', $request->integer('country_id')));
 
         if ($request->method) {
             if ($request->method != Status::GOOGLE_PAY) {

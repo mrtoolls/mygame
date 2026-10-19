@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
+use App\Models\Country;
 use App\Models\User;
 use App\Models\UserLogin;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -45,11 +47,13 @@ class RegisterController extends Controller
             $agree = 'required';
         }
 
+        $countryRule = Schema::hasTable('countries') ? 'required|integer|exists:countries,id,is_enabled,1,is_allowed,1' : 'nullable|integer';
         $validate = Validator::make($data, [
             'firstname' => 'required',
             'lastname'  => 'required',
             'email'     => 'required|string|email|unique:users',
             'password'  => ['required', 'confirmed', $passwordValidation],
+            'country_id' => $countryRule,
             'agree'     => $agree,
         ], [
             'firstname.required' => 'The first name field is required',
@@ -114,6 +118,12 @@ class RegisterController extends Controller
         $user->ts        = Status::DISABLE;
         $user->tv        = Status::VERIFIED;
         $user->demo_balance = gs('demo_balance') ?? 0;
+        if (Schema::hasColumn('users', 'country_id') && !empty($data['country_id'])) {
+            $country = Country::with('currency')->where('id', $data['country_id'])->where('is_enabled', true)->where('is_allowed', true)->firstOrFail();
+            abort_unless($country->currency?->enabled, 422, 'The selected wallet currency is unavailable.');
+            $user->country_id = $country->id;
+            $user->currency_id = $country->currency_id;
+        }
         $user->save();
 
         $adminNotification            = new AdminNotification();

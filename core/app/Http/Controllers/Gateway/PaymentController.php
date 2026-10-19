@@ -13,15 +13,24 @@ use App\Models\User;
 use App\Models\SupportAgent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PaymentController extends Controller {
     public function deposit() {
-        $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
+        $user = auth()->user();
+        $query = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
         })->where(function ($query) {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
-        })->with(['method', 'supportAgent:id,name'])->orderby('name')->get();
+        });
+        if (Schema::hasColumn('gateway_currencies', 'currency')) {
+            $walletCode = $user->currency?->code;
+            if ($walletCode) $query->where('currency', $walletCode);
+        }
+        $gatewayCurrency = $query->with(['method', 'supportAgent:id,name'])->orderby('name')->get()
+            ->filter(fn ($gateway) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$gateway->currency, $gateway->method_code, $gateway->method?->alias, $gateway->name]))
+            ->values();
         $deposits = auth()->user()->deposits()->where('status', '!=', Status::PAYMENT_INITIATE)
             ->with('gateway')->latest('id')->paginate(5, ['*'], 'deposit_page');
         $pageTitle = 'Deposit Methods';
@@ -36,16 +45,23 @@ class PaymentController extends Controller {
         ]);
 
         $user = auth()->user();
-        $gate = GatewayCurrency::whereHas('method', function ($gate) {
+        app(\App\Support\CountryPaymentLimits::class)->assert($user, 'deposit', $request->input('amount'));
+        $query = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
         })->where(function ($query) {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
-        })->where('method_code', $request->gateway)->where('currency', $request->currency)->first();
+        })->where('method_code', $request->gateway)->where('currency', $request->currency);
+        $walletCode = $user->currency?->code;
+        if ($walletCode && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
+            return back()->withErrors(['currency' => 'Choose a deposit method in your wallet currency.'])->withInput();
+        }
+        $gate = $query->first();
         if (!$gate) {
             $notify[] = ['error', 'Invalid gateway'];
             return back()->withNotify($notify);
         }
+        app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$gate->currency, $gate->method_code, $gate->method?->alias, $gate->name]);
 
         if ($gate->min_amount > $request->amount || $gate->max_amount < $request->amount) {
             $notify[] = ['error', 'Please follow deposit limit'];
@@ -58,6 +74,7 @@ class PaymentController extends Controller {
 
         $data                  = new Deposit();
         $data->user_id         = $user->id;
+        if (Schema::hasColumn('deposits', 'currency_id')) $data->currency_id = $user->currency_id;
         $data->method_code     = $gate->method_code;
         if ($gate->support_agent_id) {
             $agent = SupportAgent::paymentAgents()->findOrFail($gate->support_agent_id);
@@ -137,6 +154,9 @@ class PaymentController extends Controller {
             }
 
             $user = User::whereKey($lockedDeposit->user_id)->lockForUpdate()->firstOrFail();
+            if ($user->currency_id && $lockedDeposit->currency_id && (int) $user->currency_id !== (int) $lockedDeposit->currency_id) {
+                throw new \RuntimeException('Deposit currency no longer matches the user wallet currency.');
+            }
             $methodName = $lockedDeposit->methodName();
             $user->balance += $lockedDeposit->amount;
             $user->save();
@@ -153,6 +173,7 @@ class PaymentController extends Controller {
             $transaction->details = 'Deposit Via ' . $methodName;
             $transaction->trx = $lockedDeposit->trx;
             $transaction->remark = 'deposit';
+            if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
             $transaction->save();
 
             if (!$isManual) {

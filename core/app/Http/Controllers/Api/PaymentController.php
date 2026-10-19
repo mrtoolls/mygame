@@ -12,18 +12,24 @@ use App\Models\SupportAgent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Gateway\PaymentController as GatewayPaymentController;
 
 class PaymentController extends Controller
 {
     public function methods()
     {
-        $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
+        $user = auth()->user();
+        $query = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
         })->where(function ($query) {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
-        })->with(['method', 'supportAgent:id,name'])->orderby('name')->get();
+        });
+        if ($user?->currency?->code) $query->where('currency', $user->currency->code);
+        $gatewayCurrency = $query->with(['method', 'supportAgent:id,name'])->orderby('name')->get()
+            ->filter(fn ($gateway) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$gateway->currency, $gateway->method_code, $gateway->method?->alias, $gateway->name]))
+            ->values();
         $notify[] = 'Payment Methods';
         return responseSuccess('deposit_methods', $notify, [
             'methods' => $gatewayCurrency,
@@ -44,16 +50,22 @@ class PaymentController extends Controller
         }
 
         $user = auth()->user();
-        $gate = GatewayCurrency::whereHas('method', function ($gate) {
+        $query = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
         })->where(function ($query) {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
-        })->where('method_code', $request->method_code)->where('currency', $request->currency)->first();
+        })->where('method_code', $request->method_code)->where('currency', $request->currency);
+        if ($user->currency?->code && strtoupper($user->currency->code) !== strtoupper((string) $request->currency)) {
+            return responseError('invalid_currency', ['Deposit currency must match your wallet currency.']);
+        }
+        app(\App\Support\CountryPaymentLimits::class)->assert($user, 'deposit', $request->input('amount'));
+        $gate = $query->first();
         if (!$gate) {
             $notify[] = 'Invalid gateway';
             return responseError('invalid_gateway', $notify);
         }
+        app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$gate->currency, $gate->method_code, $gate->method?->alias, $gate->name]);
 
         if ($gate->min_amount > $request->amount || $gate->max_amount < $request->amount) {
             $notify[] = 'Please follow deposit limit';
@@ -69,6 +81,7 @@ class PaymentController extends Controller
             $deposit->from_api = 1;
             $deposit->is_web = $request->boolean('is_web') ? 1 : 0;
             $deposit->user_id = $user->id;
+            if (Schema::hasColumn('deposits', 'currency_id')) $deposit->currency_id = $user->currency_id;
             $deposit->method_code = $gate->method_code;
             if ($gate->support_agent_id) {
                 $agent = SupportAgent::paymentAgents()->findOrFail($gate->support_agent_id);

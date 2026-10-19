@@ -6,6 +6,7 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Lib\UserNotificationSender;
 use App\Models\Deposit;
+use App\Models\Country;
 use App\Models\NotificationLog;
 use App\Models\Transaction;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Models\Withdrawal;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class ManageUsersController extends Controller {
 
@@ -93,7 +95,8 @@ class ManageUsersController extends Controller {
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->approved()->sum('amount');
         $totalTransaction = Transaction::where('user_id', $user->id)->count();
         $countries        = json_decode(file_get_contents(resource_path('views/partials/country.json')));
-        return view('admin.users.detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalTransaction', 'countries'));
+        $walletCountries  = Schema::hasTable('countries') ? Country::with('currency')->where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get() : collect();
+        return view('admin.users.detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalTransaction', 'countries', 'walletCountries'));
     }
 
     public function kycDetails($id) {

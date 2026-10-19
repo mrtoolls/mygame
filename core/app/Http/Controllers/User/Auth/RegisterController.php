@@ -6,6 +6,7 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Lib\Intended;
 use App\Models\AdminNotification;
+use App\Models\Country;
 use App\Models\User;
 use App\Models\UserLogin;
 use Illuminate\Auth\Events\Registered;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller {
@@ -25,8 +27,9 @@ class RegisterController extends Controller {
 
     public function showRegistrationForm() {
         $pageTitle = "Register";
+        $countries = Schema::hasTable('countries') ? Country::with('currency')->where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get() : collect();
         Intended::identifyRoute();
-        return view('Template::user.auth.register', compact('pageTitle'));
+        return view('Template::user.auth.register', compact('pageTitle', 'countries'));
     }
 
     protected function validator(array $data) {
@@ -42,11 +45,13 @@ class RegisterController extends Controller {
             $agree = 'required';
         }
 
+        $countryRule = Schema::hasTable('countries') ? 'required|integer|exists:countries,id,is_enabled,1,is_allowed,1' : 'nullable|integer';
         $validate = Validator::make($data, [
             'firstname' => 'required',
             'lastname'  => 'required',
             'email'     => 'required|string|email|unique:users',
             'password'  => ['required', 'confirmed', $passwordValidation],
+            'country_id' => $countryRule,
             'captcha'   => 'sometimes|required',
             'agree'     => $agree,
         ], [
@@ -100,6 +105,12 @@ class RegisterController extends Controller {
         $user->ts           = Status::DISABLE;
         $user->tv           = Status::ENABLE;
         $user->demo_balance = gs('demo_balance') ?? 0;
+        if (Schema::hasColumn('users', 'country_id') && !empty($data['country_id'])) {
+            $country = Country::with('currency')->where('id', $data['country_id'])->where('is_enabled', true)->where('is_allowed', true)->firstOrFail();
+            abort_unless($country->currency?->enabled, 422, 'The selected wallet currency is unavailable.');
+            $user->country_id = $country->id;
+            $user->currency_id = $country->currency_id;
+        }
         $user->save();
 
         $adminNotification            = new AdminNotification();

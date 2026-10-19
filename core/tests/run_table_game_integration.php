@@ -27,7 +27,7 @@ $app = require dirname(__DIR__) . '/bootstrap/app.php';
 $app->make(ConsoleKernel::class)->bootstrap();
 
 Schema::create('users', function (Blueprint $table) {
-    $table->id(); $table->string('username'); $table->decimal('balance', 28, 8)->default(0); $table->timestamps();
+    $table->id(); $table->string('username'); $table->decimal('balance', 28, 8)->default(0); $table->unsignedBigInteger('currency_id')->nullable(); $table->timestamps();
 });
 Schema::create('admins', function (Blueprint $table) { $table->id(); $table->timestamps(); });
 Schema::create('transactions', function (Blueprint $table) {
@@ -41,11 +41,13 @@ $frameworkMigration->up();
 if (!Schema::hasTable('cache') || !Schema::hasTable('cache_locks') || !Schema::hasTable('sessions')) throw new RuntimeException('Framework cache/session tables were not created.');
 $migration = require dirname(__DIR__) . '/database/migrations/2026_10_19_000001_create_multiplayer_game_tables.php';
 $migration->up();
+Schema::table('table_games', fn (Blueprint $table) => $table->unsignedBigInteger('currency_id')->nullable()->index());
+Schema::table('table_game_players', fn (Blueprint $table) => $table->unsignedBigInteger('currency_id')->nullable()->index());
 $chatMigration = require dirname(__DIR__) . '/database/migrations/2026_10_19_000002_create_table_game_chat_tables.php';
 $chatMigration->up();
 
-$insertUser = static function (string $username, string $balance): User {
-    $id = DB::table('users')->insertGetId(['username' => $username, 'balance' => $balance, 'created_at' => now(), 'updated_at' => now()]);
+$insertUser = static function (string $username, string $balance, int $currencyId = 1): User {
+    $id = DB::table('users')->insertGetId(['username' => $username, 'balance' => $balance, 'currency_id' => $currencyId, 'created_at' => now(), 'updated_at' => now()]);
     return User::findOrFail($id);
 };
 $creator = $insertUser('table_creator', '100.00000000');
@@ -86,6 +88,17 @@ if ($friendlyTable->status !== 'finished' || $friendlyTable->result !== 'winner:
 $assertBalance($creator, '109.00000000', 'A friendly game changed the winner balance.');
 $assertBalance($opponent, '90.00000000', 'A friendly game changed the other player balance.');
 if (DB::table('transactions')->count() !== 3 || DB::table('table_game_commissions')->count() !== 1) throw new RuntimeException('A friendly game created a wallet transaction or commission.');
+
+$foreignCurrencyPlayer = $insertUser('table_currency_guest', '50.00000000', 2);
+try {
+    $service->join($foreignCurrencyPlayer, $friendlyTable->id);
+    throw new RuntimeException('A player joined a table with a different wallet currency.');
+} catch (InvalidArgumentException) {
+    $assertBalance($foreignCurrencyPlayer, '50.00000000', 'A rejected currency-mismatched join changed the wallet balance.');
+}
+$foreignCurrencyTable = $service->create($foreignCurrencyPlayer, 'tic_tac_toe', 2, '0.00000000', 'currency_table_0001');
+$visibleToCreator = array_column($service->liveTables($creator), 'id');
+if (in_array($foreignCurrencyTable->id, $visibleToCreator, true)) throw new RuntimeException('The live table lobby exposed a table from another wallet currency.');
 
 $refundUser = $insertUser('table_refund', '20.00000000');
 $waiting = $service->create($refundUser, 'tic_tac_toe', 2, '5.00000000', 'create_key_000002');

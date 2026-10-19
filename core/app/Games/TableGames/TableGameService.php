@@ -10,8 +10,11 @@ use App\Models\TableGamePlayer;
 use App\Models\TableGameSetting;
 use App\Models\TableGameUserLimit;
 use App\Models\Transaction;
+use App\Models\Country;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use InvalidArgumentException;
@@ -20,6 +23,8 @@ use Throwable;
 
 class TableGameService
 {
+    private array $schemaColumnCache = [];
+
     public function __construct(private readonly TableGameRules $rules = new TableGameRules()) {}
 
     public function catalog(): array
@@ -58,7 +63,7 @@ class TableGameService
                 return $existing->fresh(['players.user']);
             }
             $this->validateCreate($lockedUser, $gameType, $playerLimit, $stake, $setting);
-            $table = TableGame::create([
+            $tableData = [
                 'game_type' => $gameType,
                 'creator_id' => $lockedUser->id,
                 'create_idempotency_key' => $idempotencyKey,
@@ -67,9 +72,11 @@ class TableGameService
                 'status' => 'waiting',
                 'join_deadline_at' => now()->addMinutes($setting->empty_timeout_minutes),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
-            ]);
+            ];
+            if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
+            $table = TableGame::create($tableData);
             $this->debit($lockedUser, $table, 'creator_stake');
-            TableGamePlayer::create([
+            $playerData = [
                 'table_game_id' => $table->id,
                 'user_id' => $lockedUser->id,
                 'seat' => 0,
@@ -77,7 +84,9 @@ class TableGameService
                 'status' => 'seated',
                 'stake_debit_key' => $table->id . ':stake:' . $lockedUser->id,
                 'last_seen_at' => now(),
-            ]);
+            ];
+            if ($this->hasColumn('table_game_players', 'currency_id')) $playerData['currency_id'] = $lockedUser->currency_id;
+            TableGamePlayer::create($playerData);
             return $table->fresh(['players.user']);
         }, 3);
     }
@@ -86,6 +95,7 @@ class TableGameService
     {
         return DB::transaction(function () use ($user, $id) {
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->assertSameWalletCurrency($user, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') {
                 if ($table->players()->where('user_id', $user->id)->exists()) return $table->fresh(['players.user']);
@@ -109,7 +119,7 @@ class TableGameService
             $seat = 0;
             while (in_array($seat, $occupiedSeats, true)) $seat++;
             $this->debit($lockedUser, $table, 'player_stake');
-            TableGamePlayer::create([
+            $playerData = [
                 'table_game_id' => $table->id,
                 'user_id' => $lockedUser->id,
                 'seat' => $seat,
@@ -117,7 +127,9 @@ class TableGameService
                 'status' => 'seated',
                 'stake_debit_key' => $table->id . ':stake:' . $lockedUser->id,
                 'last_seen_at' => now(),
-            ]);
+            ];
+            if ($this->hasColumn('table_game_players', 'currency_id')) $playerData['currency_id'] = $lockedUser->currency_id;
+            TableGamePlayer::create($playerData);
             $table->refresh();
             if ($table->players()->where('status', 'seated')->count() >= $table->player_limit) $this->startLocked($table);
             return $table->fresh(['players.user']);
@@ -128,12 +140,14 @@ class TableGameService
     {
         return DB::transaction(function () use ($sender, $tableId, $username) {
             $table = TableGame::whereKey($tableId)->lockForUpdate()->firstOrFail();
+            $this->assertSameWalletCurrency($sender, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') throw new InvalidArgumentException('Only a waiting table can receive invitations.');
             if ((int) $table->creator_id !== (int) $sender->id) throw new InvalidArgumentException('Only the table creator can invite players.');
             if ($table->players()->where('status', 'seated')->count() >= $table->player_limit) throw new InvalidArgumentException('This table is already full.');
             $invitee = User::where('username', trim($username))->first();
             if (!$invitee) throw new InvalidArgumentException('No player was found with that username.');
+            $this->assertSameWalletCurrency($invitee, $table);
             if ((int) $invitee->id === (int) $sender->id) throw new InvalidArgumentException('You are already seated at this table.');
             if ($table->players()->where('user_id', $invitee->id)->exists()) throw new InvalidArgumentException('That player already has a seat at this table.');
 
@@ -165,7 +179,10 @@ class TableGameService
             ->where('invitee_id', $user->id)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
-            ->whereHas('table', fn ($query) => $query->where('status', 'waiting'))
+            ->whereHas('table', function ($query) use ($user) {
+                $query->where('status', 'waiting');
+                if ($this->hasColumn('table_games', 'currency_id')) $query->where('currency_id', $user->currency_id);
+            })
             ->latest()
             ->limit(20)
             ->get();
@@ -190,6 +207,7 @@ class TableGameService
     {
         return DB::transaction(function () use ($user, $id) {
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->assertSameWalletCurrency($user, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') return $table->fresh(['players.user']);
             if ((int) $table->creator_id !== (int) $user->id) throw new InvalidArgumentException('Only the table creator can start it early.');
@@ -207,6 +225,7 @@ class TableGameService
                 throw new InvalidArgumentException('The move request is invalid.');
             }
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->assertSameWalletCurrency($user, $table);
             $priorMove = TableGameMove::where('idempotency_key', $idempotencyKey)->first();
             if ($priorMove) {
                 if ($priorMove->table_game_id !== $table->id || (int) $priorMove->user_id !== (int) $user->id) throw new InvalidArgumentException('That request key is already in use.');
@@ -347,9 +366,11 @@ class TableGameService
         ];
     }
 
-    public function liveTables(): array
+    public function liveTables(?User $user = null): array
     {
-        return TableGame::with('players.user')->whereIn('status', ['waiting', 'active'])->latest()->limit(50)->get()->map(fn ($table) => [
+        $query = TableGame::with('players.user')->whereIn('status', ['waiting', 'active']);
+        if ($user && $this->hasColumn('table_games', 'currency_id')) $query->where('currency_id', $user->currency_id);
+        return $query->latest()->limit(50)->get()->map(fn ($table) => [
             'id' => $table->id, 'game' => $table->game_type, 'status' => $table->status,
             'stake' => (string) $table->stake, 'player_limit' => $table->player_limit,
             'players' => $table->players->where('status', 'seated')->map(fn ($player) => ['id' => (int) $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat])->values(),
@@ -384,6 +405,18 @@ class TableGameService
         if (!in_array($gameType, TableGameRules::AVAILABLE, true)) throw new InvalidArgumentException('This game is not yet enabled for tables.');
         if ($playerLimit < $definition['min'] || $playerLimit > $definition['max']) throw new InvalidArgumentException('Select a supported player count.');
         if (bccomp($stake, '0', 8) < 0 || (bccomp($stake, '0', 8) > 0 && bccomp($stake, (string) $setting->min_stake, 8) < 0) || bccomp($stake, (string) $setting->max_stake, 8) > 0) throw new InvalidArgumentException('The stake is outside the allowed limits.');
+        if (bccomp($stake, '0', 8) > 0 && $user->country_id && Schema::hasTable('countries')) {
+            $country = Country::with('currency')->find($user->country_id);
+            if (!$country || !$country->is_enabled || !$country->is_allowed || !$country->currency?->enabled
+                || (int) $country->currency_id !== (int) $user->currency_id) {
+                throw new InvalidArgumentException('Your country or wallet currency is not enabled for staked tables.');
+            }
+            $minorStake = (new Money())->toMinor($stake, (int) $country->currency->decimals);
+            if (($country->min_table_stake_minor > 0 && bccomp($minorStake, (string) $country->min_table_stake_minor, 0) < 0)
+                || ($country->max_table_stake_minor > 0 && bccomp($minorStake, (string) $country->max_table_stake_minor, 0) > 0)) {
+                throw new InvalidArgumentException('The stake is outside your country’s allowed limits.');
+            }
+        }
         $userLimit = TableGameUserLimit::where('user_id', $user->id)->first();
         if ($userLimit?->banned) throw new InvalidArgumentException('Your access to live tables is restricted.');
         $userMax = $userLimit?->max_open_tables ?? $setting->max_open_tables_per_user;
@@ -428,7 +461,21 @@ class TableGameService
         $transaction->remark = $remark;
         $transaction->trx = strtoupper(Str::random(12));
         $transaction->post_balance = $user->balance;
+        if ($this->hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
         $transaction->save();
+    }
+
+    private function assertSameWalletCurrency(User $user, TableGame $table): void
+    {
+        if ($this->hasColumn('table_games', 'currency_id') && (string) $table->currency_id !== (string) $user->currency_id) {
+            throw new InvalidArgumentException('This table uses a different wallet currency.');
+        }
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+        return $this->schemaColumnCache[$key] ??= Schema::hasColumn($table, $column);
     }
 
     private function settle(TableGame $table, ?int $winnerSeat, ?array $winnerSeats = null): void

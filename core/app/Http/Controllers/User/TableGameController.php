@@ -27,7 +27,7 @@ class TableGameController extends Controller
         return view('Template::user.table_games.index', [
             'pageTitle' => 'Live Games',
             'catalog' => $service->catalog(),
-            'tables' => $service->liveTables(),
+            'tables' => $service->liveTables($request->user()),
             'invites' => $service->pendingInvites($request->user()),
         ]);
     }

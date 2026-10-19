@@ -6,9 +6,12 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\GameLog;
+use App\Models\Currency;
+use App\Models\Country;
 use App\Models\GuessBonus;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class GameController extends Controller
 {
@@ -112,7 +115,14 @@ class GameController extends Controller
     public function gameLog(Request $request)
     {
         $pageTitle = "Game Logs";
-        $logs      = GameLog::where('status', Status::ENABLE)->searchable(['user:username'])->filter(['win_status'])->with('user', 'game')->latest('id')->paginate(getPaginate());
+        $query = GameLog::where('status', Status::ENABLE)->searchable(['user:username'])->filter(['win_status'])->with('user', 'game');
+        if (Schema::hasTable('currencies') && Schema::hasTable('countries')) {
+            view()->share('reportCurrencies', Currency::orderBy('code')->get());
+            view()->share('reportCountries', Country::orderBy('name')->get());
+        }
+        if (Schema::hasColumn('game_logs', 'currency_id') && $request->filled('currency_id')) $query->where('currency_id', $request->integer('currency_id'));
+        if ($request->filled('country_id')) $query->whereHas('user', fn ($user) => $user->where('country_id', $request->integer('country_id')));
+        $logs = $query->latest('id')->paginate(getPaginate());
         return view('admin.game.log', compact('pageTitle', 'logs'));
     }
 

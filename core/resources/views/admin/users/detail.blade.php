@@ -224,6 +224,18 @@
 
 
     {{-- Add Sub Balance MODAL --}}
+    @if ($walletCountries->isNotEmpty())
+        <div class="row mt-4"><div class="col-xl-6"><div class="card"><div class="card-body">
+            <h5>@lang('Wallet country and currency')</h5>
+            <p class="text-muted">@lang('Changing wallet currency is allowed only at a zero balance with no pending deposit or withdrawal. The change and reason are recorded for audit.')</p>
+            <form method="post" action="{{ route('admin.currency-country.user.currency', $user) }}">@csrf
+                <div class="form-group"><label>@lang('Country and wallet currency')</label><select class="form-control" name="country_id" required>@foreach($walletCountries as $walletCountry)<option value="{{ $walletCountry->id }}" @selected($user->country_id == $walletCountry->id)>{{ $walletCountry->name }} · {{ $walletCountry->currency?->code }}</option>@endforeach</select></div>
+                <div class="form-group"><label>@lang('Reason (required for the audit record)')</label><textarea class="form-control" name="reason" maxlength="500" required></textarea></div>
+                <button class="btn btn--primary w-100" type="submit">@lang('Update wallet country and currency')</button>
+            </form>
+        </div></div></div></div>
+    @endif
+
     <div id="addSubModal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">

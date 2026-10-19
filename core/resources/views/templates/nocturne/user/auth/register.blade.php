@@ -30,6 +30,22 @@
                     <input type="hidden" name="firstname" id="auto-firstname" value="Member">
                     <input type="hidden" name="lastname" id="auto-lastname" value="{{ gs('site_name') }}">
 
+                    @if ($countries->isNotEmpty())
+                        <div class="nocturne-field">
+                            <label class="form--label">@lang('Country of residence')</label>
+                            <div class="nocturne-field__control">
+                                <i class="las la-globe" aria-hidden="true"></i>
+                                <select name="country_id" required aria-label="@lang('Choose your country')">
+                                    <option value="">@lang('Choose your country')</option>
+                                    @foreach ($countries as $country)
+                                        <option value="{{ $country->id }}" @selected(old('country_id') == $country->id)>{{ $country->name }} · {{ $country->currency?->code }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <small class="text-muted">@lang('Your wallet currency is set by this choice and can only be changed by support after account balances and pending payments are settled.')</small>
+                        </div>
+                    @endif
+
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Email')</label>
                         <div class="nocturne-field__control">

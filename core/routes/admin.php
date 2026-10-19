@@ -26,6 +26,14 @@ Route::namespace('Auth')->group(function () {
 });
 
 Route::middleware('admin')->group(function () {
+    Route::controller('CurrencyCountryController')->prefix('currency-country')->name('currency-country.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('currency/{currency}', 'updateCurrency')->name('currency.update');
+        Route::post('country/{country}', 'updateCountry')->name('country.update');
+        Route::post('override', 'addOverride')->name('override.create');
+        Route::post('user/{user}/currency', 'changeUserCurrency')->name('user.currency');
+    });
+
     Route::controller('AdminController')->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('chart/deposit-withdraw', 'depositAndWithdrawReport')->name('chart.deposit.withdraw');

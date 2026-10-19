@@ -10,6 +10,15 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    public function currency()
+    {
+        return $this->belongsTo(\App\Models\Currency::class);
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(\App\Models\Country::class);
+    }
     use HasApiTokens, UserNotify;
 
     /**
@@ -43,6 +52,16 @@ class User extends Authenticatable
     public function loginLogs()
     {
         return $this->hasMany(UserLogin::class);
+    }
+
+    public function walletCurrency()
+    {
+        return $this->belongsTo(Currency::class, 'currency_id');
+    }
+
+    public function residenceCountry()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
     }
 
     public function transactions()
