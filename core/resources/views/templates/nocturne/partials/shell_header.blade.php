@@ -4,21 +4,21 @@
             <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
         </a>
         <button class="nocturne-collapse d-none d-xl-grid" type="button" aria-label="@lang('Collapse menu')">
-            <i class="ph-bold ph-caret-left"></i>
+            <i class="ph-fill ph-caret-left"></i>
         </button>
     </div>
     <button class="nocturne-menu-toggle" type="button" aria-label="@lang('Toggle menu')" aria-expanded="false">
-        <i class="ph-bold ph-list"></i>
+        <i class="ph-fill ph-list"></i>
     </button>
     <nav class="nocturne-topnav" aria-label="@lang('Primary navigation')">
-        <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-bold ph-house"></i><span>@lang('Home')</span></a>
+        <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
         @auth
-            <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-bold ph-user"></i><span>@lang('Profile')</span></a>
-            <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
+            <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
+            <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
         @else
-            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i><span>@lang('Games')</span></a>
+            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-fill ph-dice-five"></i><span>@lang('Games')</span></a>
         @endauth
-        <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-bold ph-crown"></i><span>@lang('VIP-Club')</span></a>
+        <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-fill ph-crown"></i><span>@lang('VIP-Club')</span></a>
     </nav>
     <div class="nocturne-actions">
         @auth
@@ -28,7 +28,7 @@
                     @if (auth()->user()->avatarUrl())
                         <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->username }}">
                     @else
-                        <i class="ph-bold ph-user-circle"></i>
+                        <i class="ph-fill ph-user-circle"></i>
                     @endif
                 </button>
                 <div class="nocturne-user-dropdown" role="menu">
@@ -37,7 +37,7 @@
                             @if (auth()->user()->avatarUrl())
                                 <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->username }}">
                             @else
-                                <i class="ph-bold ph-user-circle"></i>
+                                <i class="ph-fill ph-user-circle"></i>
                             @endif
                         </span>
                         <div>
@@ -45,22 +45,22 @@
                             <span>{{ showAmount(auth()->user()->balance) }}</span>
                         </div>
                     </div>
-                    <a class="nocturne-user-dropdown__deposit" href="{{ route('user.deposit.index') }}"><i class="ph-bold ph-plus-circle"></i>@lang('Deposit')</a>
+                    <a class="nocturne-user-dropdown__deposit" href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-plus-circle"></i>@lang('Deposit')</a>
                     <div class="nocturne-user-dropdown__links">
-                        <a href="{{ route('user.home') }}"><i class="ph-bold ph-squares-four"></i>@lang('Dashboard')</a>
-                        <a href="{{ route('games') }}"><i class="ph-bold ph-dice-five"></i>@lang('Games')</a>
-                        <a href="{{ route('user.referrals') }}"><i class="ph-bold ph-gift"></i>@lang('Bonuses')</a>
-                        <a href="{{ route('user.vip.index') }}"><i class="ph-bold ph-crown"></i>@lang('VIP Club')</a>
-                        <a href="{{ route('user.transactions') }}"><i class="ph-bold ph-bell"></i>@lang('Notifications')</a>
-                        <a href="{{ route('user.profile.setting') }}"><i class="ph-bold ph-gear"></i>@lang('Settings')</a>
+                        <a href="{{ route('user.home') }}"><i class="ph-fill ph-squares-four"></i>@lang('Dashboard')</a>
+                        <a href="{{ route('games') }}"><i class="ph-fill ph-dice-five"></i>@lang('Games')</a>
+                        <a href="{{ route('user.referrals') }}"><i class="ph-fill ph-gift"></i>@lang('Bonuses')</a>
+                        <a href="{{ route('user.vip.index') }}"><i class="ph-fill ph-crown"></i>@lang('VIP Club')</a>
+                        <a href="{{ route('user.transactions') }}"><i class="ph-fill ph-bell"></i>@lang('Notifications')</a>
+                        <a href="{{ route('user.profile.setting') }}"><i class="ph-fill ph-gear"></i>@lang('Settings')</a>
                     </div>
-                    <a class="nocturne-user-dropdown__logout" href="{{ route('user.logout') }}"><i class="ph-bold ph-sign-out"></i>@lang('Log out')</a>
+                    <a class="nocturne-user-dropdown__logout" href="{{ route('user.logout') }}"><i class="ph-fill ph-sign-out"></i>@lang('Log out')</a>
                 </div>
             </div>
         @else
-            <a class="nocturne-login" href="{{ route('user.login') }}"><i class="ph-bold ph-sign-in"></i><span>@lang('Login')</span></a>
+            <a class="nocturne-login" href="{{ route('user.login') }}"><i class="ph-fill ph-sign-in"></i><span>@lang('Login')</span></a>
             @if (gs('registration'))
-                <a class="nocturne-register" href="{{ route('user.register') }}"><i class="ph-bold ph-user-plus"></i><span>@lang('Register')</span></a>
+                <a class="nocturne-register" href="{{ route('user.register') }}"><i class="ph-fill ph-user-plus"></i><span>@lang('Register')</span></a>
             @endif
         @endauth
     </div>
