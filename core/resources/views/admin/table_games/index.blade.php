@@ -3,6 +3,12 @@
     @php
         $global = $settings->get('*');
         $value = fn ($key, $field, $default) => data_get($settings->get($key), $field, data_get($global, $field, $default));
+        $defaultGuide = fn ($key) => \App\Games\TableGames\TableGameGuides::for($key);
+        $guideValue = function ($key, $field) use ($settings, $defaultGuide) {
+            $saved = data_get($settings->get($key)?->guide_json, $field);
+            $value = $saved !== null && $saved !== '' && $saved !== [] ? $saved : data_get($defaultGuide($key), $field);
+            return is_array($value) ? implode("\n", $value) : $value;
+        };
         $definitions = ['*' => ['name' => 'Global defaults', 'min' => 2, 'max' => 4]] + $gameDefinitions;
     @endphp
     <div class="row"><div class="col-12"><div class="card"><div class="card-body">
@@ -32,6 +38,19 @@
                             </label>
                         @endif
                     </div>
+                    @if ($key !== '*')
+                        <div class="table-admin-guide">
+                            <p class="text-muted mb-2">@lang('Shown to players on the (i) How to Play sheet for this game. Leave any field blank to use the built-in default text.')</p>
+                            <div class="table-admin-grid">
+                                <label><span>@lang('Goal')</span><textarea name="settings[{{ $key }}][guide][goal]" rows="2">{{ $guideValue($key, 'goal') }}</textarea></label>
+                                <label><span>@lang('Setup')</span><textarea name="settings[{{ $key }}][guide][setup]" rows="2">{{ $guideValue($key, 'setup') }}</textarea></label>
+                                <label class="table-admin-guide__wide"><span>@lang('How to play (one step per line)')</span><textarea name="settings[{{ $key }}][guide][how_to_play]" rows="4">{{ $guideValue($key, 'how_to_play') }}</textarea></label>
+                                <label class="table-admin-guide__wide"><span>@lang('Special rules')</span><textarea name="settings[{{ $key }}][guide][special_rules]" rows="3">{{ $guideValue($key, 'special_rules') }}</textarea></label>
+                                <label><span>@lang('How a draw works')</span><textarea name="settings[{{ $key }}][guide][draw]" rows="2">{{ $guideValue($key, 'draw') }}</textarea></label>
+                                <label><span>@lang('How a win is decided')</span><textarea name="settings[{{ $key }}][guide][win]" rows="2">{{ $guideValue($key, 'win') }}</textarea></label>
+                            </div>
+                        </div>
+                    @endif
                 </details>
             @endforeach
             <button class="btn btn--primary w-100 mt-3" type="submit">@lang('Save Table Settings')</button>
@@ -44,5 +63,6 @@
     <div class="row mt-4"><div class="col-12"><div class="card"><div class="card-body"><h5>@lang('Live Tables')</h5><div class="table-responsive"><table class="table table--responsive--md"><thead><tr><th>ID</th><th>@lang('Game')</th><th>@lang('Creator')</th><th>@lang('Seats')</th><th>@lang('Stake')</th><th>@lang('Status')</th><th>@lang('Action')</th></tr></thead><tbody>@forelse ($liveTables as $table)<tr><td><code>{{ Str::limit($table->id, 12) }}</code></td><td>{{ __($gameDefinitions[$table->game_type]['name'] ?? $table->game_type) }}</td><td>{{ $table->creator?->username }}</td><td>{{ $table->players->where('status','seated')->count() }}/{{ $table->player_limit }}</td><td>{{ gs('cur_sym') }}{{ showAmount($table->stake) }}</td><td><span class="badge badge--warning">{{ __(ucfirst($table->status)) }}</span></td><td><form method="post" action="{{ route('admin.table-games.force-close', $table->id) }}">@csrf<button type="submit" class="btn btn-sm btn--danger">@lang('Close & refund')</button></form></td></tr>@empty<tr><td colspan="7" class="text-center">@lang('No live tables')</td></tr>@endforelse</tbody></table></div>{{ $liveTables->appends(request()->except('live_page'))->links() }}</div></div></div></div>
 
     <div class="row mt-4"><div class="col-12"><div class="card"><div class="card-body"><h5>@lang('Table History')</h5><div class="table-responsive"><table class="table table--responsive--md"><thead><tr><th>@lang('Table')</th><th>@lang('Game')</th><th>@lang('Players')</th><th>@lang('Pot')</th><th>@lang('Result')</th><th>@lang('Finished')</th></tr></thead><tbody>@forelse ($history as $table)<tr><td><code>{{ Str::limit($table->id, 12) }}</code></td><td>{{ __($gameDefinitions[$table->game_type]['name'] ?? $table->game_type) }}</td><td>{{ $table->players()->count() }}</td><td>{{ gs('cur_sym') }}{{ showAmount($table->stake * $table->players()->count()) }}</td><td>{{ __($table->result ?? $table->status) }}</td><td>{{ showDateTime($table->finished_at) }}</td></tr>@empty<tr><td colspan="6" class="text-center">@lang('No completed tables yet')</td></tr>@endforelse</tbody></table></div>{{ $history->appends(request()->except('history_page'))->links() }}</div></div></div></div>
-    <style>.table-admin-setting{margin:10px 0;border:1px solid rgba(145,156,205,.18);border-radius:10px;background:rgba(35,42,71,.2)}.table-admin-setting summary{display:flex;justify-content:space-between;gap:10px;padding:13px;cursor:pointer}.table-admin-setting summary span{color:#858eb4;font-size:12px}.table-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 13px 14px}.table-admin-grid label{display:grid;gap:6px;font-size:11px}.table-admin-grid input:not([type=checkbox]){width:100%;height:38px;padding:0 9px;border:1px solid rgba(145,156,205,.2);border-radius:7px;background:#10142a;color:#fff}.table-admin-grid label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px}.table-admin-grid input[type=checkbox]{width:18px;height:18px;accent-color:#00df82}.table-game-image-setting{grid-column:1/-1;max-width:360px;padding:12px;border:1px solid rgba(145,156,205,.18);border-radius:10px;background:#10142a}.table-game-image-setting img{width:100%;max-height:160px;object-fit:cover;border-radius:8px}.table-game-image-setting input[type=file]{height:auto!important;padding:8px!important}.table-game-image-setting small{color:#858eb4}@media(max-width:767px){.table-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
+    <style>.table-admin-setting{margin:10px 0;border:1px solid rgba(145,156,205,.18);border-radius:10px;background:rgba(35,42,71,.2)}.table-admin-setting summary{display:flex;justify-content:space-between;gap:10px;padding:13px;cursor:pointer}.table-admin-setting summary span{color:#858eb4;font-size:12px}.table-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 13px 14px}.table-admin-grid label{display:grid;gap:6px;font-size:11px}.table-admin-grid input:not([type=checkbox]){width:100%;height:38px;padding:0 9px;border:1px solid rgba(145,156,205,.2);border-radius:7px;background:#10142a;color:#fff}.table-admin-grid label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px}.table-admin-grid input[type=checkbox]{width:18px;height:18px;accent-color:#00df82}.table-game-image-setting{grid-column:1/-1;max-width:360px;padding:12px;border:1px solid rgba(145,156,205,.18);border-radius:10px;background:#10142a}.table-game-image-setting img{width:100%;max-height:160px;object-fit:cover;border-radius:8px}.table-game-image-setting input[type=file]{height:auto!important;padding:8px!important}.table-game-image-setting small{color:#858eb4}@media(max-width:767px){.table-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .table-admin-guide{margin:0 13px 14px;padding:12px;border:1px solid rgba(145,156,205,.14);border-radius:10px;background:rgba(16,20,42,.4)}.table-admin-guide .table-admin-grid{padding:0}.table-admin-guide textarea{width:100%;padding:8px 9px;border:1px solid rgba(145,156,205,.2);border-radius:7px;background:#10142a;color:#fff;font:inherit;font-size:12px;resize:vertical}.table-admin-guide__wide{grid-column:1/-1}</style>
 @endsection

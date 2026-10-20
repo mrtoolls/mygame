@@ -45,6 +45,12 @@ class TableGameAdminController extends Controller
             $rules["settings.$key.turn_seconds"] = 'required|integer|min:10|max:3600';
             $rules["settings.$key.max_open_tables_per_user"] = 'required|integer|min:1|max:100';
             $rules["settings.$key.max_concurrent_tables"] = 'required|integer|min:1|max:100000';
+            $rules["settings.$key.guide.goal"] = 'nullable|string|max:500';
+            $rules["settings.$key.guide.setup"] = 'nullable|string|max:500';
+            $rules["settings.$key.guide.how_to_play"] = 'nullable|string|max:2000';
+            $rules["settings.$key.guide.special_rules"] = 'nullable|string|max:1000';
+            $rules["settings.$key.guide.draw"] = 'nullable|string|max:500';
+            $rules["settings.$key.guide.win"] = 'nullable|string|max:500';
         }
         $validated = Validator::make($request->all(), $rules)->validate();
         Validator::make($request->all(), [
@@ -56,8 +62,21 @@ class TableGameAdminController extends Controller
         if (!empty($imageUploads) && !Schema::hasColumn('table_game_settings', 'card_image')) {
             return back()->withNotify([['error', 'Run the pending database update before uploading live game images.']]);
         }
+        $hasGuideColumn = Schema::hasColumn('table_game_settings', 'guide_json');
         foreach ($validated['settings'] as $game => $values) {
+            $guide = $values['guide'] ?? null;
+            unset($values['guide']);
             $values['empty_timeout_minutes'] = 1440;
+            if ($hasGuideColumn && $game !== '*') {
+                $values['guide_json'] = $guide ? [
+                    'goal' => trim((string) ($guide['goal'] ?? '')),
+                    'setup' => trim((string) ($guide['setup'] ?? '')),
+                    'how_to_play' => array_values(array_filter(array_map('trim', explode("\n", (string) ($guide['how_to_play'] ?? ''))))),
+                    'special_rules' => trim((string) ($guide['special_rules'] ?? '')),
+                    'draw' => trim((string) ($guide['draw'] ?? '')),
+                    'win' => trim((string) ($guide['win'] ?? '')),
+                ] : null;
+            }
             $setting = TableGameSetting::updateOrCreate(['game_type' => $game], $values);
             if ($game !== '*' && isset($imageUploads[$game])) {
                 try {

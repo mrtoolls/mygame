@@ -42,6 +42,9 @@ class TableGameController extends Controller
         abort_unless($table->players->contains('user_id', $request->user()->id), 403);
         $walletCurrency = $request->user()->walletCurrency;
         $walletStake = $table->players->firstWhere('user_id', $request->user()->id)?->wallet_stake ?? $table->stake;
+        $setting = Schema::hasTable('table_game_settings') ? \App\Models\TableGameSetting::where('game_type', $table->game_type)->first() : null;
+        $guideDefaults = \App\Games\TableGames\TableGameGuides::for($table->game_type);
+        $guide = array_merge($guideDefaults, array_filter((array) ($setting->guide_json ?? []), fn ($value) => $value !== null && $value !== '' && $value !== []));
         return view('Template::user.table_games.show', [
             'pageTitle' => TableGameRules::GAMES[$table->game_type]['name'],
             'table' => $table,
@@ -50,6 +53,9 @@ class TableGameController extends Controller
             'walletStakeFormatted' => $walletCurrency && bccomp((string) $table->stake, '0', 8) > 0
                 ? $walletCurrency->formatMinor((new \App\Support\Money())->toMinor((string) $walletStake, (int) $walletCurrency->decimals), true)
                 : null,
+            'guide' => $guide,
+            'commissionPercent' => (string) ($setting->commission_percent ?? 5),
+            'turnSeconds' => (int) ($setting->turn_seconds ?? 60),
             'snapshot' => $service->snapshot($request->user(), $table->id),
         ]);
     }
