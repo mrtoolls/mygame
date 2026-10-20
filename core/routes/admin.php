@@ -25,11 +25,18 @@ Route::namespace('Auth')->group(function () {
     });
 });
 
+// Reachable with no admin/user auth requirement by design: it only ever ends the impersonated
+// user's web-guard session and sends the browser back to the admin side (or admin login if that
+// guard's session has somehow also gone), never grants any access itself.
+Route::post('impersonate/return', 'ManageUsersController@returnToAdmin')->name('impersonate.return');
+
 Route::middleware('admin')->group(function () {
     Route::controller('FeedbackAdminController')->prefix('feedback')->name('feedback.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('{id}/approve', 'approve')->name('approve');
         Route::post('{id}/reject', 'reject')->name('reject');
+        Route::post('{id}/update', 'update')->name('update');
+        Route::post('{id}/delete', 'destroy')->name('destroy');
     });
     Route::controller('BusinessPromotionController')->prefix('business-promotions')->name('business-promotions.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -152,7 +159,7 @@ Route::middleware('admin')->group(function () {
         Route::post('add-sub-balance/{id}', 'addSubBalance')->name('add.sub.balance');
         Route::get('send-notification/{id}', 'showNotificationSingleForm')->name('notification.single');
         Route::post('send-notification/{id}', 'sendNotificationSingle')->name('notification.single');
-        Route::get('login/{id}', 'login')->name('login');
+        Route::post('login/{id}', 'login')->name('login');
         Route::post('status/{id}', 'status')->name('status');
 
         Route::get('send-notification', 'showNotificationAllForm')->name('notification.all');

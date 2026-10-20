@@ -37,7 +37,17 @@
 
 @php echo loadExtension('google-analytics') @endphp
 
-<body>
+<body @if (session('impersonating_admin_id') && auth()->check()) class="has-impersonation-bar" @endif>
+    @if (session('impersonating_admin_id') && auth()->check())
+        <div class="impersonation-bar">
+            <i class="ph-bold ph-eye"></i>
+            <span>{{ __('Viewing as :user - logged in by admin :admin', ['user' => auth()->user()->username, 'admin' => session('impersonating_admin_name', 'admin')]) }}</span>
+            <form action="{{ route('admin.impersonate.return') }}" method="post">
+                @csrf
+                <button type="submit">{{ __('Return to admin') }}</button>
+            </form>
+        </div>
+    @endif
     @stack('fbComment')
 
     <div class="preloader">

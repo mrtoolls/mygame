@@ -8,6 +8,7 @@ use App\Lib\UserNotificationSender;
 use App\Models\Deposit;
 use App\Models\Country;
 use App\Models\NotificationLog;
+use App\Models\AdminImpersonation;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
@@ -249,9 +250,43 @@ class ManageUsersController extends Controller {
         return back()->withNotify($notify);
     }
 
-    public function login($id) {
-        Auth::loginUsingId($id);
+    /**
+     * "Login as user" - a real, auditable impersonation, not a guard swap that loses track of
+     * who's really at the keyboard. The admin guard's own session is left completely untouched
+     * (SessionGuard::logout() only clears that guard's own session keys), so the admin is still
+     * authenticated on the admin side the whole time; returnToAdmin() just ends the web-guard
+     * session this starts and sends them back. Every start/end is logged in
+     * admin_impersonations with the acting admin, the target user, and an IP, since this is a
+     * real-money platform and "an admin was looking at this account as the account" needs to be
+     * reconstructable later.
+     */
+    public function login(Request $request, $id) {
+        $user = User::findOrFail($id);
+        $admin = $request->user('admin');
+        $log = AdminImpersonation::create([
+            'admin_id' => $admin->id,
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'started_at' => now(),
+        ]);
+        session([
+            'impersonating_admin_id' => $admin->id,
+            'impersonating_admin_name' => $admin->username ?: $admin->name,
+            'impersonation_log_id' => $log->id,
+        ]);
+        Auth::guard('web')->loginUsingId($user->id);
         return to_route('user.home');
+    }
+
+    public function returnToAdmin(Request $request) {
+        $logId = session('impersonation_log_id');
+        session()->forget(['impersonating_admin_id', 'impersonating_admin_name', 'impersonation_log_id']);
+        Auth::guard('web')->logout();
+        if ($logId) {
+            AdminImpersonation::whereKey($logId)->whereNull('ended_at')->update(['ended_at' => now()]);
+        }
+        $request->session()->regenerate();
+        return $request->user('admin') ? to_route('admin.dashboard') : to_route('admin.login');
     }
 
     public function status(Request $request, $id) {

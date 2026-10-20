@@ -315,7 +315,7 @@
 @endsection
 
 @push('breadcrumb-plugins')
-    <a href="{{ route('admin.users.login', $user->id) }}" target="_blank" class="btn btn-sm btn-outline--primary"><i class="las la-sign-in-alt"></i>@lang('Login as User')</a>
+    <form action="{{ route('admin.users.login', $user->id) }}" method="post" target="_blank" class="d-inline">@csrf<button type="submit" class="btn btn-sm btn-outline--primary"><i class="las la-sign-in-alt"></i>@lang('Login as User')</button></form>
 @endpush
 
 @push('script')
