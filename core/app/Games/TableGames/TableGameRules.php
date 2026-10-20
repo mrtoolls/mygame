@@ -69,11 +69,11 @@ class TableGameRules
             'tic_tac_toe' => $this->ticTacToe($state, $seat, $action),
             'four_in_a_row' => $this->fourInARow($state, $seat, $action),
             'sea_battle' => $this->seaBattle($state, $seat, $action),
-            'blackjack' => $this->blackjack($state, $seat, $action),
+            'blackjack' => $this->blackjack($state, $seat, $action, $activeSeats),
             'rummy' => $this->rummy($state, $seat, $action),
             'whot' => $this->whot($state, $seat, $action),
             'backgammon' => $this->backgammon($state, $seat, $action),
-            'texas_holdem' => $this->holdem($state, $seat, $action),
+            'texas_holdem' => $this->holdem($state, $seat, $action, $activeSeats),
             'spades', 'hearts' => $this->trickMove($game, $state, $seat, $action),
             'snakes_and_ladders' => $this->snakesAndLadders($state, $seat),
             'oware' => $this->oware($state, $seat, $action),
@@ -152,18 +152,23 @@ class TableGameRules
         return ['private_hands' => $private, 'deck' => $deck, 'board' => [], 'street' => 'preflop', 'checked' => [], 'turn' => 0, 'moves' => 0];
     }
 
-    private function holdem(array $state, int $seat, array $action): array
+    private function holdem(array $state, int $seat, array $action, array $activeSeats = []): array
     {
+        // Same reasoning as blackjack: a seat that stood up or timed out mid-hand can never
+        // check again, so the round must only wait on seats that are still actually seated.
+        $activeSeats = $activeSeats ?: array_keys($state['private_hands']);
         if (($action['type'] ?? '') !== 'check') throw new InvalidArgumentException('This fixed-stake table uses check-through rounds; no side bets are made.');
         if (in_array($seat, $state['checked'], true)) throw new InvalidArgumentException('You already checked this round.');
         $state['checked'][] = $seat; $state['moves']++;
-        if (count($state['checked']) < count($state['private_hands'])) { $state['turn'] = ($seat + 1) % count($state['private_hands']); return ['state' => $state, 'winner' => null, 'draw' => false]; }
+        if (count($state['checked']) < count($activeSeats)) { $state['turn'] = ($seat + 1) % count($state['private_hands']); return ['state' => $state, 'winner' => null, 'draw' => false]; }
         $state['checked'] = []; $stage = ['preflop' => 'flop', 'flop' => 'turn', 'turn' => 'river', 'river' => 'showdown'][$state['street']];
         if ($stage === 'flop') for ($i = 0; $i < 3; $i++) $state['board'][] = array_pop($state['deck']);
         elseif ($stage === 'turn' || $stage === 'river') $state['board'][] = array_pop($state['deck']);
         else {
             $scores = [];
-            foreach ($state['private_hands'] as $player => $cards) $scores[$player] = $this->holdemBest(array_merge($cards, $state['board']));
+            foreach ($state['private_hands'] as $player => $cards) {
+                if (in_array($player, $activeSeats, true)) $scores[$player] = $this->holdemBest(array_merge($cards, $state['board']));
+            }
             $best = null; $winners = [];
             foreach ($scores as $player => $score) { $comparison = $best === null ? 1 : $this->comparePokerScores($score, $best); if ($comparison > 0) { $best = $score; $winners = [$player]; } elseif ($comparison === 0) $winners[] = $player; }
             return ['state' => $state, 'winner' => count($winners) === 1 ? (int) $winners[0] : null, 'draw' => count($winners) !== 1];
@@ -432,8 +437,12 @@ class TableGameRules
         return $total;
     }
 
-    private function blackjack(array $state, int $seat, array $action): array
+    private function blackjack(array $state, int $seat, array $action, array $activeSeats = []): array
     {
+        // A player who stands up (or times out) mid-hand is no longer 'seated', so their turn
+        // can never come back around and their 'stood' flag can never be set to true by them -
+        // without treating departed seats as already-done, the round could never complete.
+        $activeSeats = $activeSeats ?: array_keys($state['stood']);
         $type = $action['type'] ?? '';
         if (!in_array($type, ['hit','stand'], true)) throw new InvalidArgumentException('Choose hit or stand.');
         if ($state['stood'][$seat] ?? true) throw new InvalidArgumentException('Your hand has already finished.');
@@ -443,8 +452,15 @@ class TableGameRules
             if ($this->blackjackTotal($state['hands'][$seat]) >= 21) $state['stood'][$seat] = true;
         } else $state['stood'][$seat] = true;
         $state['moves']++;
-        if (!in_array(false, $state['stood'], true)) {
-            $scores = array_map(fn ($hand) => $this->blackjackTotal($hand), $state['hands']);
+        $allDone = true;
+        foreach ($state['stood'] as $s => $stood) {
+            if (in_array($s, $activeSeats, true) && !$stood) { $allDone = false; break; }
+        }
+        if ($allDone) {
+            $scores = [];
+            foreach ($state['hands'] as $s => $hand) {
+                if (in_array($s, $activeSeats, true)) $scores[$s] = $this->blackjackTotal($hand);
+            }
             $eligible = array_filter($scores, fn ($score) => $score <= 21);
             if (!$eligible) return ['state' => $state, 'winner' => null, 'draw' => true];
             $best = max($eligible); $winners = array_keys(array_filter($scores, fn ($score) => $score === $best));
@@ -452,7 +468,7 @@ class TableGameRules
         }
         for ($offset = 1; $offset <= count($state['stood']); $offset++) {
             $next = ($seat + $offset) % count($state['stood']);
-            if (!$state['stood'][$next]) { $state['turn'] = $next; break; }
+            if (in_array($next, $activeSeats, true) && !$state['stood'][$next]) { $state['turn'] = $next; break; }
         }
         return ['state' => $state, 'winner' => null, 'draw' => false];
     }

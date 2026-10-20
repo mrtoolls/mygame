@@ -345,6 +345,18 @@ class TableGameService
             $player->save();
             $table->version++;
             $remaining = $table->players()->where('status', 'seated')->count();
+            // Spades/Hearts need exactly 4 fixed partnership seats - the hand cannot continue or
+            // be fairly scored with fewer, and the departed seat can never act again, so without
+            // this the table would just stall forever with its stakes locked (see the activeSeats
+            // fix in TableGameRules::blackjack()/holdem() for the games that CAN keep going short).
+            if ($table->status === 'active' && in_array($table->game_type, ['spades', 'hearts'], true) && $remaining > 1 && $remaining < 4) {
+                $table->status = 'finished';
+                $table->result = 'cancelled_refunded';
+                $table->finished_at = now();
+                $table->save();
+                $this->refundAll($table, 'partnership_game_broke_on_departure');
+                return $table->fresh(['players.user']);
+            }
             if ($table->status === 'active' && $remaining <= 1) {
                 $winner = $table->players()->where('status', 'seated')->first();
                 $table->status = 'finished';
@@ -751,6 +763,14 @@ class TableGameService
             'idempotency_key' => $table->id . ':timeout:' . $priorVersion,
         ]);
         $remaining = $table->players()->where('status', 'seated')->count();
+        if (in_array($table->game_type, ['spades', 'hearts'], true) && $remaining > 1 && $remaining < 4) {
+            $table->status = 'finished';
+            $table->result = 'cancelled_refunded';
+            $table->finished_at = now();
+            $table->save();
+            $this->refundAll($table, 'partnership_game_broke_on_timeout');
+            return;
+        }
         if ($remaining <= 1) {
             $winner = $table->players()->where('status', 'seated')->first();
             $table->status = 'finished';
