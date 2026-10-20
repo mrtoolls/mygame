@@ -2,7 +2,7 @@
 <aside class="nocturne-account-nav">
     <div class="nocturne-account-card">
         <div class="nocturne-account-id">
-            <span class="nocturne-account-avatar"><i class="ph-fill ph-user-circle"></i></span>
+            <span class="nocturne-account-avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->username }}">@else<i class="ph-fill ph-user-circle"></i>@endif</span>
             <div>
                 <strong>{{ auth()->user()->username }}</strong>
                 <small>{{ auth()->user()->email }}</small>

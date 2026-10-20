@@ -14,7 +14,7 @@
     <div class="nocturne-profile-summary">
         <div class="nocturne-balance-card">
             <div class="nocturne-balance-card__head">
-                <span class="nocturne-account-avatar"><i class="ph-bold ph-user-circle"></i></span>
+                <span class="nocturne-account-avatar">@if($user->avatarUrl())<img src="{{ $user->avatarUrl() }}" alt="{{ $user->username }}">@else<i class="ph-fill ph-user-circle"></i>@endif</span>
                 <div>
                     <strong>{{ $user->username }}</strong>
                     <span>{{ $user->email }}</span>
@@ -24,22 +24,22 @@
                 <strong>{{ showAmount($widget['total_balance']) }}</strong>
             </div>
             <div class="nocturne-balance-card__actions">
-                <a href="{{ route('user.deposit.index') }}"><i class="ph-bold ph-wallet"></i>@lang('Deposit')</a>
-                <a href="{{ route('user.withdraw') }}"><i class="ph-bold ph-money-wavy"></i>@lang('Withdraw')</a>
+                <a href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-wallet"></i>@lang('Deposit')</a>
+                <a href="{{ route('user.withdraw') }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
             </div>
         </div>
         <a class="nocturne-kyc-card" href="{{ route('user.kyc.form') }}">
-            <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="ph-bold ph-caret-right"></i></div>
+            <div class="nocturne-kyc-card__top">@lang('KYC Verification') <i class="ph-fill ph-caret-right"></i></div>
             <div class="nocturne-kyc-card__status {{ $kycStatusClass }}">{{ $kycStatusText }}</div>
             <i class="nocturne-kyc-card__icon ph-bold ph-lock"></i>
         </a>
         <a class="nocturne-kyc-card" href="{{ route('user.referrals') }}">
-            <div class="nocturne-kyc-card__top">@lang('Available Rakeback') <i class="ph-bold ph-caret-right"></i></div>
+            <div class="nocturne-kyc-card__top">@lang('Available Rakeback') <i class="ph-fill ph-caret-right"></i></div>
             <div class="nocturne-kyc-card__status is-verified">{{ showAmount($claimable) }}</div>
             <i class="nocturne-kyc-card__icon ph-bold ph-percent"></i>
         </a>
         <a class="nocturne-kyc-card" href="{{ route('user.referrals') }}">
-            <div class="nocturne-kyc-card__top">@lang('Active Bonuses') <i class="ph-bold ph-caret-right"></i></div>
+            <div class="nocturne-kyc-card__top">@lang('Active Bonuses') <i class="ph-fill ph-caret-right"></i></div>
             @if($activeBonuses->count())
                 <div class="nocturne-kyc-card__status is-verified">{{ $activeBonuses->count() }} @lang('Active')</div>
             @else
@@ -91,7 +91,7 @@
                     <div class="modal-header">
                         <h5 class="modal-title">@lang('KYC Document Rejection Reason')</h5>
                         <span class="close" data-bs-dismiss="modal" type="button" aria-label="Close">
-                            <i class="ph-bold ph-x"></i>
+                            <i class="ph-fill ph-x"></i>
                         </span>
                     </div>
                     <div class="modal-body">
