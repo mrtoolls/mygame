@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#111429">
     <link rel="apple-touch-icon" href="{{ getImage(getFilePath('logoIcon') . '/pwa_favicon.png') }}">
@@ -538,6 +538,11 @@
         window.addEventListener('load', () => {
             registerSW();
         });
+
+        // Belt-and-braces pinch-zoom lock: the viewport meta's maximum-scale/user-scalable
+        // already blocks this on most browsers, but recent iOS Safari can still honor a
+        // two-finger gesture despite it - this is the app, not a web page, it shouldn't move.
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
     </script>
     @include('partials.support_chat_widget')
 </body>
