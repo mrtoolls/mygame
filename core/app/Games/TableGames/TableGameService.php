@@ -9,6 +9,7 @@ use App\Models\TableGameMove;
 use App\Models\TableGamePlayer;
 use App\Models\TableGameSetting;
 use App\Models\TableGameUserLimit;
+use App\Models\TableGameViewer;
 use App\Models\Transaction;
 use App\Models\Country;
 use App\Models\Currency;
@@ -389,20 +390,29 @@ class TableGameService
     {
         $table = TableGame::select(['id', 'game_type', 'status', 'result', 'player_limit', 'stake', 'version', 'state', 'current_user_id', 'turn_deadline_at', 'settings'])
             ->findOrFail($id);
+        // A spectator (no seat at this table) may still view it read-only - $participant stays
+        // null for them, and every use below either guards for that or substitutes a seat value
+        // (-1) that can never match a real seat, so none of the per-seat private state (hole
+        // cards, hands, ship placement - see publicState()) is ever sent to a non-participant.
         $participant = TableGamePlayer::where('table_game_id', $table->id)->where('user_id', $user->id)->first();
-        abort_unless($participant, 403);
 
         // Only take the table lock when an actual deadline transition is due.
         if (($table->status === 'active' && $table->turn_deadline_at && now()->greaterThan($table->turn_deadline_at))
             || ($table->status === 'waiting' && $table->join_deadline_at && now()->greaterThan($table->join_deadline_at))) {
-            DB::transaction(function () use ($user, $id) {
+            DB::transaction(function () use ($id) {
                 $locked = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
                 $this->expireIfNeeded($locked);
-                abort_unless($locked->players()->where('user_id', $user->id)->exists(), 403);
                 if ($locked->status === 'waiting') $this->expireIfNeeded($locked);
                 elseif ($locked->status === 'active' && $locked->turn_deadline_at && now()->greaterThan($locked->turn_deadline_at)) $this->recordMissedTurn($locked);
             }, 3);
             $table->refresh();
+        }
+
+        // Record this poll as "still watching" regardless of whether anything changed (the
+        // unchanged-version short-circuit below would otherwise skip it on most polls), guarded
+        // since the migration may not have run yet right after a deploy.
+        if (Schema::hasTable('table_game_viewers')) {
+            TableGameViewer::updateOrCreate(['table_game_id' => $table->id, 'user_id' => $user->id], ['last_seen_at' => now()]);
         }
 
         if ($sinceVersion !== null && $sinceVersion === (int) $table->version) {
@@ -412,9 +422,10 @@ class TableGameService
         $settlement = null;
         if ($table->status === 'finished') {
             // $participant may predate a settlement that just happened in this very request
-            // (the deadline-transition lock above refreshes $table but not $participant).
-            $own = $players->firstWhere('user_id', $user->id) ?? $participant->refresh();
-            if ($own->settlement_type) {
+            // (the deadline-transition lock above refreshes $table but not $participant). $own
+            // stays null for a spectator (no seat), who has no personal settlement to show.
+            $own = $players->firstWhere('user_id', $user->id) ?? $participant?->refresh();
+            if ($own && $own->settlement_type) {
                 $stakeAmount = (string) ($own->wallet_stake ?? $own->stake);
                 $netAmount = $own->settlement_type === 'payout'
                     ? bcsub((string) $own->settlement_amount, $stakeAmount, 8)
@@ -442,6 +453,12 @@ class TableGameService
             $to = $moveRow?->public_data['move']['to'] ?? null;
             if ($from && $to) $lastMove = ['from' => $from, 'to' => $to];
         }
+        $watchingCount = Schema::hasTable('table_game_viewers')
+            ? TableGameViewer::where('table_game_id', $table->id)
+                ->where('last_seen_at', '>=', now()->subSeconds(20))
+                ->whereNotIn('user_id', $players->pluck('user_id'))
+                ->count()
+            : 0;
         return [
             'id' => $table->id,
             'game' => $table->game_type,
@@ -450,7 +467,9 @@ class TableGameService
             'player_limit' => $table->player_limit,
             'stake' => (string) $table->stake,
             'version' => (int) $table->version,
-            'state' => $this->publicState($table->game_type, $table->state ?? [], (int) $participant->seat),
+            'state' => $this->publicState($table->game_type, $table->state ?? [], $participant ? (int) $participant->seat : -1),
+            'is_spectator' => !$participant,
+            'watching_count' => $watchingCount,
             'current_user_id' => $table->current_user_id,
             'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String(),
             'settlement' => $settlement,

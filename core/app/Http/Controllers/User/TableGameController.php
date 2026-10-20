@@ -40,7 +40,7 @@ class TableGameController extends Controller
     public function show(Request $request, string $id, TableGameService $service)
     {
         $table = TableGame::with(['players.user', 'currency'])->findOrFail($id);
-        abort_unless($table->players->contains('user_id', $request->user()->id), 403);
+        $isSpectator = !$table->players->contains('user_id', $request->user()->id);
         $walletCurrency = $request->user()->walletCurrency;
         $walletStake = $table->players->firstWhere('user_id', $request->user()->id)?->wallet_stake ?? $table->stake;
         $setting = Schema::hasTable('table_game_settings') ? \App\Models\TableGameSetting::where('game_type', $table->game_type)->first() : null;
@@ -57,6 +57,7 @@ class TableGameController extends Controller
             'guide' => $guide,
             'commissionPercent' => (string) ($setting->commission_percent ?? 5),
             'turnSeconds' => (int) ($setting->turn_seconds ?? 60),
+            'isSpectator' => $isSpectator,
             'snapshot' => $service->snapshot($request->user(), $table->id),
         ]);
     }
@@ -159,8 +160,8 @@ class TableGameController extends Controller
 
     public function messages(Request $request, string $id)
     {
-        $player = $this->authorizeSeat($request, $id);
-        if (Schema::hasColumn('table_game_players', 'last_seen_at')) {
+        $player = $this->authorizeViewer($request, $id);
+        if ($player && Schema::hasColumn('table_game_players', 'last_seen_at')) {
             $player->forceFill(['last_seen_at' => now()])->saveQuietly();
         }
         $blockedIds = Schema::hasTable('user_blocks')
@@ -180,7 +181,7 @@ class TableGameController extends Controller
 
     public function sendMessage(Request $request, string $id)
     {
-        $this->authorizeSeat($request, $id);
+        $this->authorizeViewer($request, $id);
         $request->validate([
             'body' => 'nullable|string|max:1000|required_without:attachment',
             'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,webm,mp4,3gp|required_without:body',
@@ -212,9 +213,22 @@ class TableGameController extends Controller
         return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
     }
 
+    /**
+     * A free, unlimited "clap" - open to players and spectators alike. Reuses the chat table/
+     * poll so it shows up live for everyone watching without a separate realtime channel, but
+     * renders client-side as a compact animated chip rather than a normal bubble.
+     */
+    public function applaud(Request $request, string $id)
+    {
+        $this->authorizeViewer($request, $id);
+        $message = TableGameMessage::create(['table_game_id' => $id, 'user_id' => $request->user()->id, 'kind' => 'applause']);
+        $message->load('user:id,username,image');
+        return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
+    }
+
     public function react(Request $request, string $id, int $message)
     {
-        $this->authorizeSeat($request, $id);
+        $this->authorizeViewer($request, $id);
         $data = $request->validate(['emoji' => 'required|string|in:👍,❤️,😂,👏,😮,🎉,👎']);
         $record = DB::transaction(function () use ($id, $message, $request, $data) {
             $record = TableGameMessage::where('table_game_id', $id)->whereKey($message)->lockForUpdate()->firstOrFail();
@@ -229,7 +243,7 @@ class TableGameController extends Controller
 
     public function reportMessage(Request $request, string $id, int $message)
     {
-        $this->authorizeSeat($request, $id);
+        $this->authorizeViewer($request, $id);
         $data = $request->validate(['reason' => 'nullable|string|max:255']);
         $record = TableGameMessage::where('table_game_id', $id)->whereKey($message)->firstOrFail();
         if (!$record->reported_by) {
@@ -244,7 +258,7 @@ class TableGameController extends Controller
 
     public function blockUser(Request $request, string $id, int $user)
     {
-        $this->authorizeSeat($request, $id);
+        $this->authorizeViewer($request, $id);
         abort_if((int) $user === (int) $request->user()->id, 422, 'You cannot block yourself.');
         abort_unless(TableGamePlayer::where('table_game_id', $id)->where('user_id', $user)->exists(), 404);
         UserBlock::firstOrCreate(['blocker_id' => $request->user()->id, 'blocked_id' => $user]);
@@ -259,7 +273,7 @@ class TableGameController extends Controller
 
     public function attachment(Request $request, string $id, int $message)
     {
-        $this->authorizeSeat($request, $id);
+        $this->authorizeViewer($request, $id);
         $record = TableGameMessage::where('table_game_id', $id)->whereKey($message)->firstOrFail();
         abort_unless($record->attachment_path && Storage::disk('local')->exists($record->attachment_path), 404);
         $mime = (string) $record->attachment_mime;
@@ -269,11 +283,16 @@ class TableGameController extends Controller
         return Storage::disk('local')->download($record->attachment_path, $record->attachment_name ?: 'table-attachment', ['X-Content-Type-Options' => 'nosniff']);
     }
 
-    private function authorizeSeat(Request $request, string $id): TableGamePlayer
+    /**
+     * Chat (and the rest of the table's social features) is open to anyone watching the table,
+     * not just its seated players - this just confirms the table exists and returns the caller's
+     * own seat row when they have one (null for a spectator). Blocked users are still filtered
+     * out wherever messages are read, exactly as before.
+     */
+    private function authorizeViewer(Request $request, string $id): ?TableGamePlayer
     {
-        $player = TableGamePlayer::where('table_game_id', $id)->where('user_id', $request->user()->id)->first();
-        abort_unless($player, 403);
-        return $player;
+        abort_unless(TableGame::whereKey($id)->exists(), 404);
+        return TableGamePlayer::where('table_game_id', $id)->where('user_id', $request->user()->id)->first();
     }
 
     private function messagePayload(TableGameMessage $message, $reactions, int $userId, $otherSeenAt = null): array
