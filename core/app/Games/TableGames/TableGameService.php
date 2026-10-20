@@ -418,6 +418,13 @@ class TableGameService
                 ];
             }
         }
+        $lastMove = null;
+        if (in_array($table->game_type, ['chess', 'draughts'], true)) {
+            $moveRow = TableGameMove::where('table_game_id', $table->id)->where('action', 'move')->latest('id')->first();
+            $from = $moveRow?->public_data['move']['from'] ?? null;
+            $to = $moveRow?->public_data['move']['to'] ?? null;
+            if ($from && $to) $lastMove = ['from' => $from, 'to' => $to];
+        }
         return [
             'id' => $table->id,
             'game' => $table->game_type,
@@ -430,6 +437,7 @@ class TableGameService
             'current_user_id' => $table->current_user_id,
             'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String(),
             'settlement' => $settlement,
+            'last_move' => $lastMove,
             'players' => $players->map(fn ($player) => ['id' => $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat, 'status' => $player->status])->values(),
         ];
     }
