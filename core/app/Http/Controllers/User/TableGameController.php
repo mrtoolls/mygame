@@ -164,7 +164,7 @@ class TableGameController extends Controller
         $this->authorizeSeat($request, $id);
         $request->validate([
             'body' => 'nullable|string|max:1000|required_without:attachment',
-            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,mp4,3gp|required_without:body',
+            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,webm,mp4,3gp|required_without:body',
             'kind' => 'nullable|in:text,file,voice',
         ]);
         $body = trim((string) $request->input('body', ''));
