@@ -259,13 +259,18 @@ class TableGameService
                 return $table->fresh(['players.user']);
             }
             if ($table->status !== 'active') throw new InvalidArgumentException('This table is not in an active game.');
+            // Verify the caller is actually seated at this table before anything else runs -
+            // previously the deadline-expiry branch below (which processes a server-side
+            // forfeiture) ran before this check, so any authenticated user who knew a table id
+            // could trigger it on a table they were never seated at.
+            $player = $table->players()->where('user_id', $user->id)->where('status', 'seated')->lockForUpdate()->first();
+            if (!$player) throw new InvalidArgumentException('You are not seated at this table.');
             if ($expectedVersion !== null && $expectedVersion !== (int) $table->version) throw new InvalidArgumentException('The game has changed. Reload the latest table state.');
             if ($table->turn_deadline_at && now()->greaterThan($table->turn_deadline_at)) {
                 $this->recordMissedTurn($table);
                 return $table->fresh(['players.user']);
             }
-            $player = $table->players()->where('user_id', $user->id)->where('status', 'seated')->lockForUpdate()->first();
-            if (!$player || (int) $table->current_user_id !== (int) $user->id) throw new InvalidArgumentException('It is not your turn at this table.');
+            if ((int) $table->current_user_id !== (int) $user->id) throw new InvalidArgumentException('It is not your turn at this table.');
                 $activeSeats = $table->players()->where('status', 'seated')->pluck('seat')->map(fn ($seat) => (int) $seat)->all();
                 $result = $this->rules->move($table->game_type, $table->state ?? [], (int) $player->seat, $action, $activeSeats);
             $table->state = $result['state'];
