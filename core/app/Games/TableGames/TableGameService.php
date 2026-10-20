@@ -408,7 +408,7 @@ class TableGameService
         if ($sinceVersion !== null && $sinceVersion === (int) $table->version) {
             return ['unchanged' => true, 'version' => (int) $table->version, 'status' => $table->status, 'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String()];
         }
-        $players = TableGamePlayer::with('user:id,username')->where('table_game_id', $table->id)->orderBy('seat')->get();
+        $players = TableGamePlayer::with('user:id,username,image')->where('table_game_id', $table->id)->orderBy('seat')->get();
         $settlement = null;
         if ($table->status === 'finished') {
             // $participant may predate a settlement that just happened in this very request
@@ -455,7 +455,7 @@ class TableGameService
             'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String(),
             'settlement' => $settlement,
             'last_move' => $lastMove,
-            'players' => $players->map(fn ($player) => ['id' => $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat, 'status' => $player->status])->values(),
+            'players' => $players->map(fn ($player) => ['id' => $player->user_id, 'name' => $player->user?->username, 'avatar' => $player->user?->avatarUrl(), 'seat' => $player->seat, 'status' => $player->status])->values(),
         ];
     }
 
