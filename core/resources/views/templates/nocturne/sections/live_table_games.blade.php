@@ -22,7 +22,7 @@
                 <article class="nocturne-live-table nocturne-live-table--{{ $index % 5 }}">
                     <div class="nocturne-live-table__art" aria-label="@lang('Game image placeholder')">
                         @if (!empty($game['card_image']))
-                            <img src="{{ getImage(getFilePath('game') . '/' . $game['card_image'], getFileSize('game')) }}" alt="{{ __($game['name']) }}" width="400" height="534" loading="lazy" decoding="async">
+                            <img src="{{ getImage(getFilePath('game') . '/' . $game['card_image'], getFileSize('game')) }}" alt="{{ __($game['name']) }}" loading="lazy" decoding="async">
                         @else
                             <span class="nocturne-live-table__art-glow"></span>
                             <i class="ph-fill {{ ['ph-dice-five', 'ph-cards', 'ph-spade', 'ph-circles-three-plus', 'ph-game-controller'][($index % 5)] }}"></i>
