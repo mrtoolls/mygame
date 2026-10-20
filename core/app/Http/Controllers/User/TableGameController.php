@@ -148,7 +148,23 @@ class TableGameController extends Controller
             'version' => 'nullable|integer|min:0',
             'idempotency_key' => 'required|string|alpha_dash|min:12|max:64',
         ]);
-        return $this->run(fn () => $service->move($request->user(), $id, $data['action'], $data['idempotency_key'], $data['version'] ?? null));
+        try {
+            $service->move($request->user(), $id, $data['action'], $data['idempotency_key'], $data['version'] ?? null);
+            // The client used to follow every move with a separate snapshot fetch before it could
+            // show anything - two sequential round-trips just to render one click. Returning the
+            // same redacted snapshot the poll would have fetched anyway lets it render immediately
+            // off this single response instead.
+            return response()->json(['success' => true, 'snapshot' => $service->snapshot($request->user(), $id)]);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
+        } catch (ModelNotFoundException $exception) {
+            throw $exception;
+        } catch (\RuntimeException $exception) {
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 500);
+        } catch (\Throwable $exception) {
+            Log::error('Live table move failed unexpectedly.', ['exception' => $exception, 'user_id' => $request->user()?->id]);
+            return response()->json(['success' => false, 'message' => 'The move could not be made right now. Please try again.'], 500);
+        }
     }
 
     public function leave(Request $request, string $id, TableGameService $service)
