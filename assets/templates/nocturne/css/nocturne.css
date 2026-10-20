@@ -96,10 +96,18 @@ body {
     font-family: var(--body-font);
     font-size: 15px;
     line-height: 1.55;
+    /* Stops the page-level bounce/rubber-band and pull-to-refresh gesture from chaining past the
+       top/bottom of the page - one of the more noticeable "this is a website, not an app" tells. */
+    overscroll-behavior-y: contain;
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
 a:hover { color: var(--nocturne-green); }
+/* Removes the gray tap-flash on touch and the ~300ms double-tap-to-zoom delay on interactive
+   elements - both read as "slow website" rather than "responsive app" on a real device. */
+a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit"], input[type="button"] {
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
 .nocturne-shell { min-height: 100vh; }
 .nocturne-topbar {
     position: fixed;
@@ -112,6 +120,7 @@ a:hover { color: var(--nocturne-green); }
     padding: 12px 26px;
     background: var(--nocturne-top);
     border-bottom: 1px solid rgba(255,255,255,.025);
+    transform: translateZ(0);
 }
 .nocturne-brand { width: 270px; min-width: 150px; display: flex; align-items: center; }
 .nocturne-brand img { display: block; max-width: 176px; max-height: 54px; object-fit: contain; }
@@ -411,7 +420,7 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-game-page .container { padding-right: 14px; padding-left: 14px; }
     .nocturne-game-page .row { --bs-gutter-x: 14px; --bs-gutter-y: 16px; }
     .nocturne-game-page .headtail-wrapper,.nocturne-game-page .headtail-body { border-radius: 18px; }
-    .nocturne-game-page .game-playbtn { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 30; padding: 8px; border: 1px solid rgba(145,156,205,.16); border-radius: 16px; background: rgba(17,20,41,.88); backdrop-filter: blur(14px); }
+    .nocturne-game-page .game-playbtn { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 30; padding: 8px; border: 1px solid rgba(145,156,205,.16); border-radius: 16px; background: rgba(17,20,41,.88); backdrop-filter: blur(6px); transform: translateZ(0); }
     .nocturne-game-page .game-playbtn .btn { min-height: 48px; }
     .nocturne-game-page .game-contet-title,.nocturne-game-page .game-content-title { font-size: 16px; }
     .win-loss-popup__bg { padding: 14px; }
@@ -466,7 +475,14 @@ a:hover { color: var(--nocturne-green); }
     .nocturne-shell.menu-open .nocturne-sidebar { transform: translateX(0); }
     .nocturne-shell.menu-open .nocturne-sidebar-backdrop { display: block; opacity: 1; visibility: visible; }
     .nocturne-main { margin-left: 0; padding: 94px 20px 90px; }
-    .nocturne-mobile-nav { position: fixed; z-index: 1040; inset: auto 0 0; display: flex; align-items: stretch; justify-content: space-around; min-height: 68px; padding: 6px 10px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--nocturne-line); background: rgba(17,20,41,.97); backdrop-filter: blur(16px); }
+    .nocturne-mobile-nav {
+        position: fixed; z-index: 1040; inset: auto 0 0; display: flex; align-items: stretch; justify-content: space-around; min-height: 68px;
+        padding: 6px 10px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--nocturne-line); background: rgba(17,20,41,.97);
+        /* No backdrop-filter here: this bar is fixed and on-screen for every scroll frame on every
+           page, and at 97% background opacity the blur was doing almost nothing visible anyway while
+           still paying its full GPU compositing cost every frame - a classic mobile scroll-jank cause. */
+        transform: translateZ(0);
+    }
     .nocturne-mobile-nav a, .nocturne-mobile-nav button { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 0; background: transparent; color: var(--nocturne-muted); text-decoration: none; font-size: 10px; font-weight: 700; }
     .nocturne-mobile-nav i { font-size: 21px; }
     .nocturne-mobile-nav a:hover, .nocturne-mobile-nav button:hover { color: var(--nocturne-green); }
