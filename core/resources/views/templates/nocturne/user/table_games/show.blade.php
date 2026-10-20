@@ -262,6 +262,28 @@
 @keyframes chess-piece-in{from{transform:scale(.4) translateY(-14px) rotateX(50deg);opacity:0}60%{transform:scale(1.12) translateY(0) rotateX(0);opacity:1}to{transform:scale(1) translateY(0) rotateX(0);opacity:1}}
 .board-cell--chess{transform-style:preserve-3d}
 .board-cell--chess:not(:empty) svg{animation:chess-piece-in .18s ease}
+.ludo-wrap{position:relative;width:min(92vw,420px);aspect-ratio:1;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#fffdf6,#f2e7cc);box-shadow:0 0 0 10px #2a2140,0 16px 40px rgba(0,0,0,.5)}
+.ludo-yard{position:absolute;width:40%;height:40%}
+.ludo-yard--red{left:0;top:0;background:radial-gradient(ellipse at 30% 25%,#ff7a7a,#d32f2f 65%,#8f1414 100%)}
+.ludo-yard--green{right:0;top:0;background:radial-gradient(ellipse at 70% 25%,#6fe3a8,#1f9e5c 65%,#0e5c34 100%)}
+.ludo-yard--yellow{right:0;bottom:0;background:radial-gradient(ellipse at 70% 75%,#ffe27a,#f2b705 65%,#8f6a02 100%)}
+.ludo-yard--blue{left:0;bottom:0;background:radial-gradient(ellipse at 30% 75%,#7aa8ff,#2a62d6 65%,#123a80 100%)}
+.ludo-yard-inner{position:absolute;left:6.667%;top:6.667%;width:26.667%;height:26.667%;border-radius:14%;background:#fff;box-shadow:inset 0 2px 6px rgba(0,0,0,.12);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10%;padding:10%;box-sizing:border-box}
+.ludo-yard--red .ludo-yard-inner{background:#fff6f2}.ludo-yard--green .ludo-yard-inner{background:#f0fbf4}.ludo-yard--yellow .ludo-yard-inner{background:#fffbe9}.ludo-yard--blue .ludo-yard-inner{background:#eef4ff}
+.ludo-slot{border-radius:50%;background:rgba(0,0,0,.07);box-shadow:inset 0 2px 4px rgba(0,0,0,.18)}
+.ludo-arm-v{position:absolute;left:40%;top:0;width:20%;height:100%;background:#fffdf6;background-image:repeating-linear-gradient(to bottom,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to right,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.ludo-arm-h{position:absolute;top:40%;left:0;width:100%;height:20%;background:#fffdf6;background-image:repeating-linear-gradient(to right,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to bottom,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.ludo-lane{position:absolute}
+.ludo-lane--red{left:0;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to right,rgba(211,47,47,.12),rgba(211,47,47,.55))}
+.ludo-lane--green{left:46.667%;top:0;width:6.667%;height:40%;background:linear-gradient(to bottom,rgba(31,158,92,.12),rgba(31,158,92,.55))}
+.ludo-lane--yellow{left:60%;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to left,rgba(242,183,5,.12),rgba(242,183,5,.55))}
+.ludo-lane--blue{left:46.667%;top:60%;width:6.667%;height:40%;background:linear-gradient(to top,rgba(42,98,214,.12),rgba(42,98,214,.55))}
+.ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 6px 14px rgba(0,0,0,.4)}
+.ludo-die{position:absolute;right:3%;bottom:3%;width:10%;height:10%;border-radius:22%;background:linear-gradient(160deg,#fff,#e6e6e6);box-shadow:0 6px 12px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.08)}
+.ludo-token{position:absolute;width:6.2%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:2px solid rgba(0,0,0,.4);box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
+.ludo-token.is-movable{cursor:pointer;animation:ludo-token-pulse 1s ease-in-out infinite;z-index:2}
+@keyframes ludo-token-pulse{0%,100%{box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5),0 0 0 0 rgba(0,239,135,.6)}50%{box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5),0 0 0 7px rgba(0,239,135,0)}}
+@media(max-width:575px){.ludo-die{right:2%;bottom:2%}}
 @media(prefers-reduced-motion:reduce){.board-cell--chess:not(:empty){animation:none}}.board-grid--ludo{grid-template-columns:repeat(4,minmax(45px,72px));gap:9px}.board-token-button{display:grid;aspect-ratio:1;place-items:center;border:1px solid var(--tm-line);border-radius:50%;background:var(--tm-raised);color:var(--tm-text);font-size:20px;font-weight:900}.board-token-button.is-ready{border-color:var(--tm-green);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.board-action-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}.board-action-row button{min-height:38px;padding:0 12px;border:1px solid var(--tm-line);border-radius:10px;background:var(--tm-raised);color:var(--tm-text);font-size:10px;font-weight:850}
 </style>
 @endpush
@@ -525,6 +547,29 @@ function send(action){if(!latest||latest.status!=='active'||latest.current_user_
 }).catch(e=>{showError(e.message);});}
 const DICE_PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 function diceFace(value){const die=document.createElement('span');die.className='dice-face';const on=DICE_PIPS[value]||[];for(let i=0;i<9;i++){const dot=document.createElement('i');dot.className=on.includes(i)?'is-on':'';die.append(dot);}return die;}
+// Ludo board geometry on a 15x15 grid (the universal Ludo board layout). The 52-cell common
+// track is one quadrant (red's run from its start to just before green's) rotated 90 degrees
+// three times around the board centre (7,7) - verified self-consistent: rotating red's start
+// (6,1) by 90 degrees lands exactly on green's start (1,8), etc. Each seat's 6-cell home
+// stretch is the middle lane of that seat's own arm, leading from the edge to the centre.
+const LUDO_QUARTER=[[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8]];
+const LUDO_TRACK=(()=>{const cells=[];let current=LUDO_QUARTER;for(let turn=0;turn<4;turn++){cells.push(...current);current=current.map(([r,c])=>[7+(c-7),7-(r-7)]);}return cells;})();
+const LUDO_HOME_BASE=[[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]];
+const LUDO_HOME=[0,1,2,3].map(seat=>{let cells=LUDO_HOME_BASE;for(let turn=0;turn<seat;turn++)cells=cells.map(([r,c])=>[7+(c-7),7-(r-7)]);return cells;});
+const LUDO_YARD=[
+    [[1,1],[1,4],[4,1],[4,4]],
+    [[1,10],[1,13],[4,10],[4,13]],
+    [[10,10],[10,13],[13,10],[13,13]],
+    [[10,1],[10,4],[13,1],[13,4]],
+];
+const LUDO_COLORS=['#d32f2f','#1f9e5c','#f2b705','#2a62d6'];
+function ludoCellPercent([r,c]){return{left:((c+0.5)/15*100)+'%',top:((r+0.5)/15*100)+'%'};}
+function ludoTokenCell(seat,tokenIndex,position,starts){
+    if(position<0)return LUDO_YARD[seat][tokenIndex];
+    if(position>=58)return null;
+    if(position>=52)return LUDO_HOME[seat][position-52];
+    return LUDO_TRACK[((starts?.[seat]??[0,13,26,39][seat])+position)%52];
+}
 function renderBoard(data) {
     board.replaceChildren();
     const active = data.status === 'active' && data.current_user_id === userId;
@@ -573,9 +618,37 @@ function renderBoard(data) {
         if(active){const roll=document.createElement('button');roll.type='button';roll.className='table-match__start';roll.textContent='Roll server die';roll.onclick=()=>send({roll:true});board.append(roll);}
     } else if (type === 'ludo') {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;
-        if(active&&state.pending_roll===null){const roll=document.createElement('button');roll.type='button';roll.className='table-match__start';roll.textContent='Roll server die';roll.onclick=()=>send({roll:true});board.append(roll);}
-        if(active&&state.pending_roll!==null){const rollRow=document.createElement('div');rollRow.className='dice-roll-row';rollRow.append(diceFace(state.pending_roll));const label=document.createElement('span');label.textContent='Choose a movable token';rollRow.append(label);board.append(rollRow);const tokens=document.createElement('div');tokens.className='board-grid board-grid--ludo';state.tokens?.[seat]?.forEach((position,index)=>{const token=document.createElement('button');token.type='button';token.className='board-token-button';token.textContent=position===-1?'Home':position===58?'Finished':`Token ${index+1}  ${position}`;token.disabled=position===58||(position===-1&&state.pending_roll!==6)||(position>=0&&position+state.pending_roll>57);token.onclick=()=>send({token:index});tokens.append(token);});board.append(tokens);}
-        if(!active){const positions=document.createElement('p');positions.textContent=state.tokens?.map((tokens,index)=>`Player ${index+1}: ${tokens.filter(p=>p===58).length}/4 finished`).join('  ')||'';board.append(positions);}
+        const wrap=document.createElement('div');wrap.className='ludo-wrap';
+        ['red','green','yellow','blue'].forEach((name,seatIndex)=>{
+            const yard=document.createElement('div');yard.className='ludo-yard ludo-yard--'+name;
+            const inner=document.createElement('div');inner.className='ludo-yard-inner';
+            for(let i=0;i<4;i++){const slot=document.createElement('div');slot.className='ludo-slot';inner.append(slot);}
+            yard.append(inner);wrap.append(yard);
+        });
+        const armV=document.createElement('div');armV.className='ludo-arm-v';wrap.append(armV);
+        const armH=document.createElement('div');armH.className='ludo-arm-h';wrap.append(armH);
+        ['red','green','yellow','blue'].forEach(name=>{const lane=document.createElement('div');lane.className='ludo-lane ludo-lane--'+name;wrap.append(lane);});
+        const center=document.createElement('div');center.className='ludo-center';wrap.append(center);
+        const die=document.createElement('div');die.className='ludo-die';wrap.append(die);
+        const movable=[];
+        if(active&&state.pending_roll!==null){(state.tokens?.[seat]||[]).forEach((position,index)=>{const can=position===58?false:(position===-1?state.pending_roll===6:position+state.pending_roll<=57);if(can)movable.push(index);});}
+        (state.tokens||[]).forEach((seatTokens,tokenSeat)=>{seatTokens.forEach((position,tokenIndex)=>{
+            if(position>=58)return;
+            const cell=ludoTokenCell(tokenSeat,tokenIndex,position,state.starts);if(!cell)return;
+            const pct=ludoCellPercent(cell);
+            const peg=document.createElement('button');peg.type='button';peg.className='ludo-token';
+            peg.style.left=pct.left;peg.style.top=pct.top;peg.style.background=`radial-gradient(circle at 32% 26%,#fff,${LUDO_COLORS[tokenSeat]} 62%,#000 140%)`;
+            const canMoveThis=tokenSeat===seat&&movable.includes(tokenIndex);
+            peg.classList.toggle('is-movable',canMoveThis);
+            peg.disabled=!canMoveThis;
+            peg.setAttribute('aria-label',`${latest.players.find(p=>p.seat===tokenSeat)?.name||'Player '+(tokenSeat+1)} token ${tokenIndex+1}`);
+            peg.onclick=()=>send({token:tokenIndex});
+            wrap.append(peg);
+        });});
+        board.append(wrap);
+        if(active&&state.pending_roll===null){const roll=document.createElement('button');roll.type='button';roll.className='table-match__start';roll.textContent='Roll the die';roll.onclick=()=>send({roll:true});board.append(roll);}
+        else if(active&&state.pending_roll!==null){const rollRow=document.createElement('div');rollRow.className='dice-roll-row';rollRow.append(diceFace(state.pending_roll));const label=document.createElement('span');label.textContent=movable.length?'Tap a glowing token to move it':'No token can move with this roll';rollRow.append(label);board.append(rollRow);}
+        if(!active){const positions=document.createElement('p');positions.className='board-scorebar';positions.textContent=state.tokens?.map((tokens,index)=>`${latest.players.find(p=>p.seat===index)?.name||'Player '+(index+1)}: ${tokens.filter(p=>p===58).length}/4 home`).join('  ')||'';board.append(positions);}
     } else if (type === 'chess' || type === 'draughts') {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;const white=seat===0;const grid=document.createElement('div');grid.className='board-grid board-grid--chess';
         const chessSymbolIds={K:'p-king',Q:'p-queen',R:'p-rook',B:'p-bishop',N:'p-knight',P:'p-pawn'};
