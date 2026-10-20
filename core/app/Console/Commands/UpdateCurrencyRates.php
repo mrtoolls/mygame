@@ -19,19 +19,25 @@ class UpdateCurrencyRates extends Command
             $this->error('Currency rate source did not return a valid response.');
             return self::FAILURE;
         }
+        if ($response->json('base_code') !== 'USD' || !$response->json('time_last_update_unix')) {
+            $this->error('Currency rate source returned an incomplete USD rate set.');
+            return self::FAILURE;
+        }
         $rates = $response->json('rates', []);
+        $rateTimestamp = \Illuminate\Support\Carbon::createFromTimestampUTC((int) $response->json('time_last_update_unix'));
         $updated = 0;
-        foreach (Currency::where('auto_update', true)->get() as $currency) {
+        foreach (Currency::where('auto_update', true)->where('enabled', true)->get() as $currency) {
             $usdToCurrency = $rates[$currency->code] ?? null;
             if (!is_numeric($usdToCurrency) || (float) $usdToCurrency <= 0) continue;
             $newRate = number_format(1 / (float) $usdToCurrency, 12, '.', '');
-            DB::transaction(function () use ($currency, $newRate) {
+            DB::transaction(function () use ($currency, $newRate, $rateTimestamp) {
                 $locked = Currency::whereKey($currency->id)->lockForUpdate()->first();
                 if (!$locked || !$locked->auto_update) return;
                 $oldRate = $locked->rate_to_usd;
                 $locked->rate_to_usd = $newRate;
                 $locked->rate_source = 'api';
-                $locked->last_updated_at = now();
+                if ($locked->last_updated_at && $locked->last_updated_at->greaterThanOrEqualTo($rateTimestamp)) return;
+                $locked->last_updated_at = $rateTimestamp;
                 $locked->save();
                 if ((string) $oldRate !== (string) $newRate) {
                     $locked->rateLogs()->create([

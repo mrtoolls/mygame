@@ -11,6 +11,7 @@ use App\Models\TableGameSetting;
 use App\Models\TableGameUserLimit;
 use App\Models\Transaction;
 use App\Models\Country;
+use App\Models\Currency;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,7 @@ class TableGameService
                 return $existing->fresh(['players.user']);
             }
             $this->validateCreate($lockedUser, $gameType, $playerLimit, $stake, $setting);
+            $creatorRate = bccomp($stake, '0', 8) > 0 ? $this->currentCurrencyRate(Currency::findOrFail($lockedUser->currency_id)) : null;
             $tableData = [
                 'game_type' => $gameType,
                 'creator_id' => $lockedUser->id,
@@ -82,6 +84,9 @@ class TableGameService
                 'user_id' => $lockedUser->id,
                 'seat' => 0,
                 'stake' => $stake,
+                'wallet_stake' => $stake,
+                'wallet_rate_to_usd' => $creatorRate,
+                'table_rate_to_usd' => $creatorRate,
                 'status' => 'seated',
                 'stake_debit_key' => $table->id . ':stake:' . $lockedUser->id,
                 'last_seen_at' => now(),
@@ -96,7 +101,6 @@ class TableGameService
     {
         return DB::transaction(function () use ($user, $id) {
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
-            $this->assertSameWalletCurrency($user, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') {
                 if ($table->players()->where('user_id', $user->id)->exists()) return $table->fresh(['players.user']);
@@ -119,12 +123,17 @@ class TableGameService
             $occupiedSeats = TableGamePlayer::where('table_game_id', $table->id)->where('status', 'seated')->pluck('seat')->map(fn ($value) => (int) $value)->all();
             $seat = 0;
             while (in_array($seat, $occupiedSeats, true)) $seat++;
-            $this->debit($lockedUser, $table, 'player_stake');
+            $stakeQuote = $this->walletStakeQuoteFor($lockedUser, $table);
+            $this->validateParticipantWalletStake($lockedUser, $stakeQuote['wallet_stake'], $table);
+            $this->debit($lockedUser, $table, 'player_stake', $stakeQuote['wallet_stake']);
             $playerData = [
                 'table_game_id' => $table->id,
                 'user_id' => $lockedUser->id,
                 'seat' => $seat,
                 'stake' => $table->stake,
+                'wallet_stake' => $stakeQuote['wallet_stake'],
+                'wallet_rate_to_usd' => $stakeQuote['wallet_rate_to_usd'],
+                'table_rate_to_usd' => $stakeQuote['table_rate_to_usd'],
                 'status' => 'seated',
                 'stake_debit_key' => $table->id . ':stake:' . $lockedUser->id,
                 'last_seen_at' => now(),
@@ -141,14 +150,14 @@ class TableGameService
     {
         return DB::transaction(function () use ($sender, $tableId, $username) {
             $table = TableGame::whereKey($tableId)->lockForUpdate()->firstOrFail();
-            $this->assertSameWalletCurrency($sender, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') throw new InvalidArgumentException('Only a waiting table can receive invitations.');
             if ((int) $table->creator_id !== (int) $sender->id) throw new InvalidArgumentException('Only the table creator can invite players.');
             if ($table->players()->where('status', 'seated')->count() >= $table->player_limit) throw new InvalidArgumentException('This table is already full.');
             $invitee = User::where('username', trim($username))->first();
             if (!$invitee) throw new InvalidArgumentException('No player was found with that username.');
-            $this->assertSameWalletCurrency($invitee, $table);
+            $inviteeQuote = $this->walletStakeQuoteFor($invitee, $table);
+            $this->validateParticipantWalletStake($invitee, $inviteeQuote['wallet_stake'], $table);
             if ((int) $invitee->id === (int) $sender->id) throw new InvalidArgumentException('You are already seated at this table.');
             if ($table->players()->where('user_id', $invitee->id)->exists()) throw new InvalidArgumentException('That player already has a seat at this table.');
 
@@ -176,17 +185,27 @@ class TableGameService
     public function pendingInvites(User $user): \Illuminate\Support\Collection
     {
         if (!\Illuminate\Support\Facades\Schema::hasTable('table_game_invites')) return collect();
-        return TableGameInvite::with(['table.players.user', 'inviter'])
+        return TableGameInvite::with(['table.currency', 'table.players.user', 'inviter'])
             ->where('invitee_id', $user->id)
             ->where('status', 'pending')
             ->where('expires_at', '>', now())
             ->whereHas('table', function ($query) use ($user) {
                 $query->where('status', 'waiting');
-                if ($this->hasColumn('table_games', 'currency_id')) $query->where('currency_id', $user->currency_id);
             })
             ->latest()
             ->limit(20)
-            ->get();
+            ->get()
+            ->each(function ($invite) use ($user) {
+                try {
+                    $quote = $this->walletStakeQuoteFor($user, $invite->table);
+                    $this->validateParticipantWalletStake($user, $quote['wallet_stake'], $invite->table);
+                    $invite->wallet_stake_preview = $quote['wallet_stake'];
+                    $invite->wallet_stake_available = true;
+                } catch (InvalidArgumentException) {
+                    $invite->wallet_stake_preview = null;
+                    $invite->wallet_stake_available = false;
+                }
+            });
     }
 
     public function acceptInvite(User $user, int $inviteId): TableGame
@@ -208,7 +227,6 @@ class TableGameService
     {
         return DB::transaction(function () use ($user, $id) {
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
-            $this->assertSameWalletCurrency($user, $table);
             $this->expireIfNeeded($table);
             if ($table->status !== 'waiting') return $table->fresh(['players.user']);
             if ((int) $table->creator_id !== (int) $user->id) throw new InvalidArgumentException('Only the table creator can start it early.');
@@ -226,7 +244,6 @@ class TableGameService
                 throw new InvalidArgumentException('The move request is invalid.');
             }
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
-            $this->assertSameWalletCurrency($user, $table);
             $priorMove = TableGameMove::where('idempotency_key', $idempotencyKey)->first();
             if ($priorMove) {
                 if ($priorMove->table_game_id !== $table->id || (int) $priorMove->user_id !== (int) $user->id) throw new InvalidArgumentException('That request key is already in use.');
@@ -369,13 +386,31 @@ class TableGameService
 
     public function liveTables(?User $user = null): array
     {
-        $query = TableGame::with('players.user')->whereIn('status', ['waiting', 'active']);
-        if ($user && $this->hasColumn('table_games', 'currency_id')) $query->where('currency_id', $user->currency_id);
-        return $query->latest()->limit(50)->get()->map(fn ($table) => [
-            'id' => $table->id, 'game' => $table->game_type, 'status' => $table->status,
-            'stake' => (string) $table->stake, 'player_limit' => $table->player_limit,
-            'players' => $table->players->where('status', 'seated')->map(fn ($player) => ['id' => (int) $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat])->values(),
-        ])->all();
+        $query = TableGame::with(['currency', 'players.user'])->whereIn('status', ['waiting', 'active']);
+        return $query->latest()->limit(50)->get()->map(function ($table) use ($user) {
+            $walletStake = null;
+            $canJoin = true;
+            if (bccomp((string) $table->stake, '0', 8) > 0 && $user) {
+                try {
+                    $walletStake = $this->walletStakeQuoteFor($user, $table)['wallet_stake'];
+                    $this->validateParticipantWalletStake($user, $walletStake, $table);
+                } catch (InvalidArgumentException) {
+                    $canJoin = false;
+                }
+            }
+            $currency = $user?->walletCurrency ?? $table->currency;
+            return [
+                'id' => $table->id, 'game' => $table->game_type, 'status' => $table->status,
+                'stake' => (string) $table->stake, 'wallet_stake' => $walletStake, 'can_join' => $canJoin,
+                'player_limit' => $table->player_limit,
+                'currency_symbol' => $currency?->symbol ?? $table->currency?->symbol,
+                'currency_code' => $currency?->code ?? $table->currency?->code,
+                'wallet_stake_formatted' => $walletStake !== null && $currency
+                    ? $currency->formatMinor((new Money())->toMinor($walletStake, (int) $currency->decimals), true)
+                    : null,
+                'players' => $table->players->where('status', 'seated')->map(fn ($player) => ['id' => (int) $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat])->values(),
+            ];
+        })->all();
     }
 
     public function sweepExpired(): void
@@ -406,6 +441,12 @@ class TableGameService
         if (!in_array($gameType, TableGameRules::AVAILABLE, true)) throw new InvalidArgumentException('This game is not yet enabled for tables.');
         if ($playerLimit < $definition['min'] || $playerLimit > $definition['max']) throw new InvalidArgumentException('Select a supported player count.');
         if (bccomp($stake, '0', 8) < 0 || (bccomp($stake, '0', 8) > 0 && bccomp($stake, (string) $setting->min_stake, 8) < 0) || bccomp($stake, (string) $setting->max_stake, 8) > 0) throw new InvalidArgumentException('The stake is outside the allowed limits.');
+        if (bccomp($stake, '0', 8) > 0) {
+            $walletCurrency = Currency::find($user->currency_id);
+            if (!$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games are unavailable for your wallet currency.');
+            $this->currentCurrencyRate($walletCurrency);
+            (new Money())->toMinor($stake, (int) $walletCurrency->decimals);
+        }
         if (bccomp($stake, '0', 8) > 0 && $user->country_id && Schema::hasTable('countries')) {
             $country = Country::with('currency')->find($user->country_id);
             if (!$country || !$country->is_enabled || !$country->is_allowed || !$country->currency?->enabled
@@ -441,9 +482,9 @@ class TableGameService
         $table->save();
     }
 
-    private function debit(User $user, TableGame $table, string $reason): void
+    private function debit(User $user, TableGame $table, string $reason, ?string $amount = null): void
     {
-        $amount = (string) $table->stake;
+        $amount = $amount ?? (string) $table->stake;
         if (bccomp($amount, '0', 8) === 0) return;
         if (bccomp((string) $user->balance, $amount, 8) < 0) throw new InvalidArgumentException('Your available balance is too low for this stake.');
         $user->balance = bcsub((string) $user->balance, $amount, 8);
@@ -466,10 +507,62 @@ class TableGameService
         $transaction->save();
     }
 
-    private function assertSameWalletCurrency(User $user, TableGame $table): void
+    private function walletStakeQuoteFor(User $user, TableGame $table): array
     {
-        if ($this->hasColumn('table_games', 'currency_id') && (string) $table->currency_id !== (string) $user->currency_id) {
-            throw new InvalidArgumentException('This table uses a different wallet currency.');
+        if (bccomp((string) $table->stake, '0', 8) === 0) {
+            return ['wallet_stake' => '0.00000000', 'wallet_rate_to_usd' => null, 'table_rate_to_usd' => null];
+        }
+        if (!$table->currency_id || !$user->currency_id) throw new InvalidArgumentException('A supported wallet currency is required for staked games.');
+
+        $tableCurrency = Currency::find($table->currency_id);
+        $walletCurrency = Currency::find($user->currency_id);
+        if (!$tableCurrency?->enabled || !$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games require enabled wallet currencies.');
+
+        $tableRate = $this->currentCurrencyRate($tableCurrency);
+        $walletRate = $this->currentCurrencyRate($walletCurrency);
+        if ((string) $table->currency_id === (string) $user->currency_id) {
+            return ['wallet_stake' => (string) $table->stake, 'wallet_rate_to_usd' => $walletRate, 'table_rate_to_usd' => $tableRate];
+        }
+        $precision = max(12, (int) $walletCurrency->decimals + 2);
+        $walletStake = bcdiv(bcmul((string) $table->stake, $tableRate, $precision), $walletRate, $precision);
+        $walletStake = $this->roundCurrencyAmount($walletStake, (int) $walletCurrency->decimals);
+        if (bccomp($walletStake, '0', 8) <= 0) throw new InvalidArgumentException('This stake is too small to convert into your wallet currency.');
+
+        return ['wallet_stake' => $walletStake, 'wallet_rate_to_usd' => (string) $walletRate, 'table_rate_to_usd' => (string) $tableRate];
+    }
+
+    private function currentCurrencyRate(Currency $currency): string
+    {
+        if (!$currency->enabled || !$currency->rate_to_usd || !$currency->last_updated_at
+            || $currency->last_updated_at->lt(now()->subHours(48))) {
+            throw new InvalidArgumentException('A current exchange rate is not available for this currency. Please try again after the daily rate refresh.');
+        }
+        return (string) $currency->rate_to_usd;
+    }
+
+    private function roundCurrencyAmount(string $amount, int $decimals): string
+    {
+        $decimals = min(8, max(0, $decimals));
+        $halfUnit = '0.' . str_repeat('0', $decimals) . '5';
+        $rounded = bcadd($amount, $halfUnit, max(12, $decimals + 1));
+        return bcadd($rounded, '0', $decimals);
+    }
+
+    private function validateParticipantWalletStake(User $user, string $walletStake, TableGame $table): void
+    {
+        if (bccomp((string) $table->stake, '0', 8) === 0) return;
+        $walletCurrency = Currency::find($user->currency_id);
+        if (!$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games are unavailable for your wallet currency.');
+        if (!$user->country_id || !Schema::hasTable('countries')) return;
+        $country = Country::with('currency')->find($user->country_id);
+        if (!$country || !$country->is_enabled || !$country->is_allowed || !$country->currency?->enabled
+            || (int) $country->currency_id !== (int) $user->currency_id) {
+            throw new InvalidArgumentException('Staked tables are not available for your country or wallet currency.');
+        }
+        $minorStake = (new Money())->toMinor($walletStake, (int) $country->currency->decimals);
+        if (($country->min_table_stake_minor > 0 && bccomp($minorStake, (string) $country->min_table_stake_minor, 0) < 0)
+            || ($country->max_table_stake_minor > 0 && bccomp($minorStake, (string) $country->max_table_stake_minor, 0) > 0)) {
+            throw new InvalidArgumentException('The converted stake is outside your country’s allowed limits.');
         }
     }
 
@@ -537,11 +630,18 @@ class TableGameService
         if (bccomp($amount, '0', 8) <= 0) return;
         if ($player->settlement_key) return;
         $user = User::whereKey($player->user_id)->lockForUpdate()->firstOrFail();
-        $user->balance = bcadd((string) $user->balance, $amount, 8);
+        $walletStake = (string) ($player->wallet_stake ?? $player->stake);
+        $walletAmount = bccomp((string) $player->stake, '0', 8) > 0
+            ? bcdiv(bcmul($amount, $walletStake, 20), (string) $player->stake, 12)
+            : $amount;
+        $currency = Currency::find($player->currency_id ?? $user->currency_id);
+        $decimals = min(8, max(0, (int) ($currency?->decimals ?? 2)));
+        $walletAmount = bcadd(bcadd($walletAmount, '0.' . str_repeat('0', $decimals) . '5', max(12, $decimals + 1)), '0', $decimals);
+        $user->balance = bcadd((string) $user->balance, $walletAmount, 8);
         $user->save();
         $player->settlement_key = $table->id . ':settle:' . $user->id;
         $player->save();
-        $this->ledger($user, $table, $amount, '+', $remark, $reason);
+        $this->ledger($user, $table, $walletAmount, '+', $remark, $reason);
     }
 
     private function refundAll(TableGame $table, string $reason): void

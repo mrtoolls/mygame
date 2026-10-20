@@ -57,14 +57,12 @@
                                     </span>
                                 </small>
                             </div>
-                            <div class="form-group justify-content-center d-flex mt-5">
-                                <div class="single-select black gmimg">
-                                    <img src="{{ asset(activeTemplate(true) . 'images/play/moneyblack.png') }}"
-                                        alt="game-image">
+                            <div class="form-group justify-content-center d-flex mt-5 spin-choice-list">
+                                <div class="single-select black gmimg spin-choice spin-choice--emerald" role="button" tabindex="0" aria-label="@lang('Emerald')">
+                                    <span class="spin-choice__coin" aria-hidden="true"></span><strong>@lang('Emerald')</strong>
                                 </div>
-                                <div class="single-select red gmimg">
-                                    <img src="{{ asset(activeTemplate(true) . 'images/play/money.png') }}"
-                                        alt="game-image">
+                                <div class="single-select red gmimg spin-choice spin-choice--gold" role="button" tabindex="0" aria-label="@lang('Gold')">
+                                    <span class="spin-choice__coin" aria-hidden="true"></span><strong>@lang('Gold')</strong>
                                 </div>
                             </div>
                             <input name="choose" type="hidden">
@@ -103,12 +101,16 @@
     </div>
 @endsection
 
+@push('style-lib')
+    <link href="{{ asset('assets/global/css/game/spin-wheel.css') }}?v=20261020" rel="stylesheet">
+@endpush
+
 @push('script-lib')
     <script src="{{ asset('assets/global/js/soundControl.js') }}"></script>
     <script src="{{ asset('assets/global/js/game/game.js') }}"></script>
     <script src="{{ asset('assets/global/js/game/TweenMax.min.js') }}"></script>
     <script src="{{ asset('assets/global/js/game/Winwheel.js') }}"></script>
-    <script src="{{ asset('assets/global/js/game/spinFunctions.js') }}"></script>
+    <script src="{{ asset('assets/global/js/game/spinFunctions.js') }}?v=20261020"></script>
 @endpush
 
 @push('script')

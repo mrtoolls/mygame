@@ -61,6 +61,8 @@ function beforeProcess() {
 }
 
 function success(data) {
+  if (data.result === "BLUE") data.result = "EMERALD";
+  else if (data.result === "RED") data.result = "GOLD";
   setPopup(data);
   $(".bal").html(data.bal);
   $(".gmimg").removeClass("active");
@@ -97,29 +99,36 @@ $(".red").click(function () {
   playAudio(audioAssetPath, "click.mp3")
 });
 
+$(".spin-choice").on("keydown", function (event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    $(this).trigger("click");
+  }
+});
+
 $(window).on("load", function () {
   var theWheel = new Winwheel({
     numSegments: 18,
     outerRadius: 210,
     segments: [
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
-      { fillStyle: "#09097d", text: "" },
-      { fillStyle: "#ff0000", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
+      { fillStyle: "#00a968", text: "" },
+      { fillStyle: "#d49a32", text: "" },
     ],
   });
   runningAnimation();
@@ -130,24 +139,24 @@ var theWheel = new Winwheel({
   numSegments: 18,
   outerRadius: 210,
   segments: [
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
-    { fillStyle: "#09097d", text: "" },
-    { fillStyle: "#ff0000", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
+    { fillStyle: "#00a968", text: "" },
+    { fillStyle: "#d49a32", text: "" },
   ],
 });
 var wheelSpinning = false;

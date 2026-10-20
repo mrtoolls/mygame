@@ -38,6 +38,11 @@ class TableGame extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
     public function moves()
     {
         return $this->hasMany(TableGameMove::class, 'table_game_id');

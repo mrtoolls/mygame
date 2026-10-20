@@ -1,0 +1,164 @@
+.spin-choice-list {
+    gap: 20px;
+}
+
+.spin-choice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 175px;
+    height: 165px;
+    flex-direction: column;
+    gap: 9px;
+    overflow: hidden;
+    border: 1px solid rgba(160, 177, 218, .22);
+    border-radius: 24px;
+    background: linear-gradient(145deg, #202944, #121a2d);
+    color: #f5f7ff;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .12);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.spin-choice:before {
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 18px;
+    content: '';
+    pointer-events: none;
+}
+
+.spin-choice:hover,
+.spin-choice:focus-visible {
+    transform: translateY(-4px);
+    outline: none;
+}
+
+.spin-choice--emerald:hover,
+.spin-choice--emerald.active {
+    border-color: #00e88b;
+    box-shadow: 0 14px 32px rgba(0, 232, 139, .2), inset 0 1px rgba(255, 255, 255, .18);
+}
+
+.spin-choice--gold:hover,
+.spin-choice--gold.active {
+    border-color: #e5b85c;
+    box-shadow: 0 14px 32px rgba(229, 184, 92, .2), inset 0 1px rgba(255, 255, 255, .18);
+}
+
+.spin-choice__coin {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 86px;
+    height: 86px;
+    border: 3px solid rgba(255, 255, 255, .38);
+    border-radius: 50%;
+    box-shadow: inset 0 5px 8px rgba(255, 255, 255, .42), inset 0 -10px 15px rgba(0, 0, 0, .3), 0 12px 18px rgba(0, 0, 0, .38);
+}
+
+.spin-choice__coin:before {
+    position: absolute;
+    inset: 7px;
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 50%;
+    content: '';
+}
+
+.spin-choice__coin:after {
+    color: rgba(255, 255, 255, .94);
+    font-size: 38px;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, .3);
+    content: '✦';
+}
+
+.spin-choice--emerald .spin-choice__coin {
+    background: radial-gradient(circle at 32% 25%, #7fffc0, #00c879 45%, #08704e 100%);
+}
+
+.spin-choice--gold .spin-choice__coin {
+    background: radial-gradient(circle at 32% 25%, #fff0a8, #e5b34c 46%, #986122 100%);
+}
+
+.spin-choice strong {
+    position: relative;
+    z-index: 1;
+    font-size: 16px;
+    letter-spacing: .04em;
+}
+
+.spin-card {
+    perspective: 1100px;
+}
+
+.wheel-wrapper {
+    position: relative;
+    isolation: isolate;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    padding: 18px;
+    border: 1px solid rgba(0, 232, 139, .35);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 24%, rgba(47, 255, 174, .2), transparent 48%), linear-gradient(145deg, #293451, #11182d 70%);
+    box-shadow: inset 0 8px 14px rgba(255, 255, 255, .12), inset 0 -18px 25px rgba(0, 0, 0, .42), 0 20px 35px rgba(0, 0, 0, .38);
+    transform: rotateX(6deg);
+}
+
+.wheel-wrapper:before {
+    position: absolute;
+    z-index: 2;
+    inset: 7px;
+    border: 2px solid rgba(229, 184, 92, .52);
+    border-radius: 50%;
+    content: '';
+    pointer-events: none;
+}
+
+.the_wheel canvas {
+    display: block;
+    border-radius: 50%;
+    filter: drop-shadow(0 10px 13px rgba(0, 0, 0, .42));
+}
+
+@media (max-width: 574px) {
+    .wheel-wrapper {
+        padding: 12px;
+    }
+
+    .spin-choice {
+        border-radius: 18px;
+        width: 145px;
+        height: 140px;
+    }
+
+    .spin-choice__coin {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+@media (max-width: 424px) {
+    .spin-choice {
+        width: 108px;
+        height: 100px;
+        gap: 5px;
+    }
+
+    .spin-choice__coin {
+        width: 56px;
+        height: 56px;
+    }
+
+    .spin-choice__coin:after {
+        font-size: 28px;
+    }
+
+    .spin-choice strong {
+        font-size: 13px;
+    }
+}

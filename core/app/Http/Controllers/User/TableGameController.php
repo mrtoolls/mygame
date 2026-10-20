@@ -9,6 +9,9 @@ use App\Models\TableGame;
 use App\Models\TableGameMessage;
 use App\Models\TableGameMessageReaction;
 use App\Models\TableGamePlayer;
+use App\Models\TableGameInvite;
+use App\Models\User;
+use App\Constants\Status;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
@@ -35,11 +38,18 @@ class TableGameController extends Controller
 
     public function show(Request $request, string $id, TableGameService $service)
     {
-        $table = TableGame::with('players.user')->findOrFail($id);
+        $table = TableGame::with(['players.user', 'currency'])->findOrFail($id);
         abort_unless($table->players->contains('user_id', $request->user()->id), 403);
+        $walletCurrency = $request->user()->walletCurrency;
+        $walletStake = $table->players->firstWhere('user_id', $request->user()->id)?->wallet_stake ?? $table->stake;
         return view('Template::user.table_games.show', [
             'pageTitle' => TableGameRules::GAMES[$table->game_type]['name'],
             'table' => $table,
+            'walletCurrency' => $walletCurrency,
+            'walletStake' => $walletStake,
+            'walletStakeFormatted' => $walletCurrency && bccomp((string) $table->stake, '0', 8) > 0
+                ? $walletCurrency->formatMinor((new \App\Support\Money())->toMinor((string) $walletStake, (int) $walletCurrency->decimals), true)
+                : null,
             'snapshot' => $service->snapshot($request->user(), $table->id),
         ]);
     }
@@ -82,6 +92,31 @@ class TableGameController extends Controller
         } catch (InvalidArgumentException $exception) {
             return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
         }
+    }
+
+    public function searchPlayers(Request $request, string $id)
+    {
+        $query = trim((string) $request->query('q', ''));
+        if ($query === '' || mb_strlen($query) > 40) return response()->json(['users' => []]);
+
+        $table = TableGame::findOrFail($id);
+        abort_unless($table->status === 'waiting' && (int) $table->creator_id === (int) $request->user()->id, 403);
+
+        $excluded = TableGamePlayer::where('table_game_id', $id)->pluck('user_id')->all();
+        $pending = TableGameInvite::where('table_game_id', $id)->where('status', 'pending')->where('expires_at', '>', now())->pluck('invitee_id')->all();
+        $excluded = array_unique([...$excluded, ...$pending, (int) $request->user()->id]);
+        $exact = User::query()->whereRaw('LOWER(username) = ?', [mb_strtolower($query)])
+            ->where('status', Status::USER_ACTIVE)
+            ->whereNotIn('id', $excluded)
+            ->first(['id', 'username']);
+        $prefix = addcslashes($query, "\\%_") . '%';
+        $users = $exact ? collect([$exact]) : User::query()
+            ->where('username', 'like', $prefix)
+            ->where('status', Status::USER_ACTIVE)
+            ->whereNotIn('id', $excluded)
+            ->orderBy('username')->limit(8)->get(['id', 'username']);
+
+        return response()->json(['users' => $users->map(fn (User $user) => ['id' => $user->id, 'username' => $user->username])->values()]);
     }
 
     public function acceptInvite(Request $request, int $invite, TableGameService $service)

@@ -76,7 +76,7 @@ class CurrencyCountryController extends Controller
             }
         });
 
-        return back()->withNotify([['success', 'Currency settings saved. Rates affect reports only; wallet balances are not converted.']]);
+        return back()->withNotify([['success', 'Currency settings saved. Wallet balances are unchanged; automatic rates refresh once a day.']]);
     }
 
     public function updateCountry(Request $request, Country $country)

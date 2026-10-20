@@ -160,7 +160,7 @@
 @endsection
 
 @push('style-lib')
-    <link href="{{ asset('assets/global/css/game/dice.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/global/css/game/dice.css') }}?v=20261020" rel="stylesheet">
 @endpush
 
 @push('script-lib')

@@ -129,6 +129,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                   Route::post('{id}/chat/{message}/reaction', 'react')->whereUuid('id')->whereNumber('message')->middleware('throttle:60,1')->name('chat.react');
                   Route::get('{id}/chat/{message}/attachment', 'attachment')->whereUuid('id')->whereNumber('message')->name('chat.attachment');
                 Route::post('{id}/join', 'join')->whereUuid('id')->name('join');
+                Route::get('{id}/players/search', 'searchPlayers')->whereUuid('id')->middleware('throttle:60,1')->name('players.search');
                 Route::post('{id}/invites', 'invite')->whereUuid('id')->name('invite');
                 Route::post('invites/{invite}/accept', 'acceptInvite')->whereNumber('invite')->name('invite.accept');
                 Route::post('{id}/start', 'start')->whereUuid('id')->name('start');
