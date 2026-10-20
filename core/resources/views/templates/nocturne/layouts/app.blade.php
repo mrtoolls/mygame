@@ -544,7 +544,9 @@
         // two-finger gesture despite it - this is the app, not a web page, it shouldn't move.
         document.addEventListener('gesturestart', (e) => e.preventDefault());
     </script>
-    @include('partials.support_chat_widget')
+    @if (request()->routeIs('home') || request()->routeIs('user.home'))
+        @include('partials.support_chat_widget')
+    @endif
 </body>
 
 </html>

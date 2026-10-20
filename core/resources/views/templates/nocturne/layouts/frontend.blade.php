@@ -3,7 +3,7 @@
     <div class="nocturne-shell">
         @include('Template::partials.shell_header')
         @include('Template::partials.shell_sidebar')
-        <main class="nocturne-main">
+        <main class="nocturne-main nocturne-footer-always">
             <div class="nocturne-content">
                 @yield('content')
             </div>
