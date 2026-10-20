@@ -31,8 +31,8 @@
     }
     function compact(value) {
         value = Number(value);
-        if (value >= 1e6) return trimZeros((value / 1e6).toFixed(6)) + 'M';
-        if (value >= 1e3) return trimZeros((value / 1e3).toFixed(3)) + 'K';
+        if (value >= 1e6) return trimZeros((value / 1e6).toFixed(1)) + 'M';
+        if (value >= 1e3) return trimZeros((value / 1e3).toFixed(1)) + 'K';
         return value.toLocaleString('en-US');
     }
     function paint(data) {
