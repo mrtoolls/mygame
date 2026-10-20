@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
-                <form action="{{ route('admin.vip.store') }}" class="disableSubmission" method="POST">
+                <form action="{{ route('admin.vip.store') }}" class="disableSubmission" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
                         <div class="row">
@@ -18,6 +18,13 @@
                                 <div class="form-group">
                                     <label>@lang('Badge Text (optional)')</label>
                                     <input type="text" class="form-control" name="badge" value="{{ old('badge') }}" placeholder="@lang('e.g. Bronze')">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Badge Image (optional)')</label>
+                                    <input type="file" class="form-control" name="badge_image" accept=".png,.jpg,.jpeg,.webp">
+                                    <small class="text-muted">@lang('Square image, e.g. 160x160. Falls back to a generic icon if not set.')</small>
                                 </div>
                             </div>
                             <div class="col-md-6">

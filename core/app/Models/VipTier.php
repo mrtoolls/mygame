@@ -15,4 +15,9 @@ class VipTier extends Model
     {
         return $this->hasMany(VipRakebackClaim::class);
     }
+
+    public function badgeImageUrl(): ?string
+    {
+        return $this->badge_image ? getImage('assets/images/vip-tiers/' . $this->badge_image) : null;
+    }
 }

@@ -10,8 +10,7 @@
 @endphp
 @extends('Template::layouts.master')
 @section('content')
-<div class="nocturne-account nocturne-vip-page">
-    @include('Template::partials.account_nav')
+<div class="nocturne-account nocturne-vip-page nocturne-vip-page--full">
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('VIP Club')</span></div>
 
@@ -36,22 +35,26 @@
                 <div><span class="nocturne-vip-kicker">@lang('YOUR JOURNEY')</span><h2 id="vip-progress-title">@lang('Your VIP Progress')</h2></div>
                 <div class="nocturne-vip-wagered"><small>@lang('Lifetime wagered')</small><strong>{{ showAmount($wagered) }}</strong></div>
             </div>
-            <div class="nocturne-vip-tier-bridge">
-                <article class="nocturne-vip-tier-stop is-current">
-                    <span class="nocturne-vip-tier-stop__icon"><i class="ph-fill ph-medal"></i></span>
-                    <div><small>@lang('CURRENT TIER')</small><strong>{{ __($currentTier?->name ?? 'Unranked') }}</strong><span>@lang('Your current VIP status')</span></div>
-                    <b>@lang('CURRENT')</b>
-                </article>
-                <div class="nocturne-vip-bridge" aria-label="{{ number_format($progressPercent, 0) }}% @lang('progress')"><span style="width: {{ $progressPercent }}%"></span><i class="ph-bold ph-caret-right"></i></div>
-                <article class="nocturne-vip-tier-stop {{ $nextTier ? 'is-next' : 'is-next is-max' }}">
-                    <span class="nocturne-vip-tier-stop__icon"><i class="ph-fill {{ $nextTier ? 'ph-lock-key' : 'ph-trophy' }}"></i></span>
-                    <div><small>{{ $nextTier ? __('NEXT MILESTONE') : __('TOP TIER REACHED') }}</small><strong>{{ __($nextTier?->name ?? $currentTier?->name ?? 'VIP') }}</strong><span>{{ $nextTier ? showAmount(max($nextTier->min_wagered - $wagered, 0)) . ' ' . __('to unlock') : __('You have reached the highest tier') }}</span></div>
-                    @if($nextTier && $nextTier->bonus_amount > 0)<b>{{ showAmount($nextTier->bonus_amount) }} @lang('BONUS')</b>@endif
-                </article>
-            </div>
-            <div class="nocturne-vip-progress-track"><span style="width: {{ $progressPercent }}%"></span></div>
+            @if($tiers->isEmpty())
+                <div class="nocturne-vip-empty"><i class="ph-fill ph-crown-simple"></i><h3>@lang('VIP tiers are being prepared')</h3><p>@lang('Check back soon to start earning rewards.')</p></div>
+            @else
+                <div class="nocturne-vip-tier-bridge">
+                    <article class="nocturne-vip-tier-stop is-current">
+                        <span class="nocturne-vip-tier-stop__icon">@if($currentTier?->badgeImageUrl())<img src="{{ $currentTier->badgeImageUrl() }}" alt="">@else<i class="ph-fill ph-medal"></i>@endif</span>
+                        <div><small>@lang('CURRENT TIER')</small><strong>{{ __($currentTier?->name ?? 'Unranked') }}</strong><span>@lang('Your current VIP status')</span></div>
+                        <b>@lang('CURRENT')</b>
+                    </article>
+                    <div class="nocturne-vip-bridge" aria-label="{{ number_format($progressPercent, 0) }}% @lang('progress')"><span style="width: {{ $progressPercent }}%"></span><i class="ph-bold ph-caret-right"></i></div>
+                    <article class="nocturne-vip-tier-stop {{ $nextTier ? 'is-next' : 'is-next is-max' }}">
+                        <span class="nocturne-vip-tier-stop__icon">@if($nextTier?->badgeImageUrl())<img src="{{ $nextTier->badgeImageUrl() }}" alt="">@else<i class="ph-fill {{ $nextTier ? 'ph-lock-key' : 'ph-trophy' }}"></i>@endif</span>
+                        <div><small>{{ $nextTier ? __('NEXT MILESTONE') : __('TOP TIER REACHED') }}</small><strong>{{ __($nextTier?->name ?? $currentTier?->name ?? 'VIP') }}</strong><span>{{ $nextTier ? showAmount(max($nextTier->min_wagered - $wagered, 0)) . ' ' . __('to unlock') : __('You have reached the highest tier') }}</span></div>
+                        @if($nextTier && $nextTier->bonus_amount > 0)<b>{{ showAmount($nextTier->bonus_amount) }} @lang('BONUS')</b>@endif
+                    </article>
+                </div>
+                <div class="nocturne-vip-progress-track"><span style="width: {{ $progressPercent }}%"></span></div>
+            @endif
             <div class="nocturne-vip-progress-panel__foot">
-                <span>{{ number_format($progressPercent, 0) }}% @lang('to the next level')</span>
+                @if($tiers->isNotEmpty())<span>{{ number_format($progressPercent, 0) }}% @lang('to the next level')</span>@endif
                 @if($claimable > 0)
                     <form method="POST" action="{{ route('user.vip.claim.rakeback') }}">@csrf<button class="nocturne-vip-claim" type="submit"><i class="ph-bold ph-hand-coins"></i>@lang('Claim rakeback') <strong>{{ showAmount($claimable) }}</strong></button></form>
                 @else
@@ -69,7 +72,7 @@
                     @foreach($tiers as $index => $tier)
                         @php $isCurrent = $currentTier?->id === $tier->id; @endphp
                         <article class="nocturne-vip-level-card {{ $isCurrent ? 'is-current' : '' }} {{ $nextTier?->id === $tier->id ? 'is-next' : '' }}">
-                            <div class="nocturne-vip-level-card__top"><span class="nocturne-vip-level-card__badge"><i class="ph-fill {{ $isCurrent ? 'ph-crown-simple' : 'ph-medal' }}"></i></span><span class="nocturne-vip-level-card__rank">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span></div>
+                            <div class="nocturne-vip-level-card__top"><span class="nocturne-vip-level-card__badge">@if($tier->badgeImageUrl())<img src="{{ $tier->badgeImageUrl() }}" alt="">@else<i class="ph-fill {{ $isCurrent ? 'ph-crown-simple' : 'ph-medal' }}"></i>@endif</span><span class="nocturne-vip-level-card__rank">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span></div>
                             <h3>{{ __($tier->name) }}</h3>
                             <span class="nocturne-vip-level-card__threshold">{{ showAmount($tier->min_wagered) }} <small>@lang('XP threshold')</small></span>
                             <ul>

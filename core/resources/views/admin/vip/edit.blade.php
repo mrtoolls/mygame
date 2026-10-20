@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
-                <form action="{{ route('admin.vip.update', $tier->id) }}" class="disableSubmission" method="POST">
+                <form action="{{ route('admin.vip.update', $tier->id) }}" class="disableSubmission" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body">
                         <div class="row">
@@ -20,6 +20,24 @@
                                     <input type="text" class="form-control" name="badge" value="{{ old('badge', $tier->badge) }}" placeholder="@lang('e.g. Bronze')">
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Badge Image (optional)')</label>
+                                    <input type="file" class="form-control" name="badge_image" accept=".png,.jpg,.jpeg,.webp">
+                                    <small class="text-muted">@lang('Square image, e.g. 160x160. Falls back to a generic icon if not set.')</small>
+                                </div>
+                            </div>
+                            @if($tier->badge_image)
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>@lang('Current Badge Image')</label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="{{ $tier->badgeImageUrl() }}" alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover">
+                                            <label class="mb-0"><input type="checkbox" name="remove_badge_image" value="1"> @lang('Remove current image')</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Minimum Lifetime Wagered to Unlock')</label>

@@ -22,7 +22,14 @@
                                 @forelse($tiers as $tier)
                                     <tr>
                                         <td>{{ $tier->sort_order }}</td>
-                                        <td class="fw-bold">{{ __($tier->name) }} @if ($tier->badge) <span class="badge badge--dark">{{ __($tier->badge) }}</span> @endif</td>
+                                        <td class="fw-bold">
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if ($tier->badge_image)
+                                                    <img src="{{ $tier->badgeImageUrl() }}" alt="" style="width:32px;height:32px;border-radius:8px;object-fit:cover">
+                                                @endif
+                                                <span>{{ __($tier->name) }} @if ($tier->badge) <span class="badge badge--dark">{{ __($tier->badge) }}</span> @endif</span>
+                                            </div>
+                                        </td>
                                         <td>{{ showAmount($tier->min_wagered) }}</td>
                                         <td>{{ showAmount($tier->bonus_amount) }}</td>
                                         <td>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}%</td>

@@ -39,7 +39,8 @@
         nodes.forEach(function (node) {
             var key = node.dataset.liveStat;
             if (data[key] === undefined) return;
-            node.textContent = compact(data[key]) + (key !== 'games' ? '+' : '');
+            var text = key === 'online' ? Number(data[key]).toLocaleString('en-US') : compact(data[key]);
+            node.textContent = text + (key !== 'games' ? '+' : '');
         });
     }
     function poll() {

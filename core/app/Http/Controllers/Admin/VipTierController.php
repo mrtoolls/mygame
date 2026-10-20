@@ -28,6 +28,7 @@ class VipTierController extends Controller
         $request->validate([
             'name'              => 'required|string|max:60',
             'badge'             => 'nullable|string|max:60',
+            'badge_image'       => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
             'min_wagered'       => 'required|numeric|min:0',
             'bonus_amount'      => 'required|numeric|min:0',
             'rakeback_percent'  => 'required|numeric|min:0|max:100',
@@ -44,6 +45,9 @@ class VipTierController extends Controller
         $tier->max_bet          = $request->max_bet ?: null;
         $tier->sort_order       = $request->sort_order ?: 0;
         $tier->status           = Status::ENABLE;
+        if ($request->hasFile('badge_image')) {
+            $tier->badge_image = fileUploader($request->file('badge_image'), 'assets/images/vip-tiers', '160x160');
+        }
         $tier->save();
 
         $notify[] = ['success', 'VIP tier added successfully'];
@@ -62,6 +66,8 @@ class VipTierController extends Controller
         $request->validate([
             'name'             => 'required|string|max:60',
             'badge'            => 'nullable|string|max:60',
+            'badge_image'      => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
+            'remove_badge_image' => 'nullable|boolean',
             'min_wagered'      => 'required|numeric|min:0',
             'bonus_amount'     => 'required|numeric|min:0',
             'rakeback_percent' => 'required|numeric|min:0|max:100',
@@ -77,6 +83,12 @@ class VipTierController extends Controller
         $tier->rakeback_percent = $request->rakeback_percent;
         $tier->max_bet          = $request->max_bet ?: null;
         $tier->sort_order       = $request->sort_order ?: 0;
+        if ($request->hasFile('badge_image')) {
+            $tier->badge_image = fileUploader($request->file('badge_image'), 'assets/images/vip-tiers', '160x160', $tier->badge_image ?: null);
+        } elseif ($request->boolean('remove_badge_image') && $tier->badge_image) {
+            @unlink('assets/images/vip-tiers/' . $tier->badge_image);
+            $tier->badge_image = null;
+        }
         $tier->save();
 
         $notify[] = ['success', 'VIP tier updated successfully'];
@@ -90,7 +102,11 @@ class VipTierController extends Controller
 
     public function destroy($id)
     {
-        VipTier::findOrFail($id)->delete();
+        $tier = VipTier::findOrFail($id);
+        if ($tier->badge_image) {
+            @unlink('assets/images/vip-tiers/' . $tier->badge_image);
+        }
+        $tier->delete();
         $notify[] = ['success', 'VIP tier deleted successfully'];
         return back()->withNotify($notify);
     }
