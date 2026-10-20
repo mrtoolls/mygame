@@ -392,6 +392,32 @@ class TableGameService
             return ['unchanged' => true, 'version' => (int) $table->version, 'status' => $table->status, 'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String()];
         }
         $players = TableGamePlayer::with('user:id,username')->where('table_game_id', $table->id)->orderBy('seat')->get();
+        $settlement = null;
+        if ($table->status === 'finished') {
+            // $participant may predate a settlement that just happened in this very request
+            // (the deadline-transition lock above refreshes $table but not $participant).
+            $own = $players->firstWhere('user_id', $user->id) ?? $participant->refresh();
+            if ($own->settlement_type) {
+                $stakeAmount = (string) ($own->wallet_stake ?? $own->stake);
+                $netAmount = $own->settlement_type === 'payout'
+                    ? bcsub((string) $own->settlement_amount, $stakeAmount, 8)
+                    : ($own->settlement_type === 'loss' ? bcmul($stakeAmount, '-1', 8) : '0.00000000');
+                $walletCurrency = $user->walletCurrency;
+                $money = new \App\Support\Money();
+                $format = fn ($value) => $walletCurrency
+                    ? $walletCurrency->formatMinor($money->toMinor($value, (int) $walletCurrency->decimals), true)
+                    : null;
+                $settlement = [
+                    'type' => $own->settlement_type,
+                    'amount' => (string) $own->settlement_amount,
+                    'amount_formatted' => $format((string) $own->settlement_amount),
+                    'stake' => $stakeAmount,
+                    'stake_formatted' => $format($stakeAmount),
+                    'net' => $netAmount,
+                    'net_formatted' => $format(ltrim($netAmount, '-')),
+                ];
+            }
+        }
         return [
             'id' => $table->id,
             'game' => $table->game_type,
@@ -403,6 +429,7 @@ class TableGameService
             'state' => $this->publicState($table->game_type, $table->state ?? [], (int) $participant->seat),
             'current_user_id' => $table->current_user_id,
             'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String(),
+            'settlement' => $settlement,
             'players' => $players->map(fn ($player) => ['id' => $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat, 'status' => $player->status])->values(),
         ];
     }
@@ -621,6 +648,7 @@ class TableGameService
                 if (bccomp($payout['commission'], '0', 8) > 0) {
                     TableGameCommission::create(['table_game_id' => $table->id, 'game_type' => $table->game_type, 'amount' => $payout['commission'], 'rate_percent' => data_get($table->settings, 'commission_percent', 5), 'status' => 'retained']);
                 }
+                $this->markLosers($table, $players, $winners->pluck('user_id')->all());
                 return;
             }
             $winnerSeat = $winners->first()?->seat;
@@ -646,6 +674,7 @@ class TableGameService
                 'status' => 'retained',
             ]);
         }
+        $this->markLosers($table, $players, [$winner->user_id]);
     }
 
     private function creditPlayer(TableGame $table, TableGamePlayer $player, string $amount, string $remark, string $reason): void
@@ -663,8 +692,28 @@ class TableGameService
         $user->balance = bcadd((string) $user->balance, $walletAmount, 8);
         $user->save();
         $player->settlement_key = $table->id . ':settle:' . $user->id;
+        $player->settlement_amount = $walletAmount;
+        $player->settlement_type = $remark === 'table_refund' ? 'refund' : 'payout';
         $player->save();
         $this->ledger($user, $table, $walletAmount, '+', $remark, $reason);
+    }
+
+    /**
+     * Mark every seated/out player NOT in $winnerUserIds as having lost their stake, so the
+     * client can show a server-authoritative "you lost $X" result without inferring it from
+     * the absence of a payout row.
+     */
+    private function markLosers(TableGame $table, $players, array $winnerUserIds): void
+    {
+        foreach ($players as $player) {
+            if ($player->settlement_key) continue;
+            if (in_array($player->user_id, $winnerUserIds, true)) continue;
+            if (!in_array($player->status, ['seated', 'out'], true)) continue;
+            $player->settlement_key = $table->id . ':settle:' . $player->user_id;
+            $player->settlement_amount = '0.00000000';
+            $player->settlement_type = 'loss';
+            $player->save();
+        }
     }
 
     private function refundAll(TableGame $table, string $reason): void

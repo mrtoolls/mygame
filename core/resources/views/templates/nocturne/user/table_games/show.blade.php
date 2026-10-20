@@ -12,6 +12,24 @@
             <form class="table-chat__form" id="chat-form"><textarea id="chat-input" maxlength="1000" rows="1" placeholder="{{ __('Message the table…') }}" aria-label="{{ __('Message the table') }}"></textarea><button class="table-chat__send" type="submit" aria-label="{{ __('Send message') }}"><i class="las la-arrow-up"></i></button></form>
             <p class="table-chat__error" id="chat-error" role="status"></p>
         </section>
+        <div class="result-popup" id="result-popup" hidden role="dialog" aria-modal="true" aria-labelledby="result-popup-title">
+            <div class="result-popup__backdrop" id="result-popup-backdrop"></div>
+            <div class="result-popup__card" id="result-popup-card">
+                <div class="result-popup__fx" id="result-popup-fx" aria-hidden="true"></div>
+                <button type="button" class="result-popup__close" id="result-popup-close" aria-label="@lang('Close')"><i class="las la-times"></i></button>
+                <div class="result-popup__icon" id="result-popup-icon"><i class="las la-trophy"></i></div>
+                <h2 class="result-popup__title" id="result-popup-title"></h2>
+                <p class="result-popup__subtitle" id="result-popup-subtitle"></p>
+                <div class="result-popup__amount" id="result-popup-amount" hidden>
+                    <span class="result-popup__amount-value" id="result-popup-amount-value">0</span>
+                    <span class="result-popup__amount-label" id="result-popup-amount-label"></span>
+                </div>
+                <div class="result-popup__actions">
+                    <a class="result-popup__btn result-popup__btn--primary" id="result-popup-again" href="{{ route('user.tables.index') }}?game={{ $table->game_type }}"><i class="las la-redo"></i> <span>@lang('Play Again')</span></a>
+                    <a class="result-popup__btn result-popup__btn--ghost" href="{{ route('user.tables.index') }}"><i class="las la-th-large"></i> <span>@lang('Back to Lobby')</span></a>
+                </div>
+            </div>
+        </div>
     </main>
 @endsection
 @push('style')
@@ -36,9 +54,82 @@
 @media(max-width:575px){.table-match__invite{padding:15px}.table-match__invite-control{gap:7px}.table-match__invite input{height:45px;font-size:13px}.table-match__invite button{padding:0 12px}.table-chat{padding:14px}.table-chat__messages{min-height:170px;max-height:48vh;padding:11px}.table-chat__form{padding:7px}.table-chat__form textarea{font-size:14px}.table-chat__send{width:40px;height:40px;flex-basis:40px}}
 </style>
 @endpush
+@push('style')
+<style>
+.result-popup{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:18px}
+.result-popup[hidden]{display:none}
+.result-popup__backdrop{position:absolute;inset:0;background:rgba(6,8,18,.72);backdrop-filter:blur(6px)}
+.result-popup__card{position:relative;width:min(380px,100%);padding:34px 26px 26px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:26px;background:linear-gradient(160deg,#1a2041,#10142a);box-shadow:0 30px 80px rgba(0,0,0,.5);text-align:center;color:var(--tm-text,#f5f6ff);overflow:hidden;transform:scale(.9);opacity:0;animation:result-pop-in .32s cubic-bezier(.2,.9,.3,1.3) forwards}
+@media(prefers-reduced-motion:reduce){.result-popup__card{animation:none;transform:none;opacity:1}}
+@keyframes result-pop-in{to{transform:scale(1);opacity:1}}
+.result-popup__fx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.result-popup__confetti{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:result-confetti-fall linear forwards}
+@keyframes result-confetti-fall{to{transform:translateY(420px) rotate(540deg);opacity:0}}
+@media(prefers-reduced-motion:reduce){.result-popup__confetti{display:none}}
+.result-popup__close{position:absolute;top:14px;right:14px;display:grid;width:32px;height:32px;place-items:center;border:0;border-radius:10px;background:rgba(255,255,255,.06);color:var(--tm-muted,#929abc);font-size:16px;cursor:pointer}
+.result-popup__close:hover{background:rgba(255,255,255,.12);color:var(--tm-text,#f5f6ff)}
+.result-popup__icon{position:relative;z-index:1;display:grid;width:78px;height:78px;margin:0 auto 14px;place-items:center;border-radius:50%;font-size:38px}
+.result-popup.is-win .result-popup__icon{background:radial-gradient(circle,rgba(0,239,135,.22),rgba(0,239,135,.04));color:var(--tm-green,#00ef87);box-shadow:0 0 0 1px rgba(0,239,135,.25),0 0 40px rgba(0,239,135,.25)}
+.result-popup.is-lose .result-popup__icon{background:radial-gradient(circle,rgba(255,112,135,.18),rgba(255,112,135,.03));color:#ff95a6;box-shadow:0 0 0 1px rgba(255,112,135,.22)}
+.result-popup.is-draw .result-popup__icon{background:radial-gradient(circle,rgba(145,156,205,.22),rgba(145,156,205,.04));color:#bdc7e6;box-shadow:0 0 0 1px rgba(145,156,205,.22)}
+.result-popup__title{position:relative;z-index:1;margin:0 0 6px;font-size:23px;font-weight:950}
+.result-popup__subtitle{position:relative;z-index:1;margin:0;color:var(--tm-muted,#929abc);font-size:12.5px;line-height:1.5}
+.result-popup__amount{position:relative;z-index:1;margin:18px 0;padding:14px;border-radius:16px;background:rgba(255,255,255,.04)}
+.result-popup__amount-value{display:block;font-size:27px;font-weight:950}
+.result-popup.is-win .result-popup__amount-value{color:var(--tm-green,#00ef87)}
+.result-popup.is-lose .result-popup__amount-value{color:#ff95a6}
+.result-popup__amount-label{display:block;margin-top:3px;color:var(--tm-muted,#929abc);font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.result-popup__actions{position:relative;z-index:1;display:flex;gap:10px;margin-top:6px}
+.result-popup__btn{display:flex;flex:1;align-items:center;justify-content:center;gap:7px;min-height:46px;border-radius:13px;font-size:12.5px;font-weight:900;text-decoration:none}
+.result-popup__btn--primary{background:var(--tm-green,#00ef87);color:#062b1d}
+.result-popup__btn--primary:hover{filter:brightness(1.07)}
+.result-popup__btn--ghost{border:1px solid var(--tm-line,rgba(145,156,205,.16));color:var(--tm-text,#f5f6ff)}
+.result-popup__btn--ghost:hover{background:rgba(255,255,255,.06)}
+</style>
+@endpush
 @push('script')
 <script>
-(()=>{const root=document.querySelector('#table-match');if(!root)return;const stateUrl=root.dataset.snapshot;const api={move:root.dataset.move,start:root.dataset.start,leave:root.dataset.leave};const board=document.querySelector('#table-board');const error=document.querySelector('#match-error');const notice=document.querySelector('#match-notice');const userId=Number(root.dataset.user);const type=root.dataset.type;let latest=null,clockTimer=null,polling=false,pollTimer=null,selectedSquare=null;
+(()=>{const root=document.querySelector('#table-match');if(!root)return;const stateUrl=root.dataset.snapshot;const api={move:root.dataset.move,start:root.dataset.start,leave:root.dataset.leave};const board=document.querySelector('#table-board');const error=document.querySelector('#match-error');const notice=document.querySelector('#match-notice');const userId=Number(root.dataset.user);const type=root.dataset.type;let latest=null,clockTimer=null,polling=false,pollTimer=null,selectedSquare=null,resultShown=false;
+const resultPopup=document.querySelector('#result-popup');
+function showResultPopup(data){
+    if(!resultPopup||resultShown)return;resultShown=true;
+    const mySeat=data.players.find(p=>p.id===userId)?.seat;
+    let outcome='draw';
+    if(data.settlement){outcome=data.settlement.type==='payout'?'win':data.settlement.type==='loss'?'lose':'draw';}
+    else if(data.result&&data.result.startsWith('winner:')){outcome=Number(data.result.slice(7))===mySeat?'win':'lose';}
+    else if(data.result&&data.result.startsWith('winners:')){outcome=data.result.slice(8).split(',').map(Number).includes(mySeat)?'win':'lose';}
+    resultPopup.classList.remove('is-win','is-lose','is-draw');resultPopup.classList.add(`is-${outcome}`);
+    const icon=document.querySelector('#result-popup-icon i');icon.className=outcome==='win'?'las la-trophy':outcome==='lose'?'las la-flag':'las la-handshake';
+    const opponentNames=data.players.filter(p=>p.seat!==mySeat).map(p=>p.name).filter(Boolean).join(' & ')||'your opponent';
+    document.querySelector('#result-popup-title').textContent=outcome==='win'?'Congratulations!':outcome==='lose'?'You Lost':'Game Drawn';
+    document.querySelector('#result-popup-subtitle').textContent=outcome==='win'?`You beat ${opponentNames}.`:outcome==='lose'?`${opponentNames} won this round.`:'Stakes were refunded to every player.';
+    const amountBox=document.querySelector('#result-popup-amount');
+    if(data.settlement&&(outcome==='win'||outcome==='lose')){
+        amountBox.hidden=false;
+        const valueEl=document.querySelector('#result-popup-amount-value');
+        const label=document.querySelector('#result-popup-amount-label');
+        const target=Number(outcome==='win'?data.settlement.amount:data.settlement.stake);
+        const formatted=outcome==='win'?data.settlement.amount_formatted:data.settlement.stake_formatted;
+        label.textContent=outcome==='win'?'Amount won':'Amount lost';
+        const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if(reduceMotion||!formatted){valueEl.textContent=formatted||target.toFixed(2);}
+        else{
+            const duration=900;const start=performance.now();
+            const prefix=(formatted.match(/^[^0-9.-]*/)||[''])[0];
+            const step=now=>{const progress=Math.min(1,(now-start)/duration);const eased=1-Math.pow(1-progress,3);valueEl.textContent=prefix+(target*eased).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});if(progress<1)requestAnimationFrame(step);else valueEl.textContent=formatted;};
+            requestAnimationFrame(step);
+        }
+    }else{amountBox.hidden=true;}
+    if(outcome==='win'&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+        const fx=document.querySelector('#result-popup-fx');fx.replaceChildren();
+        const colors=['#00ef87','#ffcc70','#7ea0ff','#ff95a6','#fff'];
+        for(let i=0;i<36;i++){const piece=document.createElement('span');piece.className='result-popup__confetti';piece.style.left=Math.random()*100+'%';piece.style.background=colors[i%colors.length];piece.style.animationDuration=(1.4+Math.random()*1.1)+'s';piece.style.animationDelay=(Math.random()*.5)+'s';fx.append(piece);}
+    }
+    window.TableSound?.play?.(outcome);
+    resultPopup.hidden=false;
+}
+document.querySelector('#result-popup-close')?.addEventListener('click',()=>{resultPopup.hidden=true;});
+document.querySelector('#result-popup-backdrop')?.addEventListener('click',()=>{resultPopup.hidden=true;});
 const rules={ludo:'Roll a six to bring a token out of home. Six gives another roll. Landing on an opposing token captures it and sends it home. Finish all four tokens with an exact roll. The first player to finish wins.',chess:'Standard chess: legal moves, check/checkmate/stalemate, castling, en passant, promotion, draw offers and resignations. The server enforces each turn timer; a timeout forfeits the game.',draughts:'8x8 short-king draughts: captures are mandatory, men may capture forward or backward, and a capturing piece must finish available multi-jumps. Kings move one diagonal square. An 80-ply run without a capture or promotion is a draw.',tic_tac_toe:'Take turns placing X and O. Three in a row wins. A full board with no line is a draw, and stakes are returned.',four_in_a_row:'Drop one checker into a column. Four connected horizontally, vertically, or diagonally wins. A full board with no line is a draw.',snakes_and_ladders:'Take turns rolling the server-generated die. Ladders move you up, snakes move you down, and you must land exactly on 100 to win.',oware:'Standard two-row Oware: sow anticlockwise, feed the opponent when possible, and capture backward from their side only while the capture does not take their last seeds. The round ends at 25 seeds, when a side cannot move, or at the move cap; remaining seeds are counted. Equal scores draw and stakes are returned.'};rules.dominoes='Use a standard double-six set. Play a tile that matches either open end, draw until you can play or the stock is empty, then pass only when blocked. Empty your hand to win; if play is blocked, the fewest remaining pips wins. A tie is a draw.';rules.crazy_eights='Use a standard 52-card deck. Play a card matching the top rank or suit; an eight is wild and lets you choose the next suit. Draw when blocked. The first empty hand wins; if no cards remain and everyone is blocked, the table is a draw.';rules.sea_battle='Each player has a hidden server-placed fleet on a 10×10 grid. Fire one shot per turn at the target grid. Hits and misses are revealed after each shot; the first to hit all 17 fleet cells wins. Boards are generated and kept on the server.';rules.blackjack='Player-versus-player Blackjack: each player receives two private cards, then chooses Hit or Stand on their turn. Aces count as 1 or 11; face cards count as 10. The highest total at or below 21 wins; equal best totals and all-bust rounds are draws. Cards are shuffled server-side.';rules.rummy='Seven-card draw rummy: draw from the stock or discard, then discard one card. A valid winning hand partitions fully into 3+ card runs of one suit or sets of the same rank. The server shuffles and validates all cards.';rules.whot='Nigerian Whot: match the top number or active shape; Whot 20 is wild and names the next shape. Special cards: 1 Hold On (play again), 2 Pick Two, 5 Pick Three (the next player draws and is skipped), 8 Suspension (skip next player), 14 General Market (each other player draws one and you play again). Penalty cards do not stack in this table. Draw when blocked; first empty hand wins.';document.querySelector('#match-rules').textContent=rules[type]||'Follow the standard rules shown in the game guide.';
 function gameState(data){
 latest=data;
@@ -48,6 +139,7 @@ const active=data.status==='active';
 const creator=data.players.some(player=>player.id===userId&&player.seat===0);
 notice.textContent=data.status==='waiting'?'Waiting for players. This table and its invitations stay open for 24 hours unless the creator cancels.':data.status==='finished'&&data.result==='expired_refunded'?'Finished. The 24-hour waiting period ended and all player stakes were refunded to their wallets.':data.status==='finished'&&data.result==='cancelled_refunded'?'Finished. The creator cancelled this table and all player stakes were refunded to their wallets.':data.status==='finished'?(data.result==='draw'?'Game drawn.':`Game complete  ${(data.result.startsWith('winners:')?data.result.slice(8).split(',').map(seat=>data.players.find(p=>p.seat===Number(seat))?.name).filter(Boolean).join(' and '):data.players.find(p=>`winner:${p.seat}`===data.result)?.name)||'winner'} won.`):data.status==='cancelled'?'This table was cancelled and its unsettled stakes were refunded.':data.current_user_id===userId?'Your turn. Choose a move.':`Waiting for ${data.players.find(p=>p.id===data.current_user_id)?.name||'your opponent'}`;
 const players=document.querySelector('#match-players');players.replaceChildren();data.players.forEach(player=>{const row=document.createElement('div');row.className='match-player'+(active&&player.id===data.current_user_id?' is-turn':'');const avatar=document.createElement('span');avatar.className='match-player__avatar';avatar.textContent=String(player.seat+1);const name=document.createElement('strong');name.textContent=player.name||`Player ${player.seat+1}`;const status=document.createElement('small');status.textContent=player.status==='refunded'?'Refunded':player.status==='out'?'Out':player.id===data.current_user_id?'Playing':'Seated';row.append(avatar,name,status);players.append(row);});
+if(data.status==='finished'&&data.result&&(data.result==='draw'||data.result.startsWith('winner:')||data.result.startsWith('winners:')))showResultPopup(data);
 renderBoard(data);
 document.querySelector('#match-start').hidden=!(data.status==='waiting'&&data.players.filter(p=>p.status==='seated').length>=2&&creator);
 const leaveButton=document.querySelector('#match-leave');leaveButton.hidden=!['waiting','active'].includes(data.status);leaveButton.textContent=data.status==='waiting'&&creator?'Cancel table and refund stakes':'Stand up';
