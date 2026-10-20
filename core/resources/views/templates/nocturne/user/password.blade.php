@@ -12,19 +12,40 @@
                         @csrf
                         <div class="form-group">
                             <label class="form-label">@lang('Current Password')</label>
-                            <input type="password" class="form--control" name="current_password" required
-                                autocomplete="current-password">
+                            <div class="nocturne-field__control">
+                                <x-icon name="lock" />
+                                <input type="password" class="nocturne-password-input" name="current_password" required
+                                    autocomplete="current-password">
+                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
+                                    <x-icon name="eye" class="icon-eye" />
+                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">@lang('Password')</label>
-                            <input type="password"
-                                class="form--control @if (gs('secure_password')) secure-password @endif"
-                                name="password" required autocomplete="current-password">
+                            <div class="nocturne-field__control">
+                                <x-icon name="lock" />
+                                <input type="password"
+                                    class="nocturne-password-input @if (gs('secure_password')) secure-password @endif"
+                                    name="password" required autocomplete="current-password">
+                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
+                                    <x-icon name="eye" class="icon-eye" />
+                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">@lang('Confirm Password')</label>
-                            <input type="password" class="form--control" name="password_confirmation" required
-                                autocomplete="current-password">
+                            <div class="nocturne-field__control">
+                                <x-icon name="lock" />
+                                <input type="password" class="nocturne-password-input" name="password_confirmation" required
+                                    autocomplete="current-password">
+                                <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
+                                    <x-icon name="eye" class="icon-eye" />
+                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                </button>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn--base w-100">@lang('Submit')</button>
                     </form>
@@ -46,4 +67,18 @@
             bottom: 80% !important;
         }
     </style>
+@endpush
+
+@push('script')
+    <script>
+        "use strict";
+        (function($) {
+            $('.nocturne-field__toggle').on('click', function() {
+                var input = $(this).siblings('input');
+                var showing = input.attr('type') === 'text';
+                input.attr('type', showing ? 'password' : 'text');
+                $(this).find('.icon-eye, .icon-eye-off').toggleClass('d-none');
+            });
+        })(jQuery);
+    </script>
 @endpush
