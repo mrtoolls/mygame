@@ -18,7 +18,7 @@
 /* Install app prompt and mobile refresh affordance */
 .app-install[hidden], .app-install-modal[hidden] { display: none !important; }
 .app-install {
-    position: fixed; z-index: 1055; left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 64px);
+    position: fixed; z-index: 1100; left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 64px);
     display: flex; align-items: center; gap: 11px; width: min(390px, calc(100vw - 28px));
     padding: 11px 12px; border: 1px solid rgba(0,239,135,.28); border-radius: 18px;
     color: #f4f6ff; background: linear-gradient(120deg, rgba(25,32,57,.98), rgba(16,25,43,.98));
@@ -32,7 +32,7 @@
 .app-install__action { flex: 0 0 auto; border: 0; border-radius: 12px; padding: 10px 15px; background: #00ef87; color: #073c2a; font-size: 12px; font-weight: 900; transition: transform .18s, background .18s; }
 .app-install__action:hover { background: #38ffa4; color: #073c2a; transform: translateY(-1px); }
 .app-install__dismiss { align-self: flex-start; border: 0; padding: 0 1px; background: transparent; color: #8992b2; font-size: 20px; line-height: 18px; }
-.app-install-modal:not([hidden]) { position: fixed; inset: 0; z-index: 1060; display: grid; place-items: center; padding: 18px; }
+.app-install-modal:not([hidden]) { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 18px; }
 .app-install-modal__backdrop { position: absolute; inset: 0; border: 0; background: rgba(5,8,20,.78); backdrop-filter: blur(8px); }
 .app-install-modal__dialog { position: relative; width: min(760px, 100%); max-height: min(90vh, 780px); overflow-y: auto; padding: clamp(22px, 4vw, 38px); border: 1px solid #2d3655; border-radius: 26px; background: radial-gradient(ellipse at 88% 4%, rgba(0,239,135,.12), transparent 36%), #151a30; box-shadow: 0 25px 80px rgba(0,0,0,.48); }
 .app-install-modal__close { position: absolute; top: 13px; right: 15px; width: 38px; height: 38px; border: 0; border-radius: 12px; background: #242c49; color: #eaf0ff; font-size: 24px; line-height: 1; }
