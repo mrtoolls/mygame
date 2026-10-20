@@ -13,6 +13,7 @@
             <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-bold ph-wallet"></i>@lang('Deposit')</a>
             <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw') || request()->routeIs('user.withdraw.preview') ? 'is-active' : '' }}"><i class="ph-bold ph-money-wavy"></i>@lang('Withdraw')</a>
             <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i>@lang('Bonuses')</a>
+            <a href="{{ route('user.gifts.index') }}" class="{{ request()->routeIs('user.gifts.*') ? 'is-active' : '' }}"><i class="ph-bold ph-package"></i>@lang('My Gifts')</a>
             <a href="{{ route('user.vip.index') }}" class="{{ request()->routeIs('user.vip.*') ? 'is-active' : '' }}"><i class="ph-bold ph-crown"></i>@lang('VIP Club')</a>
             <a href="{{ route('user.business-promotions.index') }}" class="{{ request()->routeIs('user.business-promotions.*') ? 'is-active' : '' }}"><i class="ph-bold ph-megaphone-simple"></i>@lang('Promote a Business')</a>
             <a href="{{ route('user.kyc.form') }}" class="{{ request()->routeIs('user.kyc.*') ? 'is-active' : '' }}"><i class="ph-bold ph-shield-check"></i>@lang('Verification')</a>

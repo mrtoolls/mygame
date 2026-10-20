@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <radialGradient id="maneFill" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffcf5c"/>
+      <stop offset="100%" stop-color="#e08f14"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .lion-mane{transform-box:fill-box;transform-origin:center;animation:lion-pulse 1.5s ease-in-out infinite}
+    @keyframes lion-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .lion-face{transform-box:fill-box;transform-origin:center;animation:lion-nod 2.2s ease-in-out infinite}
+    @keyframes lion-nod{0%,100%{transform:rotate(0deg)}50%{transform:rotate(3deg)}}
+  </style>
+  <g class="lion-mane">
+    <circle cx="120" cy="124" r="92" fill="url(#maneFill)" stroke="#a35f0a" stroke-width="5"/>
+    <circle cx="120" cy="124" r="92" fill="none" stroke="#c97a0d" stroke-width="10" stroke-dasharray="14 10"/>
+  </g>
+  <g class="lion-face">
+    <circle cx="120" cy="128" r="58" fill="#ffe3ab" stroke="#c97a0d" stroke-width="4"/>
+    <ellipse cx="96" cy="122" rx="9" ry="11" fill="#3a2410"/>
+    <ellipse cx="144" cy="122" rx="9" ry="11" fill="#3a2410"/>
+    <path d="M120 134 C112 134 108 142 112 148 C116 152 124 152 128 148 C132 142 128 134 120 134 Z" fill="#5a3414"/>
+    <path d="M120 148 L120 156 M120 156 L106 166 M120 156 L134 166" stroke="#5a3414" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <path d="M70 126 L40 118 M70 136 L38 136 M70 146 L40 154" stroke="#5a3414" stroke-width="3" stroke-linecap="round"/>
+    <path d="M170 126 L200 118 M170 136 L202 136 M170 146 L200 154" stroke="#5a3414" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

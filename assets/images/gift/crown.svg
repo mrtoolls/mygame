@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="crownFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe07a"/>
+      <stop offset="100%" stop-color="#e8a419"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .crown-bob{transform-box:fill-box;transform-origin:center;animation:crown-bob 1.8s ease-in-out infinite}
+    @keyframes crown-bob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-8px) rotate(-2deg)}}
+    .crown-jewel{animation:crown-twinkle 1.4s ease-in-out infinite}
+    .crown-jewel:nth-child(2){animation-delay:.2s}
+    .crown-jewel:nth-child(3){animation-delay:.4s}
+    @keyframes crown-twinkle{0%,100%{opacity:1}50%{opacity:.45}}
+  </style>
+  <g class="crown-bob">
+    <path d="M40 170 L34 92 L76 124 L120 62 L164 124 L206 92 L200 170 Z" fill="url(#crownFill)" stroke="#a9690a" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="40" y="170" width="160" height="24" rx="6" fill="url(#crownFill)" stroke="#a9690a" stroke-width="6"/>
+    <circle cx="34" cy="92" r="12" fill="#fff4cf" stroke="#a9690a" stroke-width="5"/>
+    <circle cx="120" cy="62" r="13" fill="#fff4cf" stroke="#a9690a" stroke-width="5"/>
+    <circle cx="206" cy="92" r="12" fill="#fff4cf" stroke="#a9690a" stroke-width="5"/>
+    <circle class="crown-jewel" cx="80" cy="150" r="10" fill="#ff5c7a"/>
+    <circle class="crown-jewel" cx="120" cy="156" r="12" fill="#3ddc97"/>
+    <circle class="crown-jewel" cx="160" cy="150" r="10" fill="#5b8dff"/>
+  </g>
+</svg>

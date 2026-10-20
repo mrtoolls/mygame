@@ -12,6 +12,9 @@ use App\Models\TableGamePlayer;
 use App\Models\TableGameInvite;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Models\Gift;
+use App\Models\UserGiftInventory;
+use App\Services\GiftService;
 use App\Constants\Status;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -58,6 +61,7 @@ class TableGameController extends Controller
             'commissionPercent' => (string) ($setting->commission_percent ?? 5),
             'turnSeconds' => (int) ($setting->turn_seconds ?? 60),
             'isSpectator' => $isSpectator,
+            'gifts' => Schema::hasTable('gifts') ? Gift::active()->orderBy('sort_order')->get() : collect(),
             'snapshot' => $service->snapshot($request->user(), $table->id),
         ]);
     }
@@ -224,6 +228,38 @@ class TableGameController extends Controller
         $message = TableGameMessage::create(['table_game_id' => $id, 'user_id' => $request->user()->id, 'kind' => 'applause']);
         $message->load('user:id,username,image');
         return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
+    }
+
+    /**
+     * Buys any shortfall in the sender's own inventory and sends the gift to a seated player -
+     * open to players and spectators alike, matching the rest of the table's social features.
+     */
+    public function sendGift(Request $request, GiftService $service, string $id, int $gift)
+    {
+        $this->authorizeViewer($request, $id);
+        $data = $request->validate([
+            'recipient_id' => 'required|integer',
+            'quantity' => 'required|integer|min:1|max:99',
+        ]);
+        abort_unless(TableGamePlayer::where('table_game_id', $id)->where('user_id', $data['recipient_id'])->where('status', 'seated')->exists(), 404, 'That player is not seated at this table.');
+
+        $giftModel = Gift::findOrFail($gift);
+        $recipient = User::findOrFail($data['recipient_id']);
+        $sender = $request->user();
+        $quantity = (int) $data['quantity'];
+
+        try {
+            $senderInventory = UserGiftInventory::where('user_id', $sender->id)->where('gift_id', $giftModel->id)->value('quantity') ?? 0;
+            $shortfall = max(0, $quantity - $senderInventory);
+            if ($shortfall > 0) {
+                $service->buy($sender, $giftModel, $shortfall);
+            }
+            $message = $service->send($sender, $giftModel, $recipient, $quantity, $id);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        return response()->json(['message' => $message ? $this->messagePayload($message, collect(), (int) $sender->id, collect()) : null], 201);
     }
 
     public function react(Request $request, string $id, int $message)

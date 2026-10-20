@@ -3,8 +3,8 @@
 <script src="{{ asset('assets/global/js/table-sound.js') }}"></script>
 @endpush
 @section('content')
-    <main class="table-match" id="table-match" data-id="{{ $table->id }}" data-friendly="{{ bccomp((string) $table->stake, '0', 8) === 0 ? '1' : '0' }}" data-snapshot="{{ route('user.tables.snapshot', $table->id) }}" data-chat="{{ route('user.tables.chat', $table->id) }}" data-chat-send="{{ route('user.tables.chat.send', $table->id) }}" data-reaction-template="{{ route('user.tables.chat.react', [$table->id, '__MESSAGE__']) }}" data-report-template="{{ route('user.tables.chat.report', [$table->id, '__MESSAGE__']) }}" data-block-template="{{ route('user.tables.players.block', [$table->id, '__USER__']) }}" data-player-search="{{ route('user.tables.players.search', $table->id) }}" data-move="{{ route('user.tables.move', $table->id) }}" data-start="{{ route('user.tables.start', $table->id) }}" data-leave="{{ route('user.tables.leave', $table->id) }}" data-csrf="{{ csrf_token() }}" data-user="{{ auth()->id() }}" data-type="{{ $table->game_type }}" data-turn-seconds="{{ $turnSeconds }}" data-spectator="{{ $isSpectator ? '1' : '0' }}" data-applaud="{{ route('user.tables.chat.applaud', $table->id) }}">
-        <header class="table-match__top"><a href="{{ route('user.tables.index') }}" class="table-match__back"><i class="las la-arrow-left"></i></a><div class="table-match__title"><small>@lang('LIVE TABLE')</small><h1>{{ __($pageTitle) }}</h1></div>@if($isSpectator)<span class="table-match__spectator-badge"><i class="las la-eye"></i>@lang('Watching')</span>@endif<span class="table-match__watching" id="watching-count" hidden><i class="las la-eye"></i><b>0</b></span><button type="button" class="table-match__applaud" id="match-applaud" aria-label="@lang('Applaud')"><i class="las la-thumbs-up"></i></button><button type="button" class="table-match__info" id="how-to-play-open" aria-label="@lang('How to play')"><i class="las la-info-circle"></i></button><div class="sound-control" id="sound-control"><button type="button" id="sound-toggle" aria-label="@lang('Toggle sound')"><i class="las la-volume-up"></i></button><input type="range" id="sound-volume" min="0" max="100" value="50" aria-label="@lang('Sound volume')"></div><span class="table-match__status" id="match-status">{{ __(ucfirst($table->status)) }}</span></header>
+    <main class="table-match" id="table-match" data-id="{{ $table->id }}" data-friendly="{{ bccomp((string) $table->stake, '0', 8) === 0 ? '1' : '0' }}" data-snapshot="{{ route('user.tables.snapshot', $table->id) }}" data-chat="{{ route('user.tables.chat', $table->id) }}" data-chat-send="{{ route('user.tables.chat.send', $table->id) }}" data-reaction-template="{{ route('user.tables.chat.react', [$table->id, '__MESSAGE__']) }}" data-report-template="{{ route('user.tables.chat.report', [$table->id, '__MESSAGE__']) }}" data-block-template="{{ route('user.tables.players.block', [$table->id, '__USER__']) }}" data-player-search="{{ route('user.tables.players.search', $table->id) }}" data-move="{{ route('user.tables.move', $table->id) }}" data-start="{{ route('user.tables.start', $table->id) }}" data-leave="{{ route('user.tables.leave', $table->id) }}" data-csrf="{{ csrf_token() }}" data-user="{{ auth()->id() }}" data-type="{{ $table->game_type }}" data-turn-seconds="{{ $turnSeconds }}" data-spectator="{{ $isSpectator ? '1' : '0' }}" data-applaud="{{ route('user.tables.chat.applaud', $table->id) }}" data-gift-send-template="{{ route('user.tables.gifts.send', [$table->id, '__GIFT__']) }}">
+        <header class="table-match__top"><a href="{{ route('user.tables.index') }}" class="table-match__back"><i class="las la-arrow-left"></i></a><div class="table-match__title"><small>@lang('LIVE TABLE')</small><h1>{{ __($pageTitle) }}</h1></div>@if($isSpectator)<span class="table-match__spectator-badge"><i class="las la-eye"></i>@lang('Watching')</span>@endif<span class="table-match__watching" id="watching-count" hidden><i class="las la-eye"></i><b>0</b></span><button type="button" class="table-match__applaud" id="match-applaud" aria-label="@lang('Applaud')"><i class="las la-thumbs-up"></i></button>@if($gifts->isNotEmpty())<button type="button" class="table-match__applaud" id="match-gift-open" aria-label="@lang('Send a gift')"><i class="las la-gift"></i></button>@endif<button type="button" class="table-match__info" id="how-to-play-open" aria-label="@lang('How to play')"><i class="las la-info-circle"></i></button><div class="sound-control" id="sound-control"><button type="button" id="sound-toggle" aria-label="@lang('Toggle sound')"><i class="las la-volume-up"></i></button><input type="range" id="sound-volume" min="0" max="100" value="50" aria-label="@lang('Sound volume')"></div><span class="table-match__status" id="match-status">{{ __(ucfirst($table->status)) }}</span></header>
           <div class="table-match__layout"><section class="table-match__play"><div class="table-match__notice" id="match-notice" aria-live="polite">@lang('Waiting for the latest server state')</div><div class="table-board" id="table-board"></div><div class="table-match__footer"><span><i class="las la-coins"></i> @if ($isSpectator) @lang('Spectating · no stake involved') @elseif (bccomp((string) $table->stake, '0', 8) === 0) @lang('Friendly game · no money involved') @else @lang('Your stake') <strong>{{ $walletStakeFormatted ?? showAmount($walletStake) }}</strong> @lang(' · rate locked when you joined') @endif</span><span id="turn-clock"><i class="las la-hourglass-half"></i> <b>--</b></span></div></section>
             <aside class="table-match__side"><section class="table-match__panel"><div class="table-match__panel-title"><span><i class="las la-users"></i></span><div><h2>@lang('Seats')</h2><p>{{ $table->players->where('status', 'seated')->count() }}/{{ $table->player_limit }} @lang('players seated')</p></div></div><div id="match-players" class="table-match__players"></div></section><section class="table-match__panel table-match__rules"><div class="table-match__panel-title"><span><i class="las la-book-open"></i></span><div><h2>@lang('How to play')</h2><p>@lang('Server validated rules')</p></div></div><p id="match-rules"></p></section>@if($isSpectator)<p class="table-match__spectator-note"><i class="las la-info-circle"></i>@lang("You're watching this table. Cheer the players on in chat - you can't make moves here.")</p>@else @if($table->status==='waiting' && (int)$table->creator_id===(int)auth()->id())<form class="table-match__invite" id="match-invite" action="{{ route('user.tables.invite', $table->id) }}" method="post">@csrf<label for="invite-username">@lang('Invite a player by username')</label><div class="table-match__invite-control"><input id="invite-username" name="username" maxlength="40" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@lang('Search players by username')" aria-autocomplete="list" aria-controls="invite-suggestions"><button type="submit"><i class="las la-paper-plane"></i> @lang('Invite')</button></div><div class="table-match__suggestions" id="invite-suggestions" role="listbox" hidden></div><small id="invite-message" aria-live="polite"></small></form>@endif<button class="table-match__start" id="match-start" type="button" @if ((int) $table->creator_id !== (int) auth()->id()) hidden @endif>@lang('Start with 2+ players')</button><button class="table-match__leave" id="match-leave" type="button">@lang('Stand up')</button><p class="table-match__error" id="match-error" role="status"></p>@endif</aside>
         </div>
@@ -84,6 +84,42 @@
                 </div>
             </div>
         </div>
+        @if($gifts->isNotEmpty())
+        <div class="gift-drawer" id="gift-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="gift-drawer-title">
+            <div class="gift-drawer__backdrop" id="gift-drawer-backdrop"></div>
+            <div class="gift-drawer__sheet">
+                <header><h2 id="gift-drawer-title"><i class="las la-gift"></i> @lang('Send a Gift')</h2><button type="button" id="gift-drawer-close" aria-label="@lang('Close')"><i class="las la-times"></i></button></header>
+                <div class="gift-drawer__step" id="gift-drawer-pick">
+                    <div class="gift-drawer__grid" id="gift-drawer-grid">
+                        @foreach($gifts as $gift)
+                            <button type="button" class="gift-drawer__item" data-gift-id="{{ $gift->id }}" data-gift-name="{{ $gift->name }}" data-gift-image="{{ $gift->imageUrl() }}">
+                                <img src="{{ $gift->imageUrl() }}" alt="{{ $gift->name }}">
+                                <strong>{{ $gift->name }}</strong>
+                                <span>${{ showAmount($gift->buy_price, currencyFormat: false) }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="gift-drawer__step" id="gift-drawer-send" hidden>
+                    <button type="button" class="gift-drawer__back" id="gift-drawer-back"><i class="las la-arrow-left"></i>@lang('Choose a different gift')</button>
+                    <div class="gift-drawer__preview"><img id="gift-drawer-preview-img" src="" alt=""><strong id="gift-drawer-preview-name"></strong></div>
+                    <label class="gift-drawer__label">@lang('Send to')</label>
+                    <div class="gift-drawer__recipients" id="gift-drawer-recipients"></div>
+                    <label class="gift-drawer__label">@lang('Quantity')</label>
+                    <input type="number" id="gift-drawer-quantity" min="1" max="99" value="1">
+                    <button type="button" class="gift-drawer__send-btn" id="gift-drawer-send-btn"><i class="las la-paper-plane"></i> @lang('Send Gift')</button>
+                    <p class="gift-drawer__error" id="gift-drawer-error" role="status"></p>
+                </div>
+            </div>
+        </div>
+        <div class="gift-burst" id="gift-burst" hidden aria-live="polite">
+            <div class="gift-burst__sparkles" id="gift-burst-sparkles"></div>
+            <div class="gift-burst__card">
+                <img id="gift-burst-img" src="" alt="">
+                <p id="gift-burst-text"></p>
+            </div>
+        </div>
+        @endif
     </main>
 @endsection
 @push('style')
@@ -101,6 +137,44 @@
 @keyframes tm-applaud-pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 .table-match__applaud.is-popping{animation:tm-applaud-pop .35s ease}
 @media(max-width:575px){.table-match__spectator-badge{padding:5px 9px;font-size:9px}.table-match__watching{font-size:10px}.table-match__applaud{width:32px;height:32px;font-size:14px}}
+.gift-drawer{position:fixed;inset:0;z-index:1200;display:flex;align-items:flex-end;justify-content:center}
+.gift-drawer[hidden]{display:none}
+.gift-drawer__backdrop{position:absolute;inset:0;background:rgba(6,8,18,.68);backdrop-filter:blur(4px)}
+.gift-drawer__sheet{position:relative;width:min(560px,100%);max-height:84vh;display:flex;flex-direction:column;overflow-y:auto;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:24px 24px 0 0;background:linear-gradient(170deg,#1a2041,#10142a);box-shadow:0 -20px 60px rgba(0,0,0,.45);padding-bottom:18px}
+@media(min-width:720px){.gift-drawer{align-items:center}.gift-drawer__sheet{border-radius:22px;max-height:80vh}}
+.gift-drawer__sheet>header{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--tm-line,rgba(145,156,205,.16));background:inherit;z-index:1}
+.gift-drawer__sheet>header h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15px;font-weight:950;color:var(--tm-text,#f5f6ff)}
+.gift-drawer__sheet>header button{display:grid;width:30px;height:30px;margin-left:auto;place-items:center;border:0;border-radius:9px;background:rgba(255,255,255,.06);color:var(--tm-muted,#929abc);cursor:pointer}
+.gift-drawer__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;padding:18px 20px}
+.gift-drawer__item{display:grid;justify-items:center;gap:6px;padding:14px 8px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:15px;background:rgba(35,42,71,.4);cursor:pointer;transition:border-color .15s ease,transform .1s ease}
+.gift-drawer__item:hover{border-color:rgba(0,239,135,.4);transform:translateY(-2px)}
+.gift-drawer__item img{width:48px;height:48px;object-fit:contain}
+.gift-drawer__item strong{color:var(--tm-text,#f5f6ff);font-size:11.5px;font-weight:900}
+.gift-drawer__item span{color:var(--tm-green,#00ef87);font-size:10.5px;font-weight:800}
+.gift-drawer__step[hidden]{display:none}
+.gift-drawer__back{display:inline-flex;align-items:center;gap:6px;margin:16px 20px 0;padding:0;border:0;background:none;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800;cursor:pointer}
+.gift-drawer__preview{display:grid;justify-items:center;gap:6px;margin:10px 20px 4px}
+.gift-drawer__preview img{width:72px;height:72px;object-fit:contain}
+.gift-drawer__preview strong{color:var(--tm-text,#f5f6ff);font-size:14px;font-weight:950}
+.gift-drawer__label{display:block;margin:14px 20px 8px;color:#b5bdd8;font-size:11px;font-weight:850}
+.gift-drawer__recipients{display:flex;flex-wrap:wrap;gap:8px;margin:0 20px}
+.gift-drawer__recipient{min-height:36px;padding:0 14px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:999px;background:rgba(35,42,71,.4);color:var(--tm-text,#f5f6ff);font-size:11.5px;font-weight:800;cursor:pointer}
+.gift-drawer__recipient.is-selected{border-color:var(--tm-green,#00ef87);background:rgba(0,239,135,.12);color:var(--tm-green,#00ef87)}
+#gift-drawer-quantity{width:calc(100% - 40px);min-height:44px;margin:0 20px;padding:0 12px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:11px;background:#11162c;color:var(--tm-text,#f5f6ff);font-size:13px}
+.gift-drawer__send-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 40px);min-height:46px;margin:16px 20px 0;border:0;border-radius:13px;background:var(--tm-green,#00ef87);color:#062b1d;font-size:12.5px;font-weight:950;cursor:pointer}
+.gift-drawer__send-btn:disabled{opacity:.6;cursor:not-allowed}
+.gift-drawer__error{min-height:14px;margin:8px 20px 0;color:#ff95a6;font-size:11px}
+.gift-burst{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.gift-burst[hidden]{display:none}
+.gift-burst__card{display:grid;justify-items:center;gap:10px;padding:26px 34px;border-radius:24px;background:linear-gradient(160deg,rgba(26,32,65,.96),rgba(16,20,42,.96));border:1px solid rgba(0,239,135,.35);box-shadow:0 0 60px rgba(0,239,135,.25),0 30px 70px rgba(0,0,0,.5);animation:gift-burst-in .45s cubic-bezier(.2,.9,.3,1.3) forwards,gift-burst-out .4s ease .22s forwards}
+.gift-burst__card img{width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 0 22px rgba(0,239,135,.45))}
+.gift-burst__card p{margin:0;max-width:260px;color:var(--tm-text,#f5f6ff);font-size:14px;font-weight:900;text-align:center}
+@keyframes gift-burst-in{0%{transform:scale(.4) translateY(30px);opacity:0}60%{transform:scale(1.12) translateY(0);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+@keyframes gift-burst-out{to{opacity:0;transform:translateY(-16px) scale(.96)}}
+.gift-burst__sparkles{position:absolute;inset:0;overflow:hidden}
+.gift-burst__sparkles i{position:absolute;bottom:40%;font-size:18px;color:#ffd76a;opacity:0;animation:gift-burst-sparkle 1.6s ease-out forwards}
+@keyframes gift-burst-sparkle{0%{transform:translateY(0) scale(.3) rotate(0deg);opacity:0}15%{opacity:1}100%{transform:translateY(-220px) scale(1) rotate(180deg);opacity:0}}
+@media(max-width:575px){.gift-drawer__grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));padding:14px}.gift-burst__card{padding:20px 22px}.gift-burst__card img{width:84px;height:84px}}
 .board-grid--chess{grid-template-columns:repeat(8,min(10vw,62px));gap:0;overflow:hidden;border:3px solid #8b98bd;border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.35)}.board-cell--chess{width:min(10vw,62px);aspect-ratio:1;border:0;border-radius:0;background:#e9edf8;font-size:clamp(22px,5vw,38px);transition:background .15s ease}.board-cell--chess.is-dark{background:#7686ad}
 .board-cell--chess.piece-light{color:#fdfdff;text-shadow:0 1px 1px rgba(0,0,0,.55),0 0 0 1px rgba(20,25,45,.5)}
 .board-cell--chess.piece-dark{color:#14172a;text-shadow:0 1px 0 rgba(255,255,255,.35)}
@@ -433,6 +507,61 @@ function renderBoard(data) {
 }
 async function refresh(){if(polling)return;polling=true;try{const url=new URL(stateUrl,location.href);if(latest)url.searchParams.set('since',latest.version);const response=await fetch(url,{headers:{'Accept':'application/json'},cache:'no-store'});if(!response.ok)throw new Error('Could not reconnect to this table.');const data=await response.json();if(!data.unchanged)gameState(data);}catch(e){error.textContent=e.message;}finally{polling=false;}}
 const applaudBtn=document.querySelector('#match-applaud');if(applaudBtn)applaudBtn.onclick=()=>{applaudBtn.disabled=true;applaudBtn.classList.add('is-popping');setTimeout(()=>applaudBtn.classList.remove('is-popping'),350);window.TableSound?.play?.('click');fetch(root.dataset.applaud,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'}}).finally(()=>{applaudBtn.disabled=false;});};
+(()=>{
+    const openBtn=document.querySelector('#match-gift-open');const drawer=document.querySelector('#gift-drawer');if(!openBtn||!drawer)return;
+    const backdrop=document.querySelector('#gift-drawer-backdrop'),closeBtn=document.querySelector('#gift-drawer-close'),backBtn=document.querySelector('#gift-drawer-back');
+    const pickStep=document.querySelector('#gift-drawer-pick'),sendStep=document.querySelector('#gift-drawer-send');
+    const recipientsEl=document.querySelector('#gift-drawer-recipients'),quantityEl=document.querySelector('#gift-drawer-quantity'),errorEl=document.querySelector('#gift-drawer-error'),sendBtn=document.querySelector('#gift-drawer-send-btn');
+    const previewImg=document.querySelector('#gift-drawer-preview-img'),previewName=document.querySelector('#gift-drawer-preview-name');
+    let selectedGiftId=null,selectedRecipientId=null;
+    function closeDrawer(){drawer.hidden=true;pickStep.hidden=false;sendStep.hidden=true;errorEl.textContent='';}
+    function renderRecipients(){
+        recipientsEl.replaceChildren();selectedRecipientId=null;
+        const seated=(latest?.players||[]).filter(player=>player.id!==userId&&player.status==='seated');
+        if(!seated.length){recipientsEl.innerHTML='<span class="gift-drawer__error">No other players are seated yet.</span>';sendBtn.disabled=true;return;}
+        seated.forEach((player,index)=>{
+            const btn=document.createElement('button');btn.type='button';btn.className='gift-drawer__recipient';btn.textContent=player.name||`Player ${player.seat+1}`;
+            btn.onclick=()=>{recipientsEl.querySelectorAll('.gift-drawer__recipient').forEach(el=>el.classList.remove('is-selected'));btn.classList.add('is-selected');selectedRecipientId=player.id;};
+            recipientsEl.append(btn);
+            if(index===0){btn.classList.add('is-selected');selectedRecipientId=player.id;}
+        });
+        sendBtn.disabled=false;
+    }
+    openBtn.onclick=()=>{drawer.hidden=false;pickStep.hidden=false;sendStep.hidden=true;window.TableSound?.play?.('click');};
+    closeBtn.onclick=closeDrawer;backdrop.onclick=closeDrawer;
+    document.querySelectorAll('.gift-drawer__item').forEach(item=>{
+        item.onclick=()=>{
+            selectedGiftId=item.dataset.giftId;previewImg.src=item.dataset.giftImage;previewImg.alt=item.dataset.giftName;previewName.textContent=item.dataset.giftName;
+            quantityEl.value=1;errorEl.textContent='';renderRecipients();
+            pickStep.hidden=true;sendStep.hidden=false;
+        };
+    });
+    backBtn.onclick=()=>{pickStep.hidden=false;sendStep.hidden=true;};
+    sendBtn.onclick=()=>{
+        if(!selectedGiftId||!selectedRecipientId)return;
+        const quantity=Math.max(1,Math.min(99,parseInt(quantityEl.value,10)||1));
+        sendBtn.disabled=true;errorEl.textContent='';
+        const url=root.dataset.giftSendTemplate.replace('__GIFT__',selectedGiftId);
+        fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({recipient_id:selectedRecipientId,quantity})})
+            .then(async response=>{const data=await response.json();if(!response.ok)throw new Error(data.message||'The gift could not be sent.');closeDrawer();})
+            .catch(e=>{errorEl.textContent=e.message;})
+            .finally(()=>{sendBtn.disabled=false;});
+    };
+})();
+window.spawnGiftBurst=function(giftImage,text){
+    const burst=document.querySelector('#gift-burst');if(!burst)return;
+    document.querySelector('#gift-burst-img').src=giftImage;
+    document.querySelector('#gift-burst-text').textContent=text;
+    const sparkles=document.querySelector('#gift-burst-sparkles');sparkles.replaceChildren();
+    for(let i=0;i<14;i++){
+        const sparkle=document.createElement('i');sparkle.className='las la-star';
+        sparkle.style.left=(10+Math.random()*80)+'%';sparkle.style.animationDelay=(Math.random()*0.4)+'s';sparkle.style.color=['#ffd76a','#00ef87','#7fd9ff','#ff8aa3'][i%4];
+        sparkles.append(sparkle);
+    }
+    burst.hidden=false;window.TableSound?.play?.('win');
+    clearTimeout(window.__giftBurstTimer);
+    window.__giftBurstTimer=setTimeout(()=>{burst.hidden=true;},2400);
+}
 const startBtn=document.querySelector('#match-start');if(startBtn)startBtn.onclick=()=>{window.TableSound?.play?.('click');fetch(api.start,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'}}).then(refresh).catch(()=>{});};const leaveBtn=document.querySelector('#match-leave');if(leaveBtn)leaveBtn.onclick=()=>{window.TableSound?.play?.('leave');const creator=latest?.status==='waiting'&&latest.players.some(player=>player.id===userId&&player.seat===0);const prompt=creator?'Cancel this waiting table? All player stakes will be refunded to their wallets and invitations will stop working.':latest?.status==='waiting'?'Leave this waiting table? Your own stake will be refunded.':root.dataset.friendly==='1'?'Leave this friendly game? No money is involved.':'Stand up from this active game? Any stake already in play will stay in the pot.';if(confirm(prompt))fetch(api.leave,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'}}).then(refresh);};const inviteForm=document.querySelector('#match-invite');if(inviteForm){const input=inviteForm.querySelector('[name=username]'),suggestions=document.querySelector('#invite-suggestions'),message=document.querySelector('#invite-message'),button=inviteForm.querySelector('button');let searchTimer,searchController;function closeSuggestions(){suggestions.replaceChildren();suggestions.hidden=true;input.setAttribute('aria-expanded','false');}input.setAttribute('aria-expanded','false');input.addEventListener('input',()=>{clearTimeout(searchTimer);searchController?.abort();const query=input.value.trim();message.textContent='';if(!query){closeSuggestions();return;}suggestions.hidden=false;suggestions.innerHTML='<span class="table-match__suggestion-note">Searching players…</span>';input.setAttribute('aria-expanded','true');searchTimer=setTimeout(async()=>{searchController=new AbortController();try{const url=new URL(root.dataset.playerSearch,location.href);url.searchParams.set('q',query);const response=await fetch(url,{headers:{Accept:'application/json'},signal:searchController.signal});if(!response.ok)throw new Error('Player search is unavailable.');const result=await response.json();if(input.value.trim()!==query)return;suggestions.replaceChildren();if(!result.users?.length){suggestions.innerHTML='<span class="table-match__suggestion-note">No matching players found</span>';return;}result.users.forEach(player=>{const option=document.createElement('button');option.type='button';option.className='table-match__suggestion';option.setAttribute('role','option');option.textContent=player.username;option.addEventListener('click',()=>{input.value=player.username;closeSuggestions();input.focus();});suggestions.append(option);});}catch(error){if(error.name!=='AbortError'){closeSuggestions();message.textContent=error.message;}}},180);});document.addEventListener('click',event=>{if(!inviteForm.contains(event.target))closeSuggestions();});inviteForm.addEventListener('submit',async event=>{event.preventDefault();const username=input.value.trim();if(!username)return;button.disabled=true;message.textContent='';try{const response=await fetch(inviteForm.action,{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':root.dataset.csrf,'Content-Type':'application/json'},body:JSON.stringify({username})});const result=await response.json();if(!response.ok)throw new Error(result.message||'Could not send invitation.');message.textContent=result.message;input.value='';closeSuggestions();}catch(error){message.textContent=error.message;}finally{button.disabled=false;}});}refresh();const schedule=()=>{if(latest&&['finished','cancelled','force_closed'].includes(latest.status))return;pollTimer=setTimeout(async()=>{await refresh();schedule();},document.hidden?3500:1000);};document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});schedule();})();
 </script>
 @endpush
@@ -442,7 +571,7 @@ const startBtn=document.querySelector('#match-start');if(startBtn)startBtn.oncli
 const root=document.querySelector('#table-match');if(!root)return;
 const list=document.querySelector('#chat-messages'),empty=document.querySelector('#chat-empty'),error=document.querySelector('#chat-error'),user=Number(root.dataset.user);
 const quickReactions=['👍','❤️','😂','👏','😮','🎉','👎'];
-let cursor=0,busy=false,recorder=null,chunks=[],replyToId=null,lastRenderedDate=null,lastRenderedUser=null,isAtBottom=true,unseenCount=0,recordTimer=null,recordStart=0,recordAnalyser=null,recordRaf=null;
+let cursor=0,busy=false,recorder=null,chunks=[],replyToId=null,lastRenderedDate=null,lastRenderedUser=null,isAtBottom=true,unseenCount=0,recordTimer=null,recordStart=0,recordAnalyser=null,recordRaf=null,chatHistoryLoaded=false;
 const headers={'Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf};
 
 /* ---- Emoji picker (shared by the composer button and per-message quick-react) ---- */
@@ -530,6 +659,23 @@ function renderMessage(m){
         if(mine||isAtBottom){list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;}
         return;
     }
+    if(m.kind==='gift'){
+        lastRenderedUser=null;
+        let gift=null;try{gift=JSON.parse(m.body);}catch(e){}
+        const rowEl=document.createElement('div');rowEl.className='table-chat__row is-applause'+(mine?' is-mine':'');
+        const bubble=document.createElement('article');bubble.className='table-chat__message';bubble.dataset.chatMessage=m.id;
+        if(gift?.gift_image){const img=document.createElement('img');img.src=gift.gift_image;img.alt=gift.gift_name||'';img.style.cssText='width:16px;height:16px;vertical-align:-3px;margin-right:4px';bubble.append(img);}
+        const senderName=mine?'You':(m.name||'Someone');
+        const recipientName=gift?(Number(gift.recipient_id)===user?'you':(gift.recipient_name||'a player')):'a player';
+        bubble.append(document.createTextNode(`${senderName} sent ${gift?.quantity>1?gift.quantity+'x ':''}${gift?.gift_name||'a gift'} to ${recipientName}`));
+        rowEl.append(bubble);list.append(rowEl);
+        cursor=Math.max(cursor,Number(m.id));
+        if(mine||isAtBottom){list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;}
+        if(chatHistoryLoaded&&gift?.gift_image){
+            window.spawnGiftBurst?.(gift.gift_image,`${senderName} sent ${gift.quantity>1?gift.quantity+'x ':''}${gift.gift_name} to ${recipientName}!`);
+        }
+        return;
+    }
     const grouped=!mine&&lastRenderedUser===m.user_id;
     lastRenderedUser=mine?null:m.user_id;
     const rowEl=document.createElement('div');rowEl.className='table-chat__row'+(mine?' is-mine':'')+(grouped?' is-grouped':'');
@@ -606,7 +752,7 @@ document.querySelector('#chat-voice')?.addEventListener('click',startRecording);
 document.querySelector('#chat-record-stop')?.addEventListener('click',()=>finishRecording(true));
 document.querySelector('#chat-record-cancel')?.addEventListener('click',()=>finishRecording(false));
 
-getMessages();const poll=()=>setTimeout(async()=>{await getMessages();poll();},document.hidden?7000:2500);poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden){getMessages();}});
+getMessages().then(()=>{chatHistoryLoaded=true;});const poll=()=>setTimeout(async()=>{await getMessages();poll();},document.hidden?7000:2500);poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden){getMessages();}});
 })();
 </script>
 @endpush

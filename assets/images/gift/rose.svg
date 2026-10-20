@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <radialGradient id="roseFill" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#ff7a9c"/>
+      <stop offset="100%" stop-color="#d81e4e"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .rose-sway{transform-box:fill-box;transform-origin:bottom center;animation:rose-sway 2.6s ease-in-out infinite}
+    @keyframes rose-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+  </style>
+  <g class="rose-sway">
+    <path d="M118 210 C112 170 112 140 112 112" fill="none" stroke="#2f8f4e" stroke-width="10" stroke-linecap="round"/>
+    <path d="M112 150 C94 158 78 152 70 138" fill="none" stroke="#2f8f4e" stroke-width="8" stroke-linecap="round"/>
+    <path d="M114 170 C132 176 148 168 156 152" fill="none" stroke="#2f8f4e" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="118" cy="78" r="52" fill="url(#roseFill)" stroke="#9c123a" stroke-width="4"/>
+    <path d="M118 36 C140 44 152 60 150 78 C148 60 134 48 118 46 C102 48 88 60 86 78 C84 60 96 44 118 36 Z" fill="#ffb3c6" opacity="0.85"/>
+    <path d="M94 68 C94 92 104 108 118 114 C132 108 142 92 142 68 C130 80 106 80 94 68 Z" fill="#b8123f"/>
+    <circle cx="118" cy="78" r="14" fill="#7a0c2b"/>
+  </g>
+</svg>

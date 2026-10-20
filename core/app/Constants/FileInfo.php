@@ -73,6 +73,10 @@ class FileInfo {
             'path' => 'assets/images/game',
             'size' => '800x800',
         ];
+        $data['gift'] = [
+            'path' => 'assets/images/gift',
+            'size' => '240x240',
+        ];
         $data['pushConfig'] = [
             'path' => 'assets/admin',
         ];

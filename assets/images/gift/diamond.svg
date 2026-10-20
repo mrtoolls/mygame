@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="diamondTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d6f6ff"/>
+      <stop offset="100%" stop-color="#7fd9ff"/>
+    </linearGradient>
+    <linearGradient id="diamondBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5fc9ff"/>
+      <stop offset="100%" stop-color="#1b8fe0"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .diamond-pulse{transform-box:fill-box;transform-origin:center;animation:diamond-pulse 1.6s ease-in-out infinite}
+    @keyframes diamond-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+    .sparkle{animation:sparkle-twinkle 1.3s ease-in-out infinite}
+    .sparkle:nth-child(2){animation-delay:.35s}
+    .sparkle:nth-child(3){animation-delay:.7s}
+    @keyframes sparkle-twinkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+  </style>
+  <g class="diamond-pulse">
+    <path d="M56 70 L120 36 L184 70 L144 70 L120 70 L96 70 Z" fill="url(#diamondTop)" stroke="#1472b8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M56 70 L96 70 L120 70 L80 120 Z" fill="#aeeaff" stroke="#1472b8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M184 70 L144 70 L120 70 L160 120 Z" fill="#8fe0ff" stroke="#1472b8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M96 70 L144 70 L120 70 Z" fill="#cdf4ff" stroke="#1472b8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M80 120 L120 70 L160 120 L120 204 Z" fill="url(#diamondBody)" stroke="#1472b8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M120 70 L120 204" stroke="#bdf0ff" stroke-width="3" opacity="0.7"/>
+  </g>
+  <g class="sparkle" transform="translate(44,50)" fill="#ffffff" transform-origin="center">
+    <path d="M0 -10 L2.5 -2.5 L10 0 L2.5 2.5 L0 10 L-2.5 2.5 L-10 0 L-2.5 -2.5 Z"/>
+  </g>
+  <g class="sparkle" transform="translate(196,56)" fill="#ffffff" transform-origin="center">
+    <path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z"/>
+  </g>
+  <g class="sparkle" transform="translate(184,150)" fill="#ffffff" transform-origin="center">
+    <path d="M0 -7 L1.7 -1.7 L7 0 L1.7 1.7 L0 7 L-1.7 1.7 L-7 0 L-1.7 -1.7 Z"/>
+  </g>
+</svg>

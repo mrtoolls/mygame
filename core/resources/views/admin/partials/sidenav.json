@@ -79,6 +79,18 @@
             }
         ]
     },
+    "gifts": {
+        "keyword": [
+            "Gifts",
+            "Gifting",
+            "Virtual Gifts",
+            "Tipping"
+        ],
+        "title": "Gifts",
+        "icon": "las la-gift",
+        "route_name": "admin.gift.index",
+        "menu_active": "admin.gift*"
+    },
     "vip": {
         "keyword": [
             "VIP",

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="foxFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9a52"/>
+      <stop offset="100%" stop-color="#e86a1f"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .fox-bounce{transform-box:fill-box;transform-origin:center;animation:fox-bounce 1.2s ease-in-out infinite}
+    @keyframes fox-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .fox-ear-l{transform-box:fill-box;transform-origin:bottom center;animation:fox-ear-wiggle 1.2s ease-in-out infinite}
+    .fox-ear-r{transform-box:fill-box;transform-origin:bottom center;animation:fox-ear-wiggle 1.2s ease-in-out infinite reverse}
+    @keyframes fox-ear-wiggle{0%,100%{transform:rotate(0deg)}50%{transform:rotate(8deg)}}
+  </style>
+  <g class="fox-bounce">
+    <g class="fox-ear-l">
+      <path d="M60 44 L94 104 L58 112 Z" fill="url(#foxFill)" stroke="#a84c13" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M68 58 L88 96 L70 100 Z" fill="#3a2418"/>
+    </g>
+    <g class="fox-ear-r">
+      <path d="M180 44 L146 104 L182 112 Z" fill="url(#foxFill)" stroke="#a84c13" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M172 58 L152 96 L170 100 Z" fill="#3a2418"/>
+    </g>
+    <path d="M120 72 C164 72 196 104 196 142 C196 180 160 204 120 204 C80 204 44 180 44 142 C44 104 76 72 120 72 Z" fill="url(#foxFill)" stroke="#a84c13" stroke-width="5"/>
+    <path d="M120 112 C146 112 164 130 164 156 C164 180 144 196 120 196 C96 196 76 180 76 156 C76 130 94 112 120 112 Z" fill="#fff3e4"/>
+    <circle cx="98" cy="134" r="9" fill="#2a1a10"/>
+    <circle cx="142" cy="134" r="9" fill="#2a1a10"/>
+    <path d="M120 150 L110 166 L130 166 Z" fill="#3a2418"/>
+    <path d="M120 166 L120 174 M120 174 L108 182 M120 174 L132 182" stroke="#3a2418" stroke-width="4" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

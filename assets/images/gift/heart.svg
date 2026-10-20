@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="heartFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff8aa3"/>
+      <stop offset="100%" stop-color="#ff3b64"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .heart-beat{transform-box:fill-box;transform-origin:center;animation:heart-beat 1.1s ease-in-out infinite}
+    @keyframes heart-beat{0%,100%{transform:scale(1)}20%{transform:scale(1.12)}35%{transform:scale(0.96)}50%{transform:scale(1.1)}70%{transform:scale(1)}}
+  </style>
+  <g class="heart-beat">
+    <path d="M120 206 C58 164 24 128 24 90 C24 58 48 36 78 36 C98 36 114 46 120 62 C126 46 142 36 162 36 C192 36 216 58 216 90 C216 128 182 164 120 206 Z"
+          fill="url(#heartFill)" stroke="#c4123f" stroke-width="5"/>
+    <path d="M74 60 C58 70 50 84 50 98" fill="none" stroke="#ffd1dc" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+  </g>
+</svg>

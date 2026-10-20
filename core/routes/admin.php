@@ -108,6 +108,17 @@ Route::middleware('admin')->group(function () {
         Route::get('claims', 'claims')->name('claims');
     });
 
+    // Gifts
+    Route::controller('GiftController')->name('gift.')->prefix('gift')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('create', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('edit/{id}', 'update')->name('update');
+        Route::post('status/{id}', 'status')->name('status');
+        Route::post('delete/{id}', 'destroy')->name('destroy');
+    });
+
     // Bonus Codes
     Route::controller('BonusCodeController')->name('bonus.code.')->prefix('bonus-code')->group(function () {
         Route::get('/', 'index')->name('index');

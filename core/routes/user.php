@@ -139,6 +139,13 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('{id}/start', 'start')->whereUuid('id')->name('start');
                 Route::post('{id}/move', 'move')->whereUuid('id')->name('move');
                 Route::post('{id}/leave', 'leave')->whereUuid('id')->name('leave');
+                Route::post('{id}/gifts/{gift}/send', 'sendGift')->whereUuid('id')->whereNumber('gift')->middleware('throttle:20,1')->name('gifts.send');
+            });
+
+            Route::controller('GiftController')->prefix('gifts')->name('gifts.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('{gift}/buy', 'buy')->whereNumber('gift')->middleware('throttle:20,1')->name('buy');
+                Route::post('{gift}/cashout', 'cashOut')->whereNumber('gift')->middleware('throttle:20,1')->name('cashout');
             });
         });
 
