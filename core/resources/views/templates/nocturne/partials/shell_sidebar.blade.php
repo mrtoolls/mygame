@@ -2,8 +2,8 @@
 <aside class="nocturne-sidebar" aria-label="@lang('Site menu')">
     <div class="nocturne-sidebar-scroll">
         <div class="nocturne-game-tabs" aria-label="@lang('Catalogue')">
-            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i>@lang('Games')</a>
-            <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-bold ph-broadcast"></i>@lang('Live')</a>
+            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-fill ph-dice-five"></i>@lang('Games')</a>
+            <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-broadcast"></i>@lang('Live')</a>
         </div>
         @php
             $bonusCountdown = getContent('bonus_countdown.content', true);
@@ -19,50 +19,50 @@
                     <span class="nocturne-reward-countdown__unit" data-unit="h">00</span><span class="nocturne-reward-countdown__sep">:</span><span class="nocturne-reward-countdown__unit" data-unit="m">00</span><span class="nocturne-reward-countdown__sep">:</span><span class="nocturne-reward-countdown__unit" data-unit="s">00</span>
                 </span>
             @endif
-            @unless($rewardArt)<span class="nocturne-reward-icon"><i class="ph-bold ph-gift"></i></span>@endunless
+            @unless($rewardArt)<span class="nocturne-reward-icon"><i class="ph-fill ph-gift"></i></span>@endunless
         </a>
         <section class="nocturne-menu-group" aria-label="@lang('Play')">
-            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-bold ph-house"></i><span>@lang('Home')</span></a>
+            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
             @auth
-                <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-bold ph-user"></i><span>@lang('Profile')</span></a>
-                <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-bold ph-sword"></i><span>@lang('Live Games')</span></a>
-                <a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'is-active' : '' }}"><i class="ph-bold ph-headset"></i><span>@lang('Live Support')</span></a>
-                <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-bold ph-wallet"></i><span>@lang('Deposit')</span></a>
-                <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-bold ph-money-wavy"></i><span>@lang('Withdraw')</span></a>
-                <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
+                <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
+                <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-sword"></i><span>@lang('Live Games')</span></a>
+                <a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'is-active' : '' }}"><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
+                <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i><span>@lang('Deposit')</span></a>
+                <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i><span>@lang('Withdraw')</span></a>
+                <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
             @else
-                <a href="{{ route('user.login') }}"><i class="ph-bold ph-user"></i><span>@lang('Sign in')</span></a>
-                <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'is-active' : '' }}"><i class="ph-bold ph-headset"></i><span>@lang('Live Support')</span></a>
+                <a href="{{ route('user.login') }}"><i class="ph-fill ph-user"></i><span>@lang('Sign in')</span></a>
+                <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'is-active' : '' }}"><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
             @endauth
         </section>
         <section class="nocturne-menu-group" aria-label="@lang('More')">
             <h6>@lang('Discover')</h6>
-            <a href="{{ route('pages', 'about-us') }}"><i class="ph-bold ph-book-open"></i><span>@lang('About Us')</span></a>
-            <a href="{{ route('pages', 'promotions') }}"><i class="ph-bold ph-ticket"></i><span>@lang('Promotions')</span></a>
-            <a href="{{ route('pages', 'sponsorships') }}"><i class="ph-bold ph-shield-check"></i><span>@lang('Sponsorships')</span></a>
-            <a href="{{ route('pages', 'licenses-security') }}"><i class="ph-bold ph-lock"></i><span>@lang('Licenses & Security')</span></a>
-            <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-bold ph-crown"></i><span>@lang('VIP-Club')</span></a>
-            <a href="{{ route('feedback') }}"><i class="ph-bold ph-chat-circle"></i><span>@lang('Feedback About Us')</span></a>
-            <a href="{{ route('blog') }}" class="{{ request()->routeIs('blog*') ? 'is-active' : '' }}"><i class="ph-bold ph-newspaper"></i><span>@lang('News')</span></a>
+            <a href="{{ route('pages', 'about-us') }}"><i class="ph-fill ph-book-open"></i><span>@lang('About Us')</span></a>
+            <a href="{{ route('pages', 'promotions') }}"><i class="ph-fill ph-ticket"></i><span>@lang('Promotions')</span></a>
+            <a href="{{ route('pages', 'sponsorships') }}"><i class="ph-fill ph-shield-check"></i><span>@lang('Sponsorships')</span></a>
+            <a href="{{ route('pages', 'licenses-security') }}"><i class="ph-fill ph-lock"></i><span>@lang('Licenses & Security')</span></a>
+            <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-fill ph-crown"></i><span>@lang('VIP-Club')</span></a>
+            <a href="{{ route('feedback') }}"><i class="ph-fill ph-chat-circle"></i><span>@lang('Feedback About Us')</span></a>
+            <a href="{{ route('blog') }}" class="{{ request()->routeIs('blog*') ? 'is-active' : '' }}"><i class="ph-fill ph-newspaper"></i><span>@lang('News')</span></a>
         </section>
         @if (gs('multi_language'))
             <ul class="nocturne-language list-unstyled mb-0">@include('Template::partials.language', ['class' => ''])</ul>
         @endif
         @auth
-            <a class="nocturne-logout" href="{{ route('user.logout') }}"><i class="ph-bold ph-sign-out"></i><span>@lang('Log out')</span></a>
+            <a class="nocturne-logout" href="{{ route('user.logout') }}"><i class="ph-fill ph-sign-out"></i><span>@lang('Log out')</span></a>
         @endauth
     </div>
 </aside>
 <nav class="nocturne-mobile-nav" aria-label="@lang('Quick navigation')">
-    <button class="nocturne-mobile-menu" type="button"><i class="ph-bold ph-squares-four"></i><span>@lang('Menu')</span></button>
-    <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i><span>@lang('Games')</span></a>
-    <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-bold ph-broadcast"></i><span>@lang('Live')</span></a>
+    <button class="nocturne-mobile-menu" type="button"><i class="ph-fill ph-squares-four"></i><span>@lang('Menu')</span></button>
+    <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-fill ph-dice-five"></i><span>@lang('Games')</span></a>
+    <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-broadcast"></i><span>@lang('Live')</span></a>
     @auth
-        <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
-        <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-bold ph-user"></i><span>@lang('Profile')</span></a>
+        <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
+        <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
     @else
-        <a href="{{ route('user.register') }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
-        <a href="{{ route('user.login') }}"><i class="ph-bold ph-user"></i><span>@lang('Login')</span></a>
+        <a href="{{ route('user.register') }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
+        <a href="{{ route('user.login') }}"><i class="ph-fill ph-user"></i><span>@lang('Login')</span></a>
     @endauth
 </nav>
 @push('script')
