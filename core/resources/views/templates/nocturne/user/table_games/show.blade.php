@@ -10,9 +10,38 @@
         </div>
         <section class="table-chat" id="table-chat" aria-label="Table chat">
             <header class="table-chat__head"><span class="table-chat__icon"><i class="las la-comments"></i></span><div><h2>@lang('Table chat')</h2><p>@lang('Chat, share a voice note, or react while you play')</p></div><span class="table-chat__live"><i></i>@lang('LIVE')</span></header>
+            <p class="table-chat__safety"><i class="las la-shield-alt"></i>@lang('Keep it on-platform - never pay or trade outside the site. Deals made elsewhere are not protected.')</p>
             <div class="table-chat__messages" id="chat-messages" aria-live="polite"><p class="table-chat__empty" id="chat-empty">@lang('Say hello to everyone at the table.')</p></div>
-            <div class="table-chat__tools"><label class="table-chat__file" title="Attach a file"><i class="las la-paperclip"></i><input id="chat-file" type="file" accept="image/*,.pdf,.txt,.csv,.zip,audio/*,video/mp4" hidden></label><button class="table-chat__voice" id="chat-voice" type="button" title="Record voice note"><i class="las la-microphone"></i><span>@lang('Voice note')</span></button><span class="table-chat__hint" id="chat-hint">@lang('Files up to 10 MB')</span></div>
-            <form class="table-chat__form" id="chat-form"><textarea id="chat-input" maxlength="1000" rows="1" placeholder="{{ __('Message the table…') }}" aria-label="{{ __('Message the table') }}"></textarea><button class="table-chat__send" type="submit" aria-label="{{ __('Send message') }}"><i class="las la-arrow-up"></i></button></form>
+            <button type="button" class="table-chat__jump" id="chat-jump" hidden><i class="las la-arrow-down"></i><span id="chat-jump-count">0</span> @lang('new')</button>
+            <div class="table-chat__reply" id="chat-reply" hidden><div><small id="chat-reply-name"></small><p id="chat-reply-preview"></p></div><button type="button" id="chat-reply-cancel" aria-label="@lang('Cancel reply')"><i class="las la-times"></i></button></div>
+            <div class="table-chat__record" id="chat-record" hidden>
+                <button type="button" id="chat-record-cancel" aria-label="@lang('Cancel recording')"><i class="las la-trash"></i></button>
+                <div class="table-chat__record-meter" id="chat-record-meter"></div>
+                <span class="table-chat__record-time" id="chat-record-time">0:00</span>
+                <button type="button" class="table-chat__record-stop" id="chat-record-stop" aria-label="@lang('Stop and send')"><i class="las la-paper-plane"></i></button>
+            </div>
+            <form class="table-chat__form" id="chat-form">
+                <div class="table-chat__picker-anchor">
+                    <button type="button" class="table-chat__icon-btn" id="chat-emoji-open" aria-label="@lang('Emoji')"><i class="las la-laugh-beam"></i></button>
+                    <div class="emoji-picker" id="emoji-picker" hidden>
+                        <div class="emoji-picker__search"><i class="las la-search"></i><input type="text" id="emoji-search" placeholder="{{ __('Search emoji') }}" autocomplete="off"></div>
+                        <div class="emoji-picker__tabs" id="emoji-tabs"></div>
+                        <div class="emoji-picker__grid" id="emoji-grid"></div>
+                    </div>
+                </div>
+                <textarea id="chat-input" maxlength="1000" rows="1" placeholder="{{ __('Message the table…') }}" aria-label="{{ __('Message the table') }}"></textarea>
+                <div class="table-chat__picker-anchor">
+                    <button type="button" class="table-chat__icon-btn" id="chat-attach-open" aria-label="@lang('Attach')"><i class="las la-paperclip"></i></button>
+                    <div class="attach-menu" id="attach-menu" hidden>
+                        <button type="button" data-accept="image/*,video/*"><i class="las la-image"></i>@lang('Photo / Video')</button>
+                        <button type="button" data-accept=".pdf,.txt,.csv,.zip,.doc,.docx"><i class="las la-file-alt"></i>@lang('Document')</button>
+                        <button type="button" data-accept="image/*" data-capture="environment"><i class="las la-camera"></i>@lang('Camera')</button>
+                    </div>
+                    <input id="chat-file" type="file" hidden>
+                </div>
+                <button class="table-chat__send" type="submit" id="chat-send" aria-label="{{ __('Send message') }}"><i class="las la-arrow-up"></i></button>
+                <button type="button" class="table-chat__voice" id="chat-voice" aria-label="@lang('Record voice note')"><i class="las la-microphone"></i></button>
+            </form>
             <p class="table-chat__error" id="chat-error" role="status"></p>
         </section>
         <div class="how-to-play" id="how-to-play" hidden role="dialog" aria-modal="true" aria-labelledby="how-to-play-title">
@@ -133,6 +162,82 @@
 .sound-control.is-muted #sound-toggle{color:var(--tm-muted,#929abc)}
 .sound-control #sound-volume{width:64px;accent-color:var(--tm-green,#00ef87)}
 @media(max-width:575px){.sound-control #sound-volume{display:none}}
+</style>
+@endpush
+@push('style')
+<style>
+/* ---- Chat redesign overrides (later in source order = wins over the base chat rules above) ---- */
+.table-chat__safety{display:flex;align-items:center;gap:7px;margin:10px 0 0;padding:8px 11px;border:1px solid rgba(255,204,112,.22);border-radius:11px;background:rgba(255,204,112,.06);color:#e8c88a;font-size:10.5px;line-height:1.4}
+.table-chat__safety i{flex:0 0 auto;font-size:14px}
+.table-chat__jump{display:flex;align-items:center;gap:6px;align-self:center;margin:-6px 0 8px;padding:6px 13px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:#122a22;color:var(--tm-green,#00ef87);font-size:11px;font-weight:800;cursor:pointer}
+.table-chat__jump[hidden]{display:none}
+.table-chat__reply{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;border-left:3px solid var(--tm-green,#00ef87);border-radius:9px;background:rgba(255,255,255,.04)}
+.table-chat__reply[hidden]{display:none}
+.table-chat__reply>div{min-width:0;flex:1}
+.table-chat__reply small{display:block;color:var(--tm-green,#00ef87);font-size:10px;font-weight:900}
+.table-chat__reply p{margin:1px 0 0;overflow:hidden;color:#c7cfea;font-size:11.5px;text-overflow:ellipsis;white-space:nowrap}
+.table-chat__reply button{display:grid;width:24px;height:24px;flex:0 0 auto;place-items:center;border:0;border-radius:8px;background:rgba(255,255,255,.06);color:var(--tm-muted,#929abc);cursor:pointer}
+.table-chat__record{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:9px 12px;border:1px solid rgba(255,129,152,.3);border-radius:14px;background:rgba(255,129,152,.06)}
+.table-chat__record[hidden]{display:none}
+.table-chat__record button{display:grid;width:32px;height:32px;flex:0 0 auto;place-items:center;border:0;border-radius:10px;cursor:pointer}
+#chat-record-cancel{background:rgba(255,255,255,.06);color:#ff95a6}
+.table-chat__record-stop{background:var(--tm-green,#00ef87);color:#062b1d}
+.table-chat__record-meter{display:flex;align-items:center;gap:2px;flex:1;height:26px}
+.table-chat__record-meter span{flex:1;min-width:2px;border-radius:2px;background:#ff95a6;transition:height .08s ease}
+.table-chat__record-time{flex:0 0 auto;color:#ff95a6;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums}
+.table-chat__picker-anchor{position:relative;display:flex}
+.table-chat__icon-btn{display:grid;width:36px;height:36px;place-items:center;border:0;border-radius:11px;background:transparent;color:var(--tm-muted,#929abc);font-size:18px;cursor:pointer}
+.table-chat__icon-btn:hover{background:rgba(255,255,255,.06);color:var(--tm-text,#f5f6ff)}
+.emoji-picker,.attach-menu{position:absolute;bottom:calc(100% + 8px);left:0;z-index:40;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:16px;background:#171d35;box-shadow:0 18px 44px rgba(0,0,0,.4)}
+.emoji-picker[hidden],.attach-menu[hidden]{display:none}
+.emoji-picker{width:min(300px,80vw);padding:10px}
+.emoji-picker__search{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 10px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:10px;background:#10142a}
+.emoji-picker__search i{color:var(--tm-muted,#929abc);font-size:13px}
+.emoji-picker__search input{flex:1;min-height:34px;border:0;background:transparent;color:var(--tm-text,#f5f6ff);font:inherit;font-size:12px;outline:0}
+.emoji-picker__tabs{display:flex;gap:3px;margin-bottom:6px;overflow-x:auto}
+.emoji-picker__tabs button{flex:0 0 auto;min-height:28px;padding:0 10px;border:0;border-radius:9px;background:transparent;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800;cursor:pointer}
+.emoji-picker__tabs button.is-active{background:rgba(0,239,135,.14);color:var(--tm-green,#00ef87)}
+.emoji-picker__grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-height:200px;overflow-y:auto}
+.emoji-picker__grid button{display:grid;aspect-ratio:1;place-items:center;border:0;border-radius:9px;background:transparent;font-size:19px;cursor:pointer}
+.emoji-picker__grid button:hover{background:rgba(255,255,255,.07)}
+.attach-menu{display:flex;flex-direction:column;min-width:190px;padding:6px;gap:2px}
+.attach-menu button{display:flex;align-items:center;gap:11px;min-height:40px;padding:0 11px;border:0;border-radius:10px;background:transparent;color:var(--tm-text,#f5f6ff);font-size:12.5px;font-weight:700;cursor:pointer}
+.attach-menu button:hover{background:rgba(0,239,135,.09);color:var(--tm-green,#00ef87)}
+.attach-menu button i{width:18px;font-size:16px}
+.table-chat__form{display:flex;align-items:center;gap:4px;padding:6px 7px;border:1px solid rgba(145,156,205,.22);border-radius:19px;background:#10162b;transition:border-color .18s,box-shadow .18s}
+.table-chat__form:focus-within{border-color:rgba(0,239,135,.55);box-shadow:0 0 0 3px rgba(0,239,135,.08)}
+.table-chat__form textarea{flex:1;min-width:0;min-height:38px;max-height:120px;margin:0 2px;padding:9px 2px;border:0;outline:0;resize:none;background:transparent;color:var(--tm-text,#f5f6ff);font:inherit;font-size:14px;line-height:1.4}
+.table-chat__form textarea::placeholder{color:#828daf;opacity:1}
+.table-chat__send,.table-chat__voice{display:none;place-items:center;width:40px;height:40px;flex:0 0 40px;border:0;border-radius:14px;background:var(--tm-green,#00ef87);color:#062b1d;font-size:18px;cursor:pointer;transition:filter .15s,transform .15s}
+.table-chat__send:hover,.table-chat__voice:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.table-chat__form.has-text .table-chat__send{display:grid}
+.table-chat__form:not(.has-text) .table-chat__voice{display:grid}
+.table-chat__avatar{display:grid;flex:0 0 26px;width:26px;height:26px;margin-right:7px;place-items:center;align-self:flex-end;border-radius:50%;background:var(--tm-raised);color:#c7cfea;font-size:10.5px;font-weight:950}
+.table-chat__row{display:flex;align-items:flex-end}
+.table-chat__row.is-mine{justify-content:flex-end}
+.table-chat__row.is-grouped .table-chat__avatar{visibility:hidden}
+.table-chat__date-sep{align-self:center;margin:4px 0;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--tm-muted,#929abc);font-size:10px;font-weight:800}
+.table-chat__reply-quote{margin:0 0 6px;padding:6px 9px;border-left:3px solid rgba(0,239,135,.5);border-radius:7px;background:rgba(0,0,0,.18);color:#aab3d4;font-size:11px}
+.table-chat__reply-quote strong{display:block;color:var(--tm-green,#00ef87);font-size:10px}
+.table-chat__ticks{margin-left:5px;font-size:12px;color:#8891b4}
+.table-chat__ticks.is-read{color:#5bb8ff}
+.table-chat__react-btn{display:inline-grid;width:22px;height:22px;margin-left:6px;place-items:center;border:0;border-radius:8px;background:rgba(255,255,255,.06);color:var(--tm-muted,#929abc);font-size:12px;cursor:pointer;vertical-align:middle}
+.table-chat__react-btn:hover{background:rgba(0,239,135,.14);color:var(--tm-green,#00ef87)}
+.table-chat__message{position:relative}
+.quick-react-popover{position:absolute;z-index:45;bottom:calc(100% + 6px);right:0;display:flex;gap:2px;padding:5px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:14px;background:#171d35;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.quick-react-popover button{display:grid;width:30px;height:30px;place-items:center;border:0;border-radius:9px;background:transparent;font-size:17px;cursor:pointer}
+.quick-react-popover button:hover{background:rgba(255,255,255,.08);transform:scale(1.15)}
+.table-chat__reactions:empty{display:none}
+.table-chat__voice-player{display:flex;align-items:center;gap:9px;min-width:220px;margin-top:4px}
+.table-chat__voice-player button{display:grid;width:34px;height:34px;flex:0 0 auto;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:var(--tm-text,#f5f6ff);font-size:15px;cursor:pointer}
+.table-chat__voice-track{position:relative;flex:1;height:26px;cursor:pointer}
+.table-chat__voice-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px}
+.table-chat__voice-bars span{flex:1;min-width:1px;border-radius:2px;background:rgba(255,255,255,.22)}
+.table-chat__voice-progress{position:absolute;inset:0 100% 0 0;overflow:hidden}
+.table-chat__voice-progress .table-chat__voice-bars span{background:var(--tm-green,#00ef87)}
+.table-chat__voice-time{flex:0 0 auto;color:var(--tm-muted,#929abc);font-size:10px;font-variant-numeric:tabular-nums}
+.table-chat__voice-speed{flex:0 0 auto;min-width:30px;height:22px;padding:0 6px;border-radius:7px;background:rgba(255,255,255,.08);color:var(--tm-text,#f5f6ff);font-size:10px;font-weight:800}
+@media(max-width:575px){.table-chat__form textarea{font-size:16px}.emoji-picker{width:min(280px,82vw)}}
 </style>
 @endpush
 @push('script')
@@ -265,17 +370,154 @@ document.querySelector('#match-start').onclick=()=>{window.TableSound?.play?.('c
 @endpush
 @push('script')
 <script>
-(()=>{const root=document.querySelector('#table-match');if(!root)return;const list=document.querySelector('#chat-messages'),empty=document.querySelector('#chat-empty'),error=document.querySelector('#chat-error'),hint=document.querySelector('#chat-hint'),user=Number(root.dataset.user),reactions=['👍','❤️','😂','👏','😮','🎉','👎'];let cursor=0,busy=false,recorder=null,chunks=[];
+(()=>{
+const root=document.querySelector('#table-match');if(!root)return;
+const list=document.querySelector('#chat-messages'),empty=document.querySelector('#chat-empty'),error=document.querySelector('#chat-error'),user=Number(root.dataset.user);
+const quickReactions=['👍','❤️','😂','👏','😮','🎉','👎'];
+let cursor=0,busy=false,recorder=null,chunks=[],replyToId=null,lastRenderedDate=null,lastRenderedUser=null,isAtBottom=true,unseenCount=0,recordTimer=null,recordStart=0,recordAnalyser=null,recordRaf=null;
 const headers={'Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf};
-function renderMessage(m){const existing=document.querySelector(`[data-chat-message="${m.id}"]`);if(existing){const bar=existing.querySelector('.table-chat__reactions');bar?.replaceChildren();for(const choice of reactions){const mine=(m.reactions||[]).find(r=>r.emoji===choice);const button=document.createElement('button');button.type='button';button.className=mine?.mine?'is-mine':'';button.textContent=mine?`${choice} ${mine.count}`:choice;button.onclick=()=>react(m.id,choice);bar?.append(button);}return;}empty?.remove();const row=document.createElement('article');row.className='table-chat__message'+(Number(m.user_id)===user?' is-mine':'');row.dataset.chatMessage=m.id;const meta=document.createElement('div');meta.className='table-chat__meta';const name=document.createElement('strong');name.textContent=m.name||'Player';const time=document.createElement('time');time.textContent=new Date(m.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});meta.append(name,time);row.append(meta);
-if(m.body){const body=document.createElement('p');body.className='table-chat__body';body.textContent=m.body;row.append(body);}if(m.attachment_url){if(m.kind==='voice'){const audio=document.createElement('audio');audio.className='table-chat__audio';audio.controls=true;audio.preload='none';audio.src=m.attachment_url;row.append(audio);}else if((m.attachment_mime||'').startsWith('image/')){const image=document.createElement('img');image.className='table-chat__image';image.src=m.attachment_url;image.alt=m.attachment_name||'Shared image';image.loading='lazy';row.append(image);}const link=document.createElement('a');link.className='table-chat__attachment';link.href=m.attachment_url;link.textContent=(m.kind==='voice'?'🎙️ Voice note: ':'📎 ')+(m.attachment_name||'Open shared file');link.target='_blank';link.rel='noopener';row.append(link);}
-const reactionBar=document.createElement('div');reactionBar.className='table-chat__reactions';for(const choice of reactions){const mine=(m.reactions||[]).find(r=>r.emoji===choice);const button=document.createElement('button');button.type='button';button.className=mine?.mine?'is-mine':'';button.textContent=mine?`${choice} ${mine.count}`:choice;button.setAttribute('aria-label',`${choice} reaction`);button.onclick=()=>react(m.id,choice);reactionBar.append(button);}row.append(reactionBar);list.append(row);cursor=Math.max(cursor,Number(m.id));list.scrollTop=list.scrollHeight;}
+
+/* ---- Emoji picker (shared by the composer button and per-message quick-react) ---- */
+const EMOJI={Smileys:['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴'],Gestures:['👍','👎','👏','🙌','👋','🤝','🙏','💪','👊','✊','🤞','✌️','🤟','🤙','👌','🫶','💅','👉','👈','👆','👇','✋','🤚'],Hearts:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝'],Game:['🎲','♟️','🃏','🀄','🎯','🏆','🥇','🥈','🥉','🎉','🎊','🔥','⚡','💰','💎','👑','🚀','⭐','✨','💯'],Faces2:['😎','🤓','🧐','🥳','😡','😠','🤬','😢','😭','😤','😱','😨','😰','😓','🤒','🤕','🤢','🥶','🥵','😵','🤯','😷']};
+const EMOJI_KEYWORDS={'👍':'thumbs up good yes','👎':'thumbs down bad no','❤️':'heart love','🔥':'fire hot','🎉':'party celebrate','🏆':'trophy win winner','😂':'laugh funny lol','😢':'sad cry','🤔':'thinking hmm','👏':'clap applause','🚀':'rocket fast','💰':'money cash','🎲':'dice game'};
+let emojiRecentKey='tableChatRecentEmoji';
+function recentEmoji(){try{return JSON.parse(localStorage.getItem(emojiRecentKey)||'[]');}catch(e){return [];}}
+function pushRecentEmoji(e){const list=[e,...recentEmoji().filter(x=>x!==e)].slice(0,16);try{localStorage.setItem(emojiRecentKey,JSON.stringify(list));}catch(err){}}
+
+const picker=document.querySelector('#emoji-picker'),pickerTabs=document.querySelector('#emoji-tabs'),pickerGrid=document.querySelector('#emoji-grid'),pickerSearch=document.querySelector('#emoji-search');
+let pickerTarget=null;
+function buildPickerTabs(){const cats=['Recent',...Object.keys(EMOJI)];pickerTabs.replaceChildren();cats.forEach((cat,i)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=cat;btn.className=i===0?'is-active':'';btn.onclick=()=>{pickerTabs.querySelectorAll('button').forEach(b=>b.classList.remove('is-active'));btn.classList.add('is-active');renderPickerGrid(cat);};pickerTabs.append(btn);});}
+function renderPickerGrid(cat){pickerGrid.replaceChildren();const items=cat==='Recent'?recentEmoji():(EMOJI[cat]||[]);items.forEach(e=>pickerGrid.append(makeEmojiButton(e)));}
+function makeEmojiButton(e){const btn=document.createElement('button');btn.type='button';btn.textContent=e;btn.onclick=()=>{pushRecentEmoji(e);pickerTarget?.(e);closePicker();};return btn;}
+function openPicker(anchorBtn,onPick){pickerTarget=onPick;picker.hidden=false;pickerSearch.value='';buildPickerTabs();renderPickerGrid('Recent');pickerSearch.focus();}
+function closePicker(){picker.hidden=true;pickerTarget=null;}
+/* Reactions are validated server-side against a fixed set of 7 emoji, so the react button
+   opens this small dedicated popover rather than the full emoji picker - picking anything
+   outside quickReactions would just fail server validation. */
+let quickReactPopover=null;
+function closeQuickReact(){quickReactPopover?.remove();quickReactPopover=null;}
+function openQuickReact(anchorBtn,onPick){if(quickReactPopover){closeQuickReact();return;}const pop=document.createElement('div');pop.className='quick-react-popover';quickReactions.forEach(e=>{const btn=document.createElement('button');btn.type='button';btn.textContent=e;btn.onclick=ev=>{ev.stopPropagation();onPick(e);closeQuickReact();};pop.append(btn);});anchorBtn.after(pop);quickReactPopover=pop;}
+document.addEventListener('click',e=>{if(quickReactPopover&&!quickReactPopover.contains(e.target))closeQuickReact();});
+pickerSearch?.addEventListener('input',()=>{const term=pickerSearch.value.trim().toLowerCase();if(!term){pickerTabs.hidden=false;renderPickerGrid('Recent');return;}pickerTabs.hidden=true;pickerGrid.replaceChildren();Object.values(EMOJI).flat().filter(e=>(EMOJI_KEYWORDS[e]||'').includes(term)).forEach(e=>pickerGrid.append(makeEmojiButton(e)));});
+document.querySelector('#chat-emoji-open')?.addEventListener('click',e=>{e.stopPropagation();if(!picker.hidden){closePicker();return;}openPicker(null,emoji=>{const start=composer.selectionStart||composer.value.length;composer.value=composer.value.slice(0,start)+emoji+composer.value.slice(start);composer.focus();syncComposerState();});});
+document.addEventListener('click',e=>{if(!picker.hidden&&!picker.contains(e.target)&&e.target.id!=='chat-emoji-open')closePicker();});
+
+/* ---- Attach menu ---- */
+const attachMenu=document.querySelector('#attach-menu'),fileInput=document.querySelector('#chat-file');
+document.querySelector('#chat-attach-open')?.addEventListener('click',e=>{e.stopPropagation();attachMenu.hidden=!attachMenu.hidden;});
+attachMenu?.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{fileInput.accept=btn.dataset.accept||'';if(btn.dataset.capture)fileInput.capture=btn.dataset.capture;else fileInput.removeAttribute('capture');attachMenu.hidden=true;fileInput.click();}));
+document.addEventListener('click',e=>{if(!attachMenu.hidden&&!attachMenu.contains(e.target)&&e.target.id!=='chat-attach-open')attachMenu.hidden=true;});
+
+/* ---- Reply-to ---- */
+const replyBar=document.querySelector('#chat-reply');
+function startReply(id,name,preview){replyToId=id;document.querySelector('#chat-reply-name').textContent='Replying to '+(name||'Player');document.querySelector('#chat-reply-preview').textContent=preview||'';replyBar.hidden=false;composer.focus();}
+document.querySelector('#chat-reply-cancel')?.addEventListener('click',()=>{replyToId=null;replyBar.hidden=true;});
+
+/* ---- Message rendering ---- */
+function formatTime(iso){return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function formatDateLabel(iso){const d=new Date(iso),today=new Date();const sameDay=a=>a.toDateString()===d.toDateString();if(sameDay(today))return 'Today';const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);if(sameDay(yesterday))return 'Yesterday';return d.toLocaleDateString([],{month:'short',day:'numeric'});}
+function buildReactionBar(container,m){container.replaceChildren();const counted=quickReactions.map(choice=>({choice,item:(m.reactions||[]).find(r=>r.emoji===choice)})).filter(x=>x.item);counted.forEach(({choice,item})=>{const button=document.createElement('button');button.type='button';button.className=item.mine?'is-mine':'';button.textContent=`${choice} ${item.count}`;button.setAttribute('aria-label',`${choice} reaction`);button.onclick=()=>react(m.id,choice);container.append(button);});}
+const voicePlayers=[];
+function buildVoicePlayer(url){const wrap=document.createElement('div');wrap.className='table-chat__voice-player';
+    const playBtn=document.createElement('button');playBtn.type='button';const playIcon=document.createElement('i');playIcon.className='las la-play';playBtn.append(playIcon);
+    const track=document.createElement('div');track.className='table-chat__voice-track';
+    const bars=document.createElement('div');bars.className='table-chat__voice-bars';const barHeights=Array.from({length:28},()=>18+Math.random()*82);barHeights.forEach(h=>{const b=document.createElement('span');b.style.height=h+'%';bars.append(b);});
+    const progress=document.createElement('div');progress.className='table-chat__voice-progress';const progressBars=document.createElement('div');progressBars.className='table-chat__voice-bars';barHeights.forEach(h=>{const b=document.createElement('span');b.style.height=h+'%';progressBars.append(b);});progress.append(progressBars);
+    track.append(bars,progress);
+    const time=document.createElement('span');time.className='table-chat__voice-time';time.textContent='0:00';
+    const speed=document.createElement('button');speed.type='button';speed.className='table-chat__voice-speed';speed.textContent='1x';
+    const audio=new Audio(url);audio.preload='none';let rate=1;
+    const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+    voicePlayers.push({audio,playIcon});
+    playBtn.onclick=()=>{if(audio.paused){voicePlayers.forEach(p=>{if(p.audio!==audio&&!p.audio.paused){p.audio.pause();p.playIcon.className='las la-play';}});window.TableSound?.unlock?.();audio.play().catch(()=>{error.textContent='Could not play this voice note.';});playIcon.className='las la-pause';}else{audio.pause();playIcon.className='las la-play';}};
+    audio.addEventListener('timeupdate',()=>{const pct=audio.duration?(audio.currentTime/audio.duration)*100:0;progress.style.inset='0 '+(100-pct)+'% 0 0';time.textContent=fmt(audio.duration&&!isFinite(audio.duration)?0:audio.duration-audio.currentTime);});
+    audio.addEventListener('loadedmetadata',()=>{if(isFinite(audio.duration))time.textContent=fmt(audio.duration);});
+    audio.addEventListener('ended',()=>{playIcon.className='las la-play';progress.style.inset='0 100% 0 0';});
+    track.addEventListener('click',e=>{if(!audio.duration)return;const rect=track.getBoundingClientRect();audio.currentTime=((e.clientX-rect.left)/rect.width)*audio.duration;});
+    speed.onclick=()=>{rate=rate===1?1.5:rate===1.5?2:1;audio.playbackRate=rate;speed.textContent=rate+'x';};
+    wrap.append(playBtn,track,time,speed);return wrap;}
+function renderMessage(m){
+    const existing=document.querySelector(`[data-chat-message="${m.id}"]`);
+    if(existing){buildReactionBar(existing.querySelector('.table-chat__reactions'),m);return;}
+    empty?.remove();
+    const dateLabel=formatDateLabel(m.time);
+    if(dateLabel!==lastRenderedDate){const sep=document.createElement('div');sep.className='table-chat__date-sep';sep.textContent=dateLabel;list.append(sep);lastRenderedDate=dateLabel;lastRenderedUser=null;}
+    const mine=Number(m.user_id)===user;
+    const grouped=!mine&&lastRenderedUser===m.user_id;
+    lastRenderedUser=mine?null:m.user_id;
+    const rowEl=document.createElement('div');rowEl.className='table-chat__row'+(mine?' is-mine':'')+(grouped?' is-grouped':'');
+    if(!mine){const avatar=document.createElement('span');avatar.className='table-chat__avatar';avatar.textContent=(m.name||'P').slice(0,1).toUpperCase();rowEl.append(avatar);}
+    const bubble=document.createElement('article');bubble.className='table-chat__message'+(mine?' is-mine':'');bubble.dataset.chatMessage=m.id;
+    if(!grouped){const meta=document.createElement('div');meta.className='table-chat__meta';const name=document.createElement('strong');name.textContent=m.name||'Player';const time=document.createElement('time');time.textContent=formatTime(m.time);meta.append(name,time);bubble.append(meta);}
+    if(m.reply_to){const quote=document.createElement('div');quote.className='table-chat__reply-quote';const who=document.createElement('strong');who.textContent=m.reply_to.name||'Player';const text=document.createElement('span');text.textContent=m.reply_to.preview||'';quote.append(who,text);bubble.append(quote);}
+    if(m.body){const body=document.createElement('p');body.className='table-chat__body';body.textContent=m.body;bubble.append(body);}
+    if(m.attachment_url){
+        if(m.kind==='voice'){bubble.append(buildVoicePlayer(m.attachment_url));}
+        else if((m.attachment_mime||'').startsWith('image/')){const image=document.createElement('img');image.className='table-chat__image';image.src=m.attachment_url;image.alt=m.attachment_name||'Shared image';image.loading='lazy';bubble.append(image);}
+        else{const link=document.createElement('a');link.className='table-chat__attachment';link.href=m.attachment_url;link.textContent='📎 '+(m.attachment_name||'Open shared file');link.target='_blank';link.rel='noopener';bubble.append(link);}
+    }
+    const footer=document.createElement('div');footer.style.display='flex';footer.style.alignItems='center';
+    const reactionBar=document.createElement('div');reactionBar.className='table-chat__reactions';buildReactionBar(reactionBar,m);footer.append(reactionBar);
+    const reactBtn=document.createElement('button');reactBtn.type='button';reactBtn.className='table-chat__react-btn';reactBtn.innerHTML='<i class="las la-smile-beam"></i>';reactBtn.setAttribute('aria-label','React');reactBtn.onclick=e=>{e.stopPropagation();openQuickReact(reactBtn,emoji=>react(m.id,emoji));};
+    const replyBtn=document.createElement('button');replyBtn.type='button';replyBtn.className='table-chat__react-btn';replyBtn.innerHTML='<i class="las la-reply"></i>';replyBtn.setAttribute('aria-label','Reply');replyBtn.onclick=()=>startReply(m.id,m.name,m.body||(m.kind==='voice'?'Voice note':(m.attachment_name||'Attachment')));
+    footer.append(reactBtn,replyBtn);
+    if(mine&&m.status){const ticks=document.createElement('span');ticks.className='table-chat__ticks'+(m.status==='read'?' is-read':'');ticks.innerHTML=m.status==='read'?'<i class="las la-check-double"></i>':'<i class="las la-check"></i>';footer.append(ticks);}
+    bubble.append(footer);
+    rowEl.append(bubble);list.append(rowEl);
+    cursor=Math.max(cursor,Number(m.id));
+    if(mine||isAtBottom){list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;}
+    else{unseenCount++;document.querySelector('#chat-jump-count').textContent=unseenCount;jumpBtn.hidden=false;}
+}
+const jumpBtn=document.querySelector('#chat-jump');
+list.addEventListener('scroll',()=>{isAtBottom=list.scrollHeight-list.scrollTop-list.clientHeight<60;if(isAtBottom){unseenCount=0;jumpBtn.hidden=true;}});
+jumpBtn.addEventListener('click',()=>{list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;});
+
 async function getMessages(){if(busy||document.hidden)return;busy=true;try{const url=new URL(root.dataset.chat,location.href);url.searchParams.set('after',cursor);const response=await fetch(url,{headers,cache:'no-store'});if(!response.ok)throw new Error('Chat could not reconnect.');const data=await response.json();(data.messages||[]).forEach(renderMessage);error.textContent='';}catch(e){error.textContent=e.message;}finally{busy=false;}}
-async function react(id,emoji){try{const url=root.dataset.reactionTemplate.replace('__MESSAGE__',id);const response=await fetch(url,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({emoji})});if(!response.ok)throw new Error('Reaction could not be saved.');const data=await response.json();const card=document.querySelector(`[data-chat-message="${id}"]`),bar=card?.querySelector('.table-chat__reactions');if(!bar)return;bar.replaceChildren();for(const choice of reactions){const item=data.reactions.find(r=>r.emoji===choice);const button=document.createElement('button');button.type='button';button.className=item?.mine?'is-mine':'';button.textContent=item?`${choice} ${item.count}`:choice;button.onclick=()=>react(id,choice);bar.append(button);}}catch(e){error.textContent=e.message;}}
-const composer=document.querySelector('#chat-input');function resizeComposer(){composer.style.height='auto';composer.style.height=Math.min(composer.scrollHeight,160)+'px';composer.style.overflowY=composer.scrollHeight>160?'auto':'hidden';}resizeComposer();composer.addEventListener('input',resizeComposer);
-async function send(form){error.textContent='';hint.textContent='Sending…';try{const response=await fetch(root.dataset.chatSend,{method:'POST',headers,body:form});const data=await response.json();if(!response.ok)throw new Error(data.message||'Message could not be sent.');renderMessage(data.message);composer.value='';resizeComposer();document.querySelector('#chat-file').value='';hint.textContent='Files up to 10 MB';}catch(e){error.textContent=e.message;hint.textContent='Files up to 10 MB';}}
-document.querySelector('#chat-form').addEventListener('submit',event=>{event.preventDefault();const text=composer.value.trim();if(!text)return;const data=new FormData();data.append('body',text);data.append('kind','text');send(data);});composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.querySelector('#chat-form').requestSubmit();}});document.querySelector('#chat-file').addEventListener('change',event=>{const file=event.target.files?.[0];if(!file)return;const data=new FormData();data.append('attachment',file);data.append('kind','file');send(data);});
-const voice=document.querySelector('#chat-voice');voice.addEventListener('click',async()=>{if(recorder?.state==='recording'){recorder.stop();voice.classList.remove('is-recording');voice.querySelector('span').textContent='Voice note';return;}if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){error.textContent='Voice recording is not supported by this browser.';return;}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};recorder.onstop=()=>{stream.getTracks().forEach(track=>track.stop());const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(blob.size>10*1024*1024){error.textContent='Voice notes must be under 10 MB.';return;}const data=new FormData();const mime=blob.type.split(';')[0],extension=mime==='audio/webm'?'webm':mime==='audio/mp4'?'m4a':(mime.split('/')[1]||'ogg');data.append('attachment',blob,`voice-note.${extension}`);data.append('kind','voice');send(data);};recorder.start();voice.classList.add('is-recording');voice.querySelector('span').textContent='Stop recording';hint.textContent='Recording… tap to finish';}catch(e){error.textContent='Allow microphone access to record a voice note.';}});
+async function react(id,emoji){try{const url=root.dataset.reactionTemplate.replace('__MESSAGE__',id);const response=await fetch(url,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({emoji})});if(!response.ok)throw new Error('Reaction could not be saved.');const data=await response.json();const card=document.querySelector(`[data-chat-message="${id}"]`),bar=card?.querySelector('.table-chat__reactions');if(!bar)return;bar.replaceChildren();quickReactions.forEach(choice=>{const item=data.reactions.find(r=>r.emoji===choice);if(!item)return;const button=document.createElement('button');button.type='button';button.className=item.mine?'is-mine':'';button.textContent=`${choice} ${item.count}`;button.onclick=()=>react(id,choice);bar.append(button);});}catch(e){error.textContent=e.message;}}
+
+/* ---- Composer ---- */
+const composer=document.querySelector('#chat-input'),chatForm=document.querySelector('#chat-form');
+function resizeComposer(){composer.style.height='auto';composer.style.height=Math.min(composer.scrollHeight,160)+'px';}
+function syncComposerState(){resizeComposer();chatForm.classList.toggle('has-text',composer.value.trim().length>0);}
+resizeComposer();composer.addEventListener('input',syncComposerState);
+async function send(form){error.textContent='';try{if(replyToId)form.append('reply_to_id',replyToId);const response=await fetch(root.dataset.chatSend,{method:'POST',headers,body:form});const data=await response.json();if(!response.ok)throw new Error(data.message||'Message could not be sent.');renderMessage(data.message);window.TableSound?.play?.('click');composer.value='';syncComposerState();fileInput.value='';replyToId=null;replyBar.hidden=true;}catch(e){error.textContent=e.message;}}
+chatForm.addEventListener('submit',event=>{event.preventDefault();const text=composer.value.trim();if(!text)return;const data=new FormData();data.append('body',text);data.append('kind','text');send(data);});
+composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatForm.requestSubmit();}});
+fileInput.addEventListener('change',event=>{const file=event.target.files?.[0];if(!file)return;const data=new FormData();data.append('attachment',file);data.append('kind','file');send(data);});
+
+/* ---- Voice recording ---- */
+const recordBar=document.querySelector('#chat-record'),recordMeter=document.querySelector('#chat-record-meter'),recordTime=document.querySelector('#chat-record-time');
+for(let i=0;i<24;i++){const bar=document.createElement('span');bar.style.height='10%';recordMeter.append(bar);}
+function tickRecordTimer(){const elapsed=Math.floor((Date.now()-recordStart)/1000);recordTime.textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');}
+function animateMeter(){if(!recordAnalyser)return;const data=new Uint8Array(recordAnalyser.frequencyBinCount);recordAnalyser.getByteFrequencyData(data);const bars=recordMeter.children;for(let i=0;i<bars.length;i++){const v=data[Math.floor(i*data.length/bars.length)]||0;bars[i].style.height=Math.max(10,(v/255)*100)+'%';}recordRaf=requestAnimationFrame(animateMeter);}
+let recordStream=null;
+async function startRecording(){if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){error.textContent='Voice recording is not supported by this browser.';return;}
+    try{
+        recordStream=await navigator.mediaDevices.getUserMedia({audio:true});
+        window.TableSound?.unlock?.();
+        chunks=[];recorder=new MediaRecorder(recordStream);
+        recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};
+        recorder.onstop=()=>{recordStream.getTracks().forEach(track=>track.stop());cancelAnimationFrame(recordRaf);clearInterval(recordTimer);recordBar.hidden=true;recordAnalyser=null;};
+        recorder.start();
+        const AudioCtx=window.AudioContext||window.webkitAudioContext;
+        if(AudioCtx){const ctx=new AudioCtx();const source=ctx.createMediaStreamSource(recordStream);recordAnalyser=ctx.createAnalyser();recordAnalyser.fftSize=64;source.connect(recordAnalyser);animateMeter();}
+        recordStart=Date.now();recordTime.textContent='0:00';recordTimer=setInterval(tickRecordTimer,1000);recordBar.hidden=false;
+    }catch(e){error.textContent='Allow microphone access to record a voice note.';}
+}
+function finishRecording(shouldSend){if(recorder?.state!=='recording'){return;}
+    const onstopOriginal=recorder.onstop;
+    recorder.onstop=()=>{onstopOriginal();
+        if(shouldSend){const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(blob.size>10*1024*1024){error.textContent='Voice notes must be under 10 MB.';return;}
+            const mime=blob.type.split(';')[0],extension=mime==='audio/webm'?'webm':mime==='audio/mp4'?'m4a':(mime.split('/')[1]||'ogg');
+            const data=new FormData();data.append('attachment',blob,`voice-note.${extension}`);data.append('kind','voice');send(data);
+        }
+    };
+    recorder.stop();
+}
+document.querySelector('#chat-voice')?.addEventListener('click',startRecording);
+document.querySelector('#chat-record-stop')?.addEventListener('click',()=>finishRecording(true));
+document.querySelector('#chat-record-cancel')?.addEventListener('click',()=>finishRecording(false));
+
 getMessages();const poll=()=>setTimeout(async()=>{await getMessages();poll();},document.hidden?7000:2500);poll();document.addEventListener('visibilitychange',()=>{if(!document.hidden){getMessages();}});
 })();
 </script>

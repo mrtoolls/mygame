@@ -158,11 +158,17 @@ class TableGameController extends Controller
 
     public function messages(Request $request, string $id)
     {
-        $this->authorizeSeat($request, $id);
-        $messages = TableGameMessage::with('user:id,username')->where('table_game_id', $id)->orderByDesc('id')->limit(40)->get()->sortBy('id')->values();
+        $player = $this->authorizeSeat($request, $id);
+        if (Schema::hasColumn('table_game_players', 'last_seen_at')) {
+            $player->forceFill(['last_seen_at' => now()])->saveQuietly();
+        }
+        $messages = TableGameMessage::with(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username'])->where('table_game_id', $id)->orderByDesc('id')->limit(40)->get()->sortBy('id')->values();
         $ids = $messages->pluck('id');
         $reactions = TableGameMessageReaction::whereIn('message_id', $ids)->get()->groupBy('message_id');
-        return response()->json(['messages' => $messages->map(fn ($message) => $this->messagePayload($message, $reactions->get($message->id, collect()), (int) $request->user()->id))->values()]);
+        $otherSeenAt = Schema::hasColumn('table_game_players', 'last_seen_at')
+            ? TableGamePlayer::where('table_game_id', $id)->where('user_id', '!=', $request->user()->id)->pluck('last_seen_at')->filter()->map(fn ($value) => \Carbon\Carbon::parse($value))
+            : collect();
+        return response()->json(['messages' => $messages->map(fn ($message) => $this->messagePayload($message, $reactions->get($message->id, collect()), (int) $request->user()->id, $otherSeenAt))->values()]);
     }
 
     public function sendMessage(Request $request, string $id)
@@ -172,17 +178,22 @@ class TableGameController extends Controller
             'body' => 'nullable|string|max:1000|required_without:attachment',
             'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,webm,mp4,3gp|required_without:body',
             'kind' => 'nullable|in:text,file,voice',
+            'reply_to_id' => 'nullable|integer',
         ]);
         $body = trim((string) $request->input('body', ''));
         if (!$request->hasFile('attachment') && $body === '') return response()->json(['message' => 'Write a message or attach a file.'], 422);
         $file = $request->file('attachment');
         $kind = $file ? ($request->input('kind') === 'voice' ? 'voice' : 'file') : 'text';
         if ($kind === 'voice' && (!$file || !str_starts_with((string) $file->getMimeType(), 'audio/'))) return response()->json(['message' => 'Voice notes must be an audio recording.'], 422);
+        $replyToId = null;
+        if ($request->filled('reply_to_id') && Schema::hasColumn('table_game_messages', 'reply_to_id')) {
+            $replyToId = TableGameMessage::where('table_game_id', $id)->whereKey($request->input('reply_to_id'))->value('id');
+        }
         $path = $file?->storeAs('table-game-chat/' . $id, Str::uuid() . '.' . strtolower($file->getClientOriginalExtension() ?: 'bin'), 'local');
         try {
             $message = TableGameMessage::create([
                 'table_game_id' => $id, 'user_id' => $request->user()->id, 'kind' => $kind,
-                'body' => $body !== '' ? $body : null, 'attachment_path' => $path,
+                'body' => $body !== '' ? $body : null, 'attachment_path' => $path, 'reply_to_id' => $replyToId,
                 'attachment_name' => $file ? basename($file->getClientOriginalName()) : null,
                 'attachment_mime' => $file?->getMimeType(), 'attachment_size' => $file?->getSize(),
             ]);
@@ -190,7 +201,8 @@ class TableGameController extends Controller
             if ($path) Storage::disk('local')->delete($path);
             throw $exception;
         }
-        return response()->json(['message' => $this->messagePayload($message->load('user:id,username'), collect(), (int) $request->user()->id)], 201);
+        $message->load(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username']);
+        return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
     }
 
     public function react(Request $request, string $id, int $message)
@@ -220,15 +232,26 @@ class TableGameController extends Controller
         return Storage::disk('local')->download($record->attachment_path, $record->attachment_name ?: 'table-attachment', ['X-Content-Type-Options' => 'nosniff']);
     }
 
-    private function authorizeSeat(Request $request, string $id): void
+    private function authorizeSeat(Request $request, string $id): TableGamePlayer
     {
-        abort_unless(TableGamePlayer::where('table_game_id', $id)->where('user_id', $request->user()->id)->exists(), 403);
+        $player = TableGamePlayer::where('table_game_id', $id)->where('user_id', $request->user()->id)->first();
+        abort_unless($player, 403);
+        return $player;
     }
 
-    private function messagePayload(TableGameMessage $message, $reactions, int $userId): array
+    private function messagePayload(TableGameMessage $message, $reactions, int $userId, $otherSeenAt = null): array
     {
+        $status = null;
+        if ($message->user_id === $userId && $otherSeenAt !== null && $otherSeenAt->isNotEmpty()) {
+            $status = $otherSeenAt->contains(fn ($seenAt) => $seenAt->greaterThanOrEqualTo($message->created_at)) ? 'read' : 'sent';
+        }
+        $replyTo = $message->replyTo ? [
+            'id' => $message->replyTo->id,
+            'name' => $message->replyTo->user?->username,
+            'preview' => $message->replyTo->body ?: ($message->replyTo->kind === 'voice' ? 'Voice note' : ($message->replyTo->attachment_name ?: 'Attachment')),
+        ] : null;
         return ['id' => $message->id, 'user_id' => $message->user_id, 'name' => $message->user?->username, 'kind' => $message->kind,
-            'body' => $message->body, 'time' => $message->created_at?->toIso8601String(),
+            'body' => $message->body, 'time' => $message->created_at?->toIso8601String(), 'status' => $status, 'reply_to' => $replyTo,
             'attachment_name' => $message->attachment_name, 'attachment_mime' => $message->attachment_mime, 'attachment_url' => $message->attachment_path ? route('user.tables.chat.attachment', [$message->table_game_id, $message->id]) : null,
             'reactions' => $this->reactionPayload($reactions, $userId)];
     }
