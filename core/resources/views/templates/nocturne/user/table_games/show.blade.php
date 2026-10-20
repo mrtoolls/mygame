@@ -718,20 +718,48 @@ const voicePlayers=[];
 function buildVoicePlayer(url){const wrap=document.createElement('div');wrap.className='table-chat__voice-player';
     const playBtn=document.createElement('button');playBtn.type='button';const playIcon=document.createElement('i');playIcon.className='las la-play';playBtn.append(playIcon);
     const track=document.createElement('div');track.className='table-chat__voice-track';
-    const bars=document.createElement('div');bars.className='table-chat__voice-bars';const barHeights=Array.from({length:28},()=>18+Math.random()*82);barHeights.forEach(h=>{const b=document.createElement('span');b.style.height=h+'%';bars.append(b);});
+    const bars=document.createElement('div');bars.className='table-chat__voice-bars';let barHeights=Array.from({length:28},()=>18+Math.random()*82);barHeights.forEach(h=>{const b=document.createElement('span');b.style.height=h+'%';bars.append(b);});
     const progress=document.createElement('div');progress.className='table-chat__voice-progress';const progressBars=document.createElement('div');progressBars.className='table-chat__voice-bars';barHeights.forEach(h=>{const b=document.createElement('span');b.style.height=h+'%';progressBars.append(b);});progress.append(progressBars);
     track.append(bars,progress);
     const time=document.createElement('span');time.className='table-chat__voice-time';time.textContent='0:00';
     const speed=document.createElement('button');speed.type='button';speed.className='table-chat__voice-speed';speed.textContent='1x';
-    const audio=new Audio(url);audio.preload='none';let rate=1;
-    const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+    const audio=new Audio(url);audio.preload='metadata';let rate=1,realDuration=null;
+    const fmt=s=>{if(!isFinite(s))return'0:00';s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+    const durationOf=()=>realDuration??(isFinite(audio.duration)?audio.duration:null);
     voicePlayers.push({audio,playIcon});
     playBtn.onclick=()=>{if(audio.paused){voicePlayers.forEach(p=>{if(p.audio!==audio&&!p.audio.paused){p.audio.pause();p.playIcon.className='las la-play';}});window.TableSound?.unlock?.();audio.play().catch(()=>{error.textContent='Could not play this voice note.';});playIcon.className='las la-pause';}else{audio.pause();playIcon.className='las la-play';}};
-    audio.addEventListener('timeupdate',()=>{const pct=audio.duration?(audio.currentTime/audio.duration)*100:0;progress.style.inset='0 '+(100-pct)+'% 0 0';time.textContent=fmt(audio.duration&&!isFinite(audio.duration)?0:audio.duration-audio.currentTime);});
-    audio.addEventListener('loadedmetadata',()=>{if(isFinite(audio.duration))time.textContent=fmt(audio.duration);});
+    audio.addEventListener('timeupdate',()=>{const total=durationOf();const pct=total?(audio.currentTime/total)*100:0;progress.style.inset='0 '+(100-pct)+'% 0 0';time.textContent=fmt(total?total-audio.currentTime:0);});
+    // Chrome/Firefox report duration:Infinity for MediaRecorder-produced webm (no duration box in
+    // the container) until the stream is scrubbed once - this forces that scrub silently so the
+    // scrubber/time display have a real duration instead of staying stuck at "0:00"/breaking seek.
+    audio.addEventListener('loadedmetadata',()=>{
+        if(isFinite(audio.duration)){time.textContent=fmt(audio.duration);return;}
+        audio.addEventListener('durationchange',function onDurationChange(){
+            if(!isFinite(audio.duration))return;
+            audio.removeEventListener('durationchange',onDurationChange);
+            realDuration=audio.duration;time.textContent=fmt(realDuration);audio.currentTime=0;
+        });
+        audio.currentTime=1e101;
+    });
     audio.addEventListener('ended',()=>{playIcon.className='las la-play';progress.style.inset='0 100% 0 0';});
-    track.addEventListener('click',e=>{if(!audio.duration)return;const rect=track.getBoundingClientRect();audio.currentTime=((e.clientX-rect.left)/rect.width)*audio.duration;});
+    track.addEventListener('click',e=>{const total=durationOf();if(!total)return;const rect=track.getBoundingClientRect();audio.currentTime=Math.max(0,Math.min(total,((e.clientX-rect.left)/rect.width)*total));});
     speed.onclick=()=>{rate=rate===1?1.5:rate===1.5?2:1;audio.playbackRate=rate;speed.textContent=rate+'x';};
+    // Progressive enhancement: replace the placeholder bars with a waveform drawn from the real
+    // decoded audio once it's available, same as every modern voice-note UI - falls back to the
+    // placeholder bars (already shown) if decoding isn't supported or the fetch/decode fails.
+    (async()=>{
+        try{
+            const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;
+            const response=await fetch(url);const buffer=await response.arrayBuffer();
+            const ctx=new AudioCtx();const audioBuffer=await ctx.decodeAudioData(buffer);
+            const channel=audioBuffer.getChannelData(0);const bucketSize=Math.max(1,Math.floor(channel.length/barHeights.length));
+            const peaks=barHeights.map((_,i)=>{let max=0;const start=i*bucketSize;for(let j=start;j<start+bucketSize&&j<channel.length;j++){const v=Math.abs(channel[j]);if(v>max)max=v;}return max;});
+            const maxPeak=Math.max(...peaks,.01);
+            barHeights=peaks.map(p=>12+(p/maxPeak)*88);
+            [bars,progressBars].forEach(container=>{Array.from(container.children).forEach((b,i)=>{b.style.height=barHeights[i]+'%';});});
+            ctx.close?.();
+        }catch(e){/* keep the placeholder bars */}
+    })();
     wrap.append(playBtn,track,time,speed);return wrap;}
 function renderMessage(m){
     const existing=document.querySelector(`[data-chat-message="${m.id}"]`);
