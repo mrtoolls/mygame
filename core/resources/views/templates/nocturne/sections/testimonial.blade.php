@@ -1,7 +1,7 @@
 @php
     $testimonialContent = getContent('testimonial.content', true);
     $testimonials = getContent('testimonial.element', orderById: true);
-    $playerFeedback = \Illuminate\Support\Facades\Schema::hasTable('user_feedback') ? \App\Models\UserFeedback::approved()->latest('approved_at')->take(6)->get() : collect();
+    $playerFeedback = \Illuminate\Support\Facades\Schema::hasTable('user_feedback') ? \App\Models\UserFeedback::approved()->with('user:id,username,image')->latest('approved_at')->take(6)->get() : collect();
 @endphp
 @if ($testimonials->count() || $playerFeedback->count())
     <section class="nocturne-section">
@@ -23,7 +23,7 @@
                 </div>
             @endforeach
             @foreach ($playerFeedback as $feedback)
-                <div class="nocturne-review-card"><div class="nocturne-review-card__head"><span class="nocturne-feedback-avatar"><i class="ph-fill ph-user"></i></span><div><strong>{{ $feedback->display_name }}</strong><span class="nocturne-review-card__stars">@for($i=0;$i<$feedback->rating;$i++)<i class="ph-bold ph-star"></i>@endfor</span></div></div><p>{{ $feedback->message }}</p></div>
+                <div class="nocturne-review-card"><div class="nocturne-review-card__head"><span class="nocturne-feedback-avatar">@if($feedback->user?->avatarUrl())<img src="{{ $feedback->user->avatarUrl() }}" alt="">@else<i class="ph-fill ph-user"></i>@endif</span><div><strong>{{ $feedback->display_name }}</strong><span class="nocturne-review-card__stars">@for($i=0;$i<$feedback->rating;$i++)<i class="ph-bold ph-star"></i>@endfor</span></div></div><p>{{ $feedback->message }}</p></div>
             @endforeach
         </div>
     </section>

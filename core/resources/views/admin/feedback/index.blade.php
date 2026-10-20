@@ -17,13 +17,23 @@
             <p class="mt-3" id="feedback-view-{{ $feedback->id }}">{{ $feedback->message }}</p>
             @if($feedback->image)<a href="{{ getImage('assets/images/user-feedback/'.$feedback->image) }}" target="_blank"><img src="{{ getImage('assets/images/user-feedback/'.$feedback->image) }}" alt="Feedback attachment" style="max-width:180px;max-height:140px;border-radius:12px"></a>@endif
 
-            <form method="post" action="{{ route('admin.feedback.update',$feedback->id) }}" id="feedback-edit-{{ $feedback->id }}" class="d-none mt-3">
+            <form method="post" action="{{ route('admin.feedback.update',$feedback->id) }}" id="feedback-edit-{{ $feedback->id }}" class="d-none mt-3" enctype="multipart/form-data">
                 @csrf
                 <div class="row g-2">
                     <div class="col-sm-6"><label class="form-label">Display name</label><input name="display_name" class="form-control form-control-sm" value="{{ $feedback->display_name }}" required></div>
                     <div class="col-sm-3"><label class="form-label">Player since</label><input name="player_since" type="number" class="form-control form-control-sm" value="{{ $feedback->player_since }}"></div>
                     <div class="col-sm-3"><label class="form-label">Rating</label><select name="rating" class="form-control form-control-sm">@for($r=1;$r<=5;$r++)<option value="{{ $r }}" @selected($feedback->rating==$r)>{{ $r }} star{{ $r>1?'s':'' }}</option>@endfor</select></div>
                     <div class="col-12"><label class="form-label">Message</label><textarea name="message" class="form-control form-control-sm" rows="3" required>{{ $feedback->message }}</textarea></div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Proof image</label>
+                        <input type="file" name="image" accept=".jpg,.jpeg,.png" class="form-control form-control-sm">
+                    </div>
+                    @if($feedback->image)
+                        <div class="col-sm-6 d-flex align-items-center gap-2">
+                            <img src="{{ getImage('assets/images/user-feedback/'.$feedback->image) }}" alt="" style="max-width:70px;max-height:55px;border-radius:8px">
+                            <label class="form-label mb-0"><input type="checkbox" name="remove_image" value="1"> Remove current image</label>
+                        </div>
+                    @endif
                 </div>
                 <div class="mt-2 d-flex gap-2"><button class="btn btn--primary btn-sm">Save changes</button><button type="button" class="btn btn--dark btn-sm" onclick="document.getElementById('feedback-edit-{{ $feedback->id }}').classList.add('d-none');document.getElementById('feedback-view-{{ $feedback->id }}').classList.remove('d-none')">Cancel</button></div>
             </form>

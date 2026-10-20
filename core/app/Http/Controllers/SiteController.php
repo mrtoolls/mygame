@@ -38,7 +38,7 @@ class SiteController extends Controller {
         $sections    = $page->secs;
         if ($slug === 'feedback-about-us') {
             $sections = json_encode(['feedback_hero', 'feedback_form', 'feedback_reviews']);
-            $feedbacks = Schema::hasTable('user_feedback') ? UserFeedback::approved()->latest('approved_at')->paginate(9) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 9);
+            $feedbacks = Schema::hasTable('user_feedback') ? UserFeedback::approved()->with('user:id,username,image')->latest('approved_at')->paginate(9) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 9);
             $feedbackStats = Schema::hasTable('user_feedback') ? ['count' => UserFeedback::approved()->count(), 'average' => round((float) UserFeedback::approved()->avg('rating'), 2)] : ['count' => 0, 'average' => 0];
         }
         $seoContents = $page->seo_content;

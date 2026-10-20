@@ -49,14 +49,35 @@ class FeedbackAdminController extends Controller
             'player_since' => 'nullable|integer|min:1900|max:' . date('Y'),
             'rating' => 'required|integer|min:1|max:5',
             'message' => 'required|string|max:1500',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
-        UserFeedback::whereKey($id)->firstOrFail()->update($data);
+
+        $feedback = UserFeedback::whereKey($id)->firstOrFail();
+        $oldImage = $feedback->image;
+
+        if ($request->hasFile('image')) {
+            $data['image'] = fileUploader($request->file('image'), 'assets/images/user-feedback');
+        } elseif ($request->boolean('remove_image')) {
+            $data['image'] = null;
+        }
+        unset($data['remove_image']);
+
+        $feedback->update($data);
+
+        if ($oldImage && $oldImage !== $feedback->image) {
+            @unlink('assets/images/user-feedback/' . $oldImage);
+        }
+
         return back()->withNotify([['success', 'Feedback updated.']]);
     }
 
     public function destroy($id)
     {
-        UserFeedback::whereKey($id)->firstOrFail()->delete();
+        $feedback = UserFeedback::whereKey($id)->firstOrFail();
+        $image = $feedback->image;
+        $feedback->delete();
+        if ($image) @unlink('assets/images/user-feedback/' . $image);
         return back()->withNotify([['success', 'Feedback deleted.']]);
     }
 }
