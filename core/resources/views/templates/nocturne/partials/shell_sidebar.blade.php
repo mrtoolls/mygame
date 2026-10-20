@@ -3,7 +3,7 @@
     <div class="nocturne-sidebar-scroll">
         <div class="nocturne-game-tabs" aria-label="@lang('Catalogue')">
             <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i>@lang('Games')</a>
-            <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-diamond"></i>@lang('Slots')</a>
+            <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-bold ph-broadcast"></i>@lang('Live')</a>
         </div>
         @php
             $bonusCountdown = getContent('bonus_countdown.content', true);
@@ -55,7 +55,7 @@
 <nav class="nocturne-mobile-nav" aria-label="@lang('Quick navigation')">
     <button class="nocturne-mobile-menu" type="button"><i class="ph-bold ph-squares-four"></i><span>@lang('Menu')</span></button>
     <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-dice-five"></i><span>@lang('Games')</span></a>
-    <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-bold ph-diamond"></i><span>@lang('Slots')</span></a>
+    <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-bold ph-broadcast"></i><span>@lang('Live')</span></a>
     @auth
         <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-bold ph-gift"></i><span>@lang('Bonuses')</span></a>
         <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-bold ph-user"></i><span>@lang('Profile')</span></a>

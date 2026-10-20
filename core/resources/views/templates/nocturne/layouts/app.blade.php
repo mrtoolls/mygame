@@ -554,6 +554,26 @@
         // two-finger gesture despite it - this is the app, not a web page, it shouldn't move.
         document.addEventListener('gesturestart', (e) => e.preventDefault());
     </script>
+    @auth
+        <script>
+            // Feeds the public "Total Players Online" counter - a deliberate periodic ping
+            // (not a middleware on every request) so write frequency stays fully controlled
+            // here, not on every page load. Only pings while the tab is actually visible.
+            (function () {
+                function ping() {
+                    if (document.hidden) return;
+                    fetch('{{ route('user.presence.ping') }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', Accept: 'application/json' },
+                        keepalive: true,
+                    }).catch(() => {});
+                }
+                ping();
+                setInterval(ping, 60000);
+                document.addEventListener('visibilitychange', () => { if (!document.hidden) ping(); });
+            })();
+        </script>
+    @endauth
     @if (request()->routeIs('home') || request()->routeIs('user.home'))
         @include('partials.support_chat_widget')
     @endif

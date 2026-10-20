@@ -36,6 +36,7 @@ Route::namespace('User\Auth')->name('user.')->middleware('guest')->group(functio
 Route::middleware('auth')->name('user.')->group(function () {
     Route::get('user-data', 'User\UserController@userData')->name('data');
     Route::post('user-data-submit', 'User\UserController@userDataSubmit')->name('data.submit');
+    Route::post('presence/ping', 'User\PresenceController@ping')->name('presence.ping')->middleware('throttle:10,1');
 
     //authorization
     Route::middleware('registration.complete')->namespace('User')->controller('AuthorizationController')->group(function () {

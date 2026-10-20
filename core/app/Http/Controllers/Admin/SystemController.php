@@ -364,7 +364,7 @@ class SystemController extends Controller
             'about_statistics' => [
                 ['title' => 'Total Players Online', 'amount' => '—'],
                 ['title' => 'Total Registered Players', 'amount' => '—'],
-                ['title' => 'Total Paid to Players', 'amount' => '—'],
+                ['title' => 'Total Games Available', 'amount' => '—'],
             ],
             'about_links' => [
                 ['title' => 'Feedback About Us', 'button_url' => '/feedback-about-us'],

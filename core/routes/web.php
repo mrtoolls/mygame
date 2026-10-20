@@ -8,6 +8,8 @@ Route::get('/clear', function () {
 
 Route::get('cron', 'CronController@cron')->name('cron');
 
+Route::get('stats/live', 'StatsController@live')->name('stats.live')->middleware('throttle:30,1');
+
 Route::prefix('support-chat')->name('support-chat.')->controller('SupportChatController')->group(function () {
     Route::get('active', 'active')->name('active')->middleware('throttle:30,1');
     Route::get('agents', 'agents')->name('agents')->middleware('throttle:60,1');
