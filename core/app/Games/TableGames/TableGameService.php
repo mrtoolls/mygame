@@ -410,9 +410,16 @@ class TableGameService
 
         // Record this poll as "still watching" regardless of whether anything changed (the
         // unchanged-version short-circuit below would otherwise skip it on most polls), guarded
-        // since the migration may not have run yet right after a deploy.
+        // since the migration may not have run yet right after a deploy. The client polls this
+        // endpoint roughly once a second, so writing on every single poll (one write/sec/viewer)
+        // was a real source of extra DB load; only write when the existing row is actually stale,
+        // which turns that into one write per ~8 seconds per viewer - a cheap indexed SELECT every
+        // poll is far lighter than a write.
         if (Schema::hasTable('table_game_viewers')) {
-            TableGameViewer::updateOrCreate(['table_game_id' => $table->id, 'user_id' => $user->id], ['last_seen_at' => now()]);
+            $viewer = TableGameViewer::where('table_game_id', $table->id)->where('user_id', $user->id)->first();
+            if (!$viewer || !$viewer->last_seen_at || $viewer->last_seen_at->lt(now()->subSeconds(8))) {
+                TableGameViewer::updateOrCreate(['table_game_id' => $table->id, 'user_id' => $user->id], ['last_seen_at' => now()]);
+            }
         }
 
         if ($sinceVersion !== null && $sinceVersion === (int) $table->version) {
