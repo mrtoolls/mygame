@@ -7,42 +7,30 @@
         <span class="nocturne-eyebrow"><i class="ph-bold ph-handshake"></i> {{ __(@$content->data_values->heading ?: 'Sponsorships') }}</span>
         <p>{{ __(@$content->data_values->subheading) }}</p>
     </div>
+    <a href="{{ auth()->check() ? route('user.sponsorships.index') : route('user.login') }}" class="nocturne-sponsor-cta"><i class="ph-bold ph-handshake"></i>@lang('Sponsor Winxpot Events')</a>
 </section>
 
-@if ($sponsors->count())
-    <section class="nocturne-section">
-        <div class="nocturne-sponsor-wrap">
-            <div class="nocturne-sponsor-list" role="tablist">
-                @foreach ($sponsors as $sponsor)
-                    <button type="button" class="nocturne-sponsor-tab {{ $loop->first ? 'is-active' : '' }}" data-target="sponsor-{{ $sponsor->id }}">
-                        <img src="{{ getImage('assets/images/frontend/sponsorships/' . @$sponsor->data_values->image, '160x160') }}" alt="@lang('image')">
-                        {{ __(@$sponsor->data_values->title) }}
-                    </button>
-                @endforeach
-            </div>
-            <div class="nocturne-sponsor-detail">
-                @foreach ($sponsors as $sponsor)
-                    <div class="nocturne-sponsor-panel {{ $loop->first ? 'is-active' : '' }}" id="sponsor-{{ $sponsor->id }}">
-                        <img src="{{ getImage('assets/images/frontend/sponsorships/' . @$sponsor->data_values->image, '160x160') }}" alt="@lang('image')">
-                        <h4>{{ __(@$sponsor->data_values->title) }}</h4>
-                        <p>{{ __(@$sponsor->data_values->description) }}</p>
-                    </div>
-                @endforeach
-            </div>
+<section class="nocturne-section">
+    @if ($sponsors->count())
+        <div class="nocturne-sponsor-grid">
+            @foreach ($sponsors as $sponsor)
+                <article class="nocturne-sponsor-card">
+                    <span class="nocturne-sponsor-card__glow"></span>
+                    <div class="nocturne-sponsor-card__logo"><img src="{{ getImage('assets/images/frontend/sponsorships/' . @$sponsor->data_values->image, '160x160') }}" alt="{{ __(@$sponsor->data_values->title) }}" loading="lazy"></div>
+                    <h3>{{ __(@$sponsor->data_values->title) }}</h3>
+                    <p>{{ __(@$sponsor->data_values->description) }}</p>
+                    @if(!empty($sponsor->data_values->website_url))
+                        <a href="{{ $sponsor->data_values->website_url }}" target="_blank" rel="noopener" class="nocturne-sponsor-card__link">@lang('Visit website') <i class="ph-bold ph-arrow-up-right"></i></a>
+                    @endif
+                </article>
+            @endforeach
         </div>
-    </section>
-@endif
+    @else
+        <div class="nocturne-sponsor-empty"><i class="ph-fill ph-handshake"></i><h3>@lang('Our sponsor lineup is coming together')</h3><p>@lang('Brands supporting Winxpot events will be featured here.')</p></div>
+    @endif
 
-@push('script')
-<script>
-    (() => {
-        const tabs = document.querySelectorAll('.nocturne-sponsor-tab');
-        tabs.forEach(tab => tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('is-active'));
-            document.querySelectorAll('.nocturne-sponsor-panel').forEach(p => p.classList.remove('is-active'));
-            tab.classList.add('is-active');
-            document.getElementById(tab.dataset.target)?.classList.add('is-active');
-        }));
-    })();
-</script>
-@endpush
+    <div class="nocturne-sponsor-footer-cta">
+        <div><h3>@lang('Want to support a Winxpot event?')</h3><p>@lang('Tell us how you would like to sponsor us and our team will reach out.')</p></div>
+        <a href="{{ auth()->check() ? route('user.sponsorships.index') : route('user.login') }}" class="nocturne-sponsor-cta"><i class="ph-bold ph-handshake"></i>@lang('Sponsor Winxpot Events')</a>
+    </div>
+</section>

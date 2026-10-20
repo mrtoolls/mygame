@@ -88,6 +88,12 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('/', 'store')->name('store');
             });
 
+            // Sponsorship proposals
+            Route::controller('SponsorshipController')->prefix('sponsorships')->name('sponsorships.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+            });
+
             //Profile setting
             Route::controller('ProfileController')->group(function () {
                 Route::get('profile-setting', 'profile')->name('profile.setting');

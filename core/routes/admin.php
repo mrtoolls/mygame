@@ -45,6 +45,13 @@ Route::middleware('admin')->group(function () {
         Route::post('{id}/approve', 'approve')->name('approve');
         Route::post('{id}/reject', 'reject')->name('reject');
     });
+    Route::controller('SponsorshipSubmissionController')->prefix('sponsorship-submissions')->name('sponsorship-submissions.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->name('show');
+        Route::post('{id}/approve', 'approve')->name('approve');
+        Route::post('{id}/reject', 'reject')->name('reject');
+        Route::post('{id}/delete', 'destroy')->name('destroy');
+    });
 
     Route::controller('CurrencyCountryController')->prefix('currency-country')->name('currency-country.')->group(function () {
         Route::get('/', 'index')->name('index');

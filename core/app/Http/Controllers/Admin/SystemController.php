@@ -85,7 +85,7 @@ class SystemController extends Controller
             ],
             [
                 'slug' => 'sponsorships', 'name' => 'Sponsorships', 'secs' => ['sponsorships'],
-                'content' => ['sponsorships' => ['heading' => 'Sponsorships', 'subheading' => 'Proud partners across sport and esports']],
+                'content' => ['sponsorships' => ['heading' => 'Sponsorships', 'subheading' => 'Brands and partners supporting Winxpot events']],
             ],
             [
                 'slug' => 'licenses-security', 'name' => 'Licenses & Security', 'secs' => ['licenses'],

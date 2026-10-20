@@ -405,6 +405,7 @@
             },
             "title": "text",
             "description": "textarea",
+            "website_url": "text",
             "modal": true
         }
     },

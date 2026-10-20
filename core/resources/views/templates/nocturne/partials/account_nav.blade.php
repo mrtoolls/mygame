@@ -16,6 +16,7 @@
             <a href="{{ route('user.gifts.index') }}" class="{{ request()->routeIs('user.gifts.*') ? 'is-active' : '' }}"><i class="ph-bold ph-package"></i>@lang('My Gifts')</a>
             <a href="{{ route('user.vip.index') }}" class="{{ request()->routeIs('user.vip.*') ? 'is-active' : '' }}"><i class="ph-bold ph-crown"></i>@lang('VIP Club')</a>
             <a href="{{ route('user.business-promotions.index') }}" class="{{ request()->routeIs('user.business-promotions.*') ? 'is-active' : '' }}"><i class="ph-bold ph-megaphone-simple"></i>@lang('Promote a Business')</a>
+            <a href="{{ route('user.sponsorships.index') }}" class="{{ request()->routeIs('user.sponsorships.*') ? 'is-active' : '' }}"><i class="ph-bold ph-handshake"></i>@lang('Sponsor Winxpot')</a>
             <a href="{{ route('user.kyc.form') }}" class="{{ request()->routeIs('user.kyc.*') ? 'is-active' : '' }}"><i class="ph-bold ph-shield-check"></i>@lang('Verification')</a>
             <a href="{{ route('user.profile.setting') }}" class="{{ request()->routeIs('user.profile.setting') || request()->routeIs('user.change.password') || request()->routeIs('user.twofactor') ? 'is-active' : '' }}"><i class="ph-bold ph-gear"></i>@lang('Settings')</a>
             <a href="{{ route('user.transactions') }}" class="{{ request()->routeIs('user.transactions') || request()->routeIs('user.deposit.history') || request()->routeIs('user.withdraw.history') ? 'is-active' : '' }}"><i class="ph-bold ph-receipt"></i>@lang('Transactions')</a>
