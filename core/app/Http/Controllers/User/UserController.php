@@ -177,6 +177,7 @@ class UserController extends Controller {
             'mobile_code'  => 'required|in:' . $mobileCodes,
             'username'     => 'required|unique:users|min:6',
             'mobile'       => ['required', 'regex:/^([0-9]*)$/', Rule::unique('users')->where('dial_code', $request->mobile_code)],
+            'gender'       => 'required|in:male,female',
         ]);
 
         if (preg_match("/[^a-z0-9_]/", trim($request->username))) {
@@ -189,12 +190,15 @@ class UserController extends Controller {
         $user->mobile       = $request->mobile;
         $user->username     = $request->username;
 
-        $user->address      = $request->address;
-        $user->city         = $request->city;
-        $user->state        = $request->state;
-        $user->zip          = $request->zip;
-        $user->country_name = @$request->country;
-        $user->dial_code    = $request->mobile_code;
+        $user->state         = $request->state;
+        $user->country_name  = @$request->country;
+        $user->dial_code     = $request->mobile_code;
+        $user->gender        = $request->gender;
+
+        $pool = glob('assets/images/profilepics/' . $request->gender . '*.png');
+        if (!empty($pool)) {
+            $user->image = 'assets/images/profilepics/' . basename($pool[array_rand($pool)]);
+        }
 
         $user->profile_complete = Status::YES;
         $user->save();

@@ -1,133 +1,118 @@
-@extends('Template::layouts.frontend')
-
+@extends('Template::layouts.auth')
 @section('content')
-    <div class="nocturne-account">
-        @include('Template::partials.account_nav')
-        <div class="nocturne-account-content">
-    <section class="py-100">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-7 col-xl-6">
-                    <div class="card custom--card">
-                        <div class="card-body">
-                            <form method="POST" action="{{ route('user.data.submit') }}">
-                                @csrf
-                                <div class="row">
-                                    <div class="form-group">
-                                        <label class="form--label">@lang('Username')</label>
-                                        <input name="username" class="form--control checkUser" type="text"
-                                            value="{{ old('username') }}" required>
-                                        <small class="text--danger usernameExist"></small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form--label">@lang('Country')</label>
-                                            <select class="form--control select2" name="country" required>
-                                                @foreach ($countries as $key => $country)
-                                                    <option data-mobile_code="{{ $country->dial_code }}"
-                                                        data-code="{{ $key }}" value="{{ $country->country }}">
-                                                        {{ __($country->country) }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form--label">@lang('Mobile')</label>
-                                            <div class="input-inner">
-                                                <span class="input-inner__icon mobile-code"></span>
-                                                <input name="mobile_code" type="hidden">
-                                                <input name="country_code" type="hidden">
-                                                <input name="mobile" class="form--control checkUser" type="number"
-                                                    value="{{ old('old') }}" required>
-                                            </div>
-                                            <small class="text--danger mobileExist"></small>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label class="form-label">@lang('Address')</label>
-                                            <input class="form-control form--control" name="address" type="text"
-                                                value="{{ old('address') }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label class="form-label">@lang('State')</label>
-                                            <input class="form-control form--control" name="state" type="text"
-                                                value="{{ old('state') }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label class="form-label">@lang('Zip Code')</label>
-                                            <input class="form-control form--control" name="zip" type="text"
-                                                value="{{ old('zip') }}">
-                                        </div>
-                                    </div>
+    @php
+        $register = getContent('register.content', true);
+        $authImage = @$register->data_values->image
+            ? getImage('assets/images/frontend/register/' . $register->data_values->image, '1920x1080')
+            : asset('assets/images/frontend/nockturne_assets/landing_girl.jpg');
+    @endphp
+    <section class="nocturne-auth">
+        <div class="nocturne-auth-card nocturne-auth-card--wide">
+            <div class="nocturne-auth-visual" @if ($authImage) style="background-image:url('{{ $authImage }}')" @endif>
+                <a href="{{ route('home') }}" class="nocturne-auth-visual__brand">
+                    <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
+                </a>
+                <div class="nocturne-auth-visual__copy">
+                    <h2>@lang('One last step,') <span>{{ auth()->user()->username ? ucfirst(auth()->user()->username) : __('Player') }}</span>!</h2>
+                    <p>@lang('Tell us a little about you so we can get your table ready.')</p>
+                    <div class="nocturne-auth-visual__trust"><x-icon name="shield" /> @lang('Secure, encrypted connection')</div>
+                </div>
+                <small class="nocturne-auth-visual__copyright">&copy; {{ date('Y') }} {{ gs('site_name') }} | @lang('All Rights Reserved').</small>
+            </div>
+            <div class="nocturne-auth-form">
+                <h1>@lang('Complete Your Profile')</h1>
+                <p class="nocturne-onboard-sub">@lang('Just a few details and you\'re ready to play.')</p>
 
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
-                                            <label class="form-label">@lang('City')</label>
-                                            <input class="form-control form--control" name="city" type="text"
-                                                value="{{ old('city') }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="">
-                                    <button class="btn btn--base w-100" type="submit">
-                                        @lang('Submit')
-                                    </button>
-                                </div>
-                            </form>
+                <form action="{{ route('user.data.submit') }}" method="POST" id="onboardForm">
+                    @csrf
+
+                    <div class="nocturne-field">
+                        <label class="form--label">@lang('Choose your avatar')</label>
+                        <div class="nocturne-gender-picker">
+                            <label class="nocturne-gender-card">
+                                <input type="radio" name="gender" value="male" required @checked(old('gender') === 'male')>
+                                <span class="nocturne-gender-card__preview"><i class="las la-mars"></i></span>
+                                <span class="nocturne-gender-card__label">@lang('Male')</span>
+                            </label>
+                            <label class="nocturne-gender-card">
+                                <input type="radio" name="gender" value="female" required @checked(old('gender') === 'female')>
+                                <span class="nocturne-gender-card__preview"><i class="las la-venus"></i></span>
+                                <span class="nocturne-gender-card__label">@lang('Female')</span>
+                            </label>
+                        </div>
+                        <small class="text-muted">@lang('We\'ll assign you a profile picture to start - you can upload your own anytime in Settings.')</small>
+                    </div>
+
+                    <div class="nocturne-field">
+                        <label class="form--label">@lang('Username')</label>
+                        <div class="nocturne-field__control">
+                            <x-icon name="user-plus" />
+                            <input name="username" class="checkUser" type="text" value="{{ old('username') }}" required autocomplete="off" autocapitalize="none" spellcheck="false">
+                        </div>
+                        <small class="text--danger usernameExist"></small>
+                    </div>
+
+                    <div class="nocturne-field-grid">
+                        <div class="nocturne-field">
+                            <label class="form--label">@lang('Country')</label>
+                            <div class="nocturne-field__control">
+                                <i class="las la-globe" aria-hidden="true"></i>
+                                <select name="country" id="onboard-country" required aria-label="@lang('Choose your country')">
+                                    <option value="">@lang('Choose your country')</option>
+                                    @foreach ($countries as $key => $country)
+                                        <option data-mobile_code="{{ $country->dial_code }}" data-code="{{ $key }}" value="{{ $country->country }}" @selected(old('country') === $country->country)>
+                                            {{ __($country->country) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="nocturne-field">
+                            <label class="form--label">@lang('State')</label>
+                            <div class="nocturne-field__control">
+                                <i class="las la-map-marker" aria-hidden="true"></i>
+                                <input name="state" type="text" value="{{ old('state') }}">
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="nocturne-field">
+                        <label class="form--label">@lang('Mobile')</label>
+                        <div class="nocturne-field__control">
+                            <span class="mobile-code" id="onboard-mobile-code"></span>
+                            <input name="mobile_code" type="hidden">
+                            <input name="country_code" type="hidden">
+                            <input name="mobile" class="checkUser" type="number" value="{{ old('mobile') }}" required>
+                        </div>
+                        <small class="text--danger mobileExist"></small>
+                    </div>
+
+                    <div class="form-submit">
+                        <button type="submit" class="btn btn--gradient w-100">@lang('Continue')</button>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
-        </div>
-    </div>
 @endsection
-@push('style-lib')
-    <link rel="stylesheet" href="{{ asset('assets/global/css/select2.min.css') }}">
-@endpush
 
-@push('script-lib')
-    <script src="{{ asset('assets/global/js/select2.min.js') }}"></script>
-@endpush
 @push('style')
     <style>
-        .select2-container--default .select2-selection--single {
-            border: 1px solid hsl(var(--white) / 0.1) !important;
-            border-radius: 0.375rem !important;
-            padding: 0.75rem 0.75rem !important;
-            height: 100% !important;
-            background-color: transparent !important;
+        .nocturne-onboard-sub { margin: -10px 0 18px; color: var(--nocturne-muted, #929abc); font-size: 13px; }
+        .nocturne-gender-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+        .nocturne-gender-card {
+            position: relative; display: grid; justify-items: center; gap: 8px; padding: 18px 10px;
+            border: 1px solid #2c3453; border-radius: 15px; background: #0d1023; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
         }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            top: 12px !important;
+        .nocturne-gender-card input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+        .nocturne-gender-card__preview {
+            display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
+            background: var(--nocturne-raised, #232a47); color: var(--nocturne-muted, #929abc); font-size: 26px;
         }
-
-        span.selection {
-            width: 100%;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #fff;
-            line-height: 28px;
-        }
-
-        .select2-results__option--selectable {
-            color: #000 !important;
-        }
-
-        .select2-container--open .select2-selection.select2-selection--single,
-        .select2-container--open .select2-selection.select2-selection--multiple {
-            border-color: #ac7a35 !important;
-            border-radius: 0.375rem !important;
-        }
+        .nocturne-gender-card__label { color: var(--nocturne-text, #f5f6ff); font-size: 13px; font-weight: 800; }
+        .nocturne-gender-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
+        .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { background: rgba(0, 239, 135, .14); color: var(--nocturne-green, #00ef87); }
+        .nocturne-field__control .mobile-code { color: var(--nocturne-muted, #929abc); font-size: 13px; font-weight: 800; white-space: nowrap; }
     </style>
 @endpush
 
@@ -135,50 +120,37 @@
     <script>
         "use strict";
         (function($) {
-
             @if ($mobileCode)
                 $(`option[data-code={{ $mobileCode }}]`).attr('selected', '');
             @endif
-            $('.select2').select2();
 
-            $('select[name=country]').on('change', function() {
-                $('input[name=mobile_code]').val($('select[name=country] :selected').data('mobile_code'));
-                $('input[name=country_code]').val($('select[name=country] :selected').data('code'));
-                $('.mobile-code').text('+' + $('select[name=country] :selected').data('mobile_code'));
-                var value = $('[name=mobile]').val();
-                var name = 'mobile';
-                checkUser(value, name);
+            function syncMobileCode() {
+                var selected = $('#onboard-country :selected');
+                $('input[name=mobile_code]').val(selected.data('mobile_code'));
+                $('input[name=country_code]').val(selected.data('code'));
+                $('#onboard-mobile-code').text(selected.data('mobile_code') ? '+' + selected.data('mobile_code') : '');
+            }
+            $('#onboard-country').on('change', function() {
+                syncMobileCode();
+                checkUser($('[name=mobile]').val(), 'mobile');
             });
-
-            $('input[name=mobile_code]').val($('select[name=country] :selected').data('mobile_code'));
-            $('input[name=country_code]').val($('select[name=country] :selected').data('code'));
-            $('.mobile-code').text('+' + $('select[name=country] :selected').data('mobile_code'));
-
+            syncMobileCode();
 
             $('.checkUser').on('focusout', function(e) {
-                var value = $(this).val();
-                var name = $(this).attr('name')
-                checkUser(value, name);
+                checkUser($(this).val(), $(this).attr('name'));
             });
 
             function checkUser(value, name) {
                 var url = '{{ route('user.checkUser') }}';
                 var token = '{{ csrf_token() }}';
-
+                var data;
                 if (name == 'mobile') {
-                    var mobile = `${value}`;
-                    var data = {
-                        mobile: mobile,
-                        mobile_code: $('.mobile-code').text().substr(1),
-                        _token: token
-                    }
+                    data = { mobile: value, mobile_code: $('#onboard-mobile-code').text().substr(1), _token: token };
                 }
                 if (name == 'username') {
-                    var data = {
-                        username: value,
-                        _token: token
-                    }
+                    data = { username: value, _token: token };
                 }
+                if (!data) return;
                 $.post(url, data, function(response) {
                     if (response.data != false) {
                         $(`.${response.type}Exist`).text(`${response.field} already exist`);
