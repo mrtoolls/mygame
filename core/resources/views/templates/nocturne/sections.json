@@ -353,6 +353,11 @@
         "no_selection": true,
         "name": "Sidebar Bonus Countdown",
         "content": {
+            "images": {
+                "background_image": {
+                    "size": "480x320"
+                }
+            },
             "heading": "text",
             "badge": "text",
             "end_at": "datetime",

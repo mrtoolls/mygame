@@ -9,16 +9,17 @@
             $bonusCountdown = getContent('bonus_countdown.content', true);
             $countdownEndAt = @$bonusCountdown->data_values->end_at ? strtotime($bonusCountdown->data_values->end_at) : null;
             $countdownActive = $countdownEndAt && $countdownEndAt > time();
+            $rewardArt = !empty($bonusCountdown->data_values->background_image) ? frontendImage('bonus_countdown', $bonusCountdown->data_values->background_image, '480x320') : null;
         @endphp
-        <a class="nocturne-reward" href="{{ @$bonusCountdown->data_values->button_url ?: (auth()->check() ? route('user.deposit.index') : route('user.register')) }}">
+        <a class="nocturne-reward {{ $rewardArt ? 'has-art' : '' }}" href="{{ @$bonusCountdown->data_values->button_url ?: (auth()->check() ? route('user.deposit.index') : route('user.register')) }}" @if($rewardArt) style="background-image:url('{{ $rewardArt }}')" @endif>
             <span class="nocturne-reward-badge">{{ __(@$bonusCountdown->data_values->badge) ?: __('Welcome offer') }}</span>
-            <strong class="nocturne-reward-title">{{ __(@$bonusCountdown->data_values->heading) ?: __('Claim your first deposit reward') }}</strong>
+            <strong class="nocturne-reward-title">{{ __(@$bonusCountdown->data_values->heading) ?: __('Claim your free reward') }}</strong>
             @if ($countdownActive)
                 <span class="nocturne-reward-countdown" data-countdown-end="{{ $countdownEndAt * 1000 }}">
-                    <span class="nocturne-reward-countdown__unit" data-unit="h">00</span>:<span class="nocturne-reward-countdown__unit" data-unit="m">00</span>:<span class="nocturne-reward-countdown__unit" data-unit="s">00</span>
+                    <span class="nocturne-reward-countdown__unit" data-unit="h">00</span><span class="nocturne-reward-countdown__sep">:</span><span class="nocturne-reward-countdown__unit" data-unit="m">00</span><span class="nocturne-reward-countdown__sep">:</span><span class="nocturne-reward-countdown__unit" data-unit="s">00</span>
                 </span>
             @endif
-            <span class="nocturne-reward-icon"><i class="ph-bold ph-gift"></i></span>
+            @unless($rewardArt)<span class="nocturne-reward-icon"><i class="ph-bold ph-gift"></i></span>@endunless
         </a>
         <section class="nocturne-menu-group" aria-label="@lang('Play')">
             <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-bold ph-house"></i><span>@lang('Home')</span></a>
