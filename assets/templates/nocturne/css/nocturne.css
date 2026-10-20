@@ -1600,6 +1600,13 @@ a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit
     border-top: 1px solid rgba(0,239,135,.14) !important; background: radial-gradient(ellipse at 82% 12%,rgba(0,239,135,.07),transparent 34%),#0a0c1b !important;
 }
 .nocturne-site-footer::before { position:absolute; z-index:-1; top:0; right:-140px; width:420px; height:240px; border-radius:50%; background:rgba(0,239,135,.035); filter:blur(55px); content:""; pointer-events:none; }
+/* On the app shell (dashboard, deposit, live games, etc.) the footer just adds scroll weight on
+   mobile/installed-PWA without doing anything useful - hide it there, but keep it on pages whose
+   whole job IS to be read/scrolled as content (ticket/support, and anything on the public
+   marketing layout: privacy, terms, FAQ, etc. - those never get this class in the first place). */
+@media (max-width: 800px) {
+    .nocturne-main:not(.nocturne-footer-always) .nocturne-site-footer { display: none !important; }
+}
 .nocturne-site-footer .nocturne-footer-grid { grid-template-columns:repeat(4,minmax(110px,1fr)) minmax(200px,1.35fr); gap:clamp(16px,2vw,32px); padding:0 0 28px; border-bottom:1px solid var(--nocturne-line); }
 .nocturne-site-footer .nocturne-footer-col h6 { margin:0 0 14px; color:#f7f8ff; font-size:13px; font-weight:900; letter-spacing:.04em; }
 .nocturne-site-footer .nocturne-footer-col ul { gap:9px; }
