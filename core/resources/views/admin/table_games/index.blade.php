@@ -17,7 +17,7 @@
                         <label><span>@lang('Minimum stake')</span><input type="number" name="settings[{{ $key }}][min_stake]" min="0.00000001" step="any" value="{{ $value($key, 'min_stake', 1) }}" required></label>
                         <label><span>@lang('Maximum stake')</span><input type="number" name="settings[{{ $key }}][max_stake]" min="0.00000001" step="any" value="{{ $value($key, 'max_stake', 1000) }}" required></label>
                         <label><span>@lang('Turn timer (seconds)')</span><input type="number" name="settings[{{ $key }}][turn_seconds]" min="10" max="3600" value="{{ $value($key, 'turn_seconds', 60) }}" required></label>
-                        <label><span>@lang('Empty-table timeout (minutes)')</span><input type="number" name="settings[{{ $key }}][empty_timeout_minutes]" min="1" max="10080" value="{{ $value($key, 'empty_timeout_minutes', 10) }}" required></label>
+                        <p class="text-muted mb-0">@lang('Waiting tables automatically finish after 24 hours. Any unsettled player stakes are refunded to their wallets.')</p>
                         <label><span>@lang('Open tables per player')</span><input type="number" name="settings[{{ $key }}][max_open_tables_per_user]" min="1" max="100" value="{{ $value($key, 'max_open_tables_per_user', 5) }}" required></label>
                         <label><span>@lang('Maximum concurrent tables')</span><input type="number" name="settings[{{ $key }}][max_concurrent_tables]" min="1" max="100000" value="{{ $value($key, 'max_concurrent_tables', 500) }}" required></label>
                         @if ($key !== '*')

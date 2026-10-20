@@ -43,7 +43,6 @@ class TableGameAdminController extends Controller
             $rules["settings.$key.min_stake"] = 'required|numeric|min:0.00000001|decimal:0,8';
             $rules["settings.$key.max_stake"] = 'required|numeric|gt:settings.' . $key . '.min_stake|decimal:0,8';
             $rules["settings.$key.turn_seconds"] = 'required|integer|min:10|max:3600';
-            $rules["settings.$key.empty_timeout_minutes"] = 'required|integer|min:1|max:10080';
             $rules["settings.$key.max_open_tables_per_user"] = 'required|integer|min:1|max:100';
             $rules["settings.$key.max_concurrent_tables"] = 'required|integer|min:1|max:100000';
         }
@@ -58,6 +57,7 @@ class TableGameAdminController extends Controller
             return back()->withNotify([['error', 'Run the pending database update before uploading live game images.']]);
         }
         foreach ($validated['settings'] as $game => $values) {
+            $values['empty_timeout_minutes'] = 1440;
             $setting = TableGameSetting::updateOrCreate(['game_type' => $game], $values);
             if ($game !== '*' && isset($imageUploads[$game])) {
                 try {

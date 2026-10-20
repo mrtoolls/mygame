@@ -73,7 +73,7 @@ class TableGameService
                 'player_limit' => $playerLimit,
                 'stake' => $stake,
                 'status' => 'waiting',
-                'join_deadline_at' => now()->addMinutes($setting->empty_timeout_minutes),
+                'join_deadline_at' => now()->addHours(24),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
             ];
             if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
@@ -151,7 +151,16 @@ class TableGameService
         return DB::transaction(function () use ($sender, $tableId, $username) {
             $table = TableGame::whereKey($tableId)->lockForUpdate()->firstOrFail();
             $this->expireIfNeeded($table);
-            if ($table->status !== 'waiting') throw new InvalidArgumentException('Only a waiting table can receive invitations.');
+            if ($table->status !== 'waiting') {
+                $message = match ($table->result) {
+                    'expired_refunded' => 'This table finished after its 24-hour waiting period and all stakes were refunded. Create a new table to invite players.',
+                    'cancelled_refunded' => 'The table creator cancelled this table and all stakes were refunded.',
+                    default => $table->status === 'active'
+                        ? 'This game has already started. New players cannot join a game in progress.'
+                        : 'This table is no longer waiting for players. Create a new table to send an invitation.',
+                };
+                throw new InvalidArgumentException($message);
+            }
             if ((int) $table->creator_id !== (int) $sender->id) throw new InvalidArgumentException('Only the table creator can invite players.');
             if ($table->players()->where('status', 'seated')->count() >= $table->player_limit) throw new InvalidArgumentException('This table is already full.');
             $invitee = User::where('username', trim($username))->first();
@@ -166,7 +175,7 @@ class TableGameService
             if ($invite) {
                 $invite->inviter_id = $sender->id;
                 $invite->status = 'pending';
-                $invite->expires_at = $table->join_deadline_at ?? now()->addMinutes(10);
+                $invite->expires_at = $table->join_deadline_at ?? now()->addHours(24);
                 $invite->accepted_at = null;
                 $invite->save();
                 return $invite->fresh(['table', 'inviter']);
@@ -177,7 +186,7 @@ class TableGameService
                 'inviter_id' => $sender->id,
                 'invitee_id' => $invitee->id,
                 'status' => 'pending',
-                'expires_at' => $table->join_deadline_at ?? now()->addMinutes(10),
+                'expires_at' => $table->join_deadline_at ?? now()->addHours(24),
             ]);
         }, 3);
     }
@@ -312,17 +321,31 @@ class TableGameService
     {
         return DB::transaction(function () use ($user, $id) {
             $table = TableGame::whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->expireIfNeeded($table);
+            if ($table->status === 'finished' && $table->result === 'expired_refunded') return $table->fresh(['players.user']);
             $player = $table->players()->where('user_id', $user->id)->lockForUpdate()->firstOrFail();
             if (!in_array($table->status, ['waiting', 'active'], true)) throw new InvalidArgumentException('This table is already closed.');
+            if ($table->status === 'waiting' && (int) $table->creator_id === (int) $user->id) {
+                $this->refundAll($table, 'creator_cancelled_waiting_table');
+                $this->expireTableInvites($table);
+                $table->status = 'finished';
+                $table->result = 'cancelled_refunded';
+                $table->finished_at = now();
+                $table->version++;
+                $table->save();
+                return $table->fresh(['players.user']);
+            }
             $player->status = 'out';
+            if ($table->status === 'waiting') {
+                if (bccomp((string) $player->stake, '0', 8) > 0) {
+                    $this->creditPlayer($table, $player, (string) $player->stake, 'table_refund', 'player_left_waiting_table');
+                }
+                $player->status = 'refunded';
+            }
             $player->save();
             $table->version++;
             $remaining = $table->players()->where('status', 'seated')->count();
-            if ($table->status === 'waiting' && $player->seat === 0 && $remaining === 0) {
-                $this->refundAll($table, 'creator_left');
-                $table->status = 'cancelled';
-                $table->finished_at = now();
-            } elseif ($table->status === 'active' && $remaining <= 1) {
+            if ($table->status === 'active' && $remaining <= 1) {
                 $winner = $table->players()->where('status', 'seated')->first();
                 $table->status = 'finished';
                 $table->result = $winner ? 'winner:' . $winner->seat : 'draw';
@@ -650,6 +673,7 @@ class TableGameService
         foreach (TableGameSettlementMath::refunds($players->mapWithKeys(fn ($player) => [$player->user_id => (string) $player->stake])->all()) as $userId => $amount) {
             $this->creditPlayer($table, $players->firstWhere('user_id', $userId), $amount, 'table_refund', $reason);
         }
+        $table->players()->whereIn('status', ['seated', 'out'])->update(['status' => 'refunded']);
     }
 
     private function recordMissedTurn(TableGame $table): void
@@ -703,11 +727,21 @@ class TableGameService
     {
         if ($table->status === 'waiting' && $table->join_deadline_at && now()->greaterThan($table->join_deadline_at)) {
             $this->refundAll($table, 'empty_table_refund');
-            $table->status = 'cancelled';
+            $this->expireTableInvites($table);
+            $table->status = 'finished';
+            $table->result = 'expired_refunded';
             $table->finished_at = now();
             $table->version++;
             $table->save();
         }
+    }
+
+    private function expireTableInvites(TableGame $table): void
+    {
+        if (!Schema::hasTable('table_game_invites')) return;
+        TableGameInvite::where('table_game_id', $table->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'expired', 'expires_at' => now(), 'updated_at' => now()]);
     }
 
     private function expireWaitingTables(): void
@@ -730,7 +764,7 @@ class TableGameService
     {
         $defaults = [
             'enabled' => true, 'commission_percent' => 5, 'min_stake' => 1, 'max_stake' => 1000,
-            'turn_seconds' => 60, 'empty_timeout_minutes' => 10, 'max_open_tables_per_user' => 5, 'max_concurrent_tables' => 500,
+            'turn_seconds' => 60, 'empty_timeout_minutes' => 1440, 'max_open_tables_per_user' => 5, 'max_concurrent_tables' => 500,
         ];
         $global = TableGameSetting::firstOrNew(['game_type' => '*'], $defaults);
         return TableGameSetting::firstOrNew(['game_type' => $gameType], array_merge($defaults, $global->exists ? $global->only(array_keys($defaults)) : []));
