@@ -18,7 +18,7 @@
             </article>
         @endforeach
         @foreach($playerFeedback as $review)
-            <article class="nocturne-about-review-card"><header><span class="nocturne-about-review-card__avatar">@if($review->user?->avatarUrl())<img src="{{ $review->user->avatarUrl() }}" alt="">@else<i class="ph-fill ph-user"></i>@endif</span><span><strong>{{ $review->display_name }}</strong><small>{{ $review->player_since ? __('Player since :year',['year'=>$review->player_since]) : __('Winxpot player') }}</small></span></header><div class="nocturne-about-stars">{{ str_repeat('★',(int)$review->rating) }}{{ str_repeat('☆',5-(int)$review->rating) }}</div><p>{{ $review->message }}</p>@if($review->image)<img class="nocturne-about-review-card__proof" src="{{ getImage('assets/images/user-feedback/'.$review->image) }}" alt="@lang('Player review attachment')">@endif</article>
+            <article class="nocturne-about-review-card"><header><span class="nocturne-about-review-card__avatar">@if($review->user?->avatarUrl())<img src="{{ $review->user->avatarUrl() }}" alt="" loading="lazy" decoding="async" width="52" height="52">@else<i class="ph-fill ph-user"></i>@endif</span><span><strong>{{ $review->display_name }}</strong><small>{{ $review->player_since ? __('Player since :year',['year'=>$review->player_since]) : __('Winxpot player') }}</small></span></header><div class="nocturne-about-stars">{{ str_repeat('★',(int)$review->rating) }}{{ str_repeat('☆',5-(int)$review->rating) }}</div><p>{{ $review->message }}</p>@if($review->image)<img class="nocturne-about-review-card__proof" src="{{ getImage('assets/images/user-feedback/'.$review->image) }}" alt="@lang('Player review attachment')">@endif</article>
         @endforeach
     </div>
 </section>

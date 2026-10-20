@@ -26,11 +26,20 @@
 (function () {
     var nodes = document.querySelectorAll('[data-live-stat]');
     if (!nodes.length) return;
+    function trimZeros(str) {
+        return str.indexOf('.') === -1 ? str : str.replace(/0+$/, '').replace(/\.$/, '');
+    }
+    function compact(value) {
+        value = Number(value);
+        if (value >= 1e6) return trimZeros((value / 1e6).toFixed(6)) + 'M';
+        if (value >= 1e3) return trimZeros((value / 1e3).toFixed(3)) + 'K';
+        return value.toLocaleString('en-US');
+    }
     function paint(data) {
         nodes.forEach(function (node) {
             var key = node.dataset.liveStat;
             if (data[key] === undefined) return;
-            node.textContent = Number(data[key]).toLocaleString('en-US') + (key !== 'games' ? '+' : '');
+            node.textContent = compact(data[key]) + (key !== 'games' ? '+' : '');
         });
     }
     function poll() {

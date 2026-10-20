@@ -23,7 +23,7 @@
                 </div>
             @endforeach
             @foreach ($playerFeedback as $feedback)
-                <div class="nocturne-review-card"><div class="nocturne-review-card__head"><span class="nocturne-feedback-avatar">@if($feedback->user?->avatarUrl())<img src="{{ $feedback->user->avatarUrl() }}" alt="">@else<i class="ph-fill ph-user"></i>@endif</span><div><strong>{{ $feedback->display_name }}</strong><span class="nocturne-review-card__stars">@for($i=0;$i<$feedback->rating;$i++)<i class="ph-bold ph-star"></i>@endfor</span></div></div><p>{{ $feedback->message }}</p></div>
+                <div class="nocturne-review-card"><div class="nocturne-review-card__head"><span class="nocturne-feedback-avatar">@if($feedback->user?->avatarUrl())<img src="{{ $feedback->user->avatarUrl() }}" alt="" loading="lazy" decoding="async" width="46" height="46">@else<i class="ph-fill ph-user"></i>@endif</span><div><strong>{{ $feedback->display_name }}</strong><span class="nocturne-review-card__stars">@for($i=0;$i<$feedback->rating;$i++)<i class="ph-bold ph-star"></i>@endfor</span></div></div><p>{{ $feedback->message }}</p></div>
             @endforeach
         </div>
     </section>
