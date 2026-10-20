@@ -8,8 +8,22 @@
         <div class="col-md-10">
             <div class="card custom--card">
                 <div class="card-body">
-                    <form class="register" method="post">
+                    <form class="register" method="post" enctype="multipart/form-data">
                         @csrf
+                        <div class="profile-avatar-field">
+                            <div class="profile-avatar-field__preview" id="avatar-preview">
+                                @if ($user->avatarUrl())
+                                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->username }}" id="avatar-preview-img">
+                                @else
+                                    <span id="avatar-preview-initial">{{ strtoupper(substr($user->username ?: $user->firstname, 0, 1)) }}</span>
+                                    <img src="" alt="{{ $user->username }}" id="avatar-preview-img" hidden>
+                                @endif
+                            </div>
+                            <label class="profile-avatar-field__upload" for="avatar-input">
+                                <i class="las la-camera"></i> @lang('Change photo')
+                                <input type="file" id="avatar-input" name="image" accept="image/png,image/jpeg,image/webp" hidden>
+                            </label>
+                        </div>
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="form-group">
@@ -78,3 +92,39 @@
         </div>
     </div>
 @endsection
+@push('style')
+    <style>
+        .profile-avatar-field { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+        .profile-avatar-field__preview {
+            display: grid; place-items: center; width: 76px; height: 76px; flex: 0 0 auto;
+            border-radius: 50%; overflow: hidden; background: var(--nocturne-raised, #232a47);
+            color: var(--nocturne-text, #f5f6ff); font-size: 26px; font-weight: 950;
+            box-shadow: 0 0 0 3px rgba(0, 239, 135, .18);
+        }
+        .profile-avatar-field__preview img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar-field__upload {
+            display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px;
+            border: 1px solid var(--nocturne-line, rgba(145, 156, 205, .16)); border-radius: 11px;
+            background: transparent; color: var(--nocturne-text, #f5f6ff); font-size: 12px; font-weight: 800; cursor: pointer;
+        }
+        .profile-avatar-field__upload:hover { border-color: var(--nocturne-green, #00ef87); color: var(--nocturne-green, #00ef87); }
+        .profile-avatar-field__upload i { font-size: 15px; }
+    </style>
+@endpush
+@push('script')
+    <script>
+        "use strict";
+        (function($) {
+            $('#avatar-input').on('change', function(event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#avatar-preview-img').attr('src', e.target.result).prop('hidden', false);
+                    $('#avatar-preview-initial').remove();
+                };
+                reader.readAsDataURL(file);
+            });
+        })(jQuery);
+    </script>
+@endpush

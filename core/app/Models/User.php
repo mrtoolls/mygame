@@ -173,6 +173,11 @@ class User extends Authenticatable
         );
     }
 
+    public function avatarUrl(): ?string
+    {
+        return $this->image ? asset($this->image) : null;
+    }
+
     // SCOPES
     public function scopeActive($query)
     {

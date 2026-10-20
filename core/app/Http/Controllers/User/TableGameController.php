@@ -166,7 +166,7 @@ class TableGameController extends Controller
         $blockedIds = Schema::hasTable('user_blocks')
             ? UserBlock::where('blocker_id', $request->user()->id)->pluck('blocked_id')
             : collect();
-        $messages = TableGameMessage::with(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username'])
+        $messages = TableGameMessage::with(['user:id,username,image', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username'])
             ->where('table_game_id', $id)
             ->when($blockedIds->isNotEmpty(), fn ($query) => $query->whereNotIn('user_id', $blockedIds))
             ->orderByDesc('id')->limit(40)->get()->sortBy('id')->values();
@@ -208,7 +208,7 @@ class TableGameController extends Controller
             if ($path) Storage::disk('local')->delete($path);
             throw $exception;
         }
-        $message->load(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username']);
+        $message->load(['user:id,username,image', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username']);
         return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
     }
 
@@ -287,7 +287,7 @@ class TableGameController extends Controller
             'name' => $message->replyTo->user?->username,
             'preview' => $message->replyTo->body ?: ($message->replyTo->kind === 'voice' ? 'Voice note' : ($message->replyTo->attachment_name ?: 'Attachment')),
         ] : null;
-        return ['id' => $message->id, 'user_id' => $message->user_id, 'name' => $message->user?->username, 'kind' => $message->kind,
+        return ['id' => $message->id, 'user_id' => $message->user_id, 'name' => $message->user?->username, 'avatar' => $message->user?->avatarUrl(), 'kind' => $message->kind,
             'body' => $message->body, 'time' => $message->created_at?->toIso8601String(), 'status' => $status, 'reply_to' => $replyTo,
             'attachment_name' => $message->attachment_name, 'attachment_mime' => $message->attachment_mime, 'attachment_url' => $message->attachment_path ? route('user.tables.chat.attachment', [$message->table_game_id, $message->id]) : null,
             'reactions' => $this->reactionPayload($reactions, $userId)];

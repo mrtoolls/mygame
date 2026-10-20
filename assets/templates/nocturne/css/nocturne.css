@@ -143,7 +143,8 @@ a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit
     display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 15px;
     background: transparent; color: var(--nocturne-muted); text-decoration: none; font-size: 27px;
 }
-.nocturne-avatar { background: var(--nocturne-raised); border-radius: 50%; cursor: pointer; }
+.nocturne-avatar { background: var(--nocturne-raised); border-radius: 50%; cursor: pointer; overflow: hidden; }
+.nocturne-avatar img, .nocturne-account-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .nocturne-notifications { position: relative; }
 .nocturne-notifications:after { content: ""; position: absolute; top: 8px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--nocturne-green); }
 .nocturne-menu-toggle { display: none; cursor: pointer; }
@@ -688,7 +689,7 @@ a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit
 .nocturne-account-nav { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 104px; }
 .nocturne-account-card { padding: 10px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); }
 .nocturne-account-id { display: flex; align-items: center; gap: 12px; padding: 12px 10px 16px; }
-.nocturne-account-avatar { display: grid; flex: 0 0 46px; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 26px; }
+.nocturne-account-avatar { display: grid; flex: 0 0 46px; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 26px; overflow: hidden; }
 .nocturne-account-id div { min-width: 0; }
 .nocturne-account-id strong { display: block; overflow: hidden; color: var(--nocturne-text); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 .nocturne-account-id small { display: block; overflow: hidden; color: var(--nocturne-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }

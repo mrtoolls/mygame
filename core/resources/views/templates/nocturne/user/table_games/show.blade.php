@@ -225,7 +225,7 @@
 .table-chat__send:hover,.table-chat__voice:hover{filter:brightness(1.07);transform:translateY(-1px)}
 .table-chat__form.has-text .table-chat__send{display:grid}
 .table-chat__form:not(.has-text) .table-chat__voice{display:grid}
-.table-chat__avatar{display:grid;flex:0 0 26px;width:26px;height:26px;margin-right:7px;place-items:center;align-self:flex-end;border-radius:50%;background:var(--tm-raised);color:#c7cfea;font-size:10.5px;font-weight:950}
+.table-chat__avatar{display:grid;flex:0 0 26px;width:26px;height:26px;margin-right:7px;place-items:center;align-self:flex-end;border-radius:50%;background:var(--tm-raised);color:#c7cfea;font-size:10.5px;font-weight:950;overflow:hidden}.table-chat__avatar img{width:100%;height:100%;object-fit:cover}
 .table-chat__row{display:flex;align-items:flex-end}
 .table-chat__row.is-mine{justify-content:flex-end}
 .table-chat__row.is-grouped .table-chat__avatar{visibility:hidden}
@@ -507,7 +507,7 @@ function renderMessage(m){
     const grouped=!mine&&lastRenderedUser===m.user_id;
     lastRenderedUser=mine?null:m.user_id;
     const rowEl=document.createElement('div');rowEl.className='table-chat__row'+(mine?' is-mine':'')+(grouped?' is-grouped':'');
-    if(!mine){const avatar=document.createElement('span');avatar.className='table-chat__avatar';avatar.textContent=(m.name||'P').slice(0,1).toUpperCase();rowEl.append(avatar);}
+    if(!mine){const avatar=document.createElement('span');avatar.className='table-chat__avatar';if(m.avatar){const img=document.createElement('img');img.src=m.avatar;img.alt=m.name||'';avatar.append(img);}else{avatar.textContent=(m.name||'P').slice(0,1).toUpperCase();}rowEl.append(avatar);}
     const bubble=document.createElement('article');bubble.className='table-chat__message'+(mine?' is-mine':'');bubble.dataset.chatMessage=m.id;
     if(!grouped){const meta=document.createElement('div');meta.className='table-chat__meta';const name=document.createElement('strong');name.textContent=m.name||'Player';const time=document.createElement('time');time.textContent=formatTime(m.time);meta.append(name,time);bubble.append(meta);}
     if(m.reply_to){const quote=document.createElement('div');quote.className='table-chat__reply-quote';const who=document.createElement('strong');who.textContent=m.reply_to.name||'Player';const text=document.createElement('span');text.textContent=m.reply_to.preview||'';quote.append(who,text);bubble.append(quote);}

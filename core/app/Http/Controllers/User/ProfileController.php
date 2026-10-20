@@ -18,6 +18,7 @@ class ProfileController extends Controller {
         $request->validate([
             'firstname' => 'required|string',
             'lastname'  => 'required|string',
+            'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
             'firstname.required' => 'The first name field is required',
             'lastname.required'  => 'The last name field is required',
@@ -32,6 +33,17 @@ class ProfileController extends Controller {
         $user->city    = $request->city;
         $user->state   = $request->state;
         $user->zip     = $request->zip;
+
+        if ($request->hasFile('image')) {
+            // Only delete the old file when it's a previous custom upload of this user's own -
+            // never a shared default avatar from assets/images/profilepics, which other users
+            // may still be using.
+            $oldImage = $user->image && str_starts_with($user->image, 'assets/images/user_profile/')
+                ? basename($user->image)
+                : null;
+            $filename    = fileUploader($request->image, 'assets/images/user_profile', '480x480', $oldImage);
+            $user->image = 'assets/images/user_profile/' . $filename;
+        }
 
         $user->save();
         $notify[] = ['success', 'Profile updated successfully'];

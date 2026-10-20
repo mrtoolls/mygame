@@ -25,11 +25,21 @@
             <div class="nocturne-balance"><span>@lang('Your Balance')</span><strong>{{ showAmount(auth()->user()->balance) }}</strong></div>
             <div class="nocturne-user-menu">
                 <button class="nocturne-avatar" type="button" aria-haspopup="true" aria-expanded="false" aria-label="@lang('Account menu')">
-                    <i class="ph-bold ph-user-circle"></i>
+                    @if (auth()->user()->avatarUrl())
+                        <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->username }}">
+                    @else
+                        <i class="ph-bold ph-user-circle"></i>
+                    @endif
                 </button>
                 <div class="nocturne-user-dropdown" role="menu">
                     <div class="nocturne-user-dropdown__head">
-                        <span class="nocturne-account-avatar"><i class="ph-bold ph-user-circle"></i></span>
+                        <span class="nocturne-account-avatar">
+                            @if (auth()->user()->avatarUrl())
+                                <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->username }}">
+                            @else
+                                <i class="ph-bold ph-user-circle"></i>
+                            @endif
+                        </span>
                         <div>
                             <strong>{{ auth()->user()->username }}</strong>
                             <span>{{ showAmount(auth()->user()->balance) }}</span>
