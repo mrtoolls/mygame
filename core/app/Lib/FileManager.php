@@ -131,10 +131,13 @@ class FileManager
         //resize the
 	    if ($this->size) {
 	        $size = explode('x', strtolower($this->size));
-	        $image->resize($size[0], $size[1]);
+	        // cover() crops to fill the exact target box without distorting the aspect ratio
+	        // (resize() stretched images that weren't already the target ratio), and also
+	        // means we never save more pixels than the configured display size needs.
+	        $image->cover((int) $size[0], (int) $size[1]);
 	    }
         //save the image
-	    $image->save($this->path . '/' . $this->filename);
+	    $image->save($this->path . '/' . $this->filename, ...$this->saveOptions($this->filename));
 
         //save the image as thumbnail version
 	    if ($this->thumb) {
@@ -142,9 +145,23 @@ class FileManager
                 $this->removeFile($this->path . '/thumb_' . $this->old);
             }
 	        $thumb = explode('x', $this->thumb);
-	        $manager->read($this->file)->resize($thumb[0], $thumb[1])->save($this->path . '/thumb_' . $this->filename);
+	        $thumbFilename = 'thumb_' . $this->filename;
+	        $manager->read($this->file)->cover((int) $thumb[0], (int) $thumb[1])->save($this->path . '/' . $thumbFilename, ...$this->saveOptions($thumbFilename));
 	    }
 	}
+
+    /**
+    * Save-time encoder options. `quality` is only a valid constructor argument for the lossy
+    * encoders (jpg/webp/avif) - Intervention's PngEncoder/GifEncoder have no such parameter, so
+    * passing it unconditionally throws for every non-lossy upload (transparent logos/icons etc).
+    *
+    * @return array<string, mixed>
+    */
+    protected function saveOptions(string $filename): array
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        return in_array($extension, ['jpg', 'jpeg', 'webp', 'avif'], true) ? ['quality' => 82] : [];
+    }
 
 
     /**

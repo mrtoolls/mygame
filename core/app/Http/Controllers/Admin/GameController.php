@@ -179,6 +179,69 @@ class GameController extends Controller
         return back()->withNotify($notify);
     }
 
+    /**
+    * One-off, admin-triggered re-compression of already-uploaded game card images. There is
+    * no SSH/terminal access on the live host, so this is the only way to reprocess images that
+    * were uploaded before the upload pipeline started resizing/compressing properly - without
+    * it they sit on disk at their original, often multi-megabyte, size forever. Safe to run
+    * more than once: already-optimized files are skipped once they're under the size threshold.
+    */
+    public function optimizeImages()
+    {
+        $directory = getFilePath('game');
+        $target    = explode('x', strtolower(getFileSize('game')));
+        $manager   = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+
+        $processed  = 0;
+        $skipped    = 0;
+        $failed     = 0;
+        $savedBytes = 0;
+
+        foreach (Game::whereNotNull('image')->where('image', '!=', '')->get() as $game) {
+            $path = rtrim($directory, '/') . '/' . $game->image;
+            if (!is_file($path)) {
+                $skipped++;
+                continue;
+            }
+
+            $originalSize = filesize($path);
+            // Game card thumbnails are full-bleed rectangular art with no transparency need,
+            // so (unlike the shared FileManager used site-wide) it's safe to always re-encode
+            // as JPEG here - that alone is usually the single biggest size reduction for any
+            // PNG-sourced card image.
+            $newFilename = pathinfo($game->image, PATHINFO_FILENAME) . '.jpg';
+            $newPath     = rtrim($directory, '/') . '/' . $newFilename;
+
+            // Already a reasonably small, already-processed jpg - nothing to do.
+            if ($game->image === $newFilename && $originalSize < 220 * 1024) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                $image = $manager->read($path);
+                $image->cover((int) $target[0], (int) $target[1]);
+                $image->save($newPath, quality: 82);
+            } catch (\Throwable $exception) {
+                report($exception);
+                $failed++;
+                continue;
+            }
+
+            $newSize = filesize($newPath);
+            if ($newFilename !== $game->image) {
+                @unlink($path);
+                $game->image = $newFilename;
+                $game->save();
+            }
+            $savedBytes += max(0, $originalSize - $newSize);
+            $processed++;
+        }
+
+        $notify[] = ['success', "Optimized {$processed} game image(s), saving " . round($savedBytes / 1048576, 2) . ' MB.' . ($skipped ? " {$skipped} already optimized or missing." : '') . ($failed ? " {$failed} could not be processed - check the error log." : '')];
+        return back()->withNotify($notify);
+    }
+
     public function kenoUpdate(Request $request, $id)
     {
         $request->validate([

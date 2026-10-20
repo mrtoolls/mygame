@@ -66,5 +66,8 @@
     <x-confirmation-modal />
 @endsection
 @push('breadcrumb-plugins')
-    <x-search-form />
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <button type="button" class="btn btn-sm btn-outline--primary confirmationBtn" data-question="@lang('Re-compress all game card images now? Already-optimized images are skipped automatically, so this is safe to run more than once.')" data-action="{{ route('admin.game.optimize.images') }}"><i class="la la-compress"></i> @lang('Optimize Game Images')</button>
+        <x-search-form />
+    </div>
 @endpush

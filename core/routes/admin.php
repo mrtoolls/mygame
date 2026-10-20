@@ -85,6 +85,7 @@ Route::middleware('admin')->group(function () {
         Route::post('keno-update/{id}', 'kenoUpdate')->name('keno.update');
         Route::post('crazy-times/{id}', 'crazyTimesUpdate')->name('crazy.times.update');
         Route::post('dream-catcher/{id}', 'dreamCatcherUpdate')->name('dream.catcher.update');
+        Route::post('optimize-images', 'optimizeImages')->name('optimize.images');
     });
 
     Route::controller('TableGameAdminController')->name('table-games.')->prefix('table-games')->group(function () {
