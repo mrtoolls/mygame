@@ -96,9 +96,6 @@ body {
     font-family: var(--body-font);
     font-size: 15px;
     line-height: 1.55;
-    /* Stops the page-level bounce/rubber-band and pull-to-refresh gesture from chaining past the
-       top/bottom of the page - one of the more noticeable "this is a website, not an app" tells. */
-    overscroll-behavior-y: contain;
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
