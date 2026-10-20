@@ -92,6 +92,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('settings', 'settings')->name('settings');
         Route::post('{id}/force-close', 'forceClose')->whereUuid('id')->name('force-close');
+        Route::post('reports/{id}/dismiss', 'dismissReport')->whereNumber('id')->name('reports.dismiss');
         Route::post('user-limit', 'userLimit')->name('user-limit');
     });
 

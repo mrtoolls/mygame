@@ -7,6 +7,7 @@ use App\Games\TableGames\TableGameService;
 use App\Http\Controllers\Controller;
 use App\Models\TableGame;
 use App\Models\TableGameCommission;
+use App\Models\TableGameMessage;
 use App\Models\TableGameSetting;
 use App\Models\TableGameUserLimit;
 use Illuminate\Http\Request;
@@ -27,7 +28,10 @@ class TableGameAdminController extends Controller
         $commissionTotal = TableGameCommission::sum('amount');
         $commissionByGame = TableGameCommission::selectRaw('game_type, SUM(amount) as total, COUNT(*) as settled_tables')->groupBy('game_type')->get();
         $limits = TableGameUserLimit::with('user')->latest()->paginate(15, ['*'], 'limits_page');
-        return view('admin.table_games.index', compact('settings', 'liveTables', 'history', 'commissionTotal', 'commissionByGame', 'limits'))
+        $reportedMessages = Schema::hasColumn('table_game_messages', 'reported_by')
+            ? TableGameMessage::with(['user:id,username', 'reporter:id,username'])->whereNotNull('reported_by')->latest('reported_at')->paginate(15, ['*'], 'reports_page')
+            : null;
+        return view('admin.table_games.index', compact('settings', 'liveTables', 'history', 'commissionTotal', 'commissionByGame', 'limits', 'reportedMessages'))
             ->with('pageTitle', 'Table Game Management')
             ->with('gameDefinitions', TableGameRules::GAMES)
             ->with('availableGames', TableGameRules::AVAILABLE);
@@ -95,6 +99,12 @@ class TableGameAdminController extends Controller
     {
         $service->forceClose($id);
         return back()->withNotify([['success', 'Table closed and unsettled stakes refunded safely.']]);
+    }
+
+    public function dismissReport(int $id)
+    {
+        TableGameMessage::whereKey($id)->update(['reported_by' => null, 'reported_reason' => null, 'reported_at' => null]);
+        return back()->withNotify([['success', 'Report dismissed.']]);
     }
 
     public function userLimit(Request $request)

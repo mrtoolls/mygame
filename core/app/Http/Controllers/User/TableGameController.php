@@ -11,6 +11,7 @@ use App\Models\TableGameMessageReaction;
 use App\Models\TableGamePlayer;
 use App\Models\TableGameInvite;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Constants\Status;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -162,7 +163,13 @@ class TableGameController extends Controller
         if (Schema::hasColumn('table_game_players', 'last_seen_at')) {
             $player->forceFill(['last_seen_at' => now()])->saveQuietly();
         }
-        $messages = TableGameMessage::with(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username'])->where('table_game_id', $id)->orderByDesc('id')->limit(40)->get()->sortBy('id')->values();
+        $blockedIds = Schema::hasTable('user_blocks')
+            ? UserBlock::where('blocker_id', $request->user()->id)->pluck('blocked_id')
+            : collect();
+        $messages = TableGameMessage::with(['user:id,username', 'replyTo:id,user_id,body,kind,attachment_name', 'replyTo.user:id,username'])
+            ->where('table_game_id', $id)
+            ->when($blockedIds->isNotEmpty(), fn ($query) => $query->whereNotIn('user_id', $blockedIds))
+            ->orderByDesc('id')->limit(40)->get()->sortBy('id')->values();
         $ids = $messages->pluck('id');
         $reactions = TableGameMessageReaction::whereIn('message_id', $ids)->get()->groupBy('message_id');
         $otherSeenAt = Schema::hasColumn('table_game_players', 'last_seen_at')
@@ -218,6 +225,36 @@ class TableGameController extends Controller
         }, 3);
         $reactionRows = TableGameMessageReaction::where('message_id', $record->id)->get();
         return response()->json(['reactions' => $this->reactionPayload($reactionRows, (int) $request->user()->id)]);
+    }
+
+    public function reportMessage(Request $request, string $id, int $message)
+    {
+        $this->authorizeSeat($request, $id);
+        $data = $request->validate(['reason' => 'nullable|string|max:255']);
+        $record = TableGameMessage::where('table_game_id', $id)->whereKey($message)->firstOrFail();
+        if (!$record->reported_by) {
+            $record->forceFill([
+                'reported_by' => $request->user()->id,
+                'reported_reason' => $data['reason'] ?? null,
+                'reported_at' => now(),
+            ])->save();
+        }
+        return response()->json(['message' => 'Thanks - our team will review this message.']);
+    }
+
+    public function blockUser(Request $request, string $id, int $user)
+    {
+        $this->authorizeSeat($request, $id);
+        abort_if((int) $user === (int) $request->user()->id, 422, 'You cannot block yourself.');
+        abort_unless(TableGamePlayer::where('table_game_id', $id)->where('user_id', $user)->exists(), 404);
+        UserBlock::firstOrCreate(['blocker_id' => $request->user()->id, 'blocked_id' => $user]);
+        return response()->json(['message' => 'Player blocked. You will no longer see their messages at this table or future ones.']);
+    }
+
+    public function unblockUser(Request $request, int $user)
+    {
+        UserBlock::where('blocker_id', $request->user()->id)->where('blocked_id', $user)->delete();
+        return response()->json(['message' => 'Player unblocked.']);
     }
 
     public function attachment(Request $request, string $id, int $message)
