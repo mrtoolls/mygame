@@ -95,7 +95,10 @@
 .board-cell--chess.has-piece-own,.board-cell--chess.is-own-piece{cursor:pointer}
 .board-cell--chess:not(:disabled):hover{background:rgba(0,239,135,.22)}
 .board-cell--selected{box-shadow:inset 0 0 0 4px #00ef87;background:rgba(0,239,135,.28)!important}
-@keyframes chess-piece-in{from{transform:scale(.55);opacity:.2}to{transform:scale(1);opacity:1}}
+@keyframes chess-piece-in{from{transform:scale(.4) translateY(-14px) rotateX(50deg);opacity:0}60%{transform:scale(1.12) translateY(0) rotateX(0);opacity:1}to{transform:scale(1) translateY(0) rotateX(0);opacity:1}}
+.board-cell--chess{transform-style:preserve-3d}
+.board-cell--chess.piece-light:not(:empty){filter:drop-shadow(0 3px 2px rgba(0,0,0,.45))}
+.board-cell--chess.piece-dark:not(:empty){filter:drop-shadow(0 2px 1px rgba(255,255,255,.25))}
 .board-cell--chess:not(:empty){animation:chess-piece-in .18s ease}
 @media(prefers-reduced-motion:reduce){.board-cell--chess:not(:empty){animation:none}}.board-grid--ludo{grid-template-columns:repeat(4,minmax(45px,72px));gap:9px}.board-token-button{display:grid;aspect-ratio:1;place-items:center;border:1px solid var(--tm-line);border-radius:50%;background:var(--tm-raised);color:var(--tm-text);font-size:20px;font-weight:900}.board-token-button.is-ready{border-color:var(--tm-green);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.board-action-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}.board-action-row button{min-height:38px;padding:0 12px;border:1px solid var(--tm-line);border-radius:10px;background:var(--tm-raised);color:var(--tm-text);font-size:10px;font-weight:850}
 </style>
@@ -252,30 +255,31 @@
 <style>
 /* ---- Playing-card visuals for Spades/Hearts/Rummy/Blackjack/Texas Hold'em/Crazy Eights/Whot ----
    .board-card had no styling at all before this - these rendered as bare default buttons. ---- */
-.board-card-hand{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:10px 0}
+.board-card-hand{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:10px 0;perspective:700px}
 .board-card{
     display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;width:52px;height:74px;padding:6px;
     border:0;border-radius:9px;background:linear-gradient(160deg,#fbfbff,#e9ecf7);color:#1b1f33;font-size:16px;font-weight:950;line-height:1;
     box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 14px rgba(0,0,0,.3);cursor:pointer;transition:transform .14s ease,box-shadow .14s ease;
-    animation:board-card-deal .2s ease;
+    animation:board-card-deal .3s cubic-bezier(.2,.8,.3,1.1);transform-style:preserve-3d;backface-visibility:hidden;
 }
-@keyframes board-card-deal{from{transform:translateY(10px) scale(.85);opacity:0}to{transform:none;opacity:1}}
+@keyframes board-card-deal{from{transform:translateY(16px) rotateY(90deg) scale(.8);opacity:0}60%{transform:translateY(-3px) rotateY(0) scale(1.03);opacity:1}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.board-card{animation:none}}
-.board-card:not(:disabled):hover{transform:translateY(-5px);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 14px 22px rgba(0,0,0,.38)}
+.board-card:not(:disabled):hover{transform:translateY(-7px) rotateX(8deg);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 16px 26px rgba(0,0,0,.4)}
 .board-card:disabled{cursor:default;filter:grayscale(.55);opacity:.55;box-shadow:none}
 .board-card[data-suit="H"],.board-card[data-suit="D"]{color:#c21e3f}
 .board-card[data-suit="S"],.board-card[data-suit="C"]{color:#15182a}
 .board-card-pile{margin:6px 0 10px;padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.04);color:#c7cfea;font-size:11.5px;font-weight:700;text-align:center}
 .board-card-suit{min-height:38px;margin:0 auto 10px;padding:0 12px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:10px;background:var(--tm-raised,#232a47);color:var(--tm-text,#f5f6ff);display:block}
 /* ---- Dice pip graphics (Ludo roll, Backgammon dice) ---- */
-.dice-roll-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800}
-.dice-face{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:40px;height:40px;padding:6px;border-radius:9px;background:linear-gradient(160deg,#fbfbff,#e4e7f2);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 14px rgba(0,0,0,.3);animation:board-card-deal .22s ease}
+.dice-roll-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800;perspective:500px}
+.dice-face{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:40px;height:40px;padding:6px;border-radius:9px;background:linear-gradient(160deg,#fbfbff,#e4e7f2);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 14px rgba(0,0,0,.3);animation:dice-tumble .5s cubic-bezier(.2,.8,.3,1.05)}
+@keyframes dice-tumble{0%{transform:rotate3d(1,1,0,340deg) scale(.6);opacity:.2}70%{transform:rotate3d(1,1,0,-18deg) scale(1.08)}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.dice-face{animation:none}}
 .dice-face i{border-radius:50%;background:transparent}
 .dice-face i.is-on{background:#1b1f33}
 /* ---- Physical felt table surface behind every board ---- */
 .table-board{
-    border-radius:18px;border:1px solid rgba(255,255,255,.05);
+    border-radius:18px;border:1px solid rgba(255,255,255,.05);perspective:900px;
     background:radial-gradient(ellipse at 50% 15%,rgba(0,239,135,.05),transparent 60%),radial-gradient(ellipse at center,#163026,#0d1f19 72%);
     box-shadow:inset 0 2px 0 rgba(255,255,255,.04),inset 0 -18px 40px rgba(0,0,0,.45),inset 0 0 0 10px rgba(80,55,28,.22);
 }
