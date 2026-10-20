@@ -227,8 +227,8 @@ class SiteController extends Controller {
             "sign"             => $gs->site_name,
             "start_url"        => route('home'),
             "display"          => "standalone",
-            "background_color" => "#5900b3",
-            "theme_color"      => "black",
+            "background_color" => "#0b0d1e",
+            "theme_color"      => "#111429",
             "description"      => $gs->site_name . " PWA",
             "icons"            => [
                 [

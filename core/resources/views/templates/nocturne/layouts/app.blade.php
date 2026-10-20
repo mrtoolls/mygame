@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#111429">
+    <link rel="apple-touch-icon" href="{{ getImage(getFilePath('logoIcon') . '/pwa_favicon.png') }}">
     <title> {{ gs()->siteName(__($pageTitle)) }}</title>
     @include('partials.seo')
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,6 +51,62 @@
     <a class="scroll-top"><i class="fas fa-angle-double-up"></i></a>
 
     @yield('app')
+
+    <aside class="app-install" id="app-install" aria-label="Install app" hidden>
+        <img class="app-install__icon" src="{{ getImage(getFilePath('logoIcon') . '/pwa_favicon.png') }}" alt="" width="42" height="42">
+        <div class="app-install__copy">
+            <strong>@lang('Take the app with you')</strong>
+            <span>@lang('A faster, full-screen experience')</span>
+        </div>
+        <button type="button" class="app-install__action" id="app-install-action">@lang('Install')</button>
+        <button type="button" class="app-install__dismiss" id="app-install-dismiss" aria-label="@lang('Dismiss install notice')">&times;</button>
+    </aside>
+
+    <div class="app-install-modal" id="app-install-modal" hidden>
+        <button class="app-install-modal__backdrop" type="button" data-install-close aria-label="@lang('Close instructions')"></button>
+        <section class="app-install-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="app-install-title">
+            <button type="button" class="app-install-modal__close" data-install-close aria-label="@lang('Close')">&times;</button>
+            <span class="app-install-modal__eyebrow"><i class="las la-mobile-alt"></i> @lang('Your app, one tap away')</span>
+            <h2 id="app-install-title">@lang('Add Winxpot to your iPhone')</h2>
+            <p class="app-install-modal__intro">@lang('Safari can add this app to your Home Screen in a few seconds.')</p>
+            <div class="app-install-steps">
+                <article class="app-install-step">
+                    <span class="app-install-step__number">1</span>
+                    <div class="app-install-step__screen app-install-step__screen--share" aria-hidden="true">
+                        <div class="app-install-step__browser"><i class="las la-lock"></i> winxpot.com <span>•••</span></div>
+                        <div class="app-install-step__share-icon"><i class="las la-share-square"></i></div>
+                        <div class="app-install-step__caption">Share</div>
+                    </div>
+                    <strong>@lang('Tap Share')</strong>
+                    <p>@lang('In Safari, tap the share button at the bottom of the screen.') </p>
+                </article>
+                <article class="app-install-step">
+                    <span class="app-install-step__number">2</span>
+                    <div class="app-install-step__screen app-install-step__screen--home" aria-hidden="true">
+                        <div class="app-install-step__sheet-title">Share</div>
+                        <div class="app-install-step__home-icon"><i class="las la-plus"></i></div>
+                        <div class="app-install-step__home-label">Add to Home Screen</div>
+                        <i class="las la-chevron-right app-install-step__chevron"></i>
+                    </div>
+                    <strong>@lang('Choose Add to Home Screen')</strong>
+                    <p>@lang('Scroll the share menu and tap Add to Home Screen.') </p>
+                </article>
+                <article class="app-install-step">
+                    <span class="app-install-step__number">3</span>
+                    <div class="app-install-step__screen app-install-step__screen--add" aria-hidden="true">
+                        <div class="app-install-step__app-icon"><img src="{{ getImage(getFilePath('logoIcon') . '/pwa_favicon.png') }}" alt=""></div>
+                        <strong>Winxpot</strong>
+                        <span class="app-install-step__add-button">Add</span>
+                    </div>
+                    <strong>@lang('Tap Add')</strong>
+                    <p>@lang('Confirm in the top-right corner. The app will appear on your Home Screen.') </p>
+                </article>
+            </div>
+            <p class="app-install-modal__tip"><i class="las la-info-circle"></i> @lang('Use Safari for these steps. Other iPhone browsers use the same Share menu.') </p>
+        </section>
+    </div>
+
+    <div class="pull-refresh" id="pull-refresh" aria-live="polite" aria-hidden="true"><span class="pull-refresh__spinner"></span><span class="pull-refresh__text">@lang('Pull to refresh')</span></div>
 
     <div class="win-loss-popup" aria-hidden="true" data-currency="{{ gs('cur_text') }}">
         <div class="win-loss-popup__bg" data-popup-backdrop>
@@ -121,6 +179,142 @@
     <script src="{{ asset(activeTemplate(true) . 'js/main.js') }}"></script>
 
     @stack('script')
+
+    <script>
+        (() => {
+            'use strict';
+            const notice = document.querySelector('#app-install');
+            const action = document.querySelector('#app-install-action');
+            const modal = document.querySelector('#app-install-modal');
+            const dismiss = document.querySelector('#app-install-dismiss');
+            const refresh = document.querySelector('#pull-refresh');
+            if (!notice || !action || !modal || !refresh) return;
+
+            const standalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const dismissedKey = 'winxpot-install-dismissed-until';
+            let installPrompt = null;
+            let installReady = false;
+            const storage = {
+                get(key) { try { return localStorage.getItem(key); } catch (_) { return null; } },
+                set(key, value) { try { localStorage.setItem(key, value); } catch (_) {} },
+                remove(key) { try { localStorage.removeItem(key); } catch (_) {} }
+            };
+
+            function showInstallNotice() {
+                if (standalone()) {
+                    storage.remove(dismissedKey);
+                    notice.hidden = true;
+                    return;
+                }
+                if (Number(storage.get(dismissedKey) || 0) > Date.now()) return;
+                notice.hidden = !(ios || installReady);
+            }
+
+            window.addEventListener('beforeinstallprompt', event => {
+                event.preventDefault();
+                installPrompt = event;
+                installReady = true;
+                showInstallNotice();
+            });
+            window.addEventListener('appinstalled', () => {
+                installPrompt = null;
+                installReady = false;
+                storage.remove(dismissedKey);
+                notice.hidden = true;
+            });
+            action.addEventListener('click', async () => {
+                if (ios || !installPrompt) {
+                    modal.hidden = false;
+                    document.body.classList.add('app-install-open');
+                    modal.querySelector('[data-install-close]').focus();
+                    return;
+                }
+                installPrompt.prompt();
+                const choice = await installPrompt.userChoice;
+                installPrompt = null;
+                installReady = false;
+                if (choice?.outcome === 'accepted') notice.hidden = true;
+                else showInstallNotice();
+            });
+            dismiss?.addEventListener('click', () => {
+                storage.set(dismissedKey, String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+                notice.hidden = true;
+            });
+            modal.querySelectorAll('[data-install-close]').forEach(button => button.addEventListener('click', () => {
+                modal.hidden = true;
+                document.body.classList.remove('app-install-open');
+                action.focus();
+            }));
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !modal.hidden) {
+                    modal.hidden = true;
+                    document.body.classList.remove('app-install-open');
+                    action.focus();
+                }
+            });
+            showInstallNotice();
+
+            let touchStartY = 0;
+            let touchStartX = 0;
+            let pulling = false;
+            let refreshing = false;
+            let pullDistance = 0;
+            const threshold = 70;
+            const ignoredTarget = target => target.closest('input, textarea, select, button, a, [contenteditable="true"], .table-chat, .table-chat__messages, .game-board, canvas, video, audio, [data-no-pull-refresh]');
+            const isAtTop = target => {
+                let element = target instanceof Element ? target : null;
+                while (element && element !== document.body && element !== document.documentElement) {
+                    const overflow = window.getComputedStyle(element).overflowY;
+                    if ((overflow === 'auto' || overflow === 'scroll') && element.scrollHeight > element.clientHeight && element.scrollTop > 1) return false;
+                    element = element.parentElement;
+                }
+                return (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0) <= 1;
+            };
+
+            window.addEventListener('touchstart', event => {
+                if (event.touches.length !== 1 || refreshing || !isAtTop(event.target) || ignoredTarget(event.target)) return;
+                touchStartY = event.touches[0].clientY;
+                touchStartX = event.touches[0].clientX;
+                pulling = true;
+                pullDistance = 0;
+            }, { passive: true });
+            window.addEventListener('touchmove', event => {
+                if (!pulling) return;
+                if (event.touches.length !== 1 || !isAtTop(event.target)) { cancelPull(); return; }
+                const dy = event.touches[0].clientY - touchStartY;
+                const dx = event.touches[0].clientX - touchStartX;
+                if (dy <= 0 || Math.abs(dx) > dy) { if (Math.abs(dx) > dy) cancelPull(); return; }
+                if (dy < 8) return;
+                event.preventDefault();
+                pullDistance = Math.min(112, dy * 0.72);
+                refresh.style.setProperty('--pull-progress', `${pullDistance}px`);
+                refresh.classList.add('is-pulling');
+                refresh.querySelector('.pull-refresh__text').textContent = pullDistance >= threshold ? @json(__('Release to refresh')) : @json(__('Pull to refresh'));
+            }, { passive: false });
+            function cancelPull() {
+                pulling = false;
+                pullDistance = 0;
+                refresh.classList.remove('is-pulling');
+                refresh.style.removeProperty('--pull-progress');
+            }
+            function finishPull() {
+                if (!pulling) return;
+                pulling = false;
+                if (pullDistance >= threshold) {
+                    refreshing = true;
+                    refresh.classList.remove('is-pulling');
+                    refresh.classList.add('is-refreshing');
+                    refresh.querySelector('.pull-refresh__text').textContent = @json(__('Refreshing…'));
+                    setTimeout(() => window.location.reload(), 180);
+                    return;
+                }
+                cancelPull();
+            }
+            window.addEventListener('touchend', finishPull, { passive: true });
+            window.addEventListener('touchcancel', cancelPull, { passive: true });
+        })();
+    </script>
 
     <script>
         (function ($) {
@@ -335,7 +529,7 @@
             if ('serviceWorker' in navigator) {
                 try {
                     await navigator.serviceWorker.register(
-                        "{{ asset('assets/global/js/pwa/serviceworker.js') }}");
+                        "{{ asset('serviceworker.js') }}", { scope: '/' });
                 } catch (e) {
                     console.warn('SW registration failed');
                 }
