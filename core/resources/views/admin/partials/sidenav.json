@@ -531,6 +531,12 @@
         "route_name": "admin.support.agents.index",
         "menu_active": "admin.support.agents*"
     },
+    "support_bot": {
+        "title": "Support Bot",
+        "icon": "la la-robot",
+        "route_name": "admin.support.bot.index",
+        "menu_active": "admin.support.bot*"
+    },
     "reports": {
         "title": "Report",
         "icon": "la la-list",

@@ -297,6 +297,17 @@ Route::middleware('admin')->group(function () {
         Route::post('delete/{id}', 'destroy')->name('delete');
     });
 
+    Route::controller('SupportBotController')->prefix('support/bot')->name('support.bot.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('settings', 'updateSettings')->name('settings');
+        Route::get('trainings/create', 'trainingCreate')->name('trainings.create');
+        Route::post('trainings/create', 'trainingStore')->name('trainings.store');
+        Route::get('trainings/{id}/edit', 'trainingEdit')->name('trainings.edit');
+        Route::post('trainings/{id}/edit', 'trainingUpdate')->name('trainings.update');
+        Route::post('trainings/{id}/status', 'trainingStatus')->name('trainings.status');
+        Route::post('trainings/{id}/delete', 'trainingDestroy')->name('trainings.delete');
+    });
+
     Route::controller('SupportTicketController')->prefix('ticket')->name('ticket.')->group(function () {
         Route::get('/', 'tickets')->name('index');
         Route::get('pending', 'pendingTicket')->name('pending');

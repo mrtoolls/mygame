@@ -210,7 +210,7 @@
     }
 
     function updateTicketInfo(data = {}) {
-        chatAgent.textContent = data.agent || conversation?.agent || 'Winxpot Assistant';
+        chatAgent.textContent = data.agent || conversation?.agent || root.dataset.botName || 'Winxpot Assistant';
         ticketLabel.textContent = data.ticket ? `Ticket #${data.ticket}` : '';
         const closed = data.status === 'closed';
         composer.disabled = closed;

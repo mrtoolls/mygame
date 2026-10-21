@@ -48,7 +48,8 @@
 .winx-support-loading,.winx-support-empty { padding: 13px; border: 1px dashed var(--support-line); border-radius: 14px; color: var(--support-muted); font-size: 11.5px; text-align: center; }
 .winx-support-assistant { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 65px; padding: 11px 13px; border: 1px solid rgba(0,239,135,.26); border-radius: 16px; background: linear-gradient(115deg,rgba(0,239,135,.12),rgba(21,26,49,.95) 55%); color: var(--support-text); text-align: left; cursor: pointer; }
 .winx-support-assistant:hover { border-color: rgba(0,239,135,.6); }
-.winx-support-assistant__icon { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 13px; background: rgba(0,239,135,.16); color: var(--support-green); font-size: 21px; }
+.winx-support-assistant__icon { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 13px; overflow: hidden; background: rgba(0,239,135,.16); color: var(--support-green); font-size: 21px; }
+.winx-support-assistant__icon img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .winx-support-assistant strong,.winx-support-assistant small { display: block; }
 .winx-support-assistant strong { font-size: 12px; font-weight: 850; }
 .winx-support-assistant small { margin-top: 2px; color: var(--support-muted); font-size: 10px; }

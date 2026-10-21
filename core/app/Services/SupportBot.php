@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\SupportBotTraining;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+
 class SupportBot
 {
     public function welcome(): array
@@ -20,6 +24,13 @@ class SupportBot
 
         if ($this->matches($text, ['human', 'live agent', 'talk to agent', 'speak to agent', 'real person', 'chat with agent', 'chat with a person', 'live support', 'talk to someone'])) {
             return ['handoff' => true];
+        }
+
+        // Admin-trained responses take priority over the built-in rules below, so a trainer
+        // can sharpen or override the default behavior without touching code.
+        $trained = $this->trainedResponse($text);
+        if ($trained !== null) {
+            return $trained;
         }
 
         if ($this->matches($text, ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'])) {
@@ -66,5 +77,27 @@ class SupportBot
         }
 
         return false;
+    }
+
+    private function trainedResponse(string $text): ?array
+    {
+        if (!Schema::hasTable('support_bot_trainings')) {
+            return null;
+        }
+
+        $trainings = Cache::remember('support_bot_trainings', 300, function () {
+            return SupportBotTraining::where('is_active', true)->orderBy('sort_order')->orderBy('id')->get();
+        });
+
+        foreach ($trainings as $training) {
+            foreach ($training->triggerList() as $phrase) {
+                $phrase = mb_strtolower($phrase);
+                if ($phrase !== '' && str_contains($text, $phrase)) {
+                    return ['text' => $training->response, 'suggestions' => []];
+                }
+            }
+        }
+
+        return null;
     }
 }

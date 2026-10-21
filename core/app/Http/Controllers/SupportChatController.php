@@ -211,11 +211,13 @@ class SupportChatController extends Controller
     private function presentMessage(SupportMessage $message): array
     {
         $sender = $message->sender_type ?: ($message->admin_id ? 'admin' : 'user');
+        $botName = gs('chatbot_name') ?: 'Winxpot Assistant';
+        $botPhoto = gs('chatbot_photo') ? asset('assets/images/chatbot/' . gs('chatbot_photo')) : null;
         return [
             'id' => $message->id,
             'sender' => $sender,
-            'sender_name' => $message->supportAgent?->name ?: ($sender === 'bot' ? 'Winxpot Assistant' : ($sender === 'agent' ? 'Support Agent' : 'You')),
-            'sender_photo' => $message->supportAgent?->photo ? asset('assets/images/support-agents/' . $message->supportAgent->photo) : null,
+            'sender_name' => $message->supportAgent?->name ?: ($sender === 'bot' ? $botName : ($sender === 'agent' ? 'Support Agent' : 'You')),
+            'sender_photo' => $message->supportAgent?->photo ? asset('assets/images/support-agents/' . $message->supportAgent->photo) : ($sender === 'bot' ? $botPhoto : null),
             'body' => $message->message,
             'metadata' => $message->metadata ?? [],
             'time' => $message->created_at?->toIso8601String(),
