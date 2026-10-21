@@ -34,6 +34,22 @@
         href="{{ asset(activeTemplate(true) . 'css/color.php') }}?color={{ gs('base_color') }}&secondColor={{ gs('secondary_color') }}"
         rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/global/css/mobile-inputs.css') }}?v={{ @filemtime(public_path('assets/global/css/mobile-inputs.css')) }}">
+    <style>
+        /* Sitewide mobile polish: the bottom tab bar sat flush against the
+           very edge of the screen (home-indicator area on notched phones),
+           reading as cramped rather than a native app's tab bar, which
+           always leaves a little breathing room above the edge. */
+        @media (max-width: 575.98px) {
+            .nocturne-mobile-nav { padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important; }
+        }
+        /* The full footer (sitemap columns, newsletter, trust badges) is
+           too heavy for mobile on most pages - hide it there except on the
+           policy/legal pages and News, where the footer's links are the
+           most relevant navigation on the page. */
+        @media (max-width: 767.98px) {
+            .nocturne-site-footer:not(.nocturne-footer--show-mobile) { display: none !important; }
+        }
+    </style>
 </head>
 
 @php echo loadExtension('google-analytics') @endphp

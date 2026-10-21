@@ -4,7 +4,7 @@
     $partnerLogos = getContent('footer_partners.element', false, null, true);
     $footer = getContent('footer.content', true);
 @endphp
-<footer class="footer-area nocturne-site-footer">
+<footer class="footer-area nocturne-site-footer {{ request()->routeIs('policy.pages') || request()->routeIs('blog') || request()->routeIs('blog.details') ? 'nocturne-footer--show-mobile' : '' }}">
     @if ($footer && @$footer->data_values->image)
         <div class="footer-area__thumb">
             <img src="{{ getImage('assets/images/frontend/footer/' . $footer->data_values->image, '1110x420') }}" alt="@lang('image')">
