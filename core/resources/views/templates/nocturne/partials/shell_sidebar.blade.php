@@ -23,6 +23,7 @@
         </a>
         <section class="nocturne-menu-group" aria-label="@lang('Play')">
             <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
+            <a href="{{ route('arena.index') }}" class="{{ request()->routeIs('arena.*') ? 'is-active' : '' }}"><i class="ph-fill ph-fire"></i><span>@lang('Arena')</span></a>
             @auth
                 <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
                 <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-sword"></i><span>@lang('Live Games')</span></a>

@@ -84,3 +84,7 @@ Route::controller('SiteController')->group(function () {
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');
 });
+
+// Arena (social feed) - readable by guests, write actions live under the
+// authenticated user.arena.* routes in routes/user.php.
+Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');

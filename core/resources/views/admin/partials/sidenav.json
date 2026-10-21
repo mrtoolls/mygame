@@ -103,6 +103,19 @@
         "route_name": "admin.news.index",
         "menu_active": "admin.news*"
     },
+    "arena": {
+        "keyword": [
+            "Arena",
+            "Social",
+            "Feed",
+            "Community",
+            "Moderation"
+        ],
+        "title": "Arena",
+        "icon": "las la-fire",
+        "route_name": "admin.arena.settings",
+        "menu_active": "admin.arena*"
+    },
     "vip": {
         "keyword": [
             "VIP",

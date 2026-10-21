@@ -1,0 +1,248 @@
+@extends('Template::layouts.frontend')
+@section('content')
+    <div class="nocturne-arena-page">
+        <div class="nocturne-arena-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Arena')</span></div>
+
+        <div class="nocturne-arena-layout">
+            <div class="nocturne-arena-feed">
+                @auth
+                    <div class="nocturne-arena-composer">
+                        <form method="post" action="{{ route('user.arena.store') }}" enctype="multipart/form-data" id="arena-composer-form">
+                            @csrf
+                            <div class="nocturne-arena-composer__top">
+                                <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
+                                <textarea name="body" rows="2" maxlength="2000" placeholder="@lang('Share a win, ask for a competition, or say something...')" id="arena-composer-body">{{ old('body') }}</textarea>
+                            </div>
+
+                            <div class="nocturne-arena-composer__preview" id="arena-image-preview" hidden><img src="" alt=""><button type="button" id="arena-image-remove"><i class="ph-bold ph-x"></i></button></div>
+
+                            <div class="nocturne-arena-composer__swatches" id="arena-swatches">
+                                @foreach(\App\Models\ArenaPost::BACKGROUNDS as $swatch)
+                                    <button type="button" class="nocturne-arena-swatch nocturne-arena-swatch--{{ $swatch }} {{ $loop->first ? 'is-active' : '' }}" data-swatch="{{ $swatch }}" aria-label="{{ $swatch }}"></button>
+                                @endforeach
+                                <input type="hidden" name="background_style" id="arena-background-input" value="{{ \App\Models\ArenaPost::BACKGROUNDS[0] }}">
+                            </div>
+
+                            <div class="nocturne-arena-composer__row">
+                                <div class="nocturne-arena-type-pick">
+                                    @foreach(['general' => ['General','ph-chat-circle-text'],'win' => ['Win','ph-trophy'],'challenge' => ['Challenge','ph-sword'],'question' => ['Question','ph-question']] as $key => $info)
+                                        <label class="nocturne-arena-type-opt {{ $loop->first ? 'is-active' : '' }}">
+                                            <input type="radio" name="type" value="{{ $key }}" {{ $loop->first ? 'checked' : '' }}>
+                                            <i class="ph-fill {{ $info[1] }}"></i><span>{{ __($info[0]) }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            @if(count($recentWins))
+                                <div class="nocturne-arena-win-pick" id="arena-win-pick" hidden>
+                                    <label>@lang('Attach a win (optional)')</label>
+                                    <select name="linked_game_log_id">
+                                        <option value="">@lang('None')</option>
+                                        @foreach($recentWins as $log)
+                                            <option value="{{ $log->id }}">{{ __($log->game->name ?? 'Game') }} &middot; {{ showAmount($log->win_amo) }} &middot; {{ showDateTime($log->created_at, 'M d') }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="nocturne-arena-composer__foot">
+                                <label class="nocturne-arena-image-btn"><i class="ph-bold ph-image"></i>@lang('Photo')<input type="file" name="image" id="arena-image-input" accept=".png,.jpg,.jpeg,.webp" hidden></label>
+                                <button type="submit" class="nocturne-arena-post-btn"><i class="ph-bold ph-paper-plane-tilt"></i>@lang('Post')</button>
+                            </div>
+
+                            @if(gs('arena_post_approval_required'))
+                                <p class="nocturne-arena-composer__note"><i class="ph-fill ph-info"></i>@lang('Posts are reviewed by a moderator before they go live.')</p>
+                            @endif
+                        </form>
+                    </div>
+                @else
+                    <div class="nocturne-arena-guest-cta">
+                        <p>@lang('Sign in to post, comment, vote and follow other players.')</p>
+                        <a href="{{ route('user.login') }}">@lang('Sign in')</a>
+                    </div>
+                @endauth
+
+                <div class="nocturne-arena-list" id="arena-feed">
+                    @if($posts->isEmpty())
+                        <div class="nocturne-arena-empty"><i class="ph-fill ph-chats-circle"></i><h3>@lang('No posts yet')</h3><p>@lang('Be the first to post in the Arena.')</p></div>
+                    @else
+                        @include('Template::partials.arena_post_cards')
+                    @endif
+                </div>
+
+                @if($posts->hasMorePages())
+                    <div class="nocturne-arena-loadmore">
+                        <button type="button" id="arena-load-more" data-next-page="{{ $posts->currentPage() + 1 }}" data-url="{{ route('arena.index') }}">@lang('Load More')</button>
+                    </div>
+                @endif
+            </div>
+
+            <aside class="nocturne-arena-rail">
+                <div class="nocturne-arena-widget">
+                    <h3><i class="ph-fill ph-rocket-launch"></i>@lang('Arena')</h3>
+                    <p style="color:var(--arena-muted);font-size:12.5px;margin:0">@lang('Live games, wins, trending and more are coming here soon.')</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+@endsection
+
+@push('style')
+<style>
+:root{--arena-accent:#00e78a;--arena-bg:#10152a;--arena-panel:#151a31;--arena-raised:#1b2140;--arena-muted:#858eaf;--arena-line:rgba(133,142,175,.18);--arena-text:#f5f6ff}
+.nocturne-arena-page{max-width:1240px;margin:0 auto;padding:24px 20px 60px}
+.nocturne-arena-crumb{display:flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--arena-muted);font-size:13px;font-weight:700}
+.nocturne-arena-crumb a{color:var(--arena-muted);text-decoration:none}
+.nocturne-arena-crumb a:hover{color:var(--arena-text)}
+.nocturne-arena-crumb span{color:var(--arena-text)}
+.nocturne-arena-crumb i{font-size:11px;opacity:.6}
+
+.nocturne-arena-layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
+.nocturne-arena-feed{min-width:0}
+
+.nocturne-arena-composer{margin-bottom:20px;padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
+.nocturne-arena-composer__top{display:flex;gap:12px;align-items:flex-start}
+.nocturne-arena-composer textarea{flex:1;min-width:0;min-height:44px;padding:10px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;resize:vertical;outline:0}
+.nocturne-arena-composer textarea::placeholder{color:#606986}
+.nocturne-arena-composer__preview{position:relative;margin:12px 0 0 56px;border-radius:14px;overflow:hidden;max-width:320px}
+.nocturne-arena-composer__preview img{display:block;width:100%;max-height:220px;object-fit:cover}
+.nocturne-arena-composer__preview button{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:rgba(5,8,18,.7);color:#fff;cursor:pointer}
+
+.nocturne-arena-composer__swatches{display:flex;align-items:center;gap:8px;margin:12px 0 0 56px}
+.nocturne-arena-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.nocturne-arena-swatch.is-active{border-color:#fff}
+.nocturne-arena-swatch--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
+.nocturne-arena-swatch--sunset{background:linear-gradient(135deg,#f97316,#be123c)}
+.nocturne-arena-swatch--forest{background:linear-gradient(135deg,#00e78a,#065f46)}
+.nocturne-arena-swatch--ocean{background:linear-gradient(135deg,#0ea5e9,#1e3a8a)}
+.nocturne-arena-swatch--rose{background:linear-gradient(135deg,#f472b6,#9d174d)}
+
+.nocturne-arena-composer__row{margin:14px 0 0 56px}
+.nocturne-arena-type-pick{display:flex;flex-wrap:wrap;gap:8px}
+.nocturne-arena-type-opt{position:relative}
+.nocturne-arena-type-opt input{position:absolute;opacity:0;pointer-events:none}
+.nocturne-arena-type-opt>i,.nocturne-arena-type-opt>span{pointer-events:none}
+.nocturne-arena-type-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--arena-line);border-radius:999px;background:var(--arena-bg);color:var(--arena-muted);font-size:12px;font-weight:750;cursor:pointer}
+.nocturne-arena-type-opt i{font-size:14px}
+.nocturne-arena-type-opt.is-active{border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.1);color:var(--arena-accent)}
+
+.nocturne-arena-win-pick{margin:14px 0 0 56px}
+.nocturne-arena-win-pick label{display:block;margin-bottom:6px;color:var(--arena-muted);font-size:11px;font-weight:800;text-transform:uppercase}
+.nocturne-arena-win-pick select{width:100%;max-width:360px;padding:10px 12px;border:1px solid var(--arena-line);border-radius:12px;background:var(--arena-bg);color:var(--arena-text);font:inherit;font-size:13px}
+
+.nocturne-arena-composer__foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 0 56px}
+.nocturne-arena-image-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid var(--arena-line);border-radius:11px;background:var(--arena-bg);color:var(--arena-muted);font-size:12.5px;font-weight:750;cursor:pointer}
+.nocturne-arena-image-btn:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
+.nocturne-arena-post-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;cursor:pointer}
+.nocturne-arena-composer__note{display:flex;align-items:center;gap:6px;margin:12px 0 0 56px;color:var(--arena-muted);font-size:11.5px}
+.nocturne-arena-composer__note i{color:var(--arena-accent)}
+
+.nocturne-arena-guest-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;padding:16px 18px;border:1px solid var(--arena-line);border-radius:16px;background:var(--arena-panel);flex-wrap:wrap}
+.nocturne-arena-guest-cta p{margin:0;color:var(--arena-muted);font-size:13px}
+.nocturne-arena-guest-cta a{padding:9px 16px;border-radius:11px;background:var(--arena-accent);color:#062a23;font-size:12.5px;font-weight:800;text-decoration:none}
+
+.nocturne-arena-list{display:grid;gap:14px}
+.nocturne-arena-post{padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.14)}
+.nocturne-arena-post__head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.nocturne-arena-post__avatar{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:rgba(0,231,138,.12);color:var(--arena-accent);font-size:15px;font-weight:800;overflow:hidden}
+.nocturne-arena-post__avatar img{width:100%;height:100%;object-fit:cover}
+.nocturne-arena-post__identity{flex:1;min-width:0;display:grid;gap:1px}
+.nocturne-arena-post__identity strong{color:var(--arena-text);font-size:13.5px;font-weight:800}
+.nocturne-arena-post__identity small{color:var(--arena-muted);font-size:11px}
+.nocturne-arena-post__type{display:inline-flex;align-items:center;gap:5px;flex:none;padding:5px 11px;border-radius:999px;background:rgba(133,142,175,.12);color:var(--arena-muted);font-size:10.5px;font-weight:800}
+.nocturne-arena-post__body{margin:0 0 4px;color:#d7dafa;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.nocturne-arena-post__image{margin-top:10px;border-radius:14px;overflow:hidden}
+.nocturne-arena-post__image img{display:block;width:100%;max-height:420px;object-fit:cover}
+.nocturne-arena-post__colored{display:grid;place-items:center;min-height:140px;padding:24px;border-radius:16px;text-align:center}
+.nocturne-arena-post__colored p{margin:0;color:#fff;font-size:17px;font-weight:800;line-height:1.5;overflow-wrap:anywhere}
+.nocturne-arena-post__colored--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
+.nocturne-arena-post__colored--sunset{background:linear-gradient(135deg,#f97316,#be123c)}
+.nocturne-arena-post__colored--forest{background:linear-gradient(135deg,#00e78a,#065f46)}
+.nocturne-arena-post__colored--ocean{background:linear-gradient(135deg,#0ea5e9,#1e3a8a)}
+.nocturne-arena-post__colored--rose{background:linear-gradient(135deg,#f472b6,#9d174d)}
+.nocturne-arena-post__win{display:flex;align-items:center;gap:12px;margin-top:12px;padding:13px 15px;border:1px solid rgba(0,231,138,.22);border-radius:14px;background:rgba(0,231,138,.07)}
+.nocturne-arena-post__win i{color:var(--arena-accent);font-size:22px}
+.nocturne-arena-post__win strong{display:block;color:var(--arena-text);font-size:13.5px}
+.nocturne-arena-post__win small{color:var(--arena-muted);font-size:11.5px}
+
+.nocturne-arena-empty{display:grid;justify-items:center;gap:8px;padding:50px 20px;border:1px dashed var(--arena-line);border-radius:18px;color:var(--arena-muted);text-align:center}
+.nocturne-arena-empty i{color:var(--arena-accent);font-size:28px}
+.nocturne-arena-empty h3{margin:0;color:var(--arena-text);font-size:16px}
+
+.nocturne-arena-loadmore{display:flex;justify-content:center;margin-top:20px}
+#arena-load-more{padding:12px 26px;border:1px solid var(--arena-line);border-radius:14px;background:var(--arena-panel);color:var(--arena-text);font-size:13px;font-weight:800;cursor:pointer}
+#arena-load-more:hover{border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
+#arena-load-more:disabled{opacity:.5;cursor:default}
+
+.nocturne-arena-rail{display:grid;gap:16px}
+.nocturne-arena-widget{padding:18px;border:1px solid var(--arena-line);border-radius:18px;background:var(--arena-panel)}
+.nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
+.nocturne-arena-widget h3 i{color:var(--arena-accent)}
+
+@media(max-width:991.98px){
+    .nocturne-arena-layout{grid-template-columns:1fr}
+    .nocturne-arena-rail{order:3}
+}
+@media(max-width:575.98px){
+    .nocturne-arena-page{padding:16px 14px 40px}
+    .nocturne-arena-composer{padding:14px}
+    .nocturne-arena-composer__preview,.nocturne-arena-composer__swatches,.nocturne-arena-composer__row,.nocturne-arena-win-pick,.nocturne-arena-composer__foot,.nocturne-arena-composer__note{margin-left:0}
+    .nocturne-arena-composer__foot{flex-wrap:wrap}
+    .nocturne-arena-post{padding:14px}
+}
+</style>
+@endpush
+
+@push('script')
+<script>
+"use strict";
+(function($) {
+    $('#arena-image-input').on('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $('#arena-image-preview img').attr('src', e.target.result);
+            $('#arena-image-preview').prop('hidden', false);
+            $('#arena-swatches').hide();
+        };
+        reader.readAsDataURL(file);
+    });
+    $('#arena-image-remove').on('click', function() {
+        $('#arena-image-input').val('');
+        $('#arena-image-preview').prop('hidden', true).find('img').attr('src', '');
+        $('#arena-swatches').show();
+    });
+
+    $('.nocturne-arena-swatch').on('click', function() {
+        $('.nocturne-arena-swatch').removeClass('is-active');
+        $(this).addClass('is-active');
+        $('#arena-background-input').val($(this).data('swatch'));
+    });
+
+    $('.nocturne-arena-type-opt input').on('change', function() {
+        $('.nocturne-arena-type-opt').removeClass('is-active');
+        $(this).closest('.nocturne-arena-type-opt').addClass('is-active');
+        $('#arena-win-pick').prop('hidden', $(this).val() !== 'win');
+    });
+
+    $('#arena-load-more').on('click', function() {
+        var btn = $(this);
+        var page = btn.data('next-page');
+        var url = btn.data('url');
+        btn.prop('disabled', true).text("{{ __('Loading…') }}");
+        $.ajax({ url: url, data: { page: page }, headers: { 'Accept': 'application/json' } })
+            .done(function(res) {
+                $('#arena-feed').append(res.html);
+                if (res.hasMore) {
+                    btn.data('next-page', page + 1).prop('disabled', false).text("{{ __('Load More') }}");
+                } else {
+                    btn.remove();
+                }
+            })
+            .fail(function() { btn.prop('disabled', false).text("{{ __('Load More') }}"); });
+    });
+})(jQuery);
+</script>
+@endpush

@@ -82,6 +82,11 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('claim-rakeback', 'claimRakeback')->name('claim.rakeback');
             });
 
+            // Arena (social feed) - the feed itself is public, see routes/web.php
+            Route::controller('ArenaController')->prefix('arena')->name('arena.')->group(function () {
+                Route::post('post', 'store')->name('store');
+            });
+
             // Paid business promotions
             Route::controller('BusinessPromotionController')->prefix('business-promotions')->name('business-promotions.')->group(function () {
                 Route::get('/', 'index')->name('index');

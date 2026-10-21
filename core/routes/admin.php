@@ -123,6 +123,12 @@ Route::middleware('admin')->group(function () {
         Route::get('claims', 'claims')->name('claims');
     });
 
+    // Arena
+    Route::controller('ArenaController')->name('arena.')->prefix('arena')->group(function () {
+        Route::get('settings', 'settings')->name('settings');
+        Route::post('settings', 'settingsUpdate')->name('settings.update');
+    });
+
     // News
     Route::controller('NewsController')->name('news.')->prefix('news')->group(function () {
         Route::get('/', 'index')->name('index');
