@@ -18,9 +18,10 @@
                 <div class="nocturne-admin-hero__identity">
                     <span class="nocturne-admin-avatar">{{ mb_strtoupper(mb_substr(@$withdrawal->user->username ?? '?', 0, 1)) }}</span>
                     <div>
+                        <span class="nocturne-admin-hero__eyebrow">{{ @$withdrawal->user->username }} @lang('requested a payout')</span>
                         <h1>{{ showAmount($withdrawal->amount) }} <small>{{ __(gs('cur_text')) }}</small></h1>
                         <p>
-                            <a href="{{ route('admin.users.detail', $withdrawal->user_id) }}">@{{ @$withdrawal->user->username }}</a>
+                            <a href="{{ route('admin.users.detail', $withdrawal->user_id) }}">&commat;{{ @$withdrawal->user->username }}</a>
                             <span class="dot">&middot;</span> {{ __(@$withdrawal->method->name) }}
                             <span class="dot">&middot;</span> {{ $withdrawal->trx }}
                         </p>
@@ -111,7 +112,7 @@
                     <button type="button" class="nocturne-admin-modal__close" data-close-modal><i class="las la-times"></i></button>
                 </div>
                 <div class="nocturne-admin-modal__body">
-                    <p>@lang('Have you sent') <strong>{{ showAmount($withdrawal->final_amount, currencyFormat: false) }} {{ $withdrawal->currency }}</strong> @lang('to') <strong>@{{ @$withdrawal->user->username }}</strong>?</p>
+                    <p>@lang('Have you sent') <strong>{{ showAmount($withdrawal->final_amount, currencyFormat: false) }} {{ $withdrawal->currency }}</strong> @lang('to') <strong>&commat;{{ @$withdrawal->user->username }}</strong>?</p>
                     <label>@lang('Payout reference')</label>
                     <textarea name="details" maxlength="255" rows="3" required placeholder="@lang('e.g. transaction/reference number')">{{ old('details') }}</textarea>
                 </div>
@@ -136,7 +137,7 @@
                     <button type="button" class="nocturne-admin-modal__close" data-close-modal><i class="las la-times"></i></button>
                 </div>
                 <div class="nocturne-admin-modal__body">
-                    <p>@lang('Reject') <strong>{{ showAmount($withdrawal->amount) }}</strong> @lang('from') <strong>@{{ @$withdrawal->user->username }}</strong>? @lang('The amount will be refunded to their wallet.')</p>
+                    <p>@lang('Reject') <strong>{{ showAmount($withdrawal->amount) }}</strong> @lang('from') <strong>&commat;{{ @$withdrawal->user->username }}</strong>? @lang('The amount will be refunded to their wallet.')</p>
                     <label>@lang('Reason for rejection')</label>
                     <textarea name="details" maxlength="255" rows="3" required placeholder="@lang('Explain why this withdrawal is being rejected...')">{{ old('details') }}</textarea>
                 </div>
@@ -159,6 +160,7 @@
 @push('style')
 <style>
 :root{--na-accent:#00e78a;--na-bg:#0d1225;--na-panel:#151a31;--na-raised:#1b2140;--na-muted:#858eaf;--na-line:rgba(133,142,175,.18);--na-text:#f5f6ff;--na-danger:#ff5c7a;--na-warning:#ffb547}
+.page-breadcrumb{display:none}
 .nocturne-admin-wrap{max-width:1180px;margin:0 auto 90px}
 .nocturne-admin-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;color:var(--na-muted);font-size:13px;font-weight:700;text-decoration:none}
 .nocturne-admin-back:hover{color:var(--na-text)}
@@ -167,6 +169,7 @@
 .nocturne-admin-hero__row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .nocturne-admin-hero__identity{display:flex;align-items:center;gap:16px}
 .nocturne-admin-avatar{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:16px;background:linear-gradient(145deg,rgba(0,231,138,.25),rgba(0,231,138,.08));color:var(--na-accent);font-size:22px;font-weight:850}
+.nocturne-admin-hero__identity .nocturne-admin-hero__eyebrow{display:block;margin-bottom:5px;color:var(--na-accent);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .nocturne-admin-hero__identity h1{margin:0;color:var(--na-text);font-size:clamp(22px,3vw,30px);font-weight:850;letter-spacing:-.03em}
 .nocturne-admin-hero__identity h1 small{color:var(--na-muted);font-size:14px;font-weight:700}
 .nocturne-admin-hero__identity p{margin:5px 0 0;color:var(--na-muted);font-size:13px}
