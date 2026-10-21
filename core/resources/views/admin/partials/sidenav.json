@@ -121,6 +121,11 @@
                 "menu_active": "admin.arena.pending"
             },
             {
+                "title": "Announcements",
+                "route_name": "admin.arena.announcements.index",
+                "menu_active": "admin.arena.announcements*"
+            },
+            {
                 "title": "Settings",
                 "route_name": "admin.arena.settings",
                 "menu_active": "admin.arena.settings"

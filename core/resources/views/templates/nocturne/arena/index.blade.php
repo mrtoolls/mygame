@@ -16,6 +16,22 @@
 
         <div class="nocturne-arena-layout">
             <div class="nocturne-arena-feed">
+                @if($announcement)
+                    <div class="nocturne-arena-announcement">
+                        @if($announcement->imageUrl())<img class="nocturne-arena-announcement__bg" src="{{ $announcement->imageUrl() }}" alt=""><div class="nocturne-arena-announcement__shade"></div>@endif
+                        <div class="nocturne-arena-announcement__content">
+                            @if($announcement->badge_label)<span class="nocturne-arena-announcement__badge"><i class="ph-fill ph-megaphone"></i>{{ __($announcement->badge_label) }}</span>@endif
+                            <h2>{{ __($announcement->title) }}</h2>
+                            @if($announcement->description)<p>{{ __($announcement->description) }}</p>@endif
+                            <div class="nocturne-arena-announcement__foot">
+                                @if($announcement->reward_label)<span class="nocturne-arena-announcement__reward"><i class="ph-fill ph-trophy"></i>{{ __($announcement->reward_label) }}</span>@endif
+                                @if($announcement->ends_at)<span class="nocturne-arena-announcement__countdown" id="arena-announcement-countdown" data-countdown-end="{{ $announcement->ends_at->timestamp * 1000 }}">--:--:--</span>@endif
+                                @if($announcement->button_label && $announcement->button_url)<a href="{{ $announcement->button_url }}" class="nocturne-arena-announcement__btn">{{ __($announcement->button_label) }}</a>@endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 @auth
                     <div class="nocturne-arena-composer">
                         <form method="post" action="{{ route('user.arena.store') }}" enctype="multipart/form-data" id="arena-composer-form">
@@ -90,10 +106,99 @@
             </div>
 
             <aside class="nocturne-arena-rail">
+                @auth
+                    <div class="nocturne-arena-widget nocturne-arena-widget--profile">
+                        <a href="{{ route('arena.profile', auth()->user()->username) }}" class="nocturne-arena-widget__me">
+                            <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
+                            <div>
+                                <strong>{{ auth()->user()->username }}</strong>
+                                @if($currentTier)<small><i class="ph-fill ph-crown-simple"></i>{{ __($currentTier->name) }}</small>@endif
+                            </div>
+                        </a>
+                        @if($nextTier)
+                            <div class="nocturne-arena-tier-progress">
+                                <div class="nocturne-arena-tier-progress__track"><span style="width:{{ $tierProgressPercent }}%"></span></div>
+                                <small>{{ showAmount(max($nextTier->min_wagered - $wagered, 0)) }} @lang('to') {{ __($nextTier->name) }}</small>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="nocturne-arena-widget">
+                        <h3><i class="ph-fill ph-chart-bar"></i>@lang('Your Stats')</h3>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Wagered')</span><strong>{{ showAmount($userStats['total_invest']) }}</strong></div>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Won')</span><strong>{{ showAmount($userStats['total_win']) }}</strong></div>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Lost')</span><strong>{{ showAmount($userStats['total_loss']) }}</strong></div>
+                    </div>
+                @endauth
+
                 <div class="nocturne-arena-widget">
-                    <h3><i class="ph-fill ph-rocket-launch"></i>@lang('Arena')</h3>
-                    <p style="color:var(--arena-muted);font-size:12.5px;margin:0">@lang('Live games, wins, trending and more are coming here soon.')</p>
+                    <h3><i class="ph-fill ph-sword"></i>@lang('Live Games')</h3>
+                    @forelse($liveTables as $table)
+                        <a href="{{ route('user.tables.show', $table['id']) }}" class="nocturne-arena-widget-row">
+                            <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-game-controller"></i></span>
+                            <div>
+                                <strong>{{ $catalog[$table['game']]['name'] ?? ucfirst($table['game']) }}</strong>
+                                <small>{{ count($table['players']) }}/{{ $table['player_limit'] }} @lang('players') &middot; {{ ucfirst($table['status']) }}</small>
+                            </div>
+                        </a>
+                    @empty
+                        <p class="nocturne-arena-widget-empty">@lang('No live tables right now.')</p>
+                    @endforelse
                 </div>
+
+                <div class="nocturne-arena-widget">
+                    <h3><i class="ph-fill ph-trophy"></i>@lang('Recent Wins')</h3>
+                    @forelse($recentSiteWins as $log)
+                        <div class="nocturne-arena-widget-row">
+                            <span class="nocturne-arena-widget-row__icon nocturne-arena-widget-row__icon--win"><i class="ph-fill ph-coin"></i></span>
+                            <div>
+                                <strong>{{ showAmount($log->win_amo) }}</strong>
+                                <small>{{ $log->user->username ?? 'Someone' }} &middot; {{ __($log->game->name ?? 'a game') }}</small>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="nocturne-arena-widget-empty">@lang('No wins yet.')</p>
+                    @endforelse
+                </div>
+
+                <div class="nocturne-arena-widget">
+                    <h3><i class="ph-fill ph-flame"></i>@lang('Trending')</h3>
+                    @forelse($trendingGames as $game)
+                        <div class="nocturne-arena-widget-row">
+                            <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-dice-five"></i></span>
+                            <strong>{{ __($game->name) }}</strong>
+                        </div>
+                    @empty
+                        <p class="nocturne-arena-widget-empty">@lang('Nothing trending right now.')</p>
+                    @endforelse
+                </div>
+
+                @if($trendingNews->isNotEmpty())
+                    <div class="nocturne-arena-widget">
+                        <h3><i class="ph-fill ph-newspaper"></i>@lang('News')</h3>
+                        @foreach($trendingNews as $post)
+                            <a href="{{ route('blog.details', $post->slug) }}" class="nocturne-arena-widget-row">
+                                <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-article"></i></span>
+                                <strong>{{ __($post->title) }}</strong>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+
+                @auth
+                    @if($suggestedFollows->isNotEmpty())
+                        <div class="nocturne-arena-widget">
+                            <h3><i class="ph-fill ph-users-three"></i>@lang('Suggested for you')</h3>
+                            @foreach($suggestedFollows as $suggested)
+                                <div class="nocturne-arena-widget-row nocturne-arena-widget-row--suggest">
+                                    <a href="{{ route('arena.profile', $suggested->username) }}" class="nocturne-arena-post__avatar">@if($suggested->avatarUrl())<img src="{{ $suggested->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($suggested->username, 0, 1)) }}@endif</a>
+                                    <a href="{{ route('arena.profile', $suggested->username) }}"><strong>{{ $suggested->username }}</strong></a>
+                                    <button type="button" class="nocturne-arena-mini-follow" data-user-id="{{ $suggested->id }}" data-following="0"><span class="label-follow">@lang('Follow')</span><span class="label-following">@lang('Following')</span></button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @endauth
             </aside>
         </div>
     </div>
@@ -216,6 +321,45 @@
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
 
+/* Announcement card */
+.nocturne-arena-announcement{position:relative;overflow:hidden;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.2)}
+.nocturne-arena-announcement__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(5,8,18,.88),rgba(5,8,18,.4))}
+.nocturne-arena-announcement__content{position:relative;z-index:1;padding:22px}
+.nocturne-arena-announcement__badge{display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;padding:6px 12px;border-radius:999px;background:rgba(0,231,138,.16);color:var(--arena-accent);font-size:11px;font-weight:800}
+.nocturne-arena-announcement__content h2{margin:0 0 6px;color:#fff;font-size:clamp(18px,2.2vw,24px);font-weight:850}
+.nocturne-arena-announcement__content p{margin:0 0 14px;color:#c7cbea;font-size:13.5px;max-width:560px}
+.nocturne-arena-announcement__foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.nocturne-arena-announcement__reward{display:inline-flex;align-items:center;gap:6px;color:var(--arena-accent);font-size:13px;font-weight:800}
+.nocturne-arena-announcement__countdown{padding:7px 13px;border-radius:10px;background:rgba(0,0,0,.35);color:#fff;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.nocturne-arena-announcement__btn{padding:9px 18px;border-radius:11px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;text-decoration:none}
+
+/* Profile/level widget */
+.nocturne-arena-widget--profile{display:grid;gap:12px}
+.nocturne-arena-widget__me{display:flex;align-items:center;gap:11px;text-decoration:none}
+.nocturne-arena-widget__me strong{display:block;color:var(--arena-text);font-size:14px}
+.nocturne-arena-widget__me small{display:flex;align-items:center;gap:4px;color:var(--arena-accent);font-size:11px;font-weight:700}
+.nocturne-arena-tier-progress__track{height:6px;border-radius:999px;background:var(--arena-bg);overflow:hidden}
+.nocturne-arena-tier-progress__track span{display:block;height:100%;background:var(--arena-accent)}
+.nocturne-arena-tier-progress small{display:block;margin-top:6px;color:var(--arena-muted);font-size:11px}
+
+.nocturne-arena-stat-row{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--arena-line)}
+.nocturne-arena-stat-row:first-of-type{border-top:0}
+.nocturne-arena-stat-row span{color:var(--arena-muted);font-size:12px}
+.nocturne-arena-stat-row strong{color:var(--arena-text);font-size:12.5px;font-weight:800}
+
+.nocturne-arena-widget-row{display:flex;align-items:center;gap:10px;padding:8px 0;text-decoration:none}
+.nocturne-arena-widget-row+.nocturne-arena-widget-row{border-top:1px solid var(--arena-line)}
+.nocturne-arena-widget-row__icon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:rgba(0,231,138,.1);color:var(--arena-accent);font-size:14px}
+.nocturne-arena-widget-row__icon--win{background:rgba(255,181,71,.14);color:#ffb547}
+.nocturne-arena-widget-row strong{display:block;color:var(--arena-text);font-size:12.5px;font-weight:750}
+.nocturne-arena-widget-row small{color:var(--arena-muted);font-size:10.5px}
+.nocturne-arena-widget-row--suggest strong{font-size:12.5px}
+.nocturne-arena-widget-row--suggest{gap:8px}
+.nocturne-arena-widget-row--suggest .nocturne-arena-post__avatar{flex:0 0 30px;width:30px;height:30px;font-size:11px}
+.nocturne-arena-widget-row--suggest>a:nth-child(2){flex:1;min-width:0;color:inherit;text-decoration:none}
+.nocturne-arena-widget-empty{margin:0;padding:6px 0;color:var(--arena-muted);font-size:12px}
+
 /* Vote / reaction / comment bar */
 .nocturne-arena-post__bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--arena-line)}
 .nocturne-arena-vote{display:flex;align-items:center;gap:8px}
@@ -269,6 +413,10 @@
     .nocturne-arena-composer__preview,.nocturne-arena-composer__swatches,.nocturne-arena-composer__row,.nocturne-arena-win-pick,.nocturne-arena-composer__foot,.nocturne-arena-composer__note{margin-left:0}
     .nocturne-arena-composer__foot{flex-wrap:wrap}
     .nocturne-arena-post{padding:14px}
+    .nocturne-arena-crumb-row{flex-wrap:wrap}
+    .nocturne-arena-announcement__content{padding:18px}
+    .nocturne-arena-announcement__foot{gap:10px}
+    .nocturne-arena-bell-panel{right:-14px;width:290px}
 }
 </style>
 @endpush
@@ -461,6 +609,23 @@
     });
     loadNotifications();
     @endauth
+
+    // Announcement countdown
+    var countdownEl = document.getElementById('arena-announcement-countdown');
+    if (countdownEl) {
+        var endAt = parseInt(countdownEl.getAttribute('data-countdown-end'), 10);
+        var tick = function() {
+            var diff = endAt - Date.now();
+            if (diff <= 0) { countdownEl.textContent = "{{ __('Ended') }}"; return; }
+            var h = Math.floor(diff / 3600000);
+            var m = Math.floor((diff % 3600000) / 60000);
+            var s = Math.floor((diff % 60000) / 1000);
+            var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+            countdownEl.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        };
+        tick();
+        setInterval(tick, 1000);
+    }
 })(jQuery);
 </script>
 @endpush

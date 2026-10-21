@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Constants\Status;
+use App\Games\TableGames\TableGameService;
 use App\Http\Controllers\Controller;
+use App\Models\ArenaAnnouncement;
 use App\Models\ArenaFollow;
 use App\Models\ArenaNotification;
 use App\Models\ArenaPost;
 use App\Models\ArenaPostVote;
 use App\Models\ArenaReaction;
+use App\Models\Game;
 use App\Models\GameLog;
+use App\Models\NewsPost;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +41,60 @@ class ArenaController extends Controller
             ]);
         }
 
-        return view('Template::arena.index', compact('pageTitle', 'posts', 'recentWins'));
+        $announcement = ArenaAnnouncement::active()->latest()->first();
+
+        $tableGameService = app(TableGameService::class);
+        $catalog           = collect($tableGameService->catalog())->keyBy('key');
+        $liveTables        = collect($tableGameService->liveTables(auth()->user()))->take(5);
+
+        $recentSiteWins = GameLog::with('user:id,username', 'game:id,name')
+            ->where('win_amo', '>', 0)
+            ->when(\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'demo_play'), fn ($q) => $q->where('demo_play', 0))
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        $trendingGames = Game::active()->where('trending', Status::YES)->limit(5)->get();
+        $trendingNews  = NewsPost::published()->orderByDesc('views')->limit(3)->get();
+
+        $userStats = null;
+        $currentTier = null;
+        $nextTier = null;
+        $wagered = 0;
+        $tierProgressPercent = 100;
+        if (auth()->check()) {
+            $user = auth()->user();
+            $userStats = [
+                'total_invest' => GameLog::where('user_id', $user->id)->sum('invest'),
+                'total_win'    => GameLog::win()->where('user_id', $user->id)->sum('invest'),
+                'total_loss'   => GameLog::loss()->where('user_id', $user->id)->sum('invest'),
+            ];
+            $currentTier = $user->vipTier();
+            $nextTier    = $user->nextVipTier();
+            $wagered     = $user->totalWagered();
+            if ($nextTier) {
+                $floor = $currentTier?->min_wagered ?? 0;
+                $span  = max((float) $nextTier->min_wagered - (float) $floor, 0.00000001);
+                $tierProgressPercent = min(100, max(0, (($wagered - $floor) / $span) * 100));
+            }
+        }
+
+        $suggestedFollows = collect();
+        if (auth()->check()) {
+            $followingIds = ArenaFollow::where('follower_id', auth()->id())->pluck('followed_id');
+            $suggestedFollows = User::where('id', '!=', auth()->id())
+                ->whereNotIn('id', $followingIds)
+                ->active()
+                ->latest()
+                ->limit(5)
+                ->get();
+        }
+
+        return view('Template::arena.index', compact(
+            'pageTitle', 'posts', 'recentWins', 'announcement', 'catalog', 'liveTables',
+            'recentSiteWins', 'trendingGames', 'trendingNews', 'userStats', 'currentTier',
+            'nextTier', 'wagered', 'tierProgressPercent', 'suggestedFollows'
+        ));
     }
 
     public function store(Request $request)
