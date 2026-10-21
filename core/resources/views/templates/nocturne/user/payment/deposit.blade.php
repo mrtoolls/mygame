@@ -119,14 +119,27 @@
         </div>
     </form>
 
+    @php
+        $txnStatusMeta = fn ($status) => match ((int) $status) {
+            Status::PAYMENT_PENDING => ['label' => 'Pending', 'icon' => 'ph-hourglass-medium', 'cls' => 'pending'],
+            Status::PAYMENT_SUCCESS => ['label' => 'Approved', 'icon' => 'ph-check-circle', 'cls' => 'success'],
+            Status::PAYMENT_REJECT => ['label' => 'Rejected', 'icon' => 'ph-x-circle', 'cls' => 'reject'],
+            default => ['label' => 'Initiated', 'icon' => 'ph-circle-dashed', 'cls' => 'initiate'],
+        };
+    @endphp
     <section class="nocturne-wallet-history" aria-labelledby="deposit-history-title">
         <div class="nocturne-wallet-history__heading"><div><span class="nocturne-wallet-kicker">@lang('YOUR ACTIVITY')</span><h2 id="deposit-history-title">@lang('Deposit History')</h2></div><a href="{{ route('user.deposit.history') }}">@lang('View all') <i class="ph-bold ph-arrow-right"></i></a></div>
         <div class="nocturne-wallet-history__list">
             @forelse($deposits as $deposit)
+                @php $meta = $txnStatusMeta($deposit->status); @endphp
                 <div class="nocturne-wallet-history__row">
                     <span class="nocturne-wallet-history__icon"><i class="ph-fill ph-wallet"></i></span>
                     <div class="nocturne-wallet-history__mid"><strong>{{ __($deposit->gateway->name ?? 'Payment') }}</strong><small>{{ $deposit->trx }} · {{ showDateTime($deposit->created_at, 'M d, Y') }}</small></div>
-                    <div class="nocturne-wallet-history__end"><strong>{{ showAmount($deposit->amount) }}</strong>{!! $deposit->statusBadge !!}</div>
+                    <div class="nocturne-wallet-history__end">
+                        <strong class="nocturne-wallet-history__amount">{{ showAmount($deposit->amount) }}</strong>
+                        <span class="nocturne-wallet-history__chip nocturne-wallet-history__chip--{{ $meta['cls'] }}"><i class="ph-fill {{ $meta['icon'] }}"></i> {{ __($meta['label']) }}</span>
+                        <span class="nocturne-wallet-history__time"><i class="ph-bold ph-clock"></i> {{ diffForHumans($deposit->created_at) }}</span>
+                    </div>
                 </div>
             @empty
                 <div class="nocturne-wallet-empty"><i class="ph-fill ph-wallet"></i><strong>@lang('No deposits yet')</strong><span>@lang('Your completed and pending deposits will appear here.')</span></div>
@@ -235,14 +248,24 @@
 .nocturne-wallet-kicker{display:block;margin-bottom:3px;color:var(--wallet-accent);font-size:9px;font-weight:850;letter-spacing:.14em}
 .nocturne-wallet-history__heading>a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;background:var(--wallet-raised);color:var(--wallet-text);font-size:12px;font-weight:750;text-decoration:none}
 .nocturne-wallet-history__list{display:grid;gap:9px}
-.nocturne-wallet-history__row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--wallet-line);border-radius:14px;background:rgba(9,13,28,.5)}
-.nocturne-wallet-history__icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:rgba(0,231,138,.1);color:var(--wallet-accent)}
-.nocturne-wallet-history__mid{flex:1;min-width:0;display:grid;gap:2px}
+.nocturne-wallet-history__row{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--wallet-line);border-radius:16px;background:rgba(9,13,28,.5);flex-wrap:wrap}
+.nocturne-wallet-history__icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:rgba(0,231,138,.1);color:var(--wallet-accent);font-size:18px}
+.nocturne-wallet-history__mid{flex:1 1 160px;min-width:0;display:grid;gap:3px}
 .nocturne-wallet-history__mid strong{overflow:hidden;color:var(--wallet-text);font-size:13.5px;text-overflow:ellipsis;white-space:nowrap}
 .nocturne-wallet-history__mid small{color:var(--wallet-muted);font-size:11px}
-.nocturne-wallet-history__end{display:grid;justify-items:end;gap:4px;flex:0 0 auto}
-.nocturne-wallet-history__end strong{color:var(--wallet-text);font-size:13.5px}
+.nocturne-wallet-history__end{display:flex;align-items:center;gap:10px;flex:0 0 auto;margin-left:auto}
+.nocturne-wallet-history__amount{color:var(--wallet-text);font-size:14.5px;font-weight:800;white-space:nowrap}
+.nocturne-wallet-history__chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+.nocturne-wallet-history__chip--pending{background:rgba(255,181,71,.14);color:#ffb547}
+.nocturne-wallet-history__chip--success{background:rgba(0,231,138,.14);color:var(--wallet-accent)}
+.nocturne-wallet-history__chip--reject{background:rgba(255,92,122,.14);color:#ff5c7a}
+.nocturne-wallet-history__chip--initiate{background:rgba(133,142,175,.16);color:var(--wallet-muted)}
+.nocturne-wallet-history__time{display:none;align-items:center;gap:5px;color:var(--wallet-muted);font-size:11px;white-space:nowrap}
 .nocturne-wallet-history__pagination{margin-top:14px}
+
+@media(min-width:850px){
+    .nocturne-wallet-history__time{display:inline-flex}
+}
 
 @media(max-width:575.98px){
     .nocturne-wallet-hero{flex-direction:column;align-items:stretch;padding:18px}
@@ -251,7 +274,10 @@
     .nocturne-wallet-reveal{flex-direction:column;align-items:stretch;text-align:center}
     .nocturne-wallet-reveal__qr{justify-self:center;margin:0 auto}
     .nocturne-wallet-footrow{flex-direction:column;gap:10px}
-    .nocturne-wallet-history__row{flex-wrap:wrap}
+    .nocturne-wallet-history__row{align-items:flex-start}
+    .nocturne-wallet-history__mid{flex-basis:100%;order:1}
+    .nocturne-wallet-history__end{flex-basis:100%;order:2;margin-left:56px;flex-wrap:wrap}
+    .nocturne-wallet-history__time{display:inline-flex}
 }
 </style>
 @endpush
