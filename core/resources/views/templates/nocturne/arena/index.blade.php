@@ -121,6 +121,7 @@
                                 <small>{{ showAmount(max($nextTier->min_wagered - $wagered, 0)) }} @lang('to') {{ __($nextTier->name) }}</small>
                             </div>
                         @endif
+                        <a href="{{ route('user.arena.my-posts') }}" class="nocturne-arena-my-posts-link"><i class="ph-bold ph-list-bullets"></i>@lang('My Posts')</a>
                     </div>
 
                     <div class="nocturne-arena-widget">
@@ -342,6 +343,9 @@
 .nocturne-arena-tier-progress__track{height:6px;border-radius:999px;background:var(--arena-bg);overflow:hidden}
 .nocturne-arena-tier-progress__track span{display:block;height:100%;background:var(--arena-accent)}
 .nocturne-arena-tier-progress small{display:block;margin-top:6px;color:var(--arena-muted);font-size:11px}
+.nocturne-arena-my-posts-link{display:flex;align-items:center;gap:7px;padding-top:4px;color:var(--arena-muted);font-size:12px;font-weight:750;text-decoration:none}
+.nocturne-arena-my-posts-link:hover{color:var(--arena-accent)}
+.nocturne-arena-my-posts-link i{color:var(--arena-accent)}
 
 .nocturne-arena-stat-row{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--arena-line)}
 .nocturne-arena-stat-row:first-of-type{border-top:0}

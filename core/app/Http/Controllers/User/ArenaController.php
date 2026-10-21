@@ -257,4 +257,19 @@ class ArenaController extends Controller
 
         return view('Template::arena.profile', compact('pageTitle', 'profileUser', 'posts', 'followers', 'following', 'isFollowing', 'currentTier'));
     }
+
+    public function myPosts(Request $request)
+    {
+        $posts = ArenaPost::where('user_id', auth()->id())->with('linkedGameLog.game')->latest()->paginate(10);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html'    => view('Template::partials.arena_my_post_cards', ['posts' => $posts])->render(),
+                'hasMore' => $posts->hasMorePages(),
+            ]);
+        }
+
+        $pageTitle = 'My Arena Posts';
+        return view('Template::arena.my-posts', compact('pageTitle', 'posts'));
+    }
 }

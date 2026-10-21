@@ -89,6 +89,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('react', 'react')->name('react');
                 Route::get('notifications', 'notifications')->name('notifications');
                 Route::post('notifications/read', 'notificationsRead')->name('notifications.read');
+                Route::get('my-posts', 'myPosts')->name('my-posts');
             });
             Route::controller('ArenaCommentController')->prefix('arena/post/{post}/comments')->name('arena.comments.')->group(function () {
                 Route::post('/', 'store')->name('store');
