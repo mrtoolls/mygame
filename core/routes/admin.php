@@ -79,6 +79,7 @@ Route::middleware('admin')->group(function () {
         Route::post('notifications/delete-single/{id}', 'deleteSingleNotification')->name('notifications.delete.single');
 
         Route::get('download-attachments/{file_hash}', 'downloadAttachment')->name('download.attachment');
+        Route::get('preview-attachments/{file_hash}', 'previewAttachment')->name('preview.attachment');
     });
 
     // Referral

@@ -118,12 +118,19 @@ class DepositController extends Controller {
         return view('admin.deposit.detail', compact('pageTitle', 'deposit', 'details'));
     }
 
-    public function approve($id) {
+    public function approve(Request $request, $id) {
+        $request->validate([
+            'message' => 'nullable|string|max:255',
+        ]);
         $deposit = Deposit::where('id', $id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
 
-        PaymentController::userDataUpdate($deposit, true, 'admin');
+        PaymentController::userDataUpdate($deposit, true, 'admin', $request->message);
 
         $notify[] = ['success', 'Deposit request approved successfully'];
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Deposit request approved successfully']);
+        }
 
         return to_route('admin.deposit.pending')->withNotify($notify);
     }
@@ -151,6 +158,11 @@ class DepositController extends Controller {
         ]);
 
         $notify[] = ['success', 'Deposit request rejected successfully'];
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Deposit request rejected successfully']);
+        }
+
         return to_route('admin.deposit.pending')->withNotify($notify);
 
     }

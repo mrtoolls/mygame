@@ -166,8 +166,8 @@ class PaymentController extends Controller {
         return view("Template::$data->view", compact('data', 'pageTitle', 'deposit'));
     }
 
-    public static function userDataUpdate($deposit, $isManual = null, $confirmedVia = null) {
-        $result = DB::transaction(function () use ($deposit, $isManual, $confirmedVia) {
+    public static function userDataUpdate($deposit, $isManual = null, $confirmedVia = null, $adminFeedback = null) {
+        $result = DB::transaction(function () use ($deposit, $isManual, $confirmedVia, $adminFeedback) {
             $lockedDeposit = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
             if (!$lockedDeposit || !in_array((int) $lockedDeposit->status, [Status::PAYMENT_INITIATE, Status::PAYMENT_PENDING], true)) {
                 return null;
@@ -183,6 +183,10 @@ class PaymentController extends Controller {
 
             if ($confirmedVia && Schema::hasColumn('deposits', 'confirmed_via')) {
                 $lockedDeposit->confirmed_via = $confirmedVia;
+            }
+
+            if ($adminFeedback) {
+                $lockedDeposit->admin_feedback = $adminFeedback;
             }
 
             $lockedDeposit->status = Status::PAYMENT_SUCCESS;
@@ -231,6 +235,7 @@ class PaymentController extends Controller {
             'rate'            => showAmount($approvedDeposit->rate, currencyFormat: false),
             'trx'             => $approvedDeposit->trx,
             'post_balance'    => showAmount($user->balance),
+            'admin_feedback'  => $adminFeedback ?? '',
         ]);
     }
 

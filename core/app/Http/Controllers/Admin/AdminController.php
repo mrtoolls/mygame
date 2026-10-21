@@ -318,4 +318,17 @@ class AdminController extends Controller {
         return readfile($filePath);
     }
 
+    public function previewAttachment($fileHash) {
+        $filePath = decrypt($fileHash);
+        try {
+            $mimetype = mime_content_type($filePath);
+        } catch (\Exception $e) {
+            abort(404);
+        }
+        header('Content-Disposition: inline');
+        header("Content-Type: " . $mimetype);
+        header('Cache-Control: private, max-age=86400');
+        return readfile($filePath);
+    }
+
 }
