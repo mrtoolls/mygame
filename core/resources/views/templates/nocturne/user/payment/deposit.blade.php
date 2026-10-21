@@ -18,9 +18,8 @@
     </section>
     @php
         $cryptoCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto === 1)->count();
-        $agentCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1 && $g->support_agent_id)->count();
-        $otherCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1 && !$g->support_agent_id)->count();
-        $hasOther = $agentCount + $otherCount > 0;
+        $winxpayCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1)->count();
+        $hasWinxpay = $winxpayCount > 0;
         $hasCrypto = $cryptoCount > 0;
         $preselectAgentId = request()->integer('agent') ?: null;
         $preselectGateway = $preselectAgentId ? $gatewayCurrency->firstWhere('support_agent_id', $preselectAgentId) : null;
@@ -36,48 +35,63 @@
                             <div class="card custom--card payment-method-panel">
                                 <div class="card-body p-0">
                                     <h4 class="nocturne-pay-step">1. @lang('Select a Deposit Method')</h4>
-                                    <div class="nocturne-pay-tabs">
-                                        <button type="button" class="nocturne-pay-tab @if ($hasCrypto && !$hasOther) is-active @endif" data-filter="crypto" @disabled(!$hasCrypto)><i class="lab la-bitcoin"></i><span><strong>@lang('Crypto')</strong><small>@lang('Choose a coin and network')</small></span><b>{{ $cryptoCount }}</b></button>
-                                        <button type="button" class="nocturne-pay-tab @if ($agentCount && !$hasCrypto) is-active @endif" data-filter="agent" @disabled(!$agentCount)><i class="las la-user-tie"></i><span><strong>@lang('Payment Agents')</strong><small>@lang('Pay through an approved agent')</small></span><b>{{ $agentCount }}</b></button>
-                                        <button type="button" class="nocturne-pay-tab @if ($otherCount && !$hasCrypto && !$agentCount) is-active @endif" data-filter="other" @disabled(!$otherCount)><i class="las la-wallet"></i><span><strong>@lang('Other Methods')</strong><small>@lang('Available supported gateways')</small></span><b>{{ $otherCount }}</b></button>
+                                    <div class="nocturne-pay-tabs nocturne-pay-tabs--toggle">
+                                        <button type="button" class="nocturne-pay-tab @if ($hasCrypto && !$hasWinxpay) is-active @endif" data-filter="crypto" @disabled(!$hasCrypto)>
+                                            <strong>@lang('CRYPTO')</strong>
+                                            <span class="nocturne-pay-tab__icons"><i class="lab la-bitcoin"></i><i class="lab la-ethereum"></i><i class="las la-coins"></i><b>{{ $cryptoCount }}+</b></span>
+                                        </button>
+                                        <button type="button" class="nocturne-pay-tab @if ($hasWinxpay && !$hasCrypto) is-active @endif" data-filter="winxpay" @disabled(!$hasWinxpay)>
+                                            <strong>@lang('WINXPAY')</strong>
+                                            <span class="nocturne-pay-tab__icons"><i class="lab la-cc-mastercard"></i><i class="lab la-cc-visa"></i><i class="las la-user-tie"></i></span>
+                                        </button>
                                     </div>
-                                    <div class="nocturne-pay-list-heading"><div><span class="nocturne-pay-kicker">@lang('STEP 02')</span><h4 class="nocturne-pay-step">@lang('Select a payment option')</h4></div><span class="nocturne-pay-secure"><i class="las la-lock"></i> @lang('Secure')</span></div>
-                                    <div class="payment-system-list is-scrollable gateway-option-list">
-                                        @forelse ($gatewayCurrency as $data)
-                                            <label for="{{ titleToKey($data->name) }}"
-                                                data-crypto="{{ $data->method->crypto }}"
-                                                data-category="{{ (int) $data->method->crypto === 1 ? 'crypto' : ($data->support_agent_id ? 'agent' : 'other') }}"
-                                                data-payment-agent="{{ $data->supportAgent?->name }}"
-                                                data-payment-agent-id="{{ $data->support_agent_id }}"
-                                                class="payment-item gateway-option">
-                                                <div class="payment-item__info">
-                                                    <span class="payment-item__check"></span>
-                                                    <span class="payment-item__copy"><span class="payment-item__name">{{ __($data->name) }}</span>
-                                                    @if($data->support_agent_id)<small class="payment-item__agent"><i class="las la-user-check"></i> {{ $data->supportAgent?->name }}</small>@endif</span>
-                                                </div>
-                                                <div class="payment-item__thumb">
-                                                <img class="payment-item__thumb-img" onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')"
-                                                        src="{{ getImage(getFilePath('gateway') . '/' . $data->method->image) }}"
-                                                        alt="@lang('payment-thumb')">
-                                                </div>
-                                                <input class="payment-item__radio gateway-input"
-                                                    id="{{ titleToKey($data->name) }}" hidden
-                                                    data-gateway='@json($data)' type="radio"
-                                                    name="gateway" value="{{ $data->method_code }}"
-                                                    @checked(old('gateway', $preselectGateway ? $preselectGateway->method_code : ($loop->first ? $data->method_code : null)) == $data->method_code)
-                                                    data-min-amount="{{ showAmount($data->min_amount) }}"
-                                                    data-max-amount="{{ showAmount($data->max_amount) }}">
-                                            </label>
-                                        @empty
-                                            <div class="nocturne-pay-empty"><i class="las la-wallet"></i><strong>@lang('No deposit methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
-                                        @endforelse
-                                        @if ($gatewayCurrency->count() > 4)
-                                            <button type="button" class="payment-item__btn more-gateway-option">
-                                                <p class="payment-item__btn-text">@lang('Show All Payment Options')</p>
-                                                <span class="payment-item__btn__icon"><i
-                                                        class="fas fa-chevron-down"></i></span>
-                                            </button>
-                                        @endif
+
+                                    <div class="nocturne-pay-list-heading"><h4 class="nocturne-pay-step nocturne-pay-step--sub"><span class="crypto-only">@lang('Select Crypto to Deposit')</span><span class="winxpay-only" hidden>@lang('Select a WinxPay Method')</span></h4></div>
+
+                                    <div class="nocturne-pay-dropdown">
+                                        <button type="button" class="nocturne-pay-dropdown__toggle" id="pay-dropdown-toggle">
+                                            <span class="nocturne-pay-dropdown__selected">
+                                                <img class="nocturne-pay-dropdown__thumb" src="" alt="" hidden>
+                                                <span class="nocturne-pay-dropdown__name">@lang('Choose an option')</span>
+                                            </span>
+                                            <i class="las la-chevron-down"></i>
+                                        </button>
+                                        <div class="nocturne-pay-dropdown__panel" id="pay-dropdown-panel" hidden>
+                                            <div class="nocturne-pay-dropdown__search"><i class="las la-search"></i><input type="text" id="pay-dropdown-search" placeholder="@lang('Search')" autocomplete="off"></div>
+                                            <div class="payment-system-list is-scrollable gateway-option-list">
+                                                @forelse ($gatewayCurrency as $data)
+                                                    <label for="{{ titleToKey($data->name) }}"
+                                                        data-crypto="{{ $data->method->crypto }}"
+                                                        data-category="{{ (int) $data->method->crypto === 1 ? 'crypto' : 'winxpay' }}"
+                                                        data-payment-agent="{{ $data->supportAgent?->name }}"
+                                                        data-payment-agent-id="{{ $data->support_agent_id }}"
+                                                        data-search="{{ strtolower($data->name . ' ' . $data->currency) }}"
+                                                        class="payment-item gateway-option">
+                                                        <div class="payment-item__info">
+                                                            <div class="payment-item__thumb">
+                                                                <img class="payment-item__thumb-img" onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')"
+                                                                        src="{{ getImage(getFilePath('gateway') . '/' . $data->method->image) }}"
+                                                                        alt="@lang('payment-thumb')">
+                                                            </div>
+                                                            <span class="payment-item__copy">
+                                                                <span class="payment-item__name">{{ __($data->name) }} <small>{{ $data->currency }}</small></span>
+                                                                @if($data->support_agent_id)<small class="payment-item__agent"><i class="las la-user-check"></i> {{ $data->supportAgent?->name }}</small>@endif
+                                                            </span>
+                                                        </div>
+                                                        <span class="payment-item__check"></span>
+                                                        <input class="payment-item__radio gateway-input"
+                                                            id="{{ titleToKey($data->name) }}" hidden
+                                                            data-gateway='@json($data)' type="radio"
+                                                            name="gateway" value="{{ $data->method_code }}"
+                                                            @checked(old('gateway', $preselectGateway ? $preselectGateway->method_code : ($loop->first ? $data->method_code : null)) == $data->method_code)
+                                                            data-min-amount="{{ showAmount($data->min_amount) }}"
+                                                            data-max-amount="{{ showAmount($data->max_amount) }}">
+                                                    </label>
+                                                @empty
+                                                    <div class="nocturne-pay-empty"><i class="las la-wallet"></i><strong>@lang('No deposit methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
+                                                @endforelse
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -85,17 +99,18 @@
                         <div class="col-lg-7 payment-summary-column">
                             <div class="card custom--card payment-summary-panel">
                                 <div class="card-body p-0">
-                                    <div class="nocturne-pay-detail-heading"><div><span class="nocturne-pay-kicker">@lang('PAYMENT DETAILS')</span><h3>@lang('Complete your deposit')</h3><p>@lang('Enter the amount you want to add. You will review the payment instructions on the next step.')</p></div><span class="nocturne-pay-detail-icon"><i class="las la-wallet"></i></span></div>
                                     <div class="nocturne-pay-selected">
-                                        <img class="nocturne-pay-selected__thumb" src="" alt="" onerror="this.hidden=true">
-                                        <span class="nocturne-pay-selected__name"></span>
-                                        <span class="nocturne-pay-selected__agent" hidden></span>
+                                        <span class="nocturne-pay-selected__icon"><img class="nocturne-pay-selected__thumb" src="" alt="" hidden><i class="las la-wallet" id="pay-selected-fallback-icon"></i></span>
+                                        <span class="nocturne-pay-selected__identity">
+                                            <span class="nocturne-pay-selected__name"></span>
+                                            <span class="nocturne-pay-selected__agent" hidden></span>
+                                        </span>
                                         <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
                                     </div>
                                     <div class="payment-system-list p-3">
                                         <div class="deposit-info">
                                             <div class="deposit-info__title">
-                                                <p class="text mb-0">@lang('Amount')</p>
+                                                <p class="text mb-0">@lang('Enter Deposit Amount')</p>
                                             </div>
                                             <div class="deposit-info__input">
                                                 <div class="deposit-info__input-group input-group">
@@ -107,17 +122,6 @@
                                             </div>
                                         </div>
                                         <hr>
-                                        <div class="deposit-info">
-                                            <div class="deposit-info__title">
-                                                <p class="text has-icon"> @lang('Limit')
-                                                    <span></span>
-                                                </p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <p class="text"><span class="gateway-limit">@lang('0.00')</span>
-                                                </p>
-                                            </div>
-                                        </div>
                                         <div class="deposit-info mb-3">
                                             <div class="deposit-info__title">
                                                 <p class="text has-icon">@lang('Processing Charge')
@@ -169,6 +173,12 @@
                                         </div>
                                         <button type="submit" class="btn btn--base w-100 mt-3"
                                             disabled><i class="ph-bold ph-wallet"></i>@lang('Deposit Confirm')</button>
+
+                                        <div class="nocturne-pay-footrow">
+                                            <div><span>@lang('Minimum Deposit')</span><strong class="gateway-limit">—</strong></div>
+                                            <div><span>@lang('Network')</span><strong class="gateway-network">—</strong></div>
+                                        </div>
+
                                         <div class="info-text pt-3">
                                             <p class="text">@lang('Ensuring your funds grow safely through our secure deposit process with world-class payment options.')</p>
                                         </div>
@@ -360,6 +370,60 @@
             align-items: flex-start;
             justify-content: flex-start;
         }
+
+        /* --- Reference-matched Step 1 toggle (CRYPTO / WINXPAY) --- */
+        .nocturne-payment-page .nocturne-pay-tabs--toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:transparent;padding:0;margin-bottom:22px}
+        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab{display:grid;place-items:center;gap:10px;min-height:92px;padding:16px;border:1.5px solid rgba(133,142,175,.22);border-radius:16px;background:#10152a;flex:none}
+        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab strong{font-size:15px;letter-spacing:.03em;color:#f4f5fd}
+        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab.is-active{border-color:var(--pay-accent);background:linear-gradient(135deg,rgba(0,231,138,.12),#151a31 78%);box-shadow:0 0 0 1px rgba(0,231,138,.18)}
+        .nocturne-payment-page .nocturne-pay-tab__icons{display:flex;align-items:center;gap:6px;color:var(--pay-muted);font-size:18px}
+        .nocturne-payment-page .nocturne-pay-tab__icons b{margin-left:3px;padding:2px 7px;border-radius:999px;background:rgba(0,231,138,.14);color:var(--pay-accent);font-size:10px;font-weight:800}
+        .nocturne-payment-page .nocturne-pay-tab:disabled{opacity:.4;cursor:not-allowed}
+
+        .nocturne-payment-page .nocturne-pay-step--sub{margin:0 0 12px;font-size:15px}
+        .nocturne-payment-page .nocturne-pay-step--sub:before{display:none}
+
+        /* --- Step 2 searchable dropdown --- */
+        .nocturne-payment-page .nocturne-pay-dropdown{position:relative}
+        .nocturne-payment-page .nocturne-pay-dropdown__toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:62px;padding:10px 16px;border:1px solid rgba(133,142,175,.22);border-radius:14px;background:#10152a;color:#f4f5fd;cursor:pointer}
+        .nocturne-payment-page .nocturne-pay-dropdown__toggle:hover{border-color:rgba(0,231,138,.4)}
+        .nocturne-payment-page .nocturne-pay-dropdown__toggle i{color:var(--pay-muted);font-size:16px}
+        .nocturne-payment-page .nocturne-pay-dropdown__selected{display:flex;align-items:center;gap:10px;min-width:0}
+        .nocturne-payment-page .nocturne-pay-dropdown__thumb{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#fff}
+        .nocturne-payment-page .nocturne-pay-dropdown__name{overflow:hidden;color:#f4f5fd;font-size:14.5px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel{position:absolute;z-index:20;top:calc(100% + 8px);left:0;right:0;padding:12px;border:1px solid rgba(133,142,175,.22);border-radius:16px;background:#11162b;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+        .nocturne-payment-page .nocturne-pay-dropdown__search{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid rgba(133,142,175,.2);border-radius:11px;background:#0d1225}
+        .nocturne-payment-page .nocturne-pay-dropdown__search i{color:var(--pay-muted);font-size:14px}
+        .nocturne-payment-page .nocturne-pay-dropdown__search input{flex:1;min-width:0;border:0;background:transparent;color:#f4f5fd;font:inherit;outline:0}
+        .nocturne-payment-page .nocturne-pay-dropdown__search input::placeholder{color:#606986}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:280px;gap:4px;padding:0}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item{min-height:50px;padding:9px 12px;border-radius:10px;background:transparent;border-color:transparent;justify-content:space-between}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:hover{background:#171d36;transform:none}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:has(.gateway-input:checked){background:rgba(0,231,138,.1);border-color:transparent;box-shadow:none}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__thumb{width:30px;height:30px;border-radius:50%}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__name small{margin-left:5px;color:var(--pay-muted);font-weight:700}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__check{width:0;height:0;border:0}
+        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:has(.gateway-input:checked):after{content:"{{ __('Selected') }}";margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(0,231,138,.18);color:var(--pay-accent);font-size:10px;font-weight:800}
+
+        /* --- Reference-matched right panel header --- */
+        .nocturne-payment-page .nocturne-pay-selected{display:flex;align-items:center;gap:12px;margin:0 0 20px;padding:14px 16px;border:1px solid rgba(133,142,175,.16);border-radius:16px;background:#10152a}
+        .nocturne-payment-page .nocturne-pay-selected__icon{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:rgba(0,231,138,.1);color:var(--pay-accent);font-size:20px;overflow:hidden}
+        .nocturne-payment-page .nocturne-pay-selected__thumb{width:100%;height:100%;object-fit:cover}
+        .nocturne-payment-page .nocturne-pay-selected__identity{display:grid;gap:2px;flex:1;min-width:0}
+        .nocturne-payment-page .nocturne-pay-selected__name{color:#f4f5fd;font-size:16px;font-weight:850}
+        .nocturne-payment-page .nocturne-pay-selected__agent{color:var(--pay-accent);font-size:11px;font-weight:750}
+        .nocturne-payment-page .nocturne-pay-selected__badge{flex:none;padding:5px 11px;border-radius:999px;background:rgba(0,231,138,.14);color:var(--pay-accent);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+
+        /* --- Footer row: Minimum Deposit / Network --- */
+        .nocturne-payment-page .nocturne-pay-footrow{display:flex;justify-content:space-between;gap:12px;margin-top:16px;padding:14px 16px;border-top:1px dashed rgba(133,142,175,.22);flex-wrap:wrap}
+        .nocturne-payment-page .nocturne-pay-footrow div{display:grid;gap:3px}
+        .nocturne-payment-page .nocturne-pay-footrow span{color:var(--pay-muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+        .nocturne-payment-page .nocturne-pay-footrow strong{color:#f4f5fd;font-size:13.5px}
+
+        @media(max-width:575.98px){
+            .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab{min-height:78px;padding:12px}
+            .nocturne-payment-page .nocturne-pay-footrow{flex-direction:column;gap:10px}
+        }
     </style>
 @endpush
 
@@ -408,8 +472,12 @@
                     `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for payment gateway processing fees`
                 $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
                 let selectedImage = gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src');
-                if (selectedImage) $('.nocturne-pay-selected__thumb').attr('src', selectedImage).prop('hidden', false).show();
-                $(".nocturne-pay-selected__name").text(gatewayElement.closest('.payment-item').find('.payment-item__name').text());
+                let selectedName = gatewayElement.closest('.payment-item').find('.payment-item__name').clone().children().remove().end().text().trim();
+                if (selectedImage) {
+                    $('.nocturne-pay-selected__thumb, .nocturne-pay-dropdown__thumb').attr('src', selectedImage).prop('hidden', false).show();
+                    $('#pay-selected-fallback-icon').hide();
+                }
+                $(".nocturne-pay-selected__name, .nocturne-pay-dropdown__name").text(selectedName + (gateway.currency ? ' ' + gateway.currency : ''));
                 calculation();
             }
 
@@ -432,6 +500,9 @@
                     $(this).removeClass('d-none');
                     $(this).toggleClass('d-none', String($(this).data('category')) !== filter);
                 });
+                $('.crypto-only').prop('hidden', filter !== 'crypto');
+                $('.winxpay-only').prop('hidden', filter !== 'winxpay');
+                $('#pay-dropdown-search').val('').trigger('input');
                 let firstVisible = $(".gateway-option:not(.d-none)").first();
                 if (firstVisible.length) firstVisible.find('.gateway-input').prop('checked', true);
                 else $('.gateway-input').prop('checked', false);
@@ -441,6 +512,7 @@
             function calculation() {
                 if (!gateway) return;
                 $(".gateway-limit").text(minAmount + " - " + maxAmount);
+                $(".gateway-network").text(gateway.currency || '{{ __(gs("cur_text")) }}');
 
 
                 let percentCharge = 0;
@@ -500,6 +572,28 @@
             } else {
                 $('.gateway-input').change();
             }
+
+            // Dropdown open/close + search filter (Step 2: coin/merchant picker)
+            $('#pay-dropdown-toggle').on('click', function(e) {
+                e.stopPropagation();
+                $('#pay-dropdown-panel').prop('hidden', function(i, hidden) { return !hidden; });
+                if (!$('#pay-dropdown-panel').prop('hidden')) $('#pay-dropdown-search').trigger('focus');
+            });
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nocturne-pay-dropdown').length) {
+                    $('#pay-dropdown-panel').prop('hidden', true);
+                }
+            });
+            $('.gateway-option-list').on('click', '.payment-item', function() {
+                $('#pay-dropdown-panel').prop('hidden', true);
+            });
+            $('#pay-dropdown-search').on('input', function() {
+                let term = $(this).val().toLowerCase().trim();
+                $('.gateway-option').each(function() {
+                    let matches = !term || String($(this).data('search') || '').includes(term);
+                    $(this).toggle(matches);
+                });
+            });
         })(jQuery);
     </script>
 @endpush
