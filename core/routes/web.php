@@ -2,6 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 
+// Runtime Firebase config for the root PWA worker. Keeping this public config
+// endpoint in step with the admin settings avoids stale/placeholder values in
+// a checked-in static service-worker config file.
+Route::get('/firebase-messaging-sw-config.js', function () {
+    $config = gs('firebase_config');
+    return response('self.firebaseConfig = ' . json_encode($config ?: (object) []) . ';', 200, [
+        'Content-Type'  => 'application/javascript; charset=UTF-8',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+    ]);
+})->name('firebase.messaging.worker.config');
+
 Route::get('/clear', function () {
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });

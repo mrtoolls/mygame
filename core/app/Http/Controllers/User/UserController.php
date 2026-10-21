@@ -14,6 +14,8 @@ use App\Models\DeviceToken;
 use App\Models\Form;
 use App\Models\Game;
 use App\Models\GameLog;
+use App\Models\NotificationLog;
+use App\Models\ArenaNotification;
 use App\Models\Referral;
 use App\Models\Transaction;
 use App\Models\User;
@@ -246,6 +248,10 @@ class UserController extends Controller {
         $deviceToken = DeviceToken::where('token', $request->token)->first();
 
         if ($deviceToken) {
+            if ((int) $deviceToken->user_id !== (int) auth()->id()) {
+                $deviceToken->user_id = auth()->id();
+                $deviceToken->save();
+            }
             return ['success' => true, 'message' => 'Already exists'];
         }
 
@@ -256,6 +262,29 @@ class UserController extends Controller {
         $deviceToken->save();
 
         return ['success' => true, 'message' => 'Token saved successfully'];
+    }
+
+    public function notificationBadge()
+    {
+        $userId = auth()->id();
+        $pushUnread = NotificationLog::where('user_id', $userId)
+            ->where('sender', 'firebase')
+            ->where(function ($query) {
+                $query->whereNull('user_read')->orWhere('user_read', 0);
+            })->count();
+        $arenaUnread = ArenaNotification::where('user_id', $userId)->unread()->count();
+
+        return response()->json(['count' => $pushUnread + $arenaUnread]);
+    }
+
+    public function notificationsReadAll()
+    {
+        NotificationLog::where('user_id', auth()->id())
+            ->where('sender', 'firebase')
+            ->update(['user_read' => 1]);
+        ArenaNotification::where('user_id', auth()->id())->unread()->update(['read_at' => now()]);
+
+        return response()->json(['ok' => true, 'count' => 0]);
     }
 
     public function downloadAttachment($fileHash) {
