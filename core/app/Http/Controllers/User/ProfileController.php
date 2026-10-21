@@ -15,19 +15,22 @@ class ProfileController extends Controller {
     }
 
     public function submitProfile(Request $request) {
+        $user = auth()->user();
+
         $request->validate([
             'firstname' => 'required|string',
             'lastname'  => 'required|string',
+            'username'  => 'required|string|min:3|max:60|regex:/^[a-z0-9_]+$/|unique:users,username,' . $user->id,
             'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ], [
             'firstname.required' => 'The first name field is required',
             'lastname.required'  => 'The last name field is required',
+            'username.regex'     => 'Username can contain only lowercase letters, numbers and underscore.',
         ]);
-
-        $user = auth()->user();
 
         $user->firstname = $request->firstname;
         $user->lastname  = $request->lastname;
+        $user->username  = $request->username;
 
         $user->address = $request->address;
         $user->city    = $request->city;

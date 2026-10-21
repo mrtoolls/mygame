@@ -41,6 +41,16 @@
                             </div>
                             <div class="col-sm-6">
                                 <div class="form-group">
+                                    <label class="form-label">@lang('Username')</label>
+                                    <input type="text" class="form--control checkUser" name="username"
+                                        value="{{ old('username', $user->username) }}" minlength="3" maxlength="60"
+                                        pattern="[a-z0-9_]+" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+                                    <small class="text--danger usernameExist"></small>
+                                    <small class="text-muted d-block">@lang('Letters, numbers and underscore only, at least 3 characters.')</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
                                     <label class="form-label">@lang('E-mail Address')</label>
                                     <input class="form--control" value="{{ $user->email }}" readonly>
                                 </div>
@@ -124,6 +134,18 @@
                     $('#avatar-preview-initial').remove();
                 };
                 reader.readAsDataURL(file);
+            });
+
+            $('.checkUser').on('focusout', function() {
+                var value = $(this).val();
+                if (!value) return;
+                $.post('{{ route('user.checkUser') }}', { username: value, _token: '{{ csrf_token() }}' }, function(response) {
+                    if (response.data != false && value !== '{{ $user->username }}') {
+                        $('.usernameExist').text('Username already taken');
+                    } else {
+                        $('.usernameExist').text('');
+                    }
+                });
             });
         })(jQuery);
     </script>

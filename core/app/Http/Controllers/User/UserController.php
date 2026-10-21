@@ -175,7 +175,7 @@ class UserController extends Controller {
             'country_code' => 'required|in:' . $countryCodes,
             'country'      => 'required|in:' . $countries,
             'mobile_code'  => 'required|in:' . $mobileCodes,
-            'username'     => 'required|unique:users|min:6',
+            'username'     => 'required|unique:users|min:3',
             'mobile'       => ['required', 'regex:/^([0-9]*)$/', Rule::unique('users')->where('dial_code', $request->mobile_code)],
             'gender'       => 'required|in:male,female',
         ]);
@@ -195,7 +195,11 @@ class UserController extends Controller {
         $user->dial_code     = $request->mobile_code;
         $user->gender        = $request->gender;
 
-        $pool = glob('assets/images/profilepics/' . $request->gender . '*.png');
+        // glob() resolves a bare relative path against the PHP process's
+        // working directory, which isn't reliably "public/" on every host -
+        // anchor it with public_path() so the scan can't silently come back
+        // empty (leaving the user with no avatar) depending on server config.
+        $pool = glob(public_path('assets/images/profilepics/' . $request->gender . '*.png'));
         if (!empty($pool)) {
             $user->image = 'assets/images/profilepics/' . basename($pool[array_rand($pool)]);
         }
