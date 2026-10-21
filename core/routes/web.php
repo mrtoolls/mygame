@@ -29,6 +29,15 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
         Route::get('conversations/{uuid}/messages', 'messages')->name('messages')->middleware('throttle:60,1');
         Route::post('conversations/{uuid}/messages', 'reply')->name('reply')->middleware('throttle:20,1');
         Route::post('conversations/{uuid}/close', 'close')->name('close');
+
+        Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('/', 'paymentQueue')->name('queue');
+            Route::get('{id}', 'paymentShow')->name('show')->whereNumber('id');
+            Route::post('{id}/confirm', 'paymentConfirm')->name('confirm')->whereNumber('id');
+            Route::post('{id}/reject', 'paymentReject')->name('reject')->whereNumber('id');
+            Route::get('settings/accepted-types', 'paymentSettings')->name('settings');
+            Route::post('settings/accepted-types', 'paymentSettingsUpdate')->name('settings.update');
+        });
     });
 });
 

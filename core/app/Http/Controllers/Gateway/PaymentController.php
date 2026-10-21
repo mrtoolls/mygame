@@ -85,6 +85,7 @@ class PaymentController extends Controller {
                 'photo' => $agent->photo,
                 'payment_details' => $agent->payment_details,
             ];
+            if (Schema::hasColumn('deposits', 'support_agent_id')) $data->support_agent_id = $agent->id;
         }
         $data->method_currency = strtoupper($gate->currency);
         $data->amount          = $request->amount;
@@ -369,7 +370,9 @@ class PaymentController extends Controller {
         $request->validate($validationRule);
         $userData = $formProcessor->processFormData($request, $formData);
 
-        $pendingDeposit = DB::transaction(function () use ($data, $userData) {
+        $sla = (int) (gs('payment_confirmation_sla_minutes') ?: 15);
+
+        $pendingDeposit = DB::transaction(function () use ($data, $userData, $gatewayCurrency, $sla) {
             $lockedDeposit = Deposit::whereKey($data->id)->lockForUpdate()->first();
             if (!$lockedDeposit || (int) $lockedDeposit->status !== Status::PAYMENT_INITIATE) {
                 return null;
@@ -377,6 +380,11 @@ class PaymentController extends Controller {
 
             $lockedDeposit->detail = $userData;
             $lockedDeposit->status = Status::PAYMENT_PENDING;
+            if ($gatewayCurrency->support_agent_id && Schema::hasColumn('deposits', 'confirmation_deadline_at')) {
+                $lockedDeposit->confirmation_started_at  = now();
+                $lockedDeposit->confirmation_sla_minutes = $sla;
+                $lockedDeposit->confirmation_deadline_at = now()->addMinutes($sla);
+            }
             $lockedDeposit->save();
 
             $adminNotification = new AdminNotification();

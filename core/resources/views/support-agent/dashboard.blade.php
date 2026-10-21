@@ -12,7 +12,11 @@
     data-api-base="{{ url('/support-agent/conversations') }}">
     <header class="support-topbar">
         <a class="support-agent-brand" href="{{ route('support-agent.dashboard') }}"><span class="support-agent-brand__mark">W</span><span>Winxpot <b>Care</b></span></a>
-        <div class="support-topbar__right"><span class="support-online-pill"><i></i> On shift</span><button class="support-notify-toggle" type="button" title="Enable desktop alerts">Enable alerts</button><div class="support-agent-profile">@if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<span>{{ strtoupper(substr($agent->name,0,1)) }}</span>@endif<strong>{{ $agent->name }}<small>{{ $agent->title ?: 'Support agent' }}</small></strong></div><form method="post" action="{{ route('support-agent.logout') }}">@csrf<button class="support-logout" type="submit" aria-label="Sign out"><i>↗</i></button></form></div>
+        <div class="support-topbar__right">
+            @if($agent->is_payment_agent)
+                <a href="{{ route('support-agent.payments.queue') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">💳 Payments</a>
+            @endif
+            <span class="support-online-pill"><i></i> On shift</span><button class="support-notify-toggle" type="button" title="Enable desktop alerts">Enable alerts</button><div class="support-agent-profile">@if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<span>{{ strtoupper(substr($agent->name,0,1)) }}</span>@endif<strong>{{ $agent->name }}<small>{{ $agent->title ?: 'Support agent' }}</small></strong></div><form method="post" action="{{ route('support-agent.logout') }}">@csrf<button class="support-logout" type="submit" aria-label="Sign out"><i>↗</i></button></form></div>
     </header>
     <main class="support-workspace">
         <aside class="support-inbox">

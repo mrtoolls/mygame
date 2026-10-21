@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AgentTransactionSpeedLog;
+use App\Models\Deposit;
 use App\Models\SupportAgent;
 use App\Models\SupportChatNotification;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use App\Constants\Status;
+use App\Http\Controllers\Gateway\PaymentController;
+use App\Support\AgentSpeed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -189,5 +193,110 @@ class SupportAgentController extends Controller
         $conversation->save();
 
         return response()->json(['ok' => true]);
+    }
+
+    public function paymentQueue()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $deposits = Deposit::where('support_agent_id', $agent->id)
+            ->where('status', Status::PAYMENT_PENDING)
+            ->with('user:id,username,email')
+            ->latest('id')->get();
+        $speedService = app(AgentSpeed::class);
+        $speedScore = $speedService->scoreFor($agent);
+        $fastStreakCount = $speedService->fastStreakCountThisMonth($agent);
+
+        return view('support-agent.payments.queue', compact('agent', 'deposits', 'speedScore', 'fastStreakCount'));
+    }
+
+    public function paymentShow($id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->with('user:id,username,email')->firstOrFail();
+
+        return view('support-agent.payments.show', compact('agent', 'deposit'));
+    }
+
+    public function paymentConfirm($id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
+
+        PaymentController::userDataUpdate($deposit, true, 'agent');
+
+        $deposit->refresh();
+        if ((int) $deposit->status === Status::PAYMENT_SUCCESS && !AgentTransactionSpeedLog::where('deposit_id', $deposit->id)->exists()) {
+            $slaMinutes = (int) ($deposit->confirmation_sla_minutes ?: 15);
+            $startedAt = $deposit->confirmation_started_at ?: $deposit->created_at;
+            $elapsedSeconds = max(0, now()->diffInSeconds($startedAt));
+            $metFastThreshold = $elapsedSeconds <= ($slaMinutes * 60 * 0.5);
+
+            AgentTransactionSpeedLog::create([
+                'support_agent_id' => $agent->id,
+                'deposit_id' => $deposit->id,
+                'user_id' => $deposit->user_id,
+                'confirmed_at' => now(),
+                'sla_minutes_snapshot' => $slaMinutes,
+                'elapsed_seconds' => $elapsedSeconds,
+                'met_fast_threshold' => $metFastThreshold,
+            ]);
+
+            $adminNotification = new \App\Models\AdminNotification();
+            $adminNotification->user_id = $deposit->user_id;
+            $adminNotification->title = 'Agent ' . $agent->name . ' confirmed a deposit for ' . $deposit->user->username;
+            $adminNotification->click_url = urlPath('admin.deposit.details', $deposit->id);
+            $adminNotification->save();
+        }
+
+        return redirect()->route('support-agent.payments.queue')->with('status', 'Deposit confirmed and credited to the user.');
+    }
+
+    public function paymentReject(Request $request, $id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
+
+        $data = $request->validate(['message' => 'required|string|max:255']);
+
+        $deposit->admin_feedback = $data['message'];
+        $deposit->status = Status::PAYMENT_REJECT;
+        $deposit->save();
+
+        notify($deposit->user, 'DEPOSIT_REJECT', [
+            'method_name'       => $deposit->methodName(),
+            'method_currency'   => $deposit->method_currency,
+            'method_amount'     => showAmount($deposit->final_amount, currencyFormat: false),
+            'amount'            => showAmount($deposit->amount, currencyFormat: false),
+            'charge'            => showAmount($deposit->charge, currencyFormat: false),
+            'rate'              => showAmount($deposit->rate, currencyFormat: false),
+            'trx'               => $deposit->trx,
+            'rejection_message' => $data['message'],
+        ]);
+
+        return redirect()->route('support-agent.payments.queue')->with('status', 'Deposit rejected.');
+    }
+
+    public function paymentSettings()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $speedService = app(AgentSpeed::class);
+        $speedScore = $speedService->scoreFor($agent);
+        $fastStreakCount = $speedService->fastStreakCountThisMonth($agent);
+
+        return view('support-agent.payments.settings', compact('agent', 'speedScore', 'fastStreakCount'));
+    }
+
+    public function paymentSettingsUpdate(Request $request)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $data = $request->validate([
+            'accepted_payment_types'   => 'nullable|array',
+            'accepted_payment_types.*' => 'string|max:40',
+        ]);
+
+        $agent->accepted_payment_types = array_values(array_filter(array_map('trim', $data['accepted_payment_types'] ?? [])));
+        $agent->save();
+
+        return redirect()->route('support-agent.payments.settings')->with('status', 'Payment types updated.');
     }
 }

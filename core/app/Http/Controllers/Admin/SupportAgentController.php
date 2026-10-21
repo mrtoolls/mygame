@@ -51,6 +51,8 @@ class SupportAgentController extends Controller
             'is_payment_agent' => ['nullable', 'boolean'],
             'payment_details' => ['required_if:is_payment_agent,1', 'nullable', 'string', 'max:5000'],
             'country_id' => $countryRules,
+            'is_verified' => ['nullable', 'boolean'],
+            'speed_override' => ['nullable', 'integer', 'between:0,100'],
         ]);
 
         $agent = new SupportAgent($data);
@@ -58,6 +60,8 @@ class SupportAgentController extends Controller
         $agent->is_active = $request->boolean('is_active', true);
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
         $agent->payment_details = $agent->is_payment_agent ? ($data['payment_details'] ?? null) : null;
+        $agent->is_verified = $request->boolean('is_verified');
+        $agent->speed_override = $request->filled('speed_override') ? $request->integer('speed_override') : null;
         if (!empty($data['country_id']) && Schema::hasTable('countries')) {
             $country = Country::with('currency')->findOrFail($data['country_id']);
             if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
@@ -78,7 +82,10 @@ class SupportAgentController extends Controller
         $pageTitle = 'Edit Support Agent';
 
         $countries = Schema::hasTable('countries') ? Country::with('currency')->where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get() : collect();
-        return view('admin.support.agents.form', compact('pageTitle', 'agent', 'countries'));
+        $speedService = app(\App\Support\AgentSpeed::class);
+        $speedScore = $speedService->scoreFor($agent);
+        $fastStreakCount = $speedService->fastStreakCountThisMonth($agent);
+        return view('admin.support.agents.form', compact('pageTitle', 'agent', 'countries', 'speedScore', 'fastStreakCount'));
     }
 
     public function update(Request $request, int $id)
@@ -99,12 +106,16 @@ class SupportAgentController extends Controller
             'is_payment_agent' => ['nullable', 'boolean'],
             'payment_details' => ['required_if:is_payment_agent,1', 'nullable', 'string', 'max:5000'],
             'country_id' => $countryRules,
+            'is_verified' => ['nullable', 'boolean'],
+            'speed_override' => ['nullable', 'integer', 'between:0,100'],
         ]);
 
-        $agent->fill(collect($data)->except(['password', 'photo'])->all());
+        $agent->fill(collect($data)->except(['password', 'photo', 'is_verified', 'speed_override'])->all());
         $agent->is_active = $request->boolean('is_active');
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
         $agent->payment_details = $agent->is_payment_agent ? ($data['payment_details'] ?? null) : null;
+        $agent->is_verified = $request->boolean('is_verified');
+        $agent->speed_override = $request->filled('speed_override') ? $request->integer('speed_override') : null;
         if (!empty($data['country_id']) && Schema::hasTable('countries')) {
             $country = Country::with('currency')->findOrFail($data['country_id']);
             if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
