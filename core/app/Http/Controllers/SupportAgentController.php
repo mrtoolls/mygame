@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentTransactionSpeedLog;
 use App\Models\Deposit;
+use App\Models\NewsPost;
 use App\Models\SupportAgent;
 use App\Models\SupportChatNotification;
 use App\Models\SupportMessage;
@@ -307,5 +308,93 @@ class SupportAgentController extends Controller
         $agent->save();
 
         return redirect()->route('support-agent.payments.settings')->with('status', 'Payment types updated.');
+    }
+
+    public function newsIndex()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $posts = NewsPost::orderBy('id', 'desc')->paginate(15);
+        return view('support-agent.news.index', compact('agent', 'posts'));
+    }
+
+    public function newsCreate()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        return view('support-agent.news.form', ['agent' => $agent, 'post' => null]);
+    }
+
+    public function newsStore(Request $request)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $request->validate([
+            'title'       => 'required|string|max:160',
+            'badge_label' => 'nullable|string|max:40',
+            'excerpt'     => 'nullable|string|max:500',
+            'body'        => 'required|string',
+            'image'       => 'required|image|mimes:png,jpg,jpeg,webp|max:4096',
+        ]);
+
+        $post                  = new NewsPost();
+        $post->title           = $request->title;
+        $post->slug            = NewsPost::uniqueSlug($request->title);
+        $post->badge_label     = $request->badge_label;
+        $post->excerpt         = $request->excerpt;
+        $post->body            = $request->body;
+        $post->status          = Status::ENABLE;
+        $post->posted_by_type  = 'agent';
+        $post->posted_by_id    = $agent->id;
+        $post->posted_by_name  = $agent->name;
+        if ($request->hasFile('image')) {
+            $post->image = fileUploader($request->file('image'), 'assets/images/news', '1200x600');
+        }
+        $post->save();
+
+        return redirect()->route('support-agent.news.index')->with('status', 'News post published.');
+    }
+
+    public function newsEdit($id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
+        return view('support-agent.news.form', compact('agent', 'post'));
+    }
+
+    public function newsUpdate(Request $request, $id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
+
+        $request->validate([
+            'title'       => 'required|string|max:160',
+            'badge_label' => 'nullable|string|max:40',
+            'excerpt'     => 'nullable|string|max:500',
+            'body'        => 'required|string',
+            'image'       => 'nullable|image|mimes:png,jpg,jpeg,webp|max:4096',
+        ]);
+
+        if ($post->title !== $request->title) {
+            $post->slug = NewsPost::uniqueSlug($request->title, $post->id);
+        }
+        $post->title       = $request->title;
+        $post->badge_label = $request->badge_label;
+        $post->excerpt     = $request->excerpt;
+        $post->body        = $request->body;
+        if ($request->hasFile('image')) {
+            $post->image = fileUploader($request->file('image'), 'assets/images/news', '1200x600', $post->image ?: null);
+        }
+        $post->save();
+
+        return redirect()->route('support-agent.news.index')->with('status', 'News post updated.');
+    }
+
+    public function newsDestroy($id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
+        if ($post->image) {
+            @unlink('assets/images/news/' . $post->image);
+        }
+        $post->delete();
+        return redirect()->route('support-agent.news.index')->with('status', 'News post deleted.');
     }
 }

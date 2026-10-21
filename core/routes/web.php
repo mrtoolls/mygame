@@ -40,6 +40,15 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::post('settings/accepted-types', 'paymentSettingsUpdate')->name('settings.update');
             Route::post('notifications/read', 'paymentNotificationsRead')->name('notifications.read');
         });
+
+        Route::prefix('news')->name('news.')->group(function () {
+            Route::get('/', 'newsIndex')->name('index');
+            Route::get('create', 'newsCreate')->name('create');
+            Route::post('create', 'newsStore')->name('store');
+            Route::get('{id}/edit', 'newsEdit')->name('edit')->whereNumber('id');
+            Route::post('{id}/edit', 'newsUpdate')->name('update')->whereNumber('id');
+            Route::post('{id}/delete', 'newsDestroy')->name('destroy')->whereNumber('id');
+        });
     });
 });
 

@@ -125,29 +125,39 @@ class SiteController extends Controller {
         return back();
     }
 
-    public function blog() {
-        $blogs     = Frontend::where('tempname', activeTemplateName())->where('data_keys', 'blog.element')->latest()->paginate(getPaginate(15));
-        $pageTitle = 'Blog';
-        $page      = Page::where('tempname', activeTemplate())->where('slug', 'blog')->first();
-        $sections  = @$page->secs;
-        return view('Template::blog', compact('blogs', 'pageTitle', 'sections'));
+    public function blog(Request $request) {
+        $pageTitle = 'News';
+
+        // The hero (most recent post) and the 3 compact items beside it come from
+        // their own small query so the grid below never re-shows them, regardless
+        // of how many "Load more" pages get fetched.
+        $featuredAndList = \App\Models\NewsPost::published()->orderBy('id', 'desc')->limit(4)->get();
+        $featured        = $featuredAndList->first();
+        $recentList      = $featuredAndList->slice(1)->values();
+
+        $gridQuery = \App\Models\NewsPost::published()->whereNotIn('id', $featuredAndList->pluck('id'))->orderBy('id', 'desc');
+        $blogs     = (clone $gridQuery)->paginate(9);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html'    => view('Template::partials.news_grid_cards', ['blogs' => $blogs])->render(),
+                'hasMore' => $blogs->hasMorePages(),
+            ]);
+        }
+
+        $page     = Page::where('tempname', activeTemplate())->where('slug', 'blog')->first();
+        $sections = @$page->secs;
+        return view('Template::blog', compact('blogs', 'featured', 'recentList', 'pageTitle', 'sections'));
     }
 
     public function blogDetails($slug) {
-        $blog = Frontend::where('slug', $slug)->where('data_keys', 'blog.element')->firstOrFail();
-        $blog->views += 1;
-        $blog->save();
+        $blog = \App\Models\NewsPost::published()->where('slug', $slug)->firstOrFail();
+        $blog->increment('views');
 
-        $pageTitle   = 'Blog Detail';
-     
-        $latestBlogs = Frontend::where('tempname', gs("active_template"))->where('id', '!=', $blog->id)->where('data_keys', 'blog.element')->orderBy('id', 'desc')->limit(5)->get();
+        $pageTitle   = $blog->title;
+        $latestBlogs = \App\Models\NewsPost::published()->where('id', '!=', $blog->id)->orderBy('id', 'desc')->limit(5)->get();
 
-        $mostViews   = Frontend::where('tempname', gs("active_template"))->where('id', '!=', $blog->id)->where('data_keys', 'blog.element')->orderBy('views', 'desc')->limit(5)->get();
-
-        $seoContents = $blog->seo_content;
-        $seoImage = @$seoContents->image ? frontendImage('blog', $seoContents->image, getFileSize('seo'), true) : null;
-
-        return view('Template::blog_details', compact('blog', 'pageTitle', 'seoContents', 'seoImage', 'latestBlogs', 'mostViews'));
+        return view('Template::blog_details', compact('blog', 'pageTitle', 'latestBlogs'));
     }
 
     public function cookieAccept() {

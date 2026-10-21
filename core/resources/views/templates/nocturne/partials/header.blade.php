@@ -32,7 +32,7 @@
                         <a class="nav-link {{ menuActive('games') }}" href="{{ route('games') }}">@lang('Game')</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ menuActive('blog') }}" href="{{ route('blog') }}">@lang('Blog')</a>
+                        <a class="nav-link {{ menuActive('blog') }}" href="{{ route('blog') }}">@lang('News')</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ menuActive('contact') }}"

@@ -91,6 +91,18 @@
         "route_name": "admin.gift.index",
         "menu_active": "admin.gift*"
     },
+    "news": {
+        "keyword": [
+            "News",
+            "Blog",
+            "Articles",
+            "Posts"
+        ],
+        "title": "News",
+        "icon": "las la-newspaper",
+        "route_name": "admin.news.index",
+        "menu_active": "admin.news*"
+    },
     "vip": {
         "keyword": [
             "VIP",
