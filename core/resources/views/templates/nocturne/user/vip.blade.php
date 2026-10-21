@@ -146,9 +146,22 @@
 .nocturne-vip-slide .nocturne-vip-level-card__state { margin-top: auto; padding-top: 12px; }
 
 @media(max-width: 767px) {
-    .nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 10px) / 2.3) !important; }
+    /* Each tier card lists up to 9 perk lines - 2+ per view left them too
+       narrow to read (wrapping on nearly every word). One full card plus a
+       peek of the next reads far better on a phone. */
+    .nocturne-vip-tier-rail { grid-auto-columns: calc(100% / 1.15) !important; }
     .nocturne-vip-slide__badge { width: 38px; height: 38px; font-size: 18px; }
     .nocturne-vip-slide__name { font-size: 12.5px; }
+
+    /* The desktop "bridge" connector between the current/next tier stops is
+       a wide horizontal bar rotated 90deg to read as vertical on mobile -
+       but its length is still based on its (now irrelevant) width, so it
+       way overshoots the small gap between the stacked cards and cuts a
+       stray line straight through them. It's purely decorative (the actual
+       progress is already shown by the "% to the next level" text and the
+       full-width track bar below), so just drop it on mobile instead of
+       trying to re-orient a horizontal fill into a vertical one. */
+    .nocturne-vip-bridge { display: none !important; }
 }
 </style>
 @endpush
