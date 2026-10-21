@@ -9,15 +9,5 @@
         </span>
         <strong>{{ __($supportContent->reply_time ?? 'We are here when you need us') }} <i class="ph-fill ph-lightning"></i></strong>
     </div>
-    <a class="nocturne-about-support__button" href="{{ $supportContent->button_url ?: '#support' }}" data-open-support><i class="ph-fill ph-chats-circle"></i>{{ __($supportContent->button_name ?? 'Live Support') }}</a>
+    <a class="nocturne-about-support__button" href="{{ $supportContent->button_url ?: route('ticket.index') }}"><i class="ph-fill ph-chats-circle"></i>{{ __($supportContent->button_name ?? 'Support') }}</a>
 </section>
-@push('script')
-<script>
-document.querySelectorAll('[data-open-support]').forEach((button) => button.addEventListener('click', (event) => {
-    const launcher = document.querySelector('.winx-support-launcher');
-    if (!launcher) return;
-    event.preventDefault();
-    launcher.click();
-}));
-</script>
-@endpush

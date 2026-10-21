@@ -60,8 +60,8 @@ Route::controller('SiteController')->group(function () {
     Route::post('feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->middleware(['auth', 'throttle:5,1'])->name('feedback.store');
     Route::get('feedback', 'pages')->defaults('slug', 'feedback-about-us')->name('feedback');
     Route::get('/pwa/configuration', 'pwaConfiguration')->name('pwa.configuration');
-    Route::get('/contact', 'contact')->name('contact');
-    Route::post('/contact', 'contactSubmit');
+    Route::get('/contact', fn () => redirect()->route('ticket.index'))->name('contact');
+    Route::post('/contact', fn () => redirect()->route('ticket.index'));
     Route::get('/change/{lang?}', 'changeLanguage')->name('lang');
     Route::post('/subscribe', 'subscribe')->name('subscribe.post');
     Route::get('cookie-policy', 'cookiePolicy')->name('cookie.policy');

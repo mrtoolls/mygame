@@ -41,3 +41,13 @@
 </div>
 <link rel="stylesheet" href="{{ asset('assets/global/css/support-chat.css') }}?v={{ @filemtime(public_path('assets/global/css/support-chat.css')) }}">
 <script src="{{ asset('assets/global/js/support-chat.js') }}?v={{ @filemtime(public_path('assets/global/js/support-chat.js')) }}" defer></script>
+<script>
+document.addEventListener('click', function (event) {
+    var trigger = event.target.closest('[data-open-support]');
+    if (!trigger) return;
+    var launcher = document.querySelector('.winx-support-launcher');
+    if (!launcher) return;
+    event.preventDefault();
+    launcher.click();
+});
+</script>

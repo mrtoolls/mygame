@@ -26,13 +26,13 @@
             @auth
                 <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
                 <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-sword"></i><span>@lang('Live Games')</span></a>
-                <a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'is-active' : '' }}"><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
+                <a href="javascript:void(0)" data-open-support><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
                 <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i><span>@lang('Deposit')</span></a>
                 <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i><span>@lang('Withdraw')</span></a>
                 <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
             @else
                 <a href="{{ route('user.login') }}"><i class="ph-fill ph-user"></i><span>@lang('Sign in')</span></a>
-                <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'is-active' : '' }}"><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
+                <a href="javascript:void(0)" data-open-support><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
             @endauth
         </section>
         <section class="nocturne-menu-group" aria-label="@lang('More')">
