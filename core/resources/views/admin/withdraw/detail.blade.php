@@ -160,7 +160,7 @@
 @push('style')
 <style>
 :root{--na-accent:#00e78a;--na-bg:#0d1225;--na-panel:#151a31;--na-raised:#1b2140;--na-muted:#858eaf;--na-line:rgba(133,142,175,.18);--na-text:#f5f6ff;--na-danger:#ff5c7a;--na-warning:#ffb547}
-.page-breadcrumb{display:none}
+.page-breadcrumb{display:none!important}
 .nocturne-admin-wrap{max-width:1180px;margin:0 auto 90px}
 .nocturne-admin-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;color:var(--na-muted);font-size:13px;font-weight:700;text-decoration:none}
 .nocturne-admin-back:hover{color:var(--na-text)}
