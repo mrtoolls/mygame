@@ -1,7 +1,18 @@
 @extends('Template::layouts.frontend')
 @section('content')
     <div class="nocturne-arena-page">
-        <div class="nocturne-arena-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Arena')</span></div>
+        <div class="nocturne-arena-crumb-row">
+            <div class="nocturne-arena-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Arena')</span></div>
+            @auth
+                <div class="nocturne-arena-bell-wrap">
+                    <button type="button" class="nocturne-arena-bell" id="arena-bell"><i class="ph-fill ph-bell"></i><span class="nocturne-arena-bell__count" id="arena-bell-count" hidden>0</span></button>
+                    <div class="nocturne-arena-bell-panel" id="arena-bell-panel" hidden>
+                        <div class="nocturne-arena-bell-panel__head"><strong>@lang('Notifications')</strong><button type="button" id="arena-bell-markread">@lang('Mark all read')</button></div>
+                        <div class="nocturne-arena-bell-panel__list" id="arena-bell-list"><p class="nocturne-arena-notif-empty">@lang('Loading…')</p></div>
+                    </div>
+                </div>
+            @endauth
+        </div>
 
         <div class="nocturne-arena-layout">
             <div class="nocturne-arena-feed">
@@ -92,11 +103,36 @@
 <style>
 :root{--arena-accent:#00e78a;--arena-bg:#10152a;--arena-panel:#151a31;--arena-raised:#1b2140;--arena-muted:#858eaf;--arena-line:rgba(133,142,175,.18);--arena-text:#f5f6ff}
 .nocturne-arena-page{max-width:1240px;margin:0 auto;padding:24px 20px 60px}
-.nocturne-arena-crumb{display:flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--arena-muted);font-size:13px;font-weight:700}
+.nocturne-arena-crumb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.nocturne-arena-crumb{display:flex;align-items:center;gap:7px;color:var(--arena-muted);font-size:13px;font-weight:700}
 .nocturne-arena-crumb a{color:var(--arena-muted);text-decoration:none}
 .nocturne-arena-crumb a:hover{color:var(--arena-text)}
 .nocturne-arena-crumb span{color:var(--arena-text)}
 .nocturne-arena-crumb i{font-size:11px;opacity:.6}
+
+.nocturne-arena-bell-wrap{position:relative}
+.nocturne-arena-bell{position:relative;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--arena-line);border-radius:11px;background:var(--arena-panel);color:var(--arena-muted);font-size:16px;cursor:pointer}
+.nocturne-arena-bell:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
+.nocturne-arena-bell__count{position:absolute;top:-6px;right:-6px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ff5c7a;color:#fff;font-size:9.5px;font-weight:800}
+.nocturne-arena-bell-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:30;width:320px;max-height:380px;overflow-y:auto;padding:14px;border:1px solid var(--arena-line);border-radius:16px;background:#11162b;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.nocturne-arena-bell-panel__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.nocturne-arena-bell-panel__head strong{color:var(--arena-text);font-size:13.5px}
+.nocturne-arena-bell-panel__head button{border:0;background:transparent;color:var(--arena-accent);font-size:11px;font-weight:800;cursor:pointer}
+.nocturne-arena-notif{display:flex;gap:10px;padding:9px 4px;border-radius:10px}
+.nocturne-arena-notif.is-unread{background:rgba(0,231,138,.06)}
+.nocturne-arena-notif__avatar{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:rgba(0,231,138,.12);color:var(--arena-accent);font-size:13px;overflow:hidden}
+.nocturne-arena-notif__avatar img{width:100%;height:100%;object-fit:cover}
+.nocturne-arena-notif p{margin:0;color:var(--arena-text);font-size:12.5px;line-height:1.4}
+.nocturne-arena-notif small{color:var(--arena-muted);font-size:10.5px}
+.nocturne-arena-notif-empty{margin:0;padding:16px 0;color:var(--arena-muted);font-size:12.5px;text-align:center}
+
+.nocturne-arena-post__identity a{color:inherit;text-decoration:none}
+.nocturne-arena-post__identity strong:hover{color:var(--arena-accent)}
+.nocturne-arena-mini-follow{flex:0 0 auto;padding:5px 11px;border:1px solid rgba(0,231,138,.4);border-radius:999px;background:rgba(0,231,138,.1);color:var(--arena-accent);font-size:10.5px;font-weight:800;cursor:pointer}
+.nocturne-arena-mini-follow .label-following{display:none}
+.nocturne-arena-mini-follow.is-following{border-color:var(--arena-line);background:transparent;color:var(--arena-muted)}
+.nocturne-arena-mini-follow.is-following .label-follow{display:none}
+.nocturne-arena-mini-follow.is-following .label-following{display:inline}
 
 .nocturne-arena-layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
 .nocturne-arena-feed{min-width:0}
@@ -383,6 +419,48 @@
                 $('.nocturne-arena-post[data-post-id="' + postId + '"]').find('.nocturne-arena-comment-count').text(res.comments_count);
             });
     });
+
+    // Mini follow button on each post's author
+    $(document).on('click', '.nocturne-arena-mini-follow', function() {
+        var btn = $(this);
+        var userId = btn.data('user-id');
+        var following = btn.data('following') == '1';
+        var url = "{{ route('user.arena.follow.store', ['user' => '__ID__']) }}".replace('__ID__', userId);
+        $.ajax({ url: url, method: following ? 'DELETE' : 'POST', data: { _token: csrfToken } })
+            .done(function(res) {
+                $('.nocturne-arena-mini-follow[data-user-id="' + userId + '"]').toggleClass('is-following', res.following).data('following', res.following ? '1' : '0');
+            });
+    });
+
+    @auth
+    // Notification bell
+    var notifUrl = "{{ route('user.arena.notifications') }}";
+    var notifReadUrl = "{{ route('user.arena.notifications.read') }}";
+    function loadNotifications() {
+        $.ajax({ url: notifUrl, headers: { 'Accept': 'application/json' } }).done(function(res) {
+            $('#arena-bell-list').html(res.html);
+            if (res.unread > 0) {
+                $('#arena-bell-count').text(res.unread > 9 ? '9+' : res.unread).prop('hidden', false);
+            } else {
+                $('#arena-bell-count').prop('hidden', true);
+            }
+        });
+    }
+    $('#arena-bell').on('click', function(e) {
+        e.stopPropagation();
+        var panel = $('#arena-bell-panel');
+        var opening = panel.prop('hidden');
+        panel.prop('hidden', !opening);
+        if (opening) loadNotifications();
+    });
+    $('#arena-bell-markread').on('click', function() {
+        $.post(notifReadUrl, { _token: csrfToken }).done(loadNotifications);
+    });
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.nocturne-arena-bell-wrap').length) $('#arena-bell-panel').prop('hidden', true);
+    });
+    loadNotifications();
+    @endauth
 })(jQuery);
 </script>
 @endpush

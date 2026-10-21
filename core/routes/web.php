@@ -88,6 +88,7 @@ Route::controller('SiteController')->group(function () {
     // in routes/user.php.
     Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');
     Route::get('arena/post/{post}/comments', [\App\Http\Controllers\User\ArenaCommentController::class, 'index'])->name('arena.comments.index');
+    Route::get('arena/u/{username}', [\App\Http\Controllers\User\ArenaController::class, 'profile'])->name('arena.profile');
 
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');

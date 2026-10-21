@@ -109,6 +109,28 @@ class User extends Authenticatable
         return $this->hasMany(VipRakebackClaim::class);
     }
 
+    public function arenaPosts()
+    {
+        return $this->hasMany(ArenaPost::class);
+    }
+
+    /** Users this user follows in the Arena. */
+    public function arenaFollowing()
+    {
+        return $this->belongsToMany(User::class, 'arena_follows', 'follower_id', 'followed_id')->withTimestamps();
+    }
+
+    /** Users who follow this user in the Arena. */
+    public function arenaFollowers()
+    {
+        return $this->belongsToMany(User::class, 'arena_follows', 'followed_id', 'follower_id')->withTimestamps();
+    }
+
+    public function isFollowing(User $user): bool
+    {
+        return ArenaFollow::where('follower_id', $this->id)->where('followed_id', $user->id)->exists();
+    }
+
     /**
      * Lifetime real-money wagering (demo play excluded) - the single figure
      * VIP tier thresholds and rakeback are both computed from.

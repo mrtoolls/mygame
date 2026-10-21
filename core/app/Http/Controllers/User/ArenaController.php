@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\ArenaFollow;
+use App\Models\ArenaNotification;
 use App\Models\ArenaPost;
 use App\Models\ArenaPostVote;
 use App\Models\ArenaReaction;
 use App\Models\GameLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -126,7 +129,8 @@ class ArenaController extends Controller
         ]);
 
         $modelClass = ArenaReaction::TYPES[$request->reactable_type];
-        abort_unless($modelClass::whereKey($request->reactable_id)->exists(), 404);
+        $target     = $modelClass::find($request->reactable_id);
+        abort_unless($target, 404);
 
         $existing = ArenaReaction::where('reactable_type', $request->reactable_type)
             ->where('reactable_id', $request->reactable_id)
@@ -135,18 +139,64 @@ class ArenaController extends Controller
 
         if ($existing && $existing->emoji === $request->emoji) {
             $existing->delete();
-        } elseif ($existing) {
-            $existing->emoji = $request->emoji;
-            $existing->save();
         } else {
-            ArenaReaction::create([
-                'reactable_type' => $request->reactable_type,
-                'reactable_id'   => $request->reactable_id,
-                'user_id'        => auth()->id(),
-                'emoji'          => $request->emoji,
-            ]);
+            if ($existing) {
+                $existing->emoji = $request->emoji;
+                $existing->save();
+            } else {
+                ArenaReaction::create([
+                    'reactable_type' => $request->reactable_type,
+                    'reactable_id'   => $request->reactable_id,
+                    'user_id'        => auth()->id(),
+                    'emoji'          => $request->emoji,
+                ]);
+            }
+            ArenaNotification::fire(
+                $target->user_id,
+                'reaction',
+                auth()->id(),
+                $request->reactable_type,
+                $target->id,
+                auth()->user()->username . ' reacted ' . $request->emoji . ' to your ' . $request->reactable_type
+            );
         }
 
         return response()->json(ArenaReaction::summaryFor($request->reactable_type, $request->reactable_id, auth()->id()));
+    }
+
+    public function notifications()
+    {
+        $items = ArenaNotification::where('user_id', auth()->id())->with('actor')->latest()->limit(20)->get();
+        return response()->json([
+            'html'   => view('Template::partials.arena_notifications', compact('items'))->render(),
+            'unread' => ArenaNotification::where('user_id', auth()->id())->unread()->count(),
+        ]);
+    }
+
+    public function notificationsRead()
+    {
+        ArenaNotification::where('user_id', auth()->id())->unread()->update(['read_at' => now()]);
+        return response()->json(['ok' => true]);
+    }
+
+    public function profile(Request $request, $username)
+    {
+        $profileUser = User::where('username', $username)->firstOrFail();
+        $posts       = ArenaPost::approved()->where('user_id', $profileUser->id)->with('user', 'linkedGameLog.game')->latest()->paginate(10);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html'    => view('Template::partials.arena_post_cards', ['posts' => $posts])->render(),
+                'hasMore' => $posts->hasMorePages(),
+            ]);
+        }
+
+        $pageTitle   = $profileUser->username . ' · Arena';
+        $followers   = $profileUser->arenaFollowers()->count();
+        $following   = $profileUser->arenaFollowing()->count();
+        $isFollowing = auth()->check() ? auth()->user()->isFollowing($profileUser) : false;
+        $currentTier = $profileUser->vipTier();
+
+        return view('Template::arena.profile', compact('pageTitle', 'profileUser', 'posts', 'followers', 'following', 'isFollowing', 'currentTier'));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArenaComment;
+use App\Models\ArenaNotification;
 use App\Models\ArenaPost;
 use Illuminate\Http\Request;
 
@@ -25,6 +26,7 @@ class ArenaCommentController extends Controller
         ]);
 
         $parentId = null;
+        $parent   = null;
         if ($request->filled('parent_id')) {
             // One level of replies only: the parent must itself be a top-level comment on this post.
             $parent = ArenaComment::where('post_id', $post->id)->whereNull('parent_id')->find($request->parent_id);
@@ -43,6 +45,13 @@ class ArenaCommentController extends Controller
         $post->increment('comments_count');
 
         $comment->load('user');
+
+        $actorName = auth()->user()->username;
+        if ($parent) {
+            ArenaNotification::fire($parent->user_id, 'reply', auth()->id(), 'comment', $comment->id, $actorName . ' replied to your comment');
+        } else {
+            ArenaNotification::fire($post->user_id, 'comment', auth()->id(), 'post', $post->id, $actorName . ' commented on your post');
+        }
 
         return response()->json([
             'html'      => view('Template::partials.arena_comment_item', ['comment' => $comment, 'post' => $post])->render(),

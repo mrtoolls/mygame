@@ -6,13 +6,17 @@
         'question'  => ['label' => 'Question', 'icon' => 'ph-question'],
     ];
 
-    // Batch the current viewer's votes + every post's reaction counts in two
-    // queries total, instead of N queries per post rendered on this page.
+    // Batch the current viewer's votes, follows and every post's reaction counts
+    // into a handful of queries total, instead of per-post N+1 queries.
     $postIds = $posts->pluck('id');
     $myVotes = auth()->check()
         ? \App\Models\ArenaPostVote::whereIn('post_id', $postIds)->where('user_id', auth()->id())->pluck('value', 'post_id')
         : collect();
     $reactionRows = \App\Models\ArenaReaction::where('reactable_type', 'post')->whereIn('reactable_id', $postIds)->get()->groupBy('reactable_id');
+    $authorIds = $posts->pluck('user_id')->unique();
+    $myFollowedIds = auth()->check()
+        ? \App\Models\ArenaFollow::where('follower_id', auth()->id())->whereIn('followed_id', $authorIds)->pluck('followed_id')->all()
+        : [];
 @endphp
 @foreach ($posts as $post)
     @php
@@ -21,14 +25,21 @@
         $rows = $reactionRows->get($post->id, collect());
         $reactionCounts = $rows->groupBy('emoji')->map->count();
         $myReaction = auth()->check() ? $rows->firstWhere('user_id', auth()->id())?->emoji : null;
+        $isOwnPost = auth()->check() && auth()->id() === $post->user_id;
+        $isFollowingAuthor = in_array($post->user_id, $myFollowedIds, true);
     @endphp
     <article class="nocturne-arena-post" data-post-id="{{ $post->id }}">
         <div class="nocturne-arena-post__head">
-            <span class="nocturne-arena-post__avatar">@if($post->user?->avatarUrl())<img src="{{ $post->user->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($post->user->username ?? '?', 0, 1)) }}@endif</span>
+            <a href="{{ route('arena.profile', $post->user->username ?? '') }}" class="nocturne-arena-post__avatar">@if($post->user?->avatarUrl())<img src="{{ $post->user->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($post->user->username ?? '?', 0, 1)) }}@endif</a>
             <div class="nocturne-arena-post__identity">
-                <strong>{{ $post->user->username ?? 'Deleted user' }}</strong>
+                <a href="{{ route('arena.profile', $post->user->username ?? '') }}"><strong>{{ $post->user->username ?? 'Deleted user' }}</strong></a>
                 <small>{{ diffForHumans($post->created_at) }}</small>
             </div>
+            @if(auth()->check() && !$isOwnPost && $post->user)
+                <button type="button" class="nocturne-arena-mini-follow {{ $isFollowingAuthor ? 'is-following' : '' }}" data-user-id="{{ $post->user_id }}" data-following="{{ $isFollowingAuthor ? '1' : '0' }}">
+                    <span class="label-follow">@lang('Follow')</span><span class="label-following">@lang('Following')</span>
+                </button>
+            @endif
             <span class="nocturne-arena-post__type"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
         </div>
 

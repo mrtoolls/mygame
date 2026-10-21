@@ -87,9 +87,15 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('post', 'store')->name('store');
                 Route::post('post/{post}/vote', 'vote')->name('vote');
                 Route::post('react', 'react')->name('react');
+                Route::get('notifications', 'notifications')->name('notifications');
+                Route::post('notifications/read', 'notificationsRead')->name('notifications.read');
             });
             Route::controller('ArenaCommentController')->prefix('arena/post/{post}/comments')->name('arena.comments.')->group(function () {
                 Route::post('/', 'store')->name('store');
+            });
+            Route::controller('ArenaFollowController')->prefix('arena/follow')->name('arena.follow.')->group(function () {
+                Route::post('{user}', 'store')->name('store');
+                Route::delete('{user}', 'destroy')->name('destroy');
             });
 
             // Paid business promotions
