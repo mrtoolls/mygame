@@ -273,28 +273,29 @@
 @keyframes chess-piece-in{from{transform:scale(.4) translateY(-14px) rotateX(50deg);opacity:0}60%{transform:scale(1.12) translateY(0) rotateX(0);opacity:1}to{transform:scale(1) translateY(0) rotateX(0);opacity:1}}
 .board-cell--chess{transform-style:preserve-3d}
 .board-cell--chess:not(:empty) svg{animation:chess-piece-in .18s ease}
-.ludo-wrap{position:relative;width:min(92vw,420px);aspect-ratio:1;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#fffdf6,#f2e7cc);box-shadow:0 0 0 10px #2a2140,0 16px 40px rgba(0,0,0,.5)}
-.ludo-yard{position:absolute;width:40%;height:40%}
+.ludo-wrap{position:relative;width:min(100%,420px);aspect-ratio:1;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#fffdf6,#f2e7cc);box-shadow:0 0 0 10px #2a2140,0 2px 0 rgba(255,255,255,.08) inset,0 34px 60px rgba(0,0,0,.55),0 14px 18px rgba(0,0,0,.35);transform:rotateX(7deg);transform-origin:50% 100%;transform-style:preserve-3d;box-sizing:border-box;max-width:100%}
+.ludo-yard{position:absolute;width:40%;height:40%;box-shadow:inset 0 -10px 18px rgba(0,0,0,.2),inset 0 6px 10px rgba(255,255,255,.18)}
 .ludo-yard--red{left:0;top:0;background:radial-gradient(ellipse at 30% 25%,#ff7a7a,#d32f2f 65%,#8f1414 100%)}
 .ludo-yard--green{right:0;top:0;background:radial-gradient(ellipse at 70% 25%,#6fe3a8,#1f9e5c 65%,#0e5c34 100%)}
 .ludo-yard--yellow{right:0;bottom:0;background:radial-gradient(ellipse at 70% 75%,#ffe27a,#f2b705 65%,#8f6a02 100%)}
 .ludo-yard--blue{left:0;bottom:0;background:radial-gradient(ellipse at 30% 75%,#7aa8ff,#2a62d6 65%,#123a80 100%)}
-.ludo-yard-inner{position:absolute;left:6.667%;top:6.667%;width:26.667%;height:26.667%;border-radius:14%;background:#fff;box-shadow:inset 0 2px 6px rgba(0,0,0,.12);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10%;padding:10%;box-sizing:border-box}
+.ludo-yard-inner{position:absolute;left:6.667%;top:6.667%;width:26.667%;height:26.667%;border-radius:14%;background:#fff;box-shadow:inset 0 3px 8px rgba(0,0,0,.22),0 2px 0 rgba(255,255,255,.5);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10%;padding:10%;box-sizing:border-box}
 .ludo-yard--red .ludo-yard-inner{background:#fff6f2}.ludo-yard--green .ludo-yard-inner{background:#f0fbf4}.ludo-yard--yellow .ludo-yard-inner{background:#fffbe9}.ludo-yard--blue .ludo-yard-inner{background:#eef4ff}
-.ludo-slot{border-radius:50%;background:rgba(0,0,0,.07);box-shadow:inset 0 2px 4px rgba(0,0,0,.18)}
-.ludo-arm-v{position:absolute;left:40%;top:0;width:20%;height:100%;background:#fffdf6;background-image:repeating-linear-gradient(to bottom,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to right,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08)}
-.ludo-arm-h{position:absolute;top:40%;left:0;width:100%;height:20%;background:#fffdf6;background-image:repeating-linear-gradient(to right,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to bottom,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.ludo-slot{border-radius:50%;background:rgba(0,0,0,.09);box-shadow:inset 0 3px 5px rgba(0,0,0,.26),inset 0 -1px 0 rgba(255,255,255,.4)}
+.ludo-arm-v{position:absolute;left:40%;top:0;width:20%;height:100%;background:#fffdf6;background-image:repeating-linear-gradient(to bottom,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to right,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08),inset 0 2px 6px rgba(0,0,0,.08)}
+.ludo-arm-h{position:absolute;top:40%;left:0;width:100%;height:20%;background:#fffdf6;background-image:repeating-linear-gradient(to right,transparent 0 6.667%,rgba(0,0,0,.09) 6.667% calc(6.667% + 1px)),repeating-linear-gradient(to bottom,transparent 0 33.333%,rgba(0,0,0,.09) 33.333% calc(33.333% + 1px));box-shadow:0 0 0 1px rgba(0,0,0,.08),inset 0 2px 6px rgba(0,0,0,.08)}
 .ludo-lane{position:absolute}
 .ludo-lane--red{left:0;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to right,rgba(211,47,47,.12),rgba(211,47,47,.55))}
 .ludo-lane--green{left:46.667%;top:0;width:6.667%;height:40%;background:linear-gradient(to bottom,rgba(31,158,92,.12),rgba(31,158,92,.55))}
 .ludo-lane--yellow{left:60%;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to left,rgba(242,183,5,.12),rgba(242,183,5,.55))}
 .ludo-lane--blue{left:46.667%;top:60%;width:6.667%;height:40%;background:linear-gradient(to top,rgba(42,98,214,.12),rgba(42,98,214,.55))}
-.ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 6px 14px rgba(0,0,0,.4)}
-.ludo-die{position:absolute;right:3%;bottom:3%;width:10%;height:10%;border-radius:22%;background:linear-gradient(160deg,#fff,#e6e6e6);box-shadow:0 6px 12px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.08)}
-.ludo-token{position:absolute;width:6.2%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:2px solid rgba(0,0,0,.4);box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
+.ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 2px 0 rgba(255,255,255,.3) inset,0 10px 18px rgba(0,0,0,.5)}
+.ludo-die{position:absolute;right:3%;bottom:3%;width:11%;height:11%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:grid;place-items:center}
+.ludo-die::before{content:"";width:34%;height:34%;border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
+.ludo-token{position:absolute;width:6.2%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:2px solid rgba(0,0,0,.4);background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.85),rgba(255,255,255,0) 55%);box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
 .ludo-token.is-movable{cursor:pointer;animation:ludo-token-pulse 1s ease-in-out infinite;z-index:2}
-@keyframes ludo-token-pulse{0%,100%{box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5),0 0 0 0 rgba(0,239,135,.6)}50%{box-shadow:0 3px 5px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.5),0 0 0 7px rgba(0,239,135,0)}}
-@media(max-width:575px){.ludo-die{right:2%;bottom:2%}}
+@keyframes ludo-token-pulse{0%,100%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 0 rgba(0,239,135,.6)}50%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 7px rgba(0,239,135,0)}}
+@media(max-width:575px){.ludo-die{right:2%;bottom:2%}.ludo-wrap{transform:rotateX(4deg)}}
 .bg-board{display:flex;flex-direction:column;gap:6px;width:min(94vw,520px);margin:10px auto;padding:10px;border-radius:14px;background:linear-gradient(155deg,#5c3a1d,#39230f);box-shadow:0 14px 34px rgba(0,0,0,.45)}
 .bg-row{display:flex;gap:2px;height:clamp(90px,16vw,128px)}
 .bg-point{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
@@ -491,11 +492,11 @@
 .board-card-suit{min-height:38px;margin:0 auto 10px;padding:0 12px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:10px;background:var(--tm-raised,#232a47);color:var(--tm-text,#f5f6ff);display:block}
 /* ---- Dice pip graphics (Ludo roll, Backgammon dice) ---- */
 .dice-roll-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800;perspective:500px}
-.dice-face{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:40px;height:40px;padding:6px;border-radius:9px;background:linear-gradient(160deg,#fbfbff,#e4e7f2);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 14px rgba(0,0,0,.3);animation:dice-tumble .5s cubic-bezier(.2,.8,.3,1.05)}
+.dice-face{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:44px;height:44px;padding:7px;border-radius:10px;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 4px 5px rgba(0,0,0,.08) inset,4px 9px 0 -2px rgba(150,155,175,.85),6px 13px 16px rgba(0,0,0,.4);animation:dice-tumble .5s cubic-bezier(.2,.8,.3,1.05);transform-style:preserve-3d}
 @keyframes dice-tumble{0%{transform:rotate3d(1,1,0,340deg) scale(.6);opacity:.2}70%{transform:rotate3d(1,1,0,-18deg) scale(1.08)}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.dice-face{animation:none}}
 .dice-face i{border-radius:50%;background:transparent}
-.dice-face i.is-on{background:#1b1f33}
+.dice-face i.is-on{background:radial-gradient(circle at 34% 28%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.4) inset}
 /* ---- Physical felt table surface behind every board ---- */
 .table-board{
     border-radius:18px;border:1px solid rgba(255,255,255,.05);perspective:900px;
