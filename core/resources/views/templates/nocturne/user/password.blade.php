@@ -17,8 +17,7 @@
                                 <input type="password" class="nocturne-password-input" name="current_password" required
                                     autocomplete="current-password">
                                 <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                    <x-icon name="eye" class="icon-eye" />
-                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                    <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -30,8 +29,7 @@
                                     class="nocturne-password-input @if (gs('secure_password')) secure-password @endif"
                                     name="password" required autocomplete="current-password">
                                 <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                    <x-icon name="eye" class="icon-eye" />
-                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                    <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -42,8 +40,7 @@
                                 <input type="password" class="nocturne-password-input" name="password_confirmation" required
                                     autocomplete="current-password">
                                 <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                    <x-icon name="eye" class="icon-eye" />
-                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                    <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -66,6 +63,7 @@
         .hover-input-popup .input-popup {
             bottom: 80% !important;
         }
+        .nocturne-field__toggle-icon { font-size: 18px; line-height: 1; display: inline-block; color: inherit; }
     </style>
 @endpush
 
@@ -74,10 +72,12 @@
         "use strict";
         (function($) {
             $('.nocturne-field__toggle').on('click', function() {
-                var input = $(this).siblings('input');
-                var showing = input.attr('type') === 'text';
-                input.attr('type', showing ? 'password' : 'text');
-                $(this).find('.icon-eye, .icon-eye-off').toggleClass('d-none');
+                var btn = $(this);
+                var input = btn.siblings('input');
+                var icon = btn.find('.nocturne-field__toggle-icon');
+                var isPassword = input.attr('type') === 'password';
+                input.attr('type', isPassword ? 'text' : 'password');
+                icon.toggleClass('ph-eye', !isPassword).toggleClass('ph-eye-slash', isPassword);
             });
         })(jQuery);
     </script>

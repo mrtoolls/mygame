@@ -33,8 +33,8 @@
                     @if ($countries->isNotEmpty())
                         <div class="nocturne-field">
                             <label class="form--label">@lang('Country of residence')</label>
-                            <div class="nocturne-field__control">
-                                <i class="las la-globe" aria-hidden="true"></i>
+                            <div class="nocturne-field__control nocturne-field__control--select">
+                                <x-icon name="globe" />
                                 <select name="country_id" required aria-label="@lang('Choose your country')">
                                     <option value="">@lang('Choose your country')</option>
                                     @foreach ($countries as $country)
@@ -61,8 +61,7 @@
                                 <x-icon name="lock" />
                                 <input id="password" class="nocturne-password-input" type="password" name="password" placeholder="@lang('Enter Password')" required>
                                 <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                    <x-icon name="eye" class="icon-eye" />
-                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                    <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -72,8 +71,7 @@
                                 <x-icon name="lock" />
                                 <input id="confirm-password" class="nocturne-password-input" name="password_confirmation" type="password" placeholder="@lang('Repeat Password')" required>
                                 <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                    <x-icon name="eye" class="icon-eye" />
-                                    <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                    <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -145,6 +143,16 @@
         </div>
     </div>
 @endsection
+@push('style')
+<style>
+    .nocturne-field__toggle-icon { font-size: 18px; line-height: 1; display: inline-block; color: inherit; }
+    .nocturne-field__control--select select {
+        appearance: none; -webkit-appearance: none; -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23929abc' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 2px center; padding-right: 22px;
+    }
+</style>
+@endpush
 
 @if (gs('secure_password'))
     @push('script-lib')
@@ -157,10 +165,12 @@
         "use strict";
         (function($) {
             $('.nocturne-field__toggle').on('click', function() {
-                var input = $(this).siblings('input');
-                var showing = input.attr('type') === 'text';
-                input.attr('type', showing ? 'password' : 'text');
-                $(this).find('.icon-eye, .icon-eye-off').toggleClass('d-none');
+                var btn = $(this);
+                var input = btn.siblings('input');
+                var icon = btn.find('.nocturne-field__toggle-icon');
+                var isPassword = input.attr('type') === 'password';
+                input.attr('type', isPassword ? 'text' : 'password');
+                icon.toggleClass('ph-eye', !isPassword).toggleClass('ph-eye-slash', isPassword);
             });
 
             $('#registerForm').on('submit', function() {

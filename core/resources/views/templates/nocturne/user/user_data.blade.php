@@ -31,12 +31,12 @@
                         <div class="nocturne-gender-picker">
                             <label class="nocturne-gender-card">
                                 <input type="radio" name="gender" value="male" required @checked(old('gender') === 'male')>
-                                <span class="nocturne-gender-card__preview"><i class="las la-mars"></i></span>
+                                <span class="nocturne-gender-card__preview"><img src="{{ asset('assets/images/profilepics/male1.png') }}" alt="@lang('Male avatar')" loading="lazy"></span>
                                 <span class="nocturne-gender-card__label">@lang('Male')</span>
                             </label>
                             <label class="nocturne-gender-card">
                                 <input type="radio" name="gender" value="female" required @checked(old('gender') === 'female')>
-                                <span class="nocturne-gender-card__preview"><i class="las la-venus"></i></span>
+                                <span class="nocturne-gender-card__preview"><img src="{{ asset('assets/images/profilepics/female1.png') }}" alt="@lang('Female avatar')" loading="lazy"></span>
                                 <span class="nocturne-gender-card__label">@lang('Female')</span>
                             </label>
                         </div>
@@ -55,8 +55,8 @@
                     <div class="nocturne-field-grid">
                         <div class="nocturne-field">
                             <label class="form--label">@lang('Country')</label>
-                            <div class="nocturne-field__control">
-                                <i class="las la-globe" aria-hidden="true"></i>
+                            <div class="nocturne-field__control nocturne-field__control--select">
+                                <i class="ph-bold ph-globe nocturne-icon" aria-hidden="true"></i>
                                 <select name="country" id="onboard-country" required aria-label="@lang('Choose your country')">
                                     <option value="">@lang('Choose your country')</option>
                                     @foreach ($countries as $key => $country)
@@ -70,7 +70,7 @@
                         <div class="nocturne-field">
                             <label class="form--label">@lang('State')</label>
                             <div class="nocturne-field__control">
-                                <i class="las la-map-marker" aria-hidden="true"></i>
+                                <i class="ph-bold ph-map-pin nocturne-icon" aria-hidden="true"></i>
                                 <input name="state" type="text" value="{{ old('state') }}">
                             </div>
                         </div>
@@ -106,13 +106,43 @@
         }
         .nocturne-gender-card input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
         .nocturne-gender-card__preview {
-            display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
-            background: var(--nocturne-raised, #232a47); color: var(--nocturne-muted, #929abc); font-size: 26px;
+            display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; overflow: hidden;
+            background: var(--nocturne-raised, #232a47); border: 2px solid transparent; transition: border-color .15s ease;
         }
+        .nocturne-gender-card__preview img { width: 100%; height: 100%; object-fit: cover; }
         .nocturne-gender-card__label { color: var(--nocturne-text, #f5f6ff); font-size: 13px; font-weight: 800; }
         .nocturne-gender-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
-        .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { background: rgba(0, 239, 135, .14); color: var(--nocturne-green, #00ef87); }
+        .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { border-color: var(--nocturne-green, #00ef87); }
         .nocturne-field__control .mobile-code { color: var(--nocturne-muted, #929abc); font-size: 13px; font-weight: 800; white-space: nowrap; }
+        .nocturne-field__control--select select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23929abc' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 2px center; padding-right: 22px;
+        }
+
+        /* Mobile hardening: the page was overflowing horizontally on phones
+           (text/fields running past the viewport edge) - force every control
+           to respect its container and give it a premium native-app feel. */
+        html, body { overflow-x: hidden; }
+        .nocturne-auth-form, .nocturne-field, .nocturne-field-grid, .nocturne-field__control { max-width: 100%; box-sizing: border-box; }
+        .nocturne-field__control { width: 100%; }
+        .nocturne-field__control select, .nocturne-field__control input { min-width: 0; width: 100%; box-sizing: border-box; }
+        @media (max-width: 575.98px) {
+            .nocturne-auth { min-height: 100dvh; }
+            .nocturne-auth-card { box-shadow: none; }
+            .nocturne-auth-visual { min-height: 220px; padding: 22px 20px 26px; }
+            .nocturne-auth-visual__copy h2 { font-size: 19px; }
+            .nocturne-auth-visual__copy p { font-size: 13px; margin-bottom: 12px; }
+            .nocturne-auth-form { padding: 22px 16px calc(22px + env(safe-area-inset-bottom)); }
+            .nocturne-auth-form h1 { font-size: 22px; margin-bottom: 4px; }
+            .nocturne-onboard-sub { font-size: 12.5px; margin-bottom: 20px; }
+            .nocturne-gender-picker { gap: 8px; }
+            .nocturne-gender-card { padding: 14px 8px; border-radius: 16px; }
+            .nocturne-gender-card__preview { width: 54px; height: 54px; }
+            .nocturne-field { margin-bottom: 14px; }
+            .nocturne-field__control { min-height: 50px; border-radius: 14px; }
+            .form-submit .btn--gradient { min-height: 52px; border-radius: 15px; font-size: 15px; }
+        }
     </style>
 @endpush
 

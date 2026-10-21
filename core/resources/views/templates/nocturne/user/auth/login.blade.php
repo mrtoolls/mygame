@@ -38,8 +38,7 @@
                             <x-icon name="lock" />
                             <input class="nocturne-password-input" type="password" name="password" placeholder="@lang('Enter Password')" required>
                             <button type="button" class="nocturne-field__toggle" aria-label="@lang('Show password')">
-                                <x-icon name="eye" class="icon-eye" />
-                                <x-icon name="eye-off" class="icon-eye-off d-none" />
+                                <i class="ph-bold ph-eye nocturne-icon nocturne-field__toggle-icon" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -71,15 +70,22 @@
         </div>
     </section>
 @endsection
+@push('style')
+<style>
+    .nocturne-field__toggle-icon { font-size: 18px; line-height: 1; display: inline-block; color: inherit; }
+</style>
+@endpush
 @push('script')
     <script>
         (function($) {
             "use strict";
             $('.nocturne-field__toggle').on('click', function() {
-                var input = $(this).siblings('input');
-                var showing = input.attr('type') === 'text';
-                input.attr('type', showing ? 'password' : 'text');
-                $(this).find('.icon-eye, .icon-eye-off').toggleClass('d-none');
+                var btn = $(this);
+                var input = btn.siblings('input');
+                var icon = btn.find('.nocturne-field__toggle-icon');
+                var isPassword = input.attr('type') === 'password';
+                input.attr('type', isPassword ? 'text' : 'password');
+                icon.toggleClass('ph-eye', !isPassword).toggleClass('ph-eye-slash', isPassword);
             });
         })(jQuery);
     </script>
