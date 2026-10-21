@@ -133,7 +133,7 @@
                 @endauth
 
                 <div class="nocturne-arena-widget">
-                    <h3><i class="ph-fill ph-sword"></i>@lang('Live Games')</h3>
+                    <h3><i class="ph-fill ph-sword nocturne-live-pulse"></i>@lang('Live Games')</h3>
                     @forelse($liveTables as $table)
                         <a href="{{ route('user.tables.show', $table['id']) }}" class="nocturne-arena-widget-row">
                             <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-game-controller"></i></span>

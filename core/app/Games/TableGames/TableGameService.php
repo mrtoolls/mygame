@@ -7,6 +7,7 @@ use App\Models\TableGameCommission;
 use App\Models\TableGameInvite;
 use App\Models\TableGameMove;
 use App\Models\TableGamePlayer;
+use App\Models\TableGameRematch;
 use App\Models\TableGameSetting;
 use App\Models\TableGameUserLimit;
 use App\Models\TableGameViewer;
@@ -230,6 +231,86 @@ class TableGameService
             $invite->accepted_at = now();
             $invite->save();
             return $table;
+        }, 3);
+    }
+
+    /**
+     * Opens a rematch for a finished table: spins up a fresh waiting table with the requester
+     * already seated (reusing create()), then invites every other original player to it (reusing
+     * invite(), which already validates each invitee's wallet stake). The requester lands straight
+     * on that new table's normal "waiting for players" screen; everyone else sees an Accept/Reject
+     * prompt while still on the finished table's page (delivered over the existing chat poll).
+     */
+    public function requestRematch(User $user, string $tableId): TableGameRematch
+    {
+        return DB::transaction(function () use ($user, $tableId) {
+            $table = TableGame::whereKey($tableId)->lockForUpdate()->firstOrFail();
+            if ($table->status !== 'finished') throw new InvalidArgumentException('A rematch can only be requested once the game has finished.');
+            if (!TableGamePlayer::where('table_game_id', $table->id)->where('user_id', $user->id)->exists()) {
+                throw new InvalidArgumentException('Only players who were seated at this table can request a rematch.');
+            }
+
+            $existing = TableGameRematch::where('original_table_game_id', $table->id)->lockForUpdate()->first();
+            if ($existing) {
+                if ($existing->status !== 'pending' || !$existing->expires_at?->isFuture()) {
+                    throw new InvalidArgumentException($existing->status === 'declined' ? 'A rematch was already declined for this table.' : 'A rematch was already requested for this table.');
+                }
+                if ((int) $existing->requested_by === (int) $user->id) return $existing->fresh();
+                // Another original player already opened this rematch and this user has a pending
+                // invite to it - tapping the same "Request Rematch" button just accepts it for them,
+                // rather than seating them as a spectator on someone else's new table.
+                $invite = TableGameInvite::where('table_game_id', $existing->new_table_game_id)->where('invitee_id', $user->id)->first();
+                if (!$invite || $invite->status !== 'pending' || !$invite->expires_at?->isFuture()) {
+                    throw new InvalidArgumentException('A rematch was already requested for this table.');
+                }
+                $this->join($user, $existing->new_table_game_id);
+                $invite->status = 'accepted';
+                $invite->accepted_at = now();
+                $invite->save();
+                return $existing->fresh();
+            }
+
+            $otherPlayerIds = TableGamePlayer::where('table_game_id', $table->id)->where('user_id', '!=', $user->id)->pluck('user_id')->unique();
+            if ($otherPlayerIds->isEmpty()) throw new InvalidArgumentException('There is no one else to invite to a rematch.');
+
+            $newTable = $this->create($user, $table->game_type, (int) $table->player_limit, (string) $table->stake, (string) Str::uuid());
+
+            $failures = [];
+            foreach (User::whereIn('id', $otherPlayerIds)->get() as $otherPlayer) {
+                try {
+                    $this->invite($user, $newTable->id, $otherPlayer->username);
+                } catch (InvalidArgumentException $exception) {
+                    $failures[] = $otherPlayer->username . ': ' . $exception->getMessage();
+                }
+            }
+
+            $rematch = TableGameRematch::create([
+                'original_table_game_id' => $table->id,
+                'new_table_game_id' => $newTable->id,
+                'requested_by' => $user->id,
+                'status' => 'pending',
+                'expires_at' => now()->addMinutes(10),
+            ]);
+            $rematch->invite_failures = $failures;
+            return $rematch;
+        }, 3);
+    }
+
+    public function declineRematch(User $user, int $rematchId): TableGameRematch
+    {
+        return DB::transaction(function () use ($user, $rematchId) {
+            $rematch = TableGameRematch::whereKey($rematchId)->lockForUpdate()->firstOrFail();
+            if ($rematch->status !== 'pending') return $rematch;
+            $invite = TableGameInvite::where('table_game_id', $rematch->new_table_game_id)->where('invitee_id', $user->id)->first();
+            if (!$invite) throw new InvalidArgumentException('This rematch invitation does not belong to you.');
+            $invite->forceFill(['status' => 'declined'])->save();
+            $rematch->status = 'declined';
+            $rematch->save();
+            $requester = User::find($rematch->requested_by);
+            if ($requester) {
+                try { $this->standUp($requester, $rematch->new_table_game_id); } catch (Throwable) {}
+            }
+            return $rematch;
         }, 3);
     }
 

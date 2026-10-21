@@ -141,6 +141,30 @@ class TableGameController extends Controller
         return $this->run(fn () => $service->start($request->user(), $id));
     }
 
+    public function requestRematch(Request $request, string $id, TableGameService $service)
+    {
+        try {
+            $rematch = $service->requestRematch($request->user(), $id);
+            return response()->json([
+                'success' => true,
+                'rematch' => ['id' => $rematch->id, 'status' => $rematch->status, 'new_table_id' => $rematch->new_table_game_id],
+                'failures' => $rematch->invite_failures ?? [],
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    public function declineRematch(Request $request, int $rematch, TableGameService $service)
+    {
+        try {
+            $row = $service->declineRematch($request->user(), $rematch);
+            return response()->json(['success' => true, 'rematch' => ['id' => $row->id, 'status' => $row->status]]);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
     public function move(Request $request, string $id, TableGameService $service)
     {
         $data = $request->validate([
@@ -196,7 +220,31 @@ class TableGameController extends Controller
         $otherSeenAt = Schema::hasColumn('table_game_players', 'last_seen_at')
             ? TableGamePlayer::where('table_game_id', $id)->where('user_id', '!=', $request->user()->id)->pluck('last_seen_at')->filter()->map(fn ($value) => \Carbon\Carbon::parse($value))
             : collect();
-        return response()->json(['messages' => $messages->map(fn ($message) => $this->messagePayload($message, $reactions->get($message->id, collect()), (int) $request->user()->id, $otherSeenAt))->values()]);
+        return response()->json([
+            'messages' => $messages->map(fn ($message) => $this->messagePayload($message, $reactions->get($message->id, collect()), (int) $request->user()->id, $otherSeenAt))->values(),
+            'rematch' => $this->rematchPayload($id, $request->user()),
+        ]);
+    }
+
+    /**
+     * Surfaced over the chat poll (not the game-state poll, which stops once a table finishes)
+     * so a pending rematch keeps reaching every player still sitting on the finished table's page.
+     */
+    private function rematchPayload(string $tableId, User $user): ?array
+    {
+        if (!Schema::hasTable('table_game_rematches')) return null;
+        $rematch = \App\Models\TableGameRematch::where('original_table_game_id', $tableId)->latest('id')->first();
+        if (!$rematch) return null;
+        $myInvite = TableGameInvite::where('table_game_id', $rematch->new_table_game_id)->where('invitee_id', $user->id)->first();
+        return [
+            'id' => $rematch->id,
+            'status' => $rematch->status,
+            'is_requester' => (int) $rematch->requested_by === (int) $user->id,
+            'requested_by_name' => $rematch->requestedBy?->username,
+            'new_table_id' => $rematch->new_table_game_id,
+            'my_invite_status' => $myInvite?->status,
+            'invite_id' => $myInvite?->id,
+        ];
     }
 
     public function sendMessage(Request $request, string $id)

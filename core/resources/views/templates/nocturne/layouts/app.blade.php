@@ -49,6 +49,13 @@
         @media (max-width: 767.98px) {
             .nocturne-site-footer:not(.nocturne-footer--show-mobile) { display: none !important; }
         }
+        /* "Live" indicators (menu + Arena widget) blink green so the UI reads
+           as actively broadcasting rather than a static icon. */
+        @keyframes nocturneLiveBlink {
+            0%, 100% { opacity: 1; color: #00e78a; text-shadow: 0 0 2px rgba(0,231,138,.5); }
+            50% { opacity: .3; color: #00e78a; text-shadow: 0 0 10px rgba(0,231,138,.9); }
+        }
+        .nocturne-live-pulse { animation: nocturneLiveBlink 1.4s ease-in-out infinite; }
     </style>
 </head>
 

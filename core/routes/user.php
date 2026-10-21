@@ -161,6 +161,8 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('{id}/invites', 'invite')->whereUuid('id')->name('invite');
                 Route::post('invites/{invite}/accept', 'acceptInvite')->whereNumber('invite')->name('invite.accept');
                 Route::post('{id}/start', 'start')->whereUuid('id')->name('start');
+                Route::post('{id}/rematch', 'requestRematch')->whereUuid('id')->middleware('throttle:10,1')->name('rematch.request');
+                Route::post('rematch/{rematch}/decline', 'declineRematch')->whereNumber('rematch')->middleware('throttle:20,1')->name('rematch.decline');
                 Route::post('{id}/move', 'move')->whereUuid('id')->name('move');
                 Route::post('{id}/leave', 'leave')->whereUuid('id')->name('leave');
                 Route::post('{id}/gifts/{gift}/send', 'sendGift')->whereUuid('id')->whereNumber('gift')->middleware('throttle:20,1')->name('gifts.send');
