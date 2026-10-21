@@ -146,8 +146,8 @@ class PaymentController extends Controller {
         return view("Template::$data->view", compact('data', 'pageTitle', 'deposit'));
     }
 
-    public static function userDataUpdate($deposit, $isManual = null) {
-        $result = DB::transaction(function () use ($deposit, $isManual) {
+    public static function userDataUpdate($deposit, $isManual = null, $confirmedVia = null) {
+        $result = DB::transaction(function () use ($deposit, $isManual, $confirmedVia) {
             $lockedDeposit = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
             if (!$lockedDeposit || !in_array((int) $lockedDeposit->status, [Status::PAYMENT_INITIATE, Status::PAYMENT_PENDING], true)) {
                 return null;
@@ -160,6 +160,10 @@ class PaymentController extends Controller {
             $methodName = $lockedDeposit->methodName();
             $user->balance += $lockedDeposit->amount;
             $user->save();
+
+            if ($confirmedVia && Schema::hasColumn('deposits', 'confirmed_via')) {
+                $lockedDeposit->confirmed_via = $confirmedVia;
+            }
 
             $lockedDeposit->status = Status::PAYMENT_SUCCESS;
             $lockedDeposit->save();
@@ -218,9 +222,138 @@ class PaymentController extends Controller {
             $pageTitle = 'Confirm Deposit';
             $method    = $data->gatewayCurrency();
             $gateway   = $method->method;
+            if ($gateway->crypto == Status::ENABLE) {
+                return view('Template::user.payment.crypto_confirm', compact('data', 'pageTitle', 'method', 'gateway'));
+            }
             return view('Template::user.payment.manual', compact('data', 'pageTitle', 'method', 'gateway'));
         }
         abort(404);
+    }
+
+    public function confirmationSubmit(Request $request) {
+        $track   = session()->get('Track');
+        $deposit = Deposit::with(['gateway', 'user'])->where('status', Status::PAYMENT_INITIATE)->where('trx', $track)->where('user_id', auth()->id())->first();
+        abort_if(!$deposit, 404);
+        abort_unless($deposit->gateway && $deposit->gateway->crypto == Status::ENABLE, 404);
+
+        $request->validate([
+            'payment_proof'        => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'payer_wallet_address' => 'required|string|max:255',
+        ]);
+
+        $directory = date('Y') . '/' . date('m') . '/' . date('d');
+        $proof     = $directory . '/' . fileUploader($request->file('payment_proof'), getFilePath('verify') . '/' . $directory);
+        $sla       = (int) (gs('payment_confirmation_sla_minutes') ?: 15);
+
+        $pendingDeposit = DB::transaction(function () use ($deposit, $request, $proof, $sla) {
+            $lockedDeposit = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
+            if (!$lockedDeposit || (int) $lockedDeposit->status !== Status::PAYMENT_INITIATE) {
+                return null;
+            }
+
+            $lockedDeposit->payment_proof            = $proof;
+            $lockedDeposit->payer_wallet_address      = $request->payer_wallet_address;
+            $lockedDeposit->confirmation_started_at   = now();
+            $lockedDeposit->confirmation_sla_minutes  = $sla;
+            $lockedDeposit->confirmation_deadline_at  = now()->addMinutes($sla);
+            $lockedDeposit->status                    = Status::PAYMENT_PENDING;
+            $lockedDeposit->save();
+
+            $adminNotification             = new AdminNotification();
+            $adminNotification->user_id    = $lockedDeposit->user_id;
+            $adminNotification->title      = 'Crypto deposit awaiting confirmation from ' . $lockedDeposit->user->username;
+            $adminNotification->click_url  = urlPath('admin.deposit.details', $lockedDeposit->id);
+            $adminNotification->save();
+
+            return $lockedDeposit->load('user');
+        });
+
+        if (!$pendingDeposit) {
+            @unlink(getFilePath('verify') . '/' . $proof);
+            $notify[] = ['error', 'This deposit request has already been submitted.'];
+            return to_route('user.deposit.history')->withNotify($notify);
+        }
+
+        $adminEmails = \App\Models\Admin::pluck('email')->filter()->all();
+        if ($adminEmails) {
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "A crypto deposit from {$pendingDeposit->user->username} is awaiting confirmation.\n\nAmount: " . showAmount($pendingDeposit->amount, currencyFormat: false) . " {$pendingDeposit->method_currency}\nTrx: {$pendingDeposit->trx}\nPaid from: {$pendingDeposit->payer_wallet_address}\nConfirm by: {$pendingDeposit->confirmation_deadline_at}\n\nReview it in the admin panel.",
+                    function ($mail) use ($adminEmails) {
+                        $mail->to($adminEmails)->subject('Crypto deposit awaiting confirmation');
+                    }
+                );
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Admin crypto-deposit email notification failed.', ['deposit_id' => $pendingDeposit->id, 'error' => $exception->getMessage()]);
+            }
+        }
+
+        notify($pendingDeposit->user, 'DEPOSIT_REQUEST', [
+            'method_name'     => $pendingDeposit->gatewayCurrency()->name,
+            'method_currency' => $pendingDeposit->method_currency,
+            'method_amount'   => showAmount($pendingDeposit->final_amount, currencyFormat: false),
+            'amount'          => showAmount($pendingDeposit->amount, currencyFormat: false),
+            'charge'          => showAmount($pendingDeposit->charge, currencyFormat: false),
+            'rate'            => showAmount($pendingDeposit->rate, currencyFormat: false),
+            'trx'             => $pendingDeposit->trx,
+        ]);
+
+        return to_route('user.deposit.confirmation.pending');
+    }
+
+    public function confirmationPending() {
+        $track   = session()->get('Track');
+        $deposit = Deposit::with('gateway')->where('trx', $track)->where('user_id', auth()->id())->first();
+        abort_if(!$deposit || !$deposit->payment_proof, 404);
+        $pageTitle = 'Confirming Deposit';
+        return view('Template::user.payment.crypto_pending', compact('deposit', 'pageTitle'));
+    }
+
+    public function confirmationStatus() {
+        $track   = session()->get('Track');
+        $deposit = Deposit::where('trx', $track)->where('user_id', auth()->id())->first();
+        if (!$deposit) {
+            return response()->json(['status' => 'unknown']);
+        }
+        $status = match ((int) $deposit->status) {
+            Status::PAYMENT_SUCCESS => 'success',
+            Status::PAYMENT_REJECT => 'rejected',
+            default => 'pending',
+        };
+        return response()->json([
+            'status'    => $status,
+            'disputed'  => (bool) $deposit->disputed_at,
+            'deadline'  => $deposit->confirmation_deadline_at?->timestamp * 1000,
+            'history_url' => route('user.deposit.history'),
+        ]);
+    }
+
+    public function confirmationDispute(Request $request) {
+        $track   = session()->get('Track');
+        $deposit = Deposit::where('trx', $track)->where('user_id', auth()->id())->where('status', Status::PAYMENT_PENDING)->first();
+        abort_if(!$deposit, 404);
+
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
+        $deposit->disputed_at    = now();
+        $deposit->dispute_reason = $request->reason;
+        $deposit->save();
+
+        $adminEmails = \App\Models\Admin::pluck('email')->filter()->all();
+        if ($adminEmails) {
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "A deposit dispute was raised by {$deposit->user?->username} on trx {$deposit->trx}.\n\nReason: " . ($request->reason ?: 'No reason given') . "\n\nReview it in the admin panel.",
+                    function ($mail) use ($adminEmails) {
+                        $mail->to($adminEmails)->subject('Deposit disputed - needs review');
+                    }
+                );
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Admin dispute email notification failed.', ['deposit_id' => $deposit->id, 'error' => $exception->getMessage()]);
+            }
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function manualDepositUpdate(Request $request) {

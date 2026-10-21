@@ -45,6 +45,29 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4 mb-15">
+                                            <div class="form-group">
+                                                <div class="custom-control custom-checkbox mt-2">
+                                                    <input type="checkbox" class="custom-control-input" id="crypto-toggle" name="crypto" value="1" @checked(old('crypto'))>
+                                                    <label class="custom-control-label" for="crypto-toggle">@lang('This is a crypto deposit method')</label>
+                                                </div>
+                                                <small class="text-muted">@lang('Shows users a wallet address + QR code to pay into instead of a plain form.')</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-none-15 crypto-wallet-fields" style="display:{{ old('crypto') ? 'flex' : 'none' }}">
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 mb-15">
+                                            <div class="form-group">
+                                                <label>@lang('Wallet Address')</label>
+                                                <input type="text" class="form-control" name="wallet_address" value="{{ old('wallet_address') }}" placeholder="@lang('e.g. bc1q...')">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6 mb-15">
+                                            <div class="form-group">
+                                                <label>@lang('Network (optional)')</label>
+                                                <input type="text" class="form-control" name="network_label" value="{{ old('network_label') }}" placeholder="@lang('e.g. TRC20, ERC20, BTC Mainnet')">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -153,6 +176,10 @@
             @if (old('currency'))
                 $('input[name=currency]').trigger('input');
             @endif
+
+            $('#crypto-toggle').on('change', function() {
+                $('.crypto-wallet-fields').css('display', this.checked ? 'flex' : 'none');
+            });
 
             let minLimit = $('[name=min_limit]');
             let maxLimit = $('[name=max_limit]');

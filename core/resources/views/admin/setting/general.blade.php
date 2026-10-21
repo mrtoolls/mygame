@@ -159,6 +159,18 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-xl-4 col-sm-6">
+                                <div class="form-group">
+                                    <label>@lang('Payment Confirmation SLA')</label>
+                                    <div class="input-group">
+                                        <input class="form-control" name="payment_confirmation_sla_minutes" type="number"
+                                            value="{{ (int) (gs('payment_confirmation_sla_minutes') ?: 15) }}" min="5" max="60" step="1"
+                                            required>
+                                        <span class="input-group-text">@lang('minutes')</span>
+                                    </div>
+                                    <small class="text-muted">@lang('How long users see the deposit confirmation countdown before admin/agent review is expected.')</small>
+                                </div>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')</button>
                     </form>

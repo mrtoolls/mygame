@@ -61,7 +61,7 @@ class ManualGatewayController extends Controller {
         $method->status               = Status::ENABLE;
         $method->gateway_parameters   = json_encode([]);
         $method->supported_currencies = [];
-        $method->crypto               = Status::DISABLE;
+        $method->crypto               = $request->boolean('crypto') ? Status::ENABLE : Status::DISABLE;
         $method->description          = $request->instruction;
         $method->save();
 
@@ -77,6 +77,10 @@ class ManualGatewayController extends Controller {
         $gatewayCurrency->fixed_charge   = $request->fixed_charge;
         $gatewayCurrency->percent_charge = $request->percent_charge;
         $gatewayCurrency->rate           = $request->rate;
+        if ($request->boolean('crypto')) {
+            $gatewayCurrency->wallet_address = $request->wallet_address;
+            $gatewayCurrency->network_label  = $request->network_label;
+        }
         $gatewayCurrency->save();
 
         RequiredConfig::configured('deposit_method');
@@ -117,7 +121,7 @@ class ManualGatewayController extends Controller {
         $method->alias                = strtolower(trim(str_replace(' ', '_', $request->name)));
         $method->gateway_parameters   = json_encode([]);
         $method->supported_currencies = [];
-        $method->crypto               = Status::DISABLE;
+        $method->crypto               = $request->boolean('crypto') ? Status::ENABLE : Status::DISABLE;
         $method->description          = $request->instruction;
         $method->form_id              = @$generate->id ?? 0;
         $method->save();
@@ -134,6 +138,13 @@ class ManualGatewayController extends Controller {
             $singleCurrency->percent_charge = $request->percent_charge;
             $singleCurrency->rate           = $request->rate;
             $singleCurrency->support_agent_id = $request->input('payment_agent_id');
+            if ($request->boolean('crypto')) {
+                $singleCurrency->wallet_address = $request->wallet_address;
+                $singleCurrency->network_label  = $request->network_label;
+            } else {
+                $singleCurrency->wallet_address = null;
+                $singleCurrency->network_label  = null;
+            }
             $singleCurrency->save();
         }
 
@@ -152,6 +163,9 @@ class ManualGatewayController extends Controller {
             'percent_charge' => 'required|numeric|between:0,100',
             'image'          => [$isUpdate ? 'nullable' : 'required', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
             'instruction'    => 'required',
+            'crypto'           => 'nullable|boolean',
+            'wallet_address'   => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => $request->boolean('crypto'))],
+            'network_label'    => 'nullable|string|max:60',
             'payment_agent_id' => ['nullable', 'integer', Rule::exists('support_agents', 'id')->where(fn ($query) => $query->where('is_active', true)->where('is_payment_agent', true))],
         ];
 
@@ -159,18 +173,23 @@ class ManualGatewayController extends Controller {
         $validation          = array_merge($validation, $generatorValidation['rules']);
         $request->validate($validation, $generatorValidation['messages']);
 
+        // Crypto methods use the native receipt/paid-from-address fields on the new
+        // deposit confirmation modal instead of the generic form builder, so the
+        // required-file-field rule below only applies to non-crypto agent methods.
         if ($request->filled('payment_agent_id') && Schema::hasTable('countries')) {
             $agent = SupportAgent::paymentAgents()->with('country.currency')->findOrFail($request->integer('payment_agent_id'));
             if (!$agent->country?->is_allowed || !$agent->country?->is_enabled || strtoupper((string) $agent->country?->currency?->code) !== strtoupper((string) $request->input('currency'))) {
                 throw ValidationException::withMessages(['payment_agent_id' => 'The payment agent country currency must match this manual deposit method currency.']);
             }
-            $formTypes = $request->input('form_generator.form_type', []);
-            $required = $request->input('form_generator.is_required', []);
-            $hasRequiredReceipt = collect($formTypes)->contains(fn ($type, $index) => $type === 'file' && ($required[$index] ?? null) === 'required');
-            if (!$hasRequiredReceipt) {
-                throw ValidationException::withMessages([
-                    'form_generator' => 'Agent-assisted deposits must include a required file upload field for payment proof.',
-                ]);
+            if (!$request->boolean('crypto')) {
+                $formTypes = $request->input('form_generator.form_type', []);
+                $required = $request->input('form_generator.is_required', []);
+                $hasRequiredReceipt = collect($formTypes)->contains(fn ($type, $index) => $type === 'file' && ($required[$index] ?? null) === 'required');
+                if (!$hasRequiredReceipt) {
+                    throw ValidationException::withMessages([
+                        'form_generator' => 'Agent-assisted deposits must include a required file upload field for payment proof.',
+                    ]);
+                }
             }
         }
     }

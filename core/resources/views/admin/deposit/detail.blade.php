@@ -79,6 +79,24 @@
                         @if($deposit->payment_agent_snapshot)
                             <div class="alert alert-info"><strong>@lang('Payment agent')</strong><div>{{ $deposit->payment_agent_snapshot->name }} · {{ $deposit->payment_agent_snapshot->email }}</div><div class="mt-2">{!! nl2br(e($deposit->payment_agent_snapshot->payment_details ?? '')) !!}</div></div>
                         @endif
+                        @if($deposit->payment_proof || $deposit->payer_wallet_address)
+                            <div class="alert {{ $deposit->disputed_at ? 'alert-danger' : 'alert-warning' }}">
+                                <strong>@lang('Crypto deposit confirmation')</strong>
+                                @if($deposit->disputed_at)
+                                    <div class="mt-2"><span class="badge badge--danger">@lang('Disputed')</span> {{ showDateTime($deposit->disputed_at) }}</div>
+                                    @if($deposit->dispute_reason)<div class="mt-1">{{ $deposit->dispute_reason }}</div>@endif
+                                @endif
+                                @if($deposit->payer_wallet_address)
+                                    <div class="mt-2"><strong>@lang('Paid from address'):</strong> <code>{{ $deposit->payer_wallet_address }}</code></div>
+                                @endif
+                                @if($deposit->confirmation_deadline_at)
+                                    <div class="mt-1"><strong>@lang('Confirm by'):</strong> {{ showDateTime($deposit->confirmation_deadline_at) }}</div>
+                                @endif
+                                @if($deposit->payment_proof)
+                                    <div class="mt-2"><a href="{{ route('admin.download.attachment', encrypt(getFilePath('verify') . '/' . $deposit->payment_proof)) }}" target="_blank"><i class="fa-regular fa-file"></i> @lang('View payment receipt')</a></div>
+                                @endif
+                            </div>
+                        @endif
                         @if ($details != null)
                             @foreach (json_decode($details) as $val)
                                 @if ($deposit->method_code >= 1000)

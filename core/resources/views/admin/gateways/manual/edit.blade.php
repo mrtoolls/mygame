@@ -45,6 +45,29 @@
                                         <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4">
                                             <div class="form-group"><label>@lang('Payment agent (optional)')</label><select class="form-control" name="payment_agent_id"><option value="">@lang('General manual payment')</option>@foreach($paymentAgents as $agent)<option value="{{ $agent->id }}" @selected(old('payment_agent_id', $method->singleCurrency->support_agent_id) == $agent->id)>{{ $agent->name }} — {{ $agent->email }} · {{ $agent->country?->currency?->code }}</option>@endforeach</select><small class="text-muted">Only designated agents whose local currency matches this method appear here.</small></div>
                                         </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-4">
+                                            <div class="form-group">
+                                                <div class="custom-control custom-checkbox mt-2">
+                                                    <input type="checkbox" class="custom-control-input" id="crypto-toggle" name="crypto" value="1" @checked(old('crypto', $method->crypto))>
+                                                    <label class="custom-control-label" for="crypto-toggle">@lang('This is a crypto deposit method')</label>
+                                                </div>
+                                                <small class="text-muted">@lang('Shows users a wallet address + QR code to pay into instead of a plain form.')</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row crypto-wallet-fields" style="display:{{ old('crypto', $method->crypto) ? 'flex' : 'none' }}">
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                                            <div class="form-group">
+                                                <label>@lang('Wallet Address')</label>
+                                                <input type="text" class="form-control" name="wallet_address" value="{{ old('wallet_address', $method->singleCurrency->wallet_address) }}" placeholder="@lang('e.g. bc1q...')">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                                            <div class="form-group">
+                                                <label>@lang('Network (optional)')</label>
+                                                <input type="text" class="form-control" name="network_label" value="{{ old('network_label', $method->singleCurrency->network_label) }}" placeholder="@lang('e.g. TRC20, ERC20, BTC Mainnet')">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -154,6 +177,10 @@
             @if (old('currency'))
                 $('input[name=currency]').trigger('input');
             @endif
+
+            $('#crypto-toggle').on('change', function() {
+                $('.crypto-wallet-fields').css('display', this.checked ? 'flex' : 'none');
+            });
 
             let minLimit = $('[name=min_limit]');
             let maxLimit = $('[name=max_limit]');

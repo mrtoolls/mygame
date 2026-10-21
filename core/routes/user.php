@@ -163,6 +163,10 @@ Route::middleware('auth')->name('user.')->group(function () {
             Route::get('confirm', 'depositConfirm')->name('confirm');
             Route::get('manual', 'manualDepositConfirm')->name('manual.confirm');
             Route::post('manual', 'manualDepositUpdate')->name('manual.update');
+            Route::post('confirmation/submit', 'confirmationSubmit')->name('confirmation.submit');
+            Route::get('confirmation/pending', 'confirmationPending')->name('confirmation.pending');
+            Route::get('confirmation/status', 'confirmationStatus')->name('confirmation.status');
+            Route::post('confirmation/dispute', 'confirmationDispute')->name('confirmation.dispute');
         });
     });
 });

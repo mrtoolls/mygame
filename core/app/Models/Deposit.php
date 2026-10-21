@@ -12,6 +12,9 @@ class Deposit extends Model
     protected $casts = [
         'detail' => 'object',
         'payment_agent_snapshot' => 'object',
+        'confirmation_started_at' => 'datetime',
+        'confirmation_deadline_at' => 'datetime',
+        'disputed_at' => 'datetime',
     ];
 
     protected $hidden = ['detail'];

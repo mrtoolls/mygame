@@ -43,6 +43,7 @@ class GeneralSettingController extends Controller
             'balance_transfer_percent_charge' => 'required|numeric|gte:0',
             'gameplay_number_for_bonus'       => 'required|numeric|gt:0',
             'gameplay_bonus'                  => 'required|numeric|gt:0',
+            'payment_confirmation_sla_minutes' => 'required|integer|between:5,60',
         ]);
 
         $timezones = timezone_identifiers_list();
@@ -63,6 +64,7 @@ class GeneralSettingController extends Controller
         $general->balance_transfer_percent_charge = $request->balance_transfer_percent_charge;
         $general->gameplay_number_for_bonus       = $request->gameplay_number_for_bonus;
         $general->gameplay_bonus                  = $request->gameplay_bonus;
+        $general->payment_confirmation_sla_minutes = $request->payment_confirmation_sla_minutes;
         $general->save();
 
         $timezoneFile = config_path('timezone.php');
