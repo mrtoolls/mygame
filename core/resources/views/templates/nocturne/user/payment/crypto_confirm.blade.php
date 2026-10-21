@@ -82,7 +82,7 @@
 @endpush
 
 @push('script')
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 <script>
 (() => {
     const address = document.getElementById('crypto-address')?.textContent.trim();
