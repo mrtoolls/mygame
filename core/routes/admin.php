@@ -125,6 +125,9 @@ Route::middleware('admin')->group(function () {
 
     // Arena
     Route::controller('ArenaController')->name('arena.')->prefix('arena')->group(function () {
+        Route::get('pending', 'pending')->name('pending');
+        Route::post('approve/{id}', 'approve')->name('approve');
+        Route::post('reject', 'reject')->name('reject');
         Route::get('settings', 'settings')->name('settings');
         Route::post('settings', 'settingsUpdate')->name('settings.update');
     });

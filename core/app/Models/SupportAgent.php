@@ -6,7 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class SupportAgent extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'payment_details', 'is_active', 'is_payment_agent', 'last_seen_at', 'accepted_payment_types', 'is_verified', 'speed_override'];
+    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'payment_details', 'is_active', 'is_payment_agent', 'last_seen_at', 'accepted_payment_types', 'is_verified', 'speed_override', 'is_moderator'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -16,7 +16,13 @@ class SupportAgent extends Authenticatable
         'last_seen_at' => 'datetime',
         'accepted_payment_types' => 'array',
         'is_verified' => 'boolean',
+        'is_moderator' => 'boolean',
     ];
+
+    public function scopeModerators($query)
+    {
+        return $query->where('is_active', true)->where('is_moderator', true);
+    }
 
     public function conversations()
     {

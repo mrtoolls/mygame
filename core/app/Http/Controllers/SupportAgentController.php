@@ -397,4 +397,45 @@ class SupportAgentController extends Controller
         $post->delete();
         return redirect()->route('support-agent.news.index')->with('status', 'News post deleted.');
     }
+
+    public function arenaQueue()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_moderator, 403);
+        $posts = \App\Models\ArenaPost::pending()->with('user')->latest()->paginate(15);
+        return view('support-agent.arena.queue', compact('agent', 'posts'));
+    }
+
+    public function arenaApprove($id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_moderator, 403);
+        $post = \App\Models\ArenaPost::where('id', $id)->where('status', 'pending')->firstOrFail();
+        $post->status            = 'approved';
+        $post->moderated_by_type = 'agent';
+        $post->moderated_by_id   = $agent->id;
+        $post->save();
+
+        \App\Models\ArenaNotification::fire($post->user_id, 'post_approved', null, 'post', $post->id, 'Your Arena post was approved and is now live.');
+
+        return redirect()->route('support-agent.arena.queue')->with('status', 'Post approved.');
+    }
+
+    public function arenaReject(Request $request, $id)
+    {
+        $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_moderator, 403);
+        $request->validate(['message' => 'required|string|max:255']);
+
+        $post = \App\Models\ArenaPost::where('id', $id)->where('status', 'pending')->firstOrFail();
+        $post->status            = 'rejected';
+        $post->rejection_reason  = $request->message;
+        $post->moderated_by_type = 'agent';
+        $post->moderated_by_id   = $agent->id;
+        $post->save();
+
+        \App\Models\ArenaNotification::fire($post->user_id, 'post_rejected', null, 'post', $post->id, 'Your Arena post was rejected: ' . $request->message);
+
+        return redirect()->route('support-agent.arena.queue')->with('status', 'Post rejected.');
+    }
 }

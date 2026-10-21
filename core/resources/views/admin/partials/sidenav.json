@@ -113,8 +113,19 @@
         ],
         "title": "Arena",
         "icon": "las la-fire",
-        "route_name": "admin.arena.settings",
-        "menu_active": "admin.arena*"
+        "menu_active": "admin.arena*",
+        "submenu": [
+            {
+                "title": "Pending Posts",
+                "route_name": "admin.arena.pending",
+                "menu_active": "admin.arena.pending"
+            },
+            {
+                "title": "Settings",
+                "route_name": "admin.arena.settings",
+                "menu_active": "admin.arena.settings"
+            }
+        ]
     },
     "vip": {
         "keyword": [

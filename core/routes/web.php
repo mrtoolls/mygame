@@ -49,6 +49,12 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::post('{id}/edit', 'newsUpdate')->name('update')->whereNumber('id');
             Route::post('{id}/delete', 'newsDestroy')->name('destroy')->whereNumber('id');
         });
+
+        Route::prefix('arena')->name('arena.')->group(function () {
+            Route::get('/', 'arenaQueue')->name('queue');
+            Route::post('{id}/approve', 'arenaApprove')->name('approve')->whereNumber('id');
+            Route::post('{id}/reject', 'arenaReject')->name('reject')->whereNumber('id');
+        });
     });
 });
 
