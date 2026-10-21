@@ -120,6 +120,11 @@ class WithdrawalController extends Controller {
         ]);
 
         $notify[] = ['success', 'Withdrawal approved successfully'];
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Withdrawal approved successfully']);
+        }
+
         return to_route('admin.withdraw.data.pending')->withNotify($notify);
     }
 
@@ -162,6 +167,11 @@ class WithdrawalController extends Controller {
         ]);
 
         $notify[] = ['success', 'Withdrawal rejected successfully'];
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Withdrawal rejected successfully']);
+        }
+
         return to_route('admin.withdraw.data.pending')->withNotify($notify);
     }
 
