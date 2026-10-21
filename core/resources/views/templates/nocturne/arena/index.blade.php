@@ -180,6 +180,49 @@
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
 
+/* Vote / reaction / comment bar */
+.nocturne-arena-post__bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--arena-line)}
+.nocturne-arena-vote{display:flex;align-items:center;gap:8px}
+.nocturne-arena-vote.is-disabled{opacity:.5}
+.nocturne-arena-vote__btn{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--arena-line);border-radius:9px;background:var(--arena-bg);color:var(--arena-muted);font-size:13px;cursor:pointer}
+.nocturne-arena-vote__btn:hover:not(:disabled){border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
+.nocturne-arena-vote__btn--up.is-active{background:rgba(0,231,138,.14);border-color:rgba(0,231,138,.5);color:var(--arena-accent)}
+.nocturne-arena-vote__btn--down.is-active{background:rgba(255,92,122,.14);border-color:rgba(255,92,122,.5);color:#ff5c7a}
+.nocturne-arena-vote__score{min-width:22px;text-align:center;color:var(--arena-text);font-size:13px;font-weight:800}
+
+.nocturne-arena-reactions{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nocturne-arena-reactions.is-disabled{opacity:.5}
+.nocturne-arena-reaction{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border:1px solid transparent;border-radius:999px;background:transparent;font-size:14px;cursor:pointer}
+.nocturne-arena-reaction:hover:not(:disabled){background:var(--arena-bg)}
+.nocturne-arena-reaction.is-active{border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.1)}
+.nocturne-arena-reaction small{color:var(--arena-muted);font-size:10.5px;font-weight:800}
+.nocturne-arena-reaction small.is-zero{display:none}
+
+.nocturne-arena-comment-toggle{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 12px;border:1px solid var(--arena-line);border-radius:999px;background:transparent;color:var(--arena-muted);font-size:12.5px;font-weight:750;cursor:pointer}
+.nocturne-arena-comment-toggle:hover{border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
+
+.nocturne-arena-comments-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--arena-line)}
+.nocturne-arena-comment-form{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.nocturne-arena-comment-form input,.nocturne-arena-reply-form input{flex:1;min-width:0;padding:9px 13px;border:1px solid var(--arena-line);border-radius:999px;background:var(--arena-bg);color:var(--arena-text);font:inherit;font-size:12.5px;outline:0}
+.nocturne-arena-comment-form button,.nocturne-arena-reply-form button{flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:var(--arena-accent);color:#062a23;cursor:pointer}
+.nocturne-arena-reply-form{display:flex;align-items:center;gap:8px;margin:8px 0 0 44px}
+
+.nocturne-arena-comment-list{display:grid;gap:12px}
+.nocturne-arena-comment-empty{margin:0;color:var(--arena-muted);font-size:12.5px;text-align:center;padding:10px 0}
+.nocturne-arena-comment{display:flex;gap:10px}
+.nocturne-arena-comment--reply{margin-top:8px}
+.nocturne-arena-comment__avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:rgba(0,231,138,.12);color:var(--arena-accent);font-size:12px;font-weight:800;overflow:hidden}
+.nocturne-arena-comment__avatar img{width:100%;height:100%;object-fit:cover}
+.nocturne-arena-comment__body{flex:1;min-width:0}
+.nocturne-arena-comment__bubble{display:inline-block;padding:9px 13px;border-radius:14px;background:var(--arena-bg)}
+.nocturne-arena-comment__bubble strong{display:block;margin-bottom:2px;color:var(--arena-text);font-size:12.5px;font-weight:800}
+.nocturne-arena-comment__bubble p{margin:0;color:#d7dafa;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.nocturne-arena-comment__meta{display:flex;align-items:center;gap:10px;margin:5px 0 0 13px}
+.nocturne-arena-comment__meta span{color:var(--arena-muted);font-size:11px}
+.nocturne-arena-comment__reply-btn{border:0;background:transparent;color:var(--arena-muted);font-size:11px;font-weight:800;cursor:pointer;padding:0}
+.nocturne-arena-comment__reply-btn:hover{color:var(--arena-accent)}
+.nocturne-arena-comment__replies{display:grid;gap:8px;margin-left:30px}
+
 @media(max-width:991.98px){
     .nocturne-arena-layout{grid-template-columns:1fr}
     .nocturne-arena-rail{order:3}
@@ -242,6 +285,103 @@
                 }
             })
             .fail(function() { btn.prop('disabled', false).text("{{ __('Load More') }}"); });
+    });
+
+    var csrfToken = "{{ csrf_token() }}";
+    var voteUrlTpl = "{{ route('user.arena.vote', ['post' => '__ID__']) }}";
+    var reactUrl = "{{ route('user.arena.react') }}";
+    var commentsIndexUrlTpl = "{{ route('arena.comments.index', ['post' => '__ID__']) }}";
+    var commentsStoreUrlTpl = "{{ route('user.arena.comments.store', ['post' => '__ID__']) }}";
+
+    // Upvote / downvote
+    $(document).on('click', '.nocturne-arena-vote__btn:not(:disabled)', function() {
+        var btn = $(this);
+        var article = btn.closest('.nocturne-arena-post');
+        var postId = article.data('post-id');
+        var value = btn.data('vote');
+        $.post(voteUrlTpl.replace('__ID__', postId), { value: value, _token: csrfToken })
+            .done(function(res) {
+                article.find('.nocturne-arena-vote__score').text(res.upvotes - res.downvotes);
+                article.find('.nocturne-arena-vote__btn').removeClass('is-active');
+                if (res.mine === 1) article.find('.nocturne-arena-vote__btn--up').addClass('is-active');
+                if (res.mine === -1) article.find('.nocturne-arena-vote__btn--down').addClass('is-active');
+            });
+    });
+
+    // Emoji reactions
+    $(document).on('click', '.nocturne-arena-reaction:not(:disabled)', function() {
+        var btn = $(this);
+        var wrap = btn.closest('.nocturne-arena-reactions');
+        var emoji = btn.data('emoji');
+        $.post(reactUrl, { reactable_type: wrap.data('reactable-type'), reactable_id: wrap.data('reactable-id'), emoji: emoji, _token: csrfToken })
+            .done(function(res) {
+                wrap.find('.nocturne-arena-reaction').each(function() {
+                    var e = $(this).data('emoji');
+                    var count = (res.counts && res.counts[e]) || 0;
+                    $(this).toggleClass('is-active', res.mine === e);
+                    $(this).find('small').text(count).toggleClass('is-zero', count === 0);
+                });
+            });
+    });
+
+    // Comment toggle: lazy-load on first open, then just show/hide
+    $(document).on('click', '.nocturne-arena-comment-toggle', function() {
+        var btn = $(this);
+        var article = btn.closest('.nocturne-arena-post');
+        var wrap = article.find('.nocturne-arena-comments-wrap');
+        if (!wrap.data('loaded')) {
+            $.ajax({ url: commentsIndexUrlTpl.replace('__ID__', btn.data('post-id')), headers: { 'Accept': 'application/json' } })
+                .done(function(res) {
+                    wrap.html(res.html).data('loaded', true).prop('hidden', false);
+                });
+        } else {
+            wrap.prop('hidden', !wrap.prop('hidden'));
+        }
+    });
+
+    // Top-level comment submit
+    $(document).on('submit', '.nocturne-arena-comment-form', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var postId = form.data('post-id');
+        var input = form.find('input[name=body]');
+        var body = $.trim(input.val());
+        if (!body) return;
+        $.post(commentsStoreUrlTpl.replace('__ID__', postId), { body: body, _token: csrfToken })
+            .done(function(res) {
+                form.siblings('.nocturne-arena-comment-list').find('.nocturne-arena-comment-empty').remove();
+                form.siblings('.nocturne-arena-comment-list').append(res.html);
+                input.val('');
+                form.closest('.nocturne-arena-post').find('.nocturne-arena-comment-count').text(res.comments_count);
+            });
+    });
+
+    // Reply toggle
+    $(document).on('click', '.nocturne-arena-comment__reply-btn', function() {
+        var btn = $(this);
+        var existing = btn.closest('.nocturne-arena-comment__body').children('.nocturne-arena-reply-form');
+        if (existing.length) { existing.remove(); return; }
+        var form = $('<form class="nocturne-arena-reply-form"><input type="text" name="body" maxlength="1000" placeholder="{{ __('Write a reply...') }}"><button type="submit"><i class="ph-bold ph-paper-plane-tilt"></i></button></form>');
+        form.data('parent-id', btn.data('reply-to'));
+        btn.closest('.nocturne-arena-comment__meta').after(form);
+        form.find('input').trigger('focus');
+    });
+
+    // Reply submit
+    $(document).on('submit', '.nocturne-arena-reply-form', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var input = form.find('input[name=body]');
+        var body = $.trim(input.val());
+        if (!body) return;
+        var postId = form.closest('.nocturne-arena-post').data('post-id');
+        var parentId = form.data('parent-id');
+        $.post(commentsStoreUrlTpl.replace('__ID__', postId), { body: body, parent_id: parentId, _token: csrfToken })
+            .done(function(res) {
+                $('[data-replies-for="' + parentId + '"]').append(res.html);
+                form.remove();
+                $('.nocturne-arena-post[data-post-id="' + postId + '"]').find('.nocturne-arena-comment-count').text(res.comments_count);
+            });
     });
 })(jQuery);
 </script>

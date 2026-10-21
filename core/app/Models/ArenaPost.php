@@ -22,6 +22,16 @@ class ArenaPost extends Model
         return $this->belongsTo(GameLog::class, 'linked_game_log_id');
     }
 
+    public function comments()
+    {
+        return $this->hasMany(ArenaComment::class, 'post_id')->whereNull('parent_id')->latest();
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(ArenaPostVote::class, 'post_id');
+    }
+
     public function scopeApproved($query)
     {
         return $query->where('status', 'approved');

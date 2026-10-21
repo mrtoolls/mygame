@@ -87,6 +87,7 @@ Route::controller('SiteController')->group(function () {
     // 404s. Write actions live under the authenticated user.arena.* routes
     // in routes/user.php.
     Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');
+    Route::get('arena/post/{post}/comments', [\App\Http\Controllers\User\ArenaCommentController::class, 'index'])->name('arena.comments.index');
 
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');

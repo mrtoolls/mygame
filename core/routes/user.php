@@ -85,6 +85,11 @@ Route::middleware('auth')->name('user.')->group(function () {
             // Arena (social feed) - the feed itself is public, see routes/web.php
             Route::controller('ArenaController')->prefix('arena')->name('arena.')->group(function () {
                 Route::post('post', 'store')->name('store');
+                Route::post('post/{post}/vote', 'vote')->name('vote');
+                Route::post('react', 'react')->name('react');
+            });
+            Route::controller('ArenaCommentController')->prefix('arena/post/{post}/comments')->name('arena.comments.')->group(function () {
+                Route::post('/', 'store')->name('store');
             });
 
             // Paid business promotions

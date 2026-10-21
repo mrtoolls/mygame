@@ -5,10 +5,24 @@
         'challenge' => ['label' => 'Challenge', 'icon' => 'ph-sword'],
         'question'  => ['label' => 'Question', 'icon' => 'ph-question'],
     ];
+
+    // Batch the current viewer's votes + every post's reaction counts in two
+    // queries total, instead of N queries per post rendered on this page.
+    $postIds = $posts->pluck('id');
+    $myVotes = auth()->check()
+        ? \App\Models\ArenaPostVote::whereIn('post_id', $postIds)->where('user_id', auth()->id())->pluck('value', 'post_id')
+        : collect();
+    $reactionRows = \App\Models\ArenaReaction::where('reactable_type', 'post')->whereIn('reactable_id', $postIds)->get()->groupBy('reactable_id');
 @endphp
 @foreach ($posts as $post)
-    @php $meta = $typeMeta[$post->type] ?? $typeMeta['general']; @endphp
-    <article class="nocturne-arena-post">
+    @php
+        $meta = $typeMeta[$post->type] ?? $typeMeta['general'];
+        $myVote = $myVotes[$post->id] ?? null;
+        $rows = $reactionRows->get($post->id, collect());
+        $reactionCounts = $rows->groupBy('emoji')->map->count();
+        $myReaction = auth()->check() ? $rows->firstWhere('user_id', auth()->id())?->emoji : null;
+    @endphp
+    <article class="nocturne-arena-post" data-post-id="{{ $post->id }}">
         <div class="nocturne-arena-post__head">
             <span class="nocturne-arena-post__avatar">@if($post->user?->avatarUrl())<img src="{{ $post->user->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($post->user->username ?? '?', 0, 1)) }}@endif</span>
             <div class="nocturne-arena-post__identity">
@@ -39,5 +53,23 @@
                 </div>
             </div>
         @endif
+
+        <div class="nocturne-arena-post__bar">
+            <div class="nocturne-arena-vote {{ auth()->check() ? '' : 'is-disabled' }}">
+                <button type="button" class="nocturne-arena-vote__btn nocturne-arena-vote__btn--up {{ $myVote === 1 ? 'is-active' : '' }}" data-vote="1" {{ auth()->check() ? '' : 'disabled' }}><i class="ph-fill ph-arrow-fat-up"></i></button>
+                <span class="nocturne-arena-vote__score">{{ $post->upvotes_count - $post->downvotes_count }}</span>
+                <button type="button" class="nocturne-arena-vote__btn nocturne-arena-vote__btn--down {{ $myVote === -1 ? 'is-active' : '' }}" data-vote="-1" {{ auth()->check() ? '' : 'disabled' }}><i class="ph-fill ph-arrow-fat-down"></i></button>
+            </div>
+
+            <div class="nocturne-arena-reactions {{ auth()->check() ? '' : 'is-disabled' }}" data-reactable-type="post" data-reactable-id="{{ $post->id }}">
+                @foreach(\App\Models\ArenaReaction::EMOJIS as $emoji)
+                    <button type="button" class="nocturne-arena-reaction {{ $myReaction === $emoji ? 'is-active' : '' }}" data-emoji="{{ $emoji }}" {{ auth()->check() ? '' : 'disabled' }}>{{ $emoji }}<small class="{{ ($reactionCounts[$emoji] ?? 0) > 0 ? '' : 'is-zero' }}">{{ $reactionCounts[$emoji] ?? 0 }}</small></button>
+                @endforeach
+            </div>
+
+            <button type="button" class="nocturne-arena-comment-toggle" data-post-id="{{ $post->id }}"><i class="ph-bold ph-chat-circle"></i><span class="nocturne-arena-comment-count">{{ $post->comments_count }}</span></button>
+        </div>
+
+        <div class="nocturne-arena-comments-wrap" hidden></div>
     </article>
 @endforeach

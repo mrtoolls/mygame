@@ -4,8 +4,11 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArenaPost;
+use App\Models\ArenaPostVote;
+use App\Models\ArenaReaction;
 use App\Models\GameLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ArenaController extends Controller
 {
@@ -74,5 +77,76 @@ class ArenaController extends Controller
             ? 'Your post has been submitted and is awaiting moderator approval.'
             : 'Your post is live on the Arena.'];
         return back()->withNotify($notify);
+    }
+
+    public function vote(Request $request, ArenaPost $post)
+    {
+        $request->validate(['value' => 'required|integer|in:1,-1']);
+        $value = (int) $request->value;
+
+        $result = DB::transaction(function () use ($post, $value) {
+            $lockedPost = ArenaPost::whereKey($post->id)->lockForUpdate()->first();
+            $existing   = ArenaPostVote::where('post_id', $post->id)->where('user_id', auth()->id())->first();
+
+            if ($existing && (int) $existing->value === $value) {
+                // Re-clicking the same arrow clears the vote.
+                $existing->delete();
+                $column = $value === 1 ? 'upvotes_count' : 'downvotes_count';
+                $lockedPost->decrement($column);
+                $mine = null;
+            } elseif ($existing) {
+                // Flipping from up to down (or vice versa).
+                $existing->value = $value;
+                $existing->save();
+                $lockedPost->decrement($value === 1 ? 'downvotes_count' : 'upvotes_count');
+                $lockedPost->increment($value === 1 ? 'upvotes_count' : 'downvotes_count');
+                $mine = $value;
+            } else {
+                ArenaPostVote::create(['post_id' => $post->id, 'user_id' => auth()->id(), 'value' => $value]);
+                $lockedPost->increment($value === 1 ? 'upvotes_count' : 'downvotes_count');
+                $mine = $value;
+            }
+
+            return ['post' => $lockedPost->fresh(), 'mine' => $mine];
+        });
+
+        return response()->json([
+            'upvotes'   => $result['post']->upvotes_count,
+            'downvotes' => $result['post']->downvotes_count,
+            'mine'      => $result['mine'],
+        ]);
+    }
+
+    public function react(Request $request)
+    {
+        $request->validate([
+            'reactable_type' => 'required|string|in:' . implode(',', array_keys(ArenaReaction::TYPES)),
+            'reactable_id'   => 'required|integer',
+            'emoji'          => 'required|string|in:' . implode(',', ArenaReaction::EMOJIS),
+        ]);
+
+        $modelClass = ArenaReaction::TYPES[$request->reactable_type];
+        abort_unless($modelClass::whereKey($request->reactable_id)->exists(), 404);
+
+        $existing = ArenaReaction::where('reactable_type', $request->reactable_type)
+            ->where('reactable_id', $request->reactable_id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if ($existing && $existing->emoji === $request->emoji) {
+            $existing->delete();
+        } elseif ($existing) {
+            $existing->emoji = $request->emoji;
+            $existing->save();
+        } else {
+            ArenaReaction::create([
+                'reactable_type' => $request->reactable_type,
+                'reactable_id'   => $request->reactable_id,
+                'user_id'        => auth()->id(),
+                'emoji'          => $request->emoji,
+            ]);
+        }
+
+        return response()->json(ArenaReaction::summaryFor($request->reactable_type, $request->reactable_id, auth()->id()));
     }
 }
