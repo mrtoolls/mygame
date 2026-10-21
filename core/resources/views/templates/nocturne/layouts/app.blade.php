@@ -56,6 +56,14 @@
             50% { opacity: .3; color: #00e78a; text-shadow: 0 0 10px rgba(0,231,138,.9); }
         }
         .nocturne-live-pulse { animation: nocturneLiveBlink 1.4s ease-in-out infinite; }
+        /* Preloader: the base theme's .loader-p is a circular mask (border-radius:50%),
+           which was clipping the corners off the brand icon. Drop the circular clip and
+           give the icon a slightly punchier, glowing pulse instead of a flat fade. */
+        .loader-p { border-radius: 0 !important; background-size: 68% auto !important; animation: nocturneLoaderPulse 1.1s ease-in-out infinite !important; }
+        @keyframes nocturneLoaderPulse {
+            0%, 100% { transform: scale(.9); opacity: .7; filter: drop-shadow(0 0 0 rgba(0,239,135,0)); }
+            50% { transform: scale(1.06); opacity: 1; filter: drop-shadow(0 0 18px rgba(0,239,135,.55)); }
+        }
     </style>
 </head>
 
@@ -74,9 +82,33 @@
     @endif
     @stack('fbComment')
 
-    <div class="preloader">
+    <div class="preloader" id="site-preloader">
         <div class="loader-p"></div>
     </div>
+    <script>
+        // Vanilla JS, inlined right here, so the preloader can hide itself the moment the
+        // DOM is parsed - it does not wait for jQuery or any of the ~8 plugin scripts loaded
+        // near the end of <body>, which is what made the preloader feel slow on a throttled
+        // connection (it used to only hide once jQuery itself had finished loading).
+        (function () {
+            var el = document.getElementById('site-preloader');
+            if (!el) return;
+            function hide() {
+                if (!el || el.dataset.hidden) return;
+                el.dataset.hidden = '1';
+                el.style.transition = 'opacity .18s ease';
+                el.style.opacity = '0';
+                setTimeout(function () { el.remove(); }, 200);
+            }
+            if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                setTimeout(hide, 80);
+            } else {
+                document.addEventListener('DOMContentLoaded', function () { setTimeout(hide, 80); });
+            }
+            window.addEventListener('load', hide);
+            setTimeout(hide, 4000); // safety net - never leave a visitor stuck behind it
+        })();
+    </script>
 
     <div class="body-overlay"></div>
 
@@ -458,16 +490,6 @@
     <script>
         (function($) {
             "use strict";
-            // The base theme only hides the preloader on the full window "load" event,
-            // which waits for every image on the page - noticeably slow on asset-heavy
-            // pages. Hide it as soon as the DOM is ready instead, with a short grace
-            // period for first paint; window "load" stays as a harmless fallback.
-            function hidePreloader() {
-                $(".preloader").stop(true, true).fadeOut(180);
-            }
-            $(function() {
-                setTimeout(hidePreloader, 120);
-            });
 
             $(".langSel").on("click", function() {
                 window.location.href = "{{ route('home') }}/change/" + $(this).data('lang_code');

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 function systemDetails() {
-    $system['name']          = 'xaxino';
+    $system['name']          = 'winxpot';
     $system['version']       = '3.8';
     $system['build_version'] = '5.1.19';
     return $system;
