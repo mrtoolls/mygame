@@ -8,7 +8,7 @@
                     <div class="nocturne-crypto-wait" id="crypto-wait" data-deadline="{{ $deposit->confirmation_deadline_at?->timestamp * 1000 }}" data-status-url="{{ route('user.deposit.confirmation.status') }}" data-dispute-url="{{ route('user.deposit.confirmation.dispute') }}" data-history-url="{{ route('user.deposit.history') }}">
                         <span class="nocturne-crypto-wait__icon"><i class="las la-hourglass-half"></i></span>
                         <h3 class="mt-3">@lang('Confirming your deposit')</h3>
-                        <p class="text-muted">@lang('Our team is reviewing your receipt and paid-from address. This page will update automatically once confirmed.')</p>
+                        <p class="text-muted">@lang('Our team is reviewing your payment details. This page will update automatically once confirmed.')</p>
 
                         <div class="nocturne-crypto-wait__countdown">
                             <span data-unit="h">00</span>:<span data-unit="m">00</span>:<span data-unit="s">00</span>
