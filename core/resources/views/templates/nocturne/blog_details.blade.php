@@ -17,6 +17,35 @@
                     <a href="https://x.com/intent/tweet?text={{ urlencode(__($blog->title)) }}&url={{ urlencode(url()->current()) }}" target="_blank" rel="noopener"><i class="fa-brands fa-x-twitter"></i></a>
                     <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}&title={{ urlencode(__($blog->title)) }}" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>
                 </div>
+
+                <div class="nocturne-news-comments" id="comments">
+                    <h2><i class="ph-fill ph-chats-circle"></i>@lang('Comments') <span>({{ $comments->count() }})</span></h2>
+                    @auth
+                        <form class="nocturne-news-comment-form" method="post" action="{{ route('blog.comment.store', $blog->slug) }}">
+                            @csrf
+                            <span class="nocturne-news-comment__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
+                            <textarea name="body" rows="2" maxlength="1000" placeholder="@lang('Write a comment...')" required>{{ old('body') }}</textarea>
+                            <button type="submit"><i class="ph-bold ph-paper-plane-tilt"></i></button>
+                        </form>
+                    @else
+                        <div class="nocturne-news-comment-guest"><a href="{{ route('user.login') }}">@lang('Sign in')</a> @lang('to join the conversation.')</div>
+                    @endauth
+
+                    <div class="nocturne-news-comment-list">
+                        @forelse($comments as $comment)
+                            <div class="nocturne-news-comment">
+                                <span class="nocturne-news-comment__avatar">@if($comment->user?->avatarUrl())<img src="{{ $comment->user->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($comment->user->username ?? '?', 0, 1)) }}@endif</span>
+                                <div class="nocturne-news-comment__bubble">
+                                    <strong>{{ $comment->user->username ?? 'Deleted user' }}</strong>
+                                    <p>{{ $comment->body }}</p>
+                                    <small>{{ diffForHumans($comment->created_at) }}</small>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="nocturne-news-comment-empty">@lang('No comments yet. Be the first to say something.')</p>
+                        @endforelse
+                    </div>
+                </div>
             </article>
 
             <aside class="nocturne-news-detail__side">
@@ -67,6 +96,26 @@
 .nocturne-news-detail__share a:hover{color:var(--news-accent)}
 
 .nocturne-news-detail__side h2{margin:0 0 14px;color:var(--news-text);font-size:17px;font-weight:850}
+
+.nocturne-news-comments{margin-top:28px;padding-top:22px;border-top:1px solid var(--news-line)}
+.nocturne-news-comments h2{display:flex;align-items:center;gap:8px;margin:0 0 16px;color:var(--news-text);font-size:16px;font-weight:850}
+.nocturne-news-comments h2 i{color:var(--news-accent)}
+.nocturne-news-comments h2 span{color:var(--news-muted);font-weight:700}
+.nocturne-news-comment-form{display:flex;align-items:flex-start;gap:10px;margin-bottom:20px}
+.nocturne-news-comment-form textarea{flex:1;min-width:0;min-height:42px;padding:10px 13px;border:1px solid var(--news-line);border-radius:14px;background:var(--news-bg);color:var(--news-text);font:inherit;font-size:13px;resize:vertical;outline:0}
+.nocturne-news-comment-form button{flex:0 0 auto;display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:50%;background:var(--news-accent);color:#062a23;cursor:pointer;margin-top:2px}
+.nocturne-news-comment-guest{margin-bottom:20px;padding:13px 15px;border:1px dashed var(--news-line);border-radius:14px;color:var(--news-muted);font-size:12.5px}
+.nocturne-news-comment-guest a{color:var(--news-accent);font-weight:800;text-decoration:none}
+
+.nocturne-news-comment-list{display:grid;gap:14px}
+.nocturne-news-comment-empty{margin:0;color:var(--news-muted);font-size:12.5px}
+.nocturne-news-comment{display:flex;gap:10px}
+.nocturne-news-comment__avatar{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:rgba(0,231,138,.12);color:var(--news-accent);font-size:13px;font-weight:800;overflow:hidden}
+.nocturne-news-comment__avatar img{width:100%;height:100%;object-fit:cover}
+.nocturne-news-comment__bubble{flex:1;min-width:0;padding:11px 14px;border-radius:14px;background:var(--news-bg)}
+.nocturne-news-comment__bubble strong{display:block;margin-bottom:3px;color:var(--news-text);font-size:12.5px;font-weight:800}
+.nocturne-news-comment__bubble p{margin:0 0 5px;color:#d7dafa;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.nocturne-news-comment__bubble small{color:var(--news-muted);font-size:10.5px}
 
 .nocturne-news-recent{display:grid;gap:14px}
 .nocturne-news-recent__item{display:flex;gap:14px;padding:14px;border:1px solid var(--news-line);border-radius:18px;background:linear-gradient(155deg,#151a31,#10152a 78%);text-decoration:none;transition:border-color .18s,transform .18s}

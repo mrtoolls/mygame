@@ -156,8 +156,22 @@ class SiteController extends Controller {
 
         $pageTitle   = $blog->title;
         $latestBlogs = \App\Models\NewsPost::published()->where('id', '!=', $blog->id)->orderBy('id', 'desc')->limit(5)->get();
+        $comments    = $blog->comments()->with('user')->get();
 
-        return view('Template::blog_details', compact('blog', 'pageTitle', 'latestBlogs'));
+        return view('Template::blog_details', compact('blog', 'pageTitle', 'latestBlogs', 'comments'));
+    }
+
+    public function blogCommentStore(\Illuminate\Http\Request $request, $slug) {
+        $blog = \App\Models\NewsPost::published()->where('slug', $slug)->firstOrFail();
+        $request->validate(['body' => 'required|string|max:1000']);
+
+        \App\Models\NewsComment::create([
+            'news_post_id' => $blog->id,
+            'user_id'      => auth()->id(),
+            'body'         => $request->body,
+        ]);
+
+        return back()->with('status', 'Comment posted.')->withFragment('comments');
     }
 
     public function cookieAccept() {

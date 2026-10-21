@@ -16,6 +16,11 @@ class NewsPost extends Model
         return $query->where('status', \App\Constants\Status::ENABLE);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(NewsComment::class, 'news_post_id')->latest();
+    }
+
     public function imageUrl(): ?string
     {
         return $this->image ? getImage('assets/images/news/' . $this->image) : null;

@@ -84,6 +84,7 @@ Route::controller('SiteController')->group(function () {
     Route::get('games', 'games')->name('games');
     Route::get('blog', 'blog')->name('blog');
     Route::get('blog/{slug}', 'blogDetails')->name('blog.details');
+    Route::post('blog/{slug}/comment', 'blogCommentStore')->middleware(['auth', 'throttle:10,1'])->name('blog.comment.store');
     Route::get('policy/{slug}', 'policyPages')->name('policy.pages');
     Route::get('placeholder-image/{size}', 'placeholderImage')->withoutMiddleware('maintenance')->name('placeholder.image');
     Route::get('maintenance-mode', 'maintenance')->withoutMiddleware('maintenance')->name('maintenance');
