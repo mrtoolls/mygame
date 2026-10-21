@@ -26,7 +26,12 @@ class PaymentController extends Controller {
         });
         if (Schema::hasColumn('gateway_currencies', 'currency')) {
             $walletCode = $user->currency?->code;
-            if ($walletCode) $query->where('currency', $walletCode);
+            // Wallet-currency matching only makes sense for automatic gateways (code < 1000),
+            // which can have one GatewayCurrency row per supported fiat currency. Manual
+            // gateways (crypto wallets, WinxPay agent methods, code >= 1000) use `currency`
+            // to label the method's own coin/currency, not the user's wallet - filtering
+            // those by wallet currency hid every manual/crypto method regardless of setup.
+            if ($walletCode) $query->where(fn ($q) => $q->where('method_code', '>=', 1000)->orWhere('currency', $walletCode));
         }
         $gatewayCurrency = $query->with(['method', 'supportAgent:id,name'])->orderby('name')->get()
             ->filter(fn ($gateway) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$gateway->currency, $gateway->method_code, $gateway->method?->alias, $gateway->name]))
@@ -53,7 +58,7 @@ class PaymentController extends Controller {
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
         })->where('method_code', $request->gateway)->where('currency', $request->currency);
         $walletCode = $user->currency?->code;
-        if ($walletCode && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
+        if ($walletCode && (int) $request->gateway < 1000 && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
             return back()->withErrors(['currency' => 'Choose a deposit method in your wallet currency.'])->withInput();
         }
         $gate = $query->first();
