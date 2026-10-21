@@ -59,16 +59,19 @@ class PaymentController extends Controller {
         })->where('method_code', $request->gateway)->where('currency', $request->currency);
         $walletCode = $user->currency?->code;
         if ($walletCode && (int) $request->gateway < 1000 && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
+            if ($request->wantsJson()) return response()->json(['message' => 'Choose a deposit method in your wallet currency.'], 422);
             return back()->withErrors(['currency' => 'Choose a deposit method in your wallet currency.'])->withInput();
         }
         $gate = $query->first();
         if (!$gate) {
+            if ($request->wantsJson()) return response()->json(['message' => 'Invalid gateway'], 422);
             $notify[] = ['error', 'Invalid gateway'];
             return back()->withNotify($notify);
         }
         app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$gate->currency, $gate->method_code, $gate->method?->alias, $gate->name]);
 
         if ($gate->min_amount > $request->amount || $gate->max_amount < $request->amount) {
+            if ($request->wantsJson()) return response()->json(['message' => 'Please follow deposit limit'], 422);
             $notify[] = ['error', 'Please follow deposit limit'];
             return back()->withNotify($notify);
         }
@@ -104,6 +107,17 @@ class PaymentController extends Controller {
         $data->failed_url = route('user.deposit.history');
         $data->save();
         session()->put('Track', $data->trx);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok'           => true,
+                'manual'       => $gate->method_code >= 1000,
+                'crypto'       => (bool) $gate->method?->crypto,
+                'trx'          => $data->trx,
+                'confirm_url'  => route('user.deposit.confirm'),
+            ]);
+        }
+
         return to_route('user.deposit.confirm');
     }
 
@@ -276,6 +290,7 @@ class PaymentController extends Controller {
 
         if (!$pendingDeposit) {
             @unlink(getFilePath('verify') . '/' . $proof);
+            if ($request->wantsJson()) return response()->json(['message' => 'This deposit request has already been submitted.'], 422);
             $notify[] = ['error', 'This deposit request has already been submitted.'];
             return to_route('user.deposit.history')->withNotify($notify);
         }
@@ -291,6 +306,15 @@ class PaymentController extends Controller {
             'rate'            => showAmount($pendingDeposit->rate, currencyFormat: false),
             'trx'             => $pendingDeposit->trx,
         ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok'       => true,
+                'status'   => 'pending',
+                'deadline' => $pendingDeposit->confirmation_deadline_at?->timestamp * 1000,
+                'sla_minutes' => $pendingDeposit->confirmation_sla_minutes,
+            ]);
+        }
 
         return to_route('user.deposit.confirmation.pending');
     }

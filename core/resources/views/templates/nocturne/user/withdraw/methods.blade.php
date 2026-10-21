@@ -2,18 +2,18 @@
 @section('content')
     <div class="nocturne-account">
         @include('Template::partials.account_nav')
-        <div class="nocturne-account-content nocturne-payment-page nocturne-withdraw-page">
+        <div class="nocturne-account-content nocturne-wallet-page nocturne-wallet-page--withdraw">
     <h1 class="nocturne-page-title">@lang('Withdraw')</h1>
-    <section class="nocturne-payment-hero">
-        <div class="nocturne-payment-hero__copy">
-            <span class="nocturne-payment-hero__eyebrow"><i class="las la-shield-alt"></i> @lang('Secure withdrawals')</span>
+    <section class="nocturne-wallet-hero">
+        <div class="nocturne-wallet-hero__copy">
+            <span class="nocturne-wallet-hero__eyebrow"><i class="ph-fill ph-shield-check"></i> @lang('Secure withdrawals')</span>
             <h2>@lang('Your winnings, on the way')</h2>
             <p>@lang('Choose where to receive your funds, enter an amount and review the payout details.')</p>
         </div>
-        <div class="nocturne-payment-hero__balance">
+        <div class="nocturne-wallet-hero__balance">
             <span>@lang('Available balance')</span>
             <strong>{{ gs('cur_sym') }}{{ showAmount(auth()->user()->balance, currencyFormat: false) }} <small>{{ __(gs('cur_text')) }}</small></strong>
-            <i class="las la-wallet"></i>
+            <i class="ph-fill ph-wallet"></i>
         </div>
     </section>
     @php
@@ -23,514 +23,358 @@
         $hasCryptoWithdraw = $cryptoMethodCount > 0;
         $hasWinxpayWithdraw = $winxpayMethodCount > 0;
     @endphp
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <form action="{{ route('user.withdraw.money') }}" method="post" class="withdraw-form" enctype="multipart/form-data">
-                @csrf
-                <div class="gateway-card">
-                    <div class="row justify-content-center gy-sm-4 gy-3 payment-workspace">
-                        <div class="col-lg-5 payment-method-column">
-                            <div class="card custom--card payment-method-panel">
-                                <div class="card-body p-0">
-                                    <h4 class="nocturne-pay-step">1. @lang('Select a Withdraw Method')</h4>
-                                    <div class="nocturne-pay-tabs nocturne-pay-tabs--toggle">
-                                        <button type="button" class="nocturne-pay-tab @if ($hasCryptoWithdraw && !$hasWinxpayWithdraw) is-active @endif" data-filter="crypto" @disabled(!$hasCryptoWithdraw)>
-                                            <strong>@lang('CRYPTO')</strong>
-                                            <span class="nocturne-pay-tab__icons"><i class="lab la-bitcoin"></i><i class="lab la-ethereum"></i><i class="las la-coins"></i><b>{{ $cryptoMethodCount }}+</b></span>
-                                        </button>
-                                        <button type="button" class="nocturne-pay-tab @if ($hasWinxpayWithdraw && !$hasCryptoWithdraw) is-active @endif" data-filter="winxpay" @disabled(!$hasWinxpayWithdraw)>
-                                            <strong>@lang('WINXPAY')</strong>
-                                            <span class="nocturne-pay-tab__icons"><i class="lab la-cc-mastercard"></i><i class="lab la-cc-visa"></i><i class="las la-user-tie"></i></span>
-                                        </button>
-                                    </div>
 
-                                    <div class="nocturne-pay-list-heading"><h4 class="nocturne-pay-step nocturne-pay-step--sub"><span class="crypto-only">@lang('Select Crypto to Withdraw')</span><span class="winxpay-only" hidden>@lang('Select a WinxPay Method')</span></h4></div>
+    <form action="{{ route('user.withdraw.money') }}" method="post" class="withdraw-form" id="withdraw-form" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="currency">
+        <div class="nocturne-wallet-card">
+            <h3 class="nocturne-wallet-card__heading"><span>1</span> @lang('Select a withdraw method')</h3>
 
-                                    <div class="nocturne-pay-dropdown">
-                                        <button type="button" class="nocturne-pay-dropdown__toggle" id="pay-dropdown-toggle">
-                                            <span class="nocturne-pay-dropdown__selected">
-                                                <img class="nocturne-pay-dropdown__thumb" src="" alt="" hidden>
-                                                <span class="nocturne-pay-dropdown__name">@lang('Choose an option')</span>
-                                            </span>
-                                            <i class="las la-chevron-down"></i>
-                                        </button>
-                                        <div class="nocturne-pay-dropdown__panel" id="pay-dropdown-panel" hidden>
-                                            <div class="nocturne-pay-dropdown__search"><i class="las la-search"></i><input type="text" id="pay-dropdown-search" placeholder="@lang('Search')" autocomplete="off"></div>
-                                            <div class="payment-system-list is-scrollable gateway-option-list">
-                                                @forelse ($withdrawMethod as $data)
-                                                    <label for="{{ titleToKey($data->name) }}"
-                                                        data-crypto="{{ in_array(strtoupper((string) $data->currency), $cryptoCurrencies, true) ? 1 : 0 }}"
-                                                        data-category="{{ in_array(strtoupper((string) $data->currency), $cryptoCurrencies, true) ? 'crypto' : 'winxpay' }}"
-                                                        data-payment-agent="{{ $data->supportAgent?->name }}"
-                                                        data-search="{{ strtolower($data->name . ' ' . $data->currency) }}"
-                                                        class="payment-item gateway-option">
-                                                        <div class="payment-item__info">
-                                                            <div class="payment-item__thumb">
-                                                                <img class="payment-item__thumb-img" onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')"
-                                                                    src="{{ getImage(getFilePath('withdrawMethod') . '/' . $data->image) }}"
-                                                                    alt="@lang('payment-thumb')">
-                                                            </div>
-                                                            <span class="payment-item__copy">
-                                                                <span class="payment-item__name">{{ __($data->name) }} <small>{{ $data->currency }}</small></span>
-                                                                @if($data->support_agent_id)<small class="payment-item__agent"><i class="las la-user-check"></i> {{ $data->supportAgent?->name }}</small>@endif
-                                                            </span>
-                                                        </div>
-                                                        <span class="payment-item__check"></span>
-                                                        <input class="payment-item__radio gateway-input"
-                                                            id="{{ titleToKey($data->name) }}" hidden
-                                                            data-gateway='@json($data)' type="radio"
-                                                            name="method_code" value="{{ $data->id }}"
-                                                            @if (old('method_code')) @checked(old('method_code') == $data->id) @else @checked($loop->first) @endif
-                                                            data-min-amount="{{ showAmount($data->min_limit) }}"
-                                                            data-max-amount="{{ showAmount($data->max_limit) }}">
-                                                    </label>
-                                                @empty
-                                                    <div class="nocturne-pay-empty"><i class="las la-money-check-alt"></i><strong>@lang('No withdrawal methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
-                                                @endforelse
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-7 payment-summary-column">
-                            <div class="card custom--card payment-summary-panel">
-                                <div class="card-body p-0">
-                                    <div class="nocturne-pay-selected">
-                                        <span class="nocturne-pay-selected__icon"><img class="nocturne-pay-selected__thumb" src="" alt="" hidden><i class="las la-money-check-alt" id="pay-selected-fallback-icon"></i></span>
-                                        <span class="nocturne-pay-selected__identity">
-                                            <span class="nocturne-pay-selected__name"></span>
-                                            <span class="nocturne-pay-selected__agent" hidden></span>
-                                        </span>
-                                        <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
-                                    </div>
-                                    <div class="payment-system-list p-3">
-                                        @if ($withdrawMethod->isNotEmpty())
-                                            <div class="withdraw-method-data">
-                                                @foreach ($withdrawMethod as $method)
-                                                    <fieldset class="withdraw-method-fields" data-method-id="{{ $method->id }}" @if (!$loop->first) disabled hidden @endif>
-                                                        <x-viser-form identifier="id" identifierValue="{{ $method->form_id }}" />
-                                                    </fieldset>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                        <div class="deposit-info">
-                                            <div class="deposit-info__title">
-                                                <p class="text mb-0">@lang('Enter Withdrawal Amount')</p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <span class="nocturne-pay-balance-chip"><i class="ph-bold ph-wallet"></i> {{ gs('cur_sym') }}{{ showAmount(auth()->user()->balance, currencyFormat: false) }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="deposit-info__input-group input-group nocturne-pay-amount-group">
-                                            <span class="deposit-info__input-group-text">{{ gs('cur_sym') }}</span>
-                                            <input type="number" inputmode="decimal" min="0" step="any" class="form-control form--control amount"
-                                                name="amount" placeholder="@lang('00.00')"
-                                                value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Withdrawal amount')">
-                                            <button type="button" class="nocturne-pay-max-btn" id="withdraw-max-btn">@lang('Max')</button>
-                                        </div>
-                                        <hr>
-                                        <div class="deposit-info conversion-currency d-none total-amount pt-2">
-                                            <div class="deposit-info__title">
-                                                <p class="text">@lang('Amount Received in') <span class="gateway-currency"></span></p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <p class="text">~<span class="in-currency"></span></p>
-                                            </div>
-                                        </div>
-                                        <div class="deposit-info gateway-conversion d-none total-amount pt-2">
-                                            <div class="deposit-info__title">
-                                                <p class="text">@lang('Conversion')</p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <p class="text"></p>
-                                            </div>
-                                        </div>
+            <div class="nocturne-wallet-switch">
+                <button type="button" class="nocturne-wallet-switch__opt @if ($hasCryptoWithdraw && !$hasWinxpayWithdraw) is-active @endif" data-filter="crypto" @disabled(!$hasCryptoWithdraw)>
+                    <span class="nocturne-wallet-switch__icons"><i class="lab la-bitcoin"></i><i class="lab la-ethereum"></i><i class="las la-coins"></i></span>
+                    <strong>@lang('Crypto')</strong>
+                    <small>{{ $cryptoMethodCount }} @lang('coins')</small>
+                </button>
+                <button type="button" class="nocturne-wallet-switch__opt @if ($hasWinxpayWithdraw && !$hasCryptoWithdraw) is-active @endif" data-filter="winxpay" @disabled(!$hasWinxpayWithdraw)>
+                    <span class="nocturne-wallet-switch__icons"><i class="las la-user-tie"></i><i class="lab la-cc-mastercard"></i><i class="lab la-cc-visa"></i></span>
+                    <strong>@lang('WinxPay')</strong>
+                    <small>{{ $winxpayMethodCount }} @lang('methods')</small>
+                </button>
+            </div>
 
-                                        <button type="submit" class="btn btn--base w-100 mt-3"
-                                            disabled><i class="ph-bold ph-money-wavy"></i>@lang('Withdraw')</button>
-
-                                        <div class="nocturne-pay-footrow">
-                                            <div><span>@lang('Minimal Withdraw amount')</span><strong class="gateway-limit">—</strong></div>
-                                            <div><span>@lang('Fee')</span><strong class="processing-fee-label">@lang('No Commission')</strong></div>
-                                        </div>
-
-                                        <div class="info-text pt-3">
-                                            <p class="text">@lang('Safely withdraw your funds using our highly secure process and various withdrawal method')</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="nocturne-wallet-pick">
+                <button type="button" class="nocturne-wallet-pick__toggle" id="pay-dropdown-toggle">
+                    <span class="nocturne-wallet-pick__selected">
+                        <span class="nocturne-wallet-pick__thumb-wrap"><img class="nocturne-wallet-pick__thumb" src="" alt="" hidden><i class="ph-fill ph-wallet" id="pay-selected-fallback-icon"></i></span>
+                        <span class="nocturne-wallet-pick__name" id="pay-dropdown-name">@lang('Choose an option')</span>
+                    </span>
+                    <i class="ph-bold ph-caret-down"></i>
+                </button>
+                <div class="nocturne-wallet-pick__panel" id="pay-dropdown-panel" hidden>
+                    <div class="nocturne-wallet-pick__search"><i class="ph-bold ph-magnifying-glass"></i><input type="text" id="pay-dropdown-search" placeholder="@lang('Search')" autocomplete="off"></div>
+                    <div class="nocturne-wallet-pick__list gateway-option-list">
+                        @forelse ($withdrawMethod as $data)
+                            <label for="{{ titleToKey($data->name) }}"
+                                data-crypto="{{ in_array(strtoupper((string) $data->currency), $cryptoCurrencies, true) ? 1 : 0 }}"
+                                data-category="{{ in_array(strtoupper((string) $data->currency), $cryptoCurrencies, true) ? 'crypto' : 'winxpay' }}"
+                                data-payment-agent="{{ $data->supportAgent?->name }}"
+                                data-search="{{ strtolower($data->name . ' ' . $data->currency) }}"
+                                class="nocturne-wallet-option gateway-option">
+                                <span class="nocturne-wallet-option__thumb">
+                                    <img onerror="this.hidden=true;this.parentElement.classList.add('has-missing-image')" src="{{ getImage(getFilePath('withdrawMethod') . '/' . $data->image) }}" alt="">
+                                </span>
+                                <span class="nocturne-wallet-option__copy">
+                                    <span class="nocturne-wallet-option__name">{{ __($data->name) }} <small>{{ $data->currency }}</small></span>
+                                    @if($data->support_agent_id)<small class="nocturne-wallet-option__agent"><i class="ph-fill ph-user-check"></i> {{ $data->supportAgent?->name }}</small>@endif
+                                </span>
+                                <span class="nocturne-wallet-option__check"><i class="ph-bold ph-check"></i></span>
+                                <input class="gateway-input" id="{{ titleToKey($data->name) }}" hidden
+                                    data-gateway='@json($data)' type="radio" name="method_code" value="{{ $data->id }}"
+                                    @if (old('method_code')) @checked(old('method_code') == $data->id) @else @checked($loop->first) @endif
+                                    data-min-amount="{{ showAmount($data->min_limit) }}"
+                                    data-max-amount="{{ showAmount($data->max_limit) }}">
+                            </label>
+                        @empty
+                            <div class="nocturne-wallet-empty"><i class="ph-fill ph-wallet"></i><strong>@lang('No withdrawal methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
+                        @endforelse
                     </div>
                 </div>
-            </form>
-            <section class="nocturne-payment-history" aria-labelledby="withdraw-history-title">
-                <div class="nocturne-payment-history__heading"><div><span class="nocturne-pay-kicker">@lang('YOUR ACTIVITY')</span><h2 id="withdraw-history-title"><i class="las la-list-alt"></i> @lang('Withdrawal History')</h2></div><a href="{{ route('user.withdraw.history') }}">@lang('View all') <i class="las la-arrow-right"></i></a></div>
-                <div class="nocturne-payment-history__table-wrap"><table class="nocturne-payment-history__table"><thead><tr><th>@lang('Method / Reference')</th><th>@lang('Amount')</th><th>@lang('Status')</th><th>@lang('Date')</th></tr></thead><tbody>
-                    @forelse($withdraws as $withdraw)
-                        <tr><td data-label="@lang('Method / Reference')"><strong>{{ __($withdraw->method->name ?? 'Payout') }}</strong><small>{{ $withdraw->trx }}</small></td><td data-label="@lang('Amount')"><strong>{{ showAmount($withdraw->amount) }}</strong>@if($withdraw->charge > 0)<small>@lang('Fee'): {{ showAmount($withdraw->charge) }}</small>@endif</td><td data-label="@lang('Status')"><span class="nocturne-history-status">{!! $withdraw->statusBadge !!}</span></td><td data-label="@lang('Date')"><strong>{{ showDateTime($withdraw->created_at, 'M d, Y') }}</strong><small>{{ diffForHumans($withdraw->created_at) }}</small></td></tr>
-                    @empty
-                        <tr><td colspan="4"><div class="nocturne-history-empty"><i class="las la-money-bill-wave"></i><strong>@lang('No withdrawals yet')</strong><span>@lang('Your completed and pending withdrawals will appear here.')</span></div></td></tr>
-                    @endforelse
-                </tbody></table></div><div class="nocturne-payment-history__pagination">{{ paginateLinks($withdraws) }}</div>
-            </section>
+            </div>
+
+            @if ($withdrawMethod->isNotEmpty())
+                <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>2</span> @lang('Payout details')</h3>
+                <div class="nocturne-wallet-fields">
+                    @foreach ($withdrawMethod as $method)
+                        <fieldset class="withdraw-method-fields" data-method-id="{{ $method->id }}" @if (!$loop->first) disabled hidden @endif>
+                            <x-viser-form identifier="id" identifierValue="{{ $method->form_id }}" />
+                        </fieldset>
+                    @endforeach
+                </div>
+            @endif
+
+            <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>{{ $withdrawMethod->isNotEmpty() ? 3 : 2 }}</span> @lang('Enter withdrawal amount')</h3>
+            <div class="nocturne-wallet-amount nocturne-wallet-amount--withdraw">
+                <span class="nocturne-wallet-amount__prefix">{{ gs('cur_sym') }}</span>
+                <input type="number" inputmode="decimal" min="0" step="any" class="amount" name="amount" placeholder="0.00" value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Withdrawal amount')">
+                <button type="button" class="nocturne-wallet-max-btn" id="withdraw-max-btn">@lang('Max')</button>
+            </div>
+
+            <div class="nocturne-wallet-charges d-none">
+                <div><span>@lang('Fee')</span><strong><span class="processing-fee-label">@lang('No Commission')</span></strong></div>
+            </div>
+            <div class="nocturne-wallet-conversion d-none gateway-conversion"></div>
+            <div class="nocturne-wallet-conversion d-none conversion-currency"><span>@lang('Amount received in')</span> <span class="gateway-currency"></span>: <span class="in-currency"></span></div>
+
+            <button type="submit" class="nocturne-wallet-cta" id="withdraw-cta" disabled><i class="ph-bold ph-paper-plane-tilt"></i><span>@lang('Request Withdraw')</span></button>
+
+            <div class="nocturne-wallet-footrow">
+                <div><span>@lang('Minimum Withdraw')</span><strong class="gateway-limit">—</strong></div>
+                <div><span>@lang('Fee')</span><strong class="processing-fee-label">@lang('No Commission')</strong></div>
+            </div>
         </div>
-    </div>
+    </form>
+
+    <section class="nocturne-wallet-history" aria-labelledby="withdraw-history-title">
+        <div class="nocturne-wallet-history__heading"><div><span class="nocturne-wallet-kicker">@lang('YOUR ACTIVITY')</span><h2 id="withdraw-history-title">@lang('Withdrawal History')</h2></div><a href="{{ route('user.withdraw.history') }}">@lang('View all') <i class="ph-bold ph-arrow-right"></i></a></div>
+        <div class="nocturne-wallet-history__list">
+            @forelse($withdraws as $withdraw)
+                <div class="nocturne-wallet-history__row">
+                    <span class="nocturne-wallet-history__icon"><i class="ph-fill ph-paper-plane-tilt"></i></span>
+                    <div class="nocturne-wallet-history__mid"><strong>{{ __($withdraw->method->name ?? 'Payout') }}</strong><small>{{ $withdraw->trx }} · {{ showDateTime($withdraw->created_at, 'M d, Y') }}</small></div>
+                    <div class="nocturne-wallet-history__end"><strong>{{ showAmount($withdraw->amount) }}</strong>{!! $withdraw->statusBadge !!}</div>
+                </div>
+            @empty
+                <div class="nocturne-wallet-empty"><i class="ph-fill ph-paper-plane-tilt"></i><strong>@lang('No withdrawals yet')</strong><span>@lang('Your completed and pending withdrawals will appear here.')</span></div>
+            @endforelse
+        </div>
+        <div class="nocturne-wallet-history__pagination">{{ paginateLinks($withdraws) }}</div>
+    </section>
         </div>
     </div>
 @endsection
+
 @push('style')
-    <style>
-        .nocturne-payment-page{--pay-accent:#00e78a;--pay-panel:#151a31;--pay-soft:#202744;--pay-muted:#858eaf;max-width:1480px;margin-inline:auto}
-        .nocturne-payment-page .nocturne-page-title{margin-bottom:18px}
-        .nocturne-payment-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden;margin:0 0 24px;padding:26px 30px;border:1px solid rgba(133,142,175,.14);border-radius:24px;background:radial-gradient(ellipse at 78% 0,rgba(0,231,138,.2),transparent 34%),linear-gradient(120deg,#171d37,#11162b 68%);box-shadow:0 18px 50px rgba(0,0,0,.18)}
-        .nocturne-payment-hero:after{content:"";position:absolute;width:240px;height:240px;right:22%;top:-150px;border:1px solid rgba(0,231,138,.15);border-radius:50%;box-shadow:0 0 0 22px rgba(0,231,138,.025),0 0 0 46px rgba(0,231,138,.02);pointer-events:none}
-        .nocturne-payment-hero__copy,.nocturne-payment-hero__balance{position:relative;z-index:1}
-        .nocturne-payment-hero__eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--pay-accent);font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-        .nocturne-payment-hero__copy h2{margin:8px 0 5px;color:#f5f6ff;font-size:clamp(22px,2.2vw,32px);font-weight:800;letter-spacing:-.04em}
-        .nocturne-payment-hero__copy p{margin:0;color:var(--pay-muted);font-size:14px}
-        .nocturne-payment-hero__balance{min-width:225px;padding:16px 48px 16px 18px;border:1px solid rgba(255,255,255,.07);border-radius:18px;background:rgba(7,11,27,.48)}
-        .nocturne-payment-hero__balance>span{display:block;color:var(--pay-muted);font-size:12px;font-weight:700}
-        .nocturne-payment-hero__balance strong{display:block;margin-top:3px;color:#fff;font-size:21px;font-weight:800;white-space:nowrap}
-        .nocturne-payment-hero__balance small{color:var(--pay-muted);font-size:12px}
-        .nocturne-payment-hero__balance>i{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:var(--pay-accent);font-size:25px}
-        .nocturne-payment-page .payment-workspace{align-items:stretch}
-        .nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{height:100%;padding:22px;border:1px solid rgba(133,142,175,.12);border-radius:22px;background:var(--pay-panel);box-shadow:0 15px 40px rgba(0,0,0,.15)}
-        .nocturne-payment-page .nocturne-pay-step{display:flex;align-items:center;gap:10px;margin:0 0 15px;color:#f3f4ff;font-size:15px;font-weight:800}
-        .nocturne-payment-page .nocturne-pay-step:before{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:rgba(0,231,138,.13);color:var(--pay-accent);font-size:12px;content:counter(paystep);counter-increment:paystep}
-        .nocturne-payment-page .payment-method-panel .card-body{counter-reset:paystep;padding:0!important}
-        .nocturne-payment-page .nocturne-pay-tabs{display:flex;gap:8px;margin:0 0 20px;padding:5px;border-radius:13px;background:#0d1225}
-        .nocturne-payment-page .nocturne-pay-tab{flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--pay-muted);font-size:13px;font-weight:800;transition:.2s}
-        .nocturne-payment-page .nocturne-pay-tab.is-active{background:var(--pay-soft);color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.18)}
-        .nocturne-payment-page .payment-system-list.is-scrollable{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:410px;overflow:auto;padding:0 3px 4px}
-        .nocturne-payment-page .payment-item{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:68px;margin:0;padding:12px;border:1px solid rgba(133,142,175,.16);border-radius:15px;background:#11162b;cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
-        .nocturne-payment-page .payment-item:hover{transform:translateY(-2px);border-color:rgba(0,231,138,.45)}
-        .nocturne-payment-page .payment-item:has(.gateway-input:checked){border-color:var(--pay-accent);background:linear-gradient(135deg,rgba(0,231,138,.13),#151a31 75%);box-shadow:0 0 0 1px rgba(0,231,138,.13)}
-        .nocturne-payment-page .payment-item__info{display:flex;align-items:center;gap:9px;min-width:0}
-        .nocturne-payment-page .payment-item__name{overflow:hidden;color:#f2f3fc;font-size:13px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}
-        .nocturne-payment-page .payment-item__copy{display:grid;min-width:0;gap:3px}.nocturne-payment-page .payment-item__agent{color:var(--pay-accent);font-size:10px;font-weight:700;white-space:normal}.nocturne-payment-page .nocturne-pay-selected__agent{color:var(--pay-accent);font-size:11px;font-weight:750}
-        .nocturne-payment-page .payment-item__check{flex:none;width:16px;height:16px;border:1.5px solid #606987;border-radius:50%}
-        .nocturne-payment-page .payment-item:has(.gateway-input:checked) .payment-item__check{border:5px solid var(--pay-accent)}
-        .nocturne-payment-page .payment-item__thumb{flex:none;width:38px;height:30px;display:grid;place-items:center;border-radius:8px;background:#fff;padding:3px}
-        .nocturne-payment-page .payment-item__thumb-img{max-width:100%;max-height:100%;object-fit:contain}
-        .nocturne-payment-page .payment-item__btn{grid-column:1/-1;display:flex;justify-content:center;align-items:center;gap:8px;min-height:42px;border:0;border-radius:12px;background:var(--pay-soft);color:#fff}
-        .nocturne-payment-page .payment-item__btn-text{margin:0;font-size:12px;font-weight:700}
-        .nocturne-payment-page .nocturne-pay-selected{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:12px 14px;border:1px solid rgba(0,231,138,.16);border-radius:15px;background:rgba(0,231,138,.07)}
-        .nocturne-payment-page .nocturne-pay-selected__thumb{width:32px;height:26px;object-fit:contain;border-radius:6px;background:#fff;padding:2px}
-        .nocturne-payment-page .nocturne-pay-selected__name{color:#f4f5fd;font-weight:800}
-        .nocturne-payment-page .nocturne-pay-selected__badge{margin-left:auto;color:var(--pay-accent);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-        .nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0!important}
-        .nocturne-payment-page .deposit-info__title .text{color:var(--pay-muted);font-size:13px;font-weight:650}
-        .nocturne-payment-page .deposit-info__input .text{color:#f5f6ff;font-size:13px;font-weight:750}
-        .nocturne-payment-page .deposit-info__input-group{min-height:62px;align-items:center;border:1px solid rgba(133,142,175,.2);border-radius:15px;background:#10152a;overflow:hidden}
-        .nocturne-payment-page .deposit-info__input-group-text{padding-left:17px;color:var(--pay-accent);font-size:20px;font-weight:800}
-        .nocturne-payment-page .deposit-info__input-group .amount{height:58px;border:0!important;color:#fff!important;font-size:24px;font-weight:800;box-shadow:none!important}
-        .nocturne-payment-page .deposit-info__input-group .amount::placeholder{color:#606986}
-        .nocturne-payment-page hr{border-color:rgba(133,142,175,.16);opacity:1}
-        .nocturne-payment-page .total-amount{padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.035)}
-        .nocturne-payment-page .total-amount .deposit-info__title .text,.nocturne-payment-page .total-amount .deposit-info__input .text{margin:0}
-        .nocturne-payment-page .deposit-info.total-amount:last-of-type{margin-top:10px;border:1px solid rgba(0,231,138,.2);background:rgba(0,231,138,.08)}
-        .nocturne-payment-page .withdraw-form button[type=submit]{min-height:54px;border-radius:14px;font-size:15px;font-weight:850;box-shadow:0 10px 25px rgba(0,231,138,.15)}
-        .nocturne-payment-page .info-text{color:var(--pay-muted);font-size:12px;line-height:1.55}
-        .nocturne-payment-page .info-text p{margin:0}
-        .nocturne-payment-page .nocturne-pay-history-link{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;margin:16px 0 0 auto;padding:12px 16px;border:1px solid rgba(133,142,175,.15);border-radius:13px;background:var(--pay-panel);color:#dfe2f4;font-weight:750;text-decoration:none}
-        .nocturne-payment-page .nocturne-pay-history-link i:last-child{margin-left:5px;color:var(--pay-accent)}
-        @media(max-width:767.98px){.nocturne-payment-page{padding-bottom:calc(24px + env(safe-area-inset-bottom))}.nocturne-payment-page .nocturne-page-title{font-size:24px}.nocturne-payment-hero{align-items:flex-start;flex-direction:column;gap:17px;margin-bottom:16px;padding:20px;border-radius:20px}.nocturne-payment-hero__balance{width:100%;min-width:0;padding:12px 48px 12px 14px}.nocturne-payment-hero__balance strong{font-size:19px}.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px;border-radius:19px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:repeat(2,minmax(0,1fr));max-height:265px;gap:8px}.nocturne-payment-page .payment-item{min-height:62px;padding:9px}.nocturne-payment-page .payment-item__thumb{width:30px;height:25px}.nocturne-payment-page .payment-item__name{font-size:12px}.nocturne-payment-page .deposit-info__input-group{min-height:58px}.nocturne-payment-page .deposit-info__input-group .amount{height:54px;font-size:22px}.nocturne-payment-page .nocturne-pay-history-link{width:100%;justify-content:center;margin-top:12px}.nocturne-payment-page .nocturne-pay-step{margin-bottom:12px}}
-        @media(max-width:360px){.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr}.nocturne-payment-page .payment-item{min-height:58px}}
-        .nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{min-height:100%;padding:26px;background:linear-gradient(155deg,#171d36 0%,#13182e 72%);border-color:rgba(133,142,175,.18)}
-        .nocturne-payment-page .payment-item.d-none{display:none!important}
-        .nocturne-payment-page .nocturne-pay-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 20px;padding:0;background:transparent}
-        .nocturne-payment-page .nocturne-pay-tab{display:flex;align-items:center;gap:10px;min-height:72px;padding:10px;border:1px solid rgba(133,142,175,.19);border-radius:15px;background:#10152a;color:#f4f5fd;text-align:left}
-        .nocturne-payment-page .nocturne-pay-tab>i{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:rgba(0,231,138,.12);color:var(--pay-accent);font-size:21px}
-        .nocturne-payment-page .nocturne-pay-tab>span{display:grid;gap:3px;min-width:0}
-        .nocturne-payment-page .nocturne-pay-tab strong{font-size:12px;font-weight:850}
-        .nocturne-payment-page .nocturne-pay-tab small{color:var(--pay-muted);font-size:9px;line-height:1.25}
-        .nocturne-payment-page .nocturne-pay-tab>b{margin-left:auto;color:var(--pay-muted);font-size:10px}
-        .nocturne-payment-page .nocturne-pay-tab.is-active{border-color:var(--pay-accent);background:linear-gradient(135deg,rgba(0,231,138,.13),#151a31 76%)}
-        .nocturne-payment-page .nocturne-pay-tab:disabled{opacity:.5;cursor:not-allowed}
-        .nocturne-payment-page .withdraw-method-fields{min-width:0;margin:0;padding:0;border:0}
-        .nocturne-payment-page .withdraw-method-data__title{margin:0 0 12px;color:#f5f6ff;font-size:16px;font-weight:800}
-        .nocturne-payment-page .withdraw-method-fields .form-group{margin-bottom:14px}
-        .nocturne-payment-page .withdraw-method-fields .form-control{min-height:48px;border:1px solid rgba(133,142,175,.2);border-radius:12px;background:#10152a;color:#f4f5fd}
-        .nocturne-payment-page .payment-item__thumb.has-missing-image{position:relative;background:rgba(0,231,138,.1)}
-        .nocturne-payment-page .payment-item__thumb.has-missing-image:after{content:'◆';color:var(--pay-accent);font-size:15px}
-        .nocturne-payment-page .nocturne-pay-empty{display:grid;justify-items:center;align-content:center;gap:8px;min-height:180px;padding:24px;border:1px dashed rgba(133,142,175,.25);border-radius:16px;text-align:center;color:var(--pay-muted)}
-        .nocturne-payment-page .nocturne-pay-empty i{color:var(--pay-accent);font-size:27px}
-        .nocturne-payment-page .nocturne-pay-empty strong{color:#f4f5fd;font-size:14px}
-        .nocturne-payment-page .nocturne-pay-empty span{font-size:12px}
-        .nocturne-payment-page .payment-method-column{flex:0 0 auto;width:41.666667%}
-        .nocturne-payment-page .payment-summary-column{flex:0 0 auto;width:58.333333%}
-        .nocturne-payment-page .nocturne-pay-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-        .nocturne-payment-page .nocturne-pay-kicker{display:block;margin-bottom:5px;color:var(--pay-accent);font-size:9px;font-weight:850;letter-spacing:.15em}
-        .nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{margin:0;font-size:17px}
-        .nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step:before{display:none}
-        .nocturne-payment-page .nocturne-pay-secure{display:inline-flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid rgba(0,231,138,.16);border-radius:10px;color:var(--pay-accent);font-size:10px;font-weight:750}
-        .nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:440px;gap:9px}
-        .nocturne-payment-page .payment-item{min-height:72px;padding:13px 15px;border-radius:15px;background:linear-gradient(110deg,#10152a,#141a32)}
-        .nocturne-payment-page .payment-item__check{width:18px;height:18px}
-        .nocturne-payment-page .payment-item__name{font-size:14px}
-        .nocturne-payment-page .payment-item__thumb{width:48px;height:38px;border-radius:10px}
-        .nocturne-payment-page .nocturne-pay-detail-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 22px;padding:4px 2px 19px;border-bottom:1px solid rgba(133,142,175,.14)}
-        .nocturne-payment-page .nocturne-pay-detail-heading h3{margin:0 0 6px;color:#f5f6ff;font-size:clamp(19px,2vw,25px);font-weight:850;letter-spacing:-.035em}
-        .nocturne-payment-page .nocturne-pay-detail-heading p{max-width:500px;margin:0;color:var(--pay-muted);font-size:12px;line-height:1.55}
-        .nocturne-payment-page .nocturne-pay-detail-icon{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:17px;background:rgba(0,231,138,.1);color:var(--pay-accent);font-size:27px}
-        .nocturne-payment-page .nocturne-pay-selected{min-height:58px}
-        .nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0!important}
-        @media(max-width:991.98px){.nocturne-payment-page .payment-method-column,.nocturne-payment-page .payment-summary-column{width:100%}.nocturne-payment-page .payment-system-list.is-scrollable{max-height:360px}}
-        @media(max-width:767.98px){.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:17px}.nocturne-payment-page .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:300px}.nocturne-payment-page .nocturne-pay-detail-heading{align-items:flex-start;margin-bottom:17px;padding-bottom:15px}.nocturne-payment-page .nocturne-pay-detail-icon{width:44px;height:44px;border-radius:14px;font-size:22px}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{font-size:15px}.nocturne-payment-page .nocturne-pay-tab{min-height:66px;padding:8px}.nocturne-payment-page .nocturne-pay-tab>i{width:30px;height:30px;font-size:18px}}
-        .btn:disabled {
-            border: unset;
-        }
+<style>
+:root{--wallet-accent:#00e78a;--wallet-bg:#10152a;--wallet-panel:#151a31;--wallet-raised:#1b2140;--wallet-muted:#858eaf;--wallet-line:rgba(133,142,175,.18);--wallet-text:#f5f6ff}
+.nocturne-wallet-page{max-width:900px;margin-inline:auto}
+.nocturne-wallet-page .nocturne-page-title{margin-bottom:16px;font-size:26px}
+.nocturne-wallet-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;margin:0 0 22px;padding:24px 28px;border:1px solid var(--wallet-line);border-radius:24px;background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.nocturne-wallet-hero__eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--wallet-accent);font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.nocturne-wallet-hero__copy h2{margin:8px 0 4px;color:var(--wallet-text);font-size:clamp(20px,2.4vw,28px);font-weight:850;letter-spacing:-.03em}
+.nocturne-wallet-hero__copy p{margin:0;color:var(--wallet-muted);font-size:13.5px}
+.nocturne-wallet-hero__balance{position:relative;min-width:190px;padding:14px 46px 14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(7,11,27,.5)}
+.nocturne-wallet-hero__balance>span{display:block;color:var(--wallet-muted);font-size:11px;font-weight:700}
+.nocturne-wallet-hero__balance strong{display:block;margin-top:3px;color:#fff;font-size:19px;font-weight:800;white-space:nowrap}
+.nocturne-wallet-hero__balance small{color:var(--wallet-muted);font-size:11px}
+.nocturne-wallet-hero__balance>i{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--wallet-accent);font-size:22px}
 
-        .form--control{background:unset!important}
-        .nocturne-payment-page .payment-method-panel .card-body{padding:2px!important}.nocturne-payment-page .payment-summary-panel .card-body{min-width:0}
-        .nocturne-payment-page .nocturne-pay-list-heading{align-items:flex-start}.nocturne-payment-page .nocturne-pay-list-heading>div{min-width:0;flex:1}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{line-height:1.35;overflow-wrap:anywhere}.nocturne-payment-page .nocturne-pay-secure{flex:none;white-space:nowrap;padding:8px 11px}.nocturne-payment-page .nocturne-pay-detail-heading{padding:10px 8px 20px}.nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0 8px 10px!important}
-        .nocturne-payment-page .deposit-info__input-group{display:flex;flex-wrap:nowrap;width:100%;min-width:0}.nocturne-payment-page .deposit-info__input-group-text{display:flex;align-items:center;justify-content:center;min-width:56px;padding:0 15px;border-right:1px solid rgba(133,142,175,.15)}.nocturne-payment-page .deposit-info__input-group .amount{flex:1;min-width:0;padding:0 18px;background:#0d1225!important;text-align:right;font-variant-numeric:tabular-nums}
-        .nocturne-payment-page .nocturne-payment-history{margin-top:28px;padding:24px;border:1px solid rgba(133,142,175,.14);border-radius:22px;background:linear-gradient(145deg,#151a31,#10152a);box-shadow:0 16px 42px rgba(0,0,0,.16)}.nocturne-payment-page .nocturne-payment-history__heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.nocturne-payment-page .nocturne-payment-history__heading h2{margin:0;color:#f4f5fd;font-size:21px;font-weight:850;letter-spacing:-.025em}.nocturne-payment-page .nocturne-payment-history__heading h2 i{margin-right:6px;color:#858eaf}.nocturne-payment-page .nocturne-payment-history__heading>a{display:inline-flex;align-items:center;gap:7px;flex:none;padding:11px 14px;border-radius:12px;background:#222a47;color:#f4f5fd;font-size:13px;font-weight:750;text-decoration:none}.nocturne-payment-page .nocturne-payment-history__heading>a i{color:var(--pay-accent)}
-        .nocturne-payment-history__table-wrap{overflow:auto;border:1px solid rgba(133,142,175,.1);border-radius:15px}.nocturne-payment-history__table{width:100%;border-collapse:collapse;color:#edf0fc}.nocturne-payment-history__table th{padding:14px 18px;background:#222a47;color:#e9ebf8;font-size:12px;font-weight:800;text-align:left;white-space:nowrap}.nocturne-payment-history__table td{padding:15px 18px;border-top:1px solid rgba(133,142,175,.1);vertical-align:middle;font-size:13px}.nocturne-payment-history__table td strong,.nocturne-payment-history__table td small{display:block}.nocturne-payment-history__table td small{margin-top:4px;color:#858eaf;font-size:11px;overflow-wrap:anywhere}.nocturne-payment-history__table td .badge{white-space:nowrap}.nocturne-history-empty{display:grid;justify-items:center;gap:5px;padding:30px 12px;text-align:center}.nocturne-history-empty i{color:var(--pay-accent);font-size:26px}.nocturne-history-empty strong{color:#f3f4fc;font-size:16px}.nocturne-history-empty span{color:var(--pay-muted);font-size:12px}.nocturne-payment-history__pagination{padding-top:14px}.nocturne-payment-history__pagination nav{margin:0}
-        @media(max-width:767.98px){.nocturne-payment-page .payment-method-panel,.nocturne-payment-page .payment-summary-panel{padding:clamp(16px,5vw,22px);border-radius:20px}.nocturne-payment-page .payment-workspace{--bs-gutter-x:12px}.nocturne-payment-page .nocturne-pay-list-heading{gap:8px}.nocturne-payment-page .nocturne-pay-list-heading .nocturne-pay-step{font-size:14px}.nocturne-payment-page .nocturne-pay-secure{padding:7px 8px;font-size:9px}.nocturne-payment-page .nocturne-pay-detail-heading{padding:4px 2px 17px}.nocturne-payment-page .payment-summary-panel .payment-system-list{padding:0!important}.nocturne-payment-page .deposit-info{gap:10px}.nocturne-payment-page .deposit-info__input-group .amount{font-size:21px}.nocturne-payment-page .nocturne-payment-history{margin-top:20px;padding:17px 14px;border-radius:19px}.nocturne-payment-page .nocturne-payment-history__heading{align-items:flex-start}.nocturne-payment-page .nocturne-payment-history__heading h2{font-size:18px}.nocturne-payment-page .nocturne-payment-history__heading>a{padding:9px 10px;font-size:11px}.nocturne-payment-history__table-wrap{overflow:visible;border:0}.nocturne-payment-history__table thead{display:none}.nocturne-payment-history__table,.nocturne-payment-history__table tbody{display:block;width:100%}.nocturne-payment-history__table tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:10px;padding:8px 12px;border:1px solid rgba(133,142,175,.13);border-radius:14px;background:#11162b}.nocturne-payment-history__table tbody tr:last-child{margin-bottom:0}.nocturne-payment-history__table td{min-width:0;padding:9px 4px;border:0;font-size:12px;overflow-wrap:anywhere}.nocturne-payment-history__table td:before{display:block;margin-bottom:4px;color:#858eaf;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;content:attr(data-label)}.nocturne-payment-history__table td[colspan]{grid-column:1/-1}.nocturne-payment-history__table td[colspan]:before{display:none}}
-        @media(max-width:360px){.nocturne-payment-page .nocturne-pay-tab{gap:7px;padding:8px}.nocturne-payment-page .nocturne-pay-tab strong{font-size:11px}.nocturne-payment-page .nocturne-pay-tab small{font-size:8px}}
-        @media(min-width:768px){.nocturne-withdraw-page .nocturne-pay-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.nocturne-withdraw-page .nocturne-pay-tab{min-width:0;padding:9px}.nocturne-withdraw-page .nocturne-pay-tab>i{width:32px;height:32px;font-size:19px}.nocturne-withdraw-page .nocturne-pay-tab strong{font-size:11px}.nocturne-withdraw-page .nocturne-pay-tab small{font-size:9px}}
-        @media(max-width:767.98px){.nocturne-withdraw-page .nocturne-pay-tabs{display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding-bottom:4px}.nocturne-withdraw-page .nocturne-pay-tab{flex:0 0 min(78%,220px);scroll-snap-align:start}}
+.nocturne-wallet-card{padding:clamp(18px,3vw,28px);border:1px solid var(--wallet-line);border-radius:26px;background:linear-gradient(160deg,#171d36,#11152a 75%);box-shadow:0 20px 55px rgba(0,0,0,.2)}
+.nocturne-wallet-card__heading{display:flex;align-items:center;gap:10px;margin:0 0 16px;color:var(--wallet-text);font-size:15px;font-weight:800}
+.nocturne-wallet-card__heading span{display:grid;place-items:center;flex:0 0 26px;width:26px;height:26px;border-radius:9px;background:rgba(0,231,138,.14);color:var(--wallet-accent);font-size:12px}
+.nocturne-wallet-card__heading--amount{margin-top:22px}
 
-        /* --- Reference-matched Step 1 toggle (CRYPTO / WINXPAY) --- */
-        .nocturne-payment-page .nocturne-pay-tabs--toggle{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:transparent;padding:0;margin-bottom:22px}
-        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab{display:grid;place-items:center;gap:10px;min-height:92px;padding:16px;border:1.5px solid rgba(133,142,175,.22);border-radius:16px;background:#10152a;flex:none}
-        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab strong{font-size:15px;letter-spacing:.03em;color:#f4f5fd}
-        .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab.is-active{border-color:var(--pay-accent);background:linear-gradient(135deg,rgba(0,231,138,.12),#151a31 78%);box-shadow:0 0 0 1px rgba(0,231,138,.18)}
-        .nocturne-payment-page .nocturne-pay-tab__icons{display:flex;align-items:center;gap:6px;color:var(--pay-muted);font-size:18px}
-        .nocturne-payment-page .nocturne-pay-tab__icons b{margin-left:3px;padding:2px 7px;border-radius:999px;background:rgba(0,231,138,.14);color:var(--pay-accent);font-size:10px;font-weight:800}
-        .nocturne-payment-page .nocturne-pay-tab:disabled{opacity:.4;cursor:not-allowed}
+.nocturne-wallet-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.nocturne-wallet-switch__opt{display:grid;place-items:center;gap:7px;min-height:88px;padding:14px;border:1.5px solid var(--wallet-line);border-radius:18px;background:var(--wallet-bg);color:var(--wallet-text);transition:border-color .18s,background .18s,transform .18s}
+.nocturne-wallet-switch__opt:not(:disabled):hover{transform:translateY(-2px)}
+.nocturne-wallet-switch__opt.is-active{border-color:var(--wallet-accent);background:linear-gradient(140deg,rgba(0,231,138,.14),var(--wallet-raised) 80%);box-shadow:0 0 0 1px rgba(0,231,138,.2)}
+.nocturne-wallet-switch__opt:disabled{opacity:.4;cursor:not-allowed}
+.nocturne-wallet-switch__icons{display:flex;align-items:center;gap:7px;color:var(--wallet-muted);font-size:18px}
+.nocturne-wallet-switch__opt.is-active .nocturne-wallet-switch__icons{color:var(--wallet-accent)}
+.nocturne-wallet-switch__opt strong{font-size:14px;font-weight:850}
+.nocturne-wallet-switch__opt small{color:var(--wallet-muted);font-size:10.5px}
 
-        .nocturne-payment-page .nocturne-pay-step--sub{margin:0 0 12px;font-size:15px}
-        .nocturne-payment-page .nocturne-pay-step--sub:before{display:none}
+.nocturne-wallet-pick{position:relative;margin-bottom:18px}
+.nocturne-wallet-pick__toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:64px;padding:10px 16px;border:1px solid var(--wallet-line);border-radius:16px;background:var(--wallet-bg);color:var(--wallet-text);cursor:pointer}
+.nocturne-wallet-pick__toggle:hover{border-color:rgba(0,231,138,.4)}
+.nocturne-wallet-pick__toggle>i{color:var(--wallet-muted)}
+.nocturne-wallet-pick__selected{display:flex;align-items:center;gap:11px;min-width:0}
+.nocturne-wallet-pick__thumb-wrap{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:rgba(0,231,138,.1);color:var(--wallet-accent);overflow:hidden}
+.nocturne-wallet-pick__thumb{width:100%;height:100%;object-fit:cover}
+.nocturne-wallet-pick__name{overflow:hidden;font-size:15px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+.nocturne-wallet-pick__panel{position:absolute;z-index:30;top:calc(100% + 8px);left:0;right:0;padding:12px;border:1px solid var(--wallet-line);border-radius:18px;background:#11162b;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.nocturne-wallet-pick__search{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid var(--wallet-line);border-radius:12px;background:#0d1225}
+.nocturne-wallet-pick__search i{color:var(--wallet-muted);font-size:14px}
+.nocturne-wallet-pick__search input{flex:1;min-width:0;border:0;background:transparent;color:var(--wallet-text);font:inherit;outline:0}
+.nocturne-wallet-pick__search input::placeholder{color:#606986}
+.nocturne-wallet-pick__list{display:grid;gap:4px;max-height:280px;overflow:auto}
+.nocturne-wallet-option{position:relative;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;cursor:pointer}
+.nocturne-wallet-option:hover{background:#171d36}
+.nocturne-wallet-option:has(.gateway-input:checked){background:rgba(0,231,138,.1)}
+.nocturne-wallet-option__thumb{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#fff;overflow:hidden}
+.nocturne-wallet-option__thumb img{width:100%;height:100%;object-fit:cover}
+.nocturne-wallet-option__copy{display:grid;min-width:0;gap:2px;flex:1}
+.nocturne-wallet-option__name{overflow:hidden;font-size:13.5px;font-weight:750;text-overflow:ellipsis;white-space:nowrap;color:var(--wallet-text)}
+.nocturne-wallet-option__name small{margin-left:5px;color:var(--wallet-muted);font-weight:700}
+.nocturne-wallet-option__agent{color:var(--wallet-accent);font-size:10px;font-weight:700}
+.nocturne-wallet-option__check{display:none;flex:0 0 auto;color:var(--wallet-accent)}
+.nocturne-wallet-option:has(.gateway-input:checked) .nocturne-wallet-option__check{display:block}
 
-        /* --- Step 2 searchable dropdown --- */
-        .nocturne-payment-page .nocturne-pay-dropdown{position:relative}
-        .nocturne-payment-page .nocturne-pay-dropdown__toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:62px;padding:10px 16px;border:1px solid rgba(133,142,175,.22);border-radius:14px;background:#10152a;color:#f4f5fd;cursor:pointer}
-        .nocturne-payment-page .nocturne-pay-dropdown__toggle:hover{border-color:rgba(0,231,138,.4)}
-        .nocturne-payment-page .nocturne-pay-dropdown__toggle i{color:var(--pay-muted);font-size:16px}
-        .nocturne-payment-page .nocturne-pay-dropdown__selected{display:flex;align-items:center;gap:10px;min-width:0}
-        .nocturne-payment-page .nocturne-pay-dropdown__thumb{width:28px;height:28px;border-radius:50%;object-fit:cover;background:#fff}
-        .nocturne-payment-page .nocturne-pay-dropdown__name{overflow:hidden;color:#f4f5fd;font-size:14.5px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel{position:absolute;z-index:20;top:calc(100% + 8px);left:0;right:0;padding:12px;border:1px solid rgba(133,142,175,.22);border-radius:16px;background:#11162b;box-shadow:0 20px 50px rgba(0,0,0,.4)}
-        .nocturne-payment-page .nocturne-pay-dropdown__search{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid rgba(133,142,175,.2);border-radius:11px;background:#0d1225}
-        .nocturne-payment-page .nocturne-pay-dropdown__search i{color:var(--pay-muted);font-size:14px}
-        .nocturne-payment-page .nocturne-pay-dropdown__search input{flex:1;min-width:0;border:0;background:transparent;color:#f4f5fd;font:inherit;outline:0}
-        .nocturne-payment-page .nocturne-pay-dropdown__search input::placeholder{color:#606986}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-system-list.is-scrollable{grid-template-columns:1fr;max-height:280px;gap:4px;padding:0}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item{min-height:50px;padding:9px 12px;border-radius:10px;background:transparent;border-color:transparent;justify-content:space-between}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:hover{background:#171d36;transform:none}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:has(.gateway-input:checked){background:rgba(0,231,138,.1);border-color:transparent;box-shadow:none}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__thumb{width:30px;height:30px;border-radius:50%}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__name small{margin-left:5px;color:var(--pay-muted);font-weight:700}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item__check{width:0;height:0;border:0}
-        .nocturne-payment-page .nocturne-pay-dropdown__panel .payment-item:has(.gateway-input:checked):after{content:"{{ __('Selected') }}";margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(0,231,138,.18);color:var(--pay-accent);font-size:10px;font-weight:800}
+.nocturne-wallet-fields{display:grid;gap:14px;margin-bottom:18px;padding:16px;border:1px solid var(--wallet-line);border-radius:18px;background:rgba(7,11,27,.42)}
+.nocturne-wallet-fields .withdraw-method-fields{min-width:0;margin:0;padding:0;border:0}
+.nocturne-wallet-fields .form-group{margin-bottom:12px}
+.nocturne-wallet-fields .form-group:last-child{margin-bottom:0}
+.nocturne-wallet-fields .form-control,.nocturne-wallet-fields .form--control{min-height:48px;border:1px solid var(--wallet-line)!important;border-radius:12px;background:var(--wallet-bg)!important;color:var(--wallet-text)!important}
+.nocturne-wallet-fields label{color:var(--wallet-muted);font-size:12.5px;font-weight:700}
 
-        /* --- Reference-matched right panel header --- */
-        .nocturne-payment-page .nocturne-pay-selected{display:flex;align-items:center;gap:12px;margin:0 0 20px;padding:14px 16px;border:1px solid rgba(133,142,175,.16);border-radius:16px;background:#10152a}
-        .nocturne-payment-page .nocturne-pay-selected__icon{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:rgba(0,231,138,.1);color:var(--pay-accent);font-size:20px;overflow:hidden}
-        .nocturne-payment-page .nocturne-pay-selected__thumb{width:100%;height:100%;object-fit:cover}
-        .nocturne-payment-page .nocturne-pay-selected__identity{display:grid;gap:2px;flex:1;min-width:0}
-        .nocturne-payment-page .nocturne-pay-selected__name{color:#f4f5fd;font-size:16px;font-weight:850}
-        .nocturne-payment-page .nocturne-pay-selected__agent{color:var(--pay-accent);font-size:11px;font-weight:750}
-        .nocturne-payment-page .nocturne-pay-selected__badge{flex:none;padding:5px 11px;border-radius:999px;background:rgba(0,231,138,.14);color:var(--pay-accent);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.nocturne-wallet-amount{display:flex;align-items:center;min-height:62px;border:1px solid var(--wallet-line);border-radius:16px;background:var(--wallet-bg);overflow:hidden}
+.nocturne-wallet-amount__prefix{display:grid;place-items:center;flex:0 0 auto;min-width:52px;height:100%;color:var(--wallet-accent);font-size:19px;font-weight:800;border-right:1px solid var(--wallet-line)}
+.nocturne-wallet-amount .amount{flex:1;min-width:0;height:60px;padding:0 16px;border:0;background:transparent;color:#fff;font-size:22px;font-weight:800;outline:0}
+.nocturne-wallet-amount .amount::placeholder{color:#606986}
+.nocturne-wallet-amount--withdraw .amount{padding-right:4px}
+.nocturne-wallet-max-btn{flex:0 0 auto;margin-right:8px;padding:9px 15px;border:0;border-radius:10px;background:rgba(0,231,138,.14);color:var(--wallet-accent);font-size:12px;font-weight:800;cursor:pointer}
+.nocturne-wallet-max-btn:hover{background:rgba(0,231,138,.22)}
 
-        /* --- Balance chip + amount field with Max button --- */
-        .nocturne-payment-page .nocturne-pay-balance-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(0,231,138,.1);color:var(--pay-accent);font-size:12px;font-weight:800}
-        .nocturne-payment-page .nocturne-pay-amount-group{min-height:62px;align-items:center;border:1px solid rgba(133,142,175,.2);border-radius:15px;background:#10152a;overflow:hidden}
-        .nocturne-payment-page .nocturne-pay-amount-group .amount{flex:1;min-width:0;height:60px;border:0!important;background:transparent!important;color:#fff!important;font-size:22px;font-weight:800;box-shadow:none!important;padding:0 10px}
-        .nocturne-payment-page .nocturne-pay-max-btn{flex:none;margin-right:8px;padding:8px 14px;border:0;border-radius:10px;background:rgba(0,231,138,.14);color:var(--pay-accent);font-size:12px;font-weight:800;cursor:pointer}
-        .nocturne-payment-page .nocturne-pay-max-btn:hover{background:rgba(0,231,138,.22)}
+.nocturne-wallet-charges{display:grid;gap:8px;margin-top:14px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.03)}
+.nocturne-wallet-charges>div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--wallet-muted)}
+.nocturne-wallet-charges strong{color:var(--wallet-text)}
+.nocturne-wallet-conversion{margin-top:10px;font-size:12px;color:var(--wallet-muted)}
 
-        /* --- Footer row: Minimal Withdraw amount / Fee --- */
-        .nocturne-payment-page .nocturne-pay-footrow{display:flex;justify-content:space-between;gap:12px;margin-top:16px;padding:14px 16px;border-top:1px dashed rgba(133,142,175,.22);flex-wrap:wrap}
-        .nocturne-payment-page .nocturne-pay-footrow div{display:grid;gap:3px}
-        .nocturne-payment-page .nocturne-pay-footrow span{color:var(--pay-muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-        .nocturne-payment-page .nocturne-pay-footrow strong{color:#f4f5fd;font-size:13.5px}
+.nocturne-wallet-cta{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:54px;margin-top:18px;border:0;border-radius:15px;background:var(--wallet-accent);color:#062a23;font-size:15px;font-weight:850;cursor:pointer;box-shadow:0 12px 30px rgba(0,231,138,.18)}
+.nocturne-wallet-cta:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 
-        @media(max-width:575.98px){
-            .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab{min-height:78px;padding:12px}
-            .nocturne-payment-page .nocturne-pay-footrow{flex-direction:column;gap:10px}
-        }
-    </style>
+.nocturne-wallet-footrow{display:flex;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--wallet-line);flex-wrap:wrap}
+.nocturne-wallet-footrow div{display:grid;gap:3px}
+.nocturne-wallet-footrow span{color:var(--wallet-muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+.nocturne-wallet-footrow strong{color:var(--wallet-text);font-size:13px}
+
+.nocturne-wallet-empty{display:grid;justify-items:center;gap:8px;padding:28px;border:1px dashed var(--wallet-line);border-radius:16px;color:var(--wallet-muted);text-align:center}
+.nocturne-wallet-empty i{color:var(--wallet-accent);font-size:26px}
+
+.nocturne-wallet-history{margin-top:24px;padding:22px;border:1px solid var(--wallet-line);border-radius:22px;background:linear-gradient(150deg,#151a31,#10152a)}
+.nocturne-wallet-history__heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.nocturne-wallet-history__heading h2{margin:0;color:var(--wallet-text);font-size:18px;font-weight:850}
+.nocturne-wallet-kicker{display:block;margin-bottom:3px;color:var(--wallet-accent);font-size:9px;font-weight:850;letter-spacing:.14em}
+.nocturne-wallet-history__heading>a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;background:var(--wallet-raised);color:var(--wallet-text);font-size:12px;font-weight:750;text-decoration:none}
+.nocturne-wallet-history__list{display:grid;gap:9px}
+.nocturne-wallet-history__row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--wallet-line);border-radius:14px;background:rgba(9,13,28,.5)}
+.nocturne-wallet-history__icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:rgba(0,231,138,.1);color:var(--wallet-accent)}
+.nocturne-wallet-history__mid{flex:1;min-width:0;display:grid;gap:2px}
+.nocturne-wallet-history__mid strong{overflow:hidden;color:var(--wallet-text);font-size:13.5px;text-overflow:ellipsis;white-space:nowrap}
+.nocturne-wallet-history__mid small{color:var(--wallet-muted);font-size:11px}
+.nocturne-wallet-history__end{display:grid;justify-items:end;gap:4px;flex:0 0 auto}
+.nocturne-wallet-history__end strong{color:var(--wallet-text);font-size:13.5px}
+.nocturne-wallet-history__pagination{margin-top:14px}
+
+@media(max-width:575.98px){
+    .nocturne-wallet-hero{flex-direction:column;align-items:stretch;padding:18px}
+    .nocturne-wallet-hero__balance{width:100%}
+    .nocturne-wallet-switch__opt{min-height:76px;padding:10px}
+    .nocturne-wallet-footrow{flex-direction:column;gap:10px}
+    .nocturne-wallet-history__row{flex-wrap:wrap}
+    .nocturne-wallet-max-btn{padding:8px 11px;font-size:11px}
+}
+</style>
 @endpush
 
-
-
 @push('script')
-    <script>
-        "use strict";
-        (function($) {
+<script>
+"use strict";
+(function($) {
+    var amount = parseFloat($('.amount').val() || 0);
+    var gateway, minAmount, maxAmount;
 
-            var amount = parseFloat($('.amount').val() || 0);
-            var gateway, minAmount, maxAmount;
+    $('.amount').on('input', function() {
+        amount = parseFloat($(this).val()) || 0;
+        calculation();
+    });
 
+    $('.gateway-input').on('change', gatewayChange);
 
-            $('.amount').on('input', function(e) {
-                amount = parseFloat($(this).val());
-                if (!amount) {
-                    amount = 0;
-                }
-                calculation();
-            });
+    function gatewayChange() {
+        let el = $('.gateway-input:checked');
+        if (!el.length) {
+            gateway = null;
+            $('.nocturne-wallet-pick__thumb').attr('src', '').hide();
+            $('#pay-dropdown-name').text("{{ __('Choose an option') }}");
+            $('#withdraw-cta').prop('disabled', true);
+            $('.withdraw-method-fields').prop('disabled', true).prop('hidden', true);
+            $('.gateway-limit').text('—');
+            $('.processing-fee-label').text("{{ __('No Commission') }}");
+            return;
+        }
+        gateway = el.data('gateway');
+        minAmount = el.data('min-amount');
+        maxAmount = el.data('max-amount');
 
-            $('.gateway-input').on('change', function(e) {
-                gatewayChange();
-            });
+        $('.withdraw-method-fields').prop('disabled', true).prop('hidden', true);
+        $('.withdraw-method-fields[data-method-id="' + el.val() + '"]').prop('disabled', false).prop('hidden', false);
 
-            function gatewayChange() {
-                let gatewayElement = $('.gateway-input:checked');
-                if (!gatewayElement.length) {
-                    gateway = null;
-                    $('.withdraw-method-fields').prop('disabled', true).prop('hidden', true);
-                    $('.nocturne-pay-selected__thumb, .nocturne-pay-dropdown__thumb').attr('src', '').hide();
-                    $('.nocturne-pay-selected__agent').text('').prop('hidden', true);
-                    $('.nocturne-pay-selected__name, .nocturne-pay-dropdown__name').text("{{ __('Select a withdrawal method') }}");
-                    $('.withdraw-form button[type=submit]').prop('disabled', true);
-                    $('.gateway-limit').text('—');
-                    $('.processing-fee-label').text("{{ __('No Commission') }}");
-                    return;
-                }
-                let methodCode = gatewayElement.val();
+        let selectedImage = el.closest('.nocturne-wallet-option').find('img').attr('src');
+        let selectedName = el.closest('.nocturne-wallet-option').find('.nocturne-wallet-option__name').clone().children().remove().end().text().trim();
+        if (selectedImage) {
+            $('.nocturne-wallet-pick__thumb').attr('src', selectedImage).prop('hidden', false).show();
+            $('#pay-selected-fallback-icon').hide();
+        }
+        $('#pay-dropdown-name').text(selectedName + (gateway.currency ? ' ' + gateway.currency : ''));
 
-                gateway = gatewayElement.data('gateway');
-                const paymentAgentName = gatewayElement.data('payment-agent');
-                $('.nocturne-pay-selected__agent').text(paymentAgentName ? `{{ __('Handled by') }} ${paymentAgentName}` : '').prop('hidden', !paymentAgentName);
-                $('.withdraw-method-fields').prop('disabled', true).prop('hidden', true);
-                $('.withdraw-method-fields[data-method-id="' + gatewayElement.val() + '"]').prop('disabled', false).prop('hidden', false);
-                minAmount = gatewayElement.data('min-amount');
-                maxAmount = gatewayElement.data('max-amount');
+        calculation();
+    }
 
-                let processingFeeInfo =
-                    `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for processing fees`
-                $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
-                let selectedImage = gatewayElement.closest('.payment-item').find('.payment-item__thumb-img').attr('src');
-                let selectedName = gatewayElement.closest('.payment-item').find('.payment-item__name').clone().children().remove().end().text().trim();
-                if (selectedImage) {
-                    $('.nocturne-pay-selected__thumb, .nocturne-pay-dropdown__thumb').attr('src', selectedImage).prop('hidden', false).show();
-                    $('#pay-selected-fallback-icon').hide();
-                }
-                $(".nocturne-pay-selected__name, .nocturne-pay-dropdown__name").text(selectedName + (gateway.currency ? ' ' + gateway.currency : ''));
+    gatewayChange();
 
-                calculation();
-            }
+    $('.nocturne-wallet-switch__opt').on('click', function() {
+        if (this.disabled) return;
+        let filter = String($(this).data('filter'));
+        $('.nocturne-wallet-switch__opt').removeClass('is-active');
+        $(this).addClass('is-active');
+        $('.gateway-option').each(function() {
+            $(this).toggle(String($(this).data('category')) === filter);
+        });
+        $('#pay-dropdown-search').val('').trigger('input');
+        let visibleChecked = $('.gateway-option:visible .gateway-input:checked');
+        if (!visibleChecked.length) {
+            $('.gateway-input').prop('checked', false);
+            let firstVisible = $('.gateway-option:visible').first();
+            if (firstVisible.length) firstVisible.find('.gateway-input').prop('checked', true);
+        }
+        gatewayChange();
+    });
 
-            gatewayChange();
+    function calculation() {
+        if (!gateway) return;
+        $('.gateway-limit').text("{{ gs('cur_sym') }}" + minAmount);
 
-            $(".more-gateway-option").on("click", function(e) {
-                let paymentList = $(".gateway-option-list");
-                paymentList.find(".gateway-option").removeClass("d-none");
-                $(this).addClass('d-none');
-                paymentList.animate({
-                    scrollTop: (paymentList.height() - 60)
-                }, 'slow');
-            });
+        let percentCharge = parseFloat(gateway.percent_charge) || 0;
+        let fixedCharge = parseFloat(gateway.fixed_charge) || 0;
+        let totalPercentCharge = amount ? (amount / 100 * percentCharge) : 0;
+        let totalCharge = totalPercentCharge + fixedCharge;
+        let totalAmount = (amount || 0) - totalPercentCharge - fixedCharge;
 
-            $('.nocturne-pay-tab').on('click', function() {
-                if (this.disabled) return;
-                const filter = String($(this).data('filter'));
-                $('.nocturne-pay-tab').removeClass('is-active');
-                $(this).addClass('is-active');
-                $('.gateway-option').each(function() {
-                    $(this).removeClass('d-none');
-                $(this).toggleClass('d-none', String($(this).data('category')) !== filter);
-                });
-                $('.crypto-only').prop('hidden', filter !== 'crypto');
-                $('.winxpay-only').prop('hidden', filter !== 'winxpay');
-                $('#pay-dropdown-search').val('').trigger('input');
-                const firstVisible = $('.gateway-option:not(.d-none)').first();
-                if (!$('.gateway-option:not(.d-none) .gateway-input:checked').length) {
-                    $('.gateway-input').prop('checked', false);
-                    if (firstVisible.length) firstVisible.find('.gateway-input').prop('checked', true);
-                }
-                gatewayChange();
-            });
+        $('.processing-fee-label').text(totalCharge > 0 ? (totalCharge.toFixed(2) + ' {{ __(gs("cur_text")) }}') : "{{ __('No Commission') }}");
+        $('.nocturne-wallet-charges').toggleClass('d-none', !(percentCharge > 0 || fixedCharge > 0));
+        $('input[name=currency]').val(gateway.currency);
+        $('.gateway-currency').text(gateway.currency);
 
-            function calculation() {
-                if (!gateway) return;
-                $(".gateway-limit").text("{{ gs('cur_sym') }}" + minAmount);
+        $('#withdraw-cta').prop('disabled', !(amount >= Number(gateway.min_limit) && amount <= Number(gateway.max_limit)));
 
-                let percentCharge = 0;
-                let fixedCharge = 0;
-                let totalPercentCharge = 0;
+        if (gateway.currency != "{{ gs('cur_text') }}") {
+            $('.gateway-conversion, .conversion-currency').removeClass('d-none');
+            $('.gateway-conversion').html(`1 {{ __(gs('cur_text')) }} = ${parseFloat(gateway.rate).toFixed(2)} ${gateway.currency}`);
+            $('.in-currency').text((totalAmount * gateway.rate).toFixed(2));
+        } else {
+            $('.gateway-conversion, .conversion-currency').addClass('d-none');
+        }
+    }
 
-                if (amount) {
-                    percentCharge = parseFloat(gateway.percent_charge);
-                    fixedCharge = parseFloat(gateway.fixed_charge);
-                    totalPercentCharge = parseFloat(amount / 100 * percentCharge);
-                }
+    if ($('.nocturne-wallet-switch__opt').length) {
+        let checkedCategory = $('.gateway-input:checked').closest('.gateway-option').data('category');
+        let initialFilter = checkedCategory === undefined ? $('.nocturne-wallet-switch__opt:not(:disabled)').first().data('filter') : checkedCategory;
+        $('.nocturne-wallet-switch__opt').filter(`[data-filter="${initialFilter}"]`).trigger('click');
+    } else {
+        gatewayChange();
+    }
 
-                let totalCharge = parseFloat(totalPercentCharge + fixedCharge);
-                let totalAmount = parseFloat((amount || 0) - totalPercentCharge - fixedCharge);
+    // Max: fills the amount field with balance minus the estimated flat+percent fee
+    $('#withdraw-max-btn').on('click', function() {
+        if (!gateway) return;
+        const balance = {{ (float) auth()->user()->balance }};
+        const percentCharge = parseFloat(gateway.percent_charge) || 0;
+        const fixedCharge = parseFloat(gateway.fixed_charge) || 0;
+        let max = (balance - fixedCharge) / (1 + percentCharge / 100);
+        max = Math.max(0, max);
+        $('.amount').val(max.toFixed(2)).trigger('input');
+    });
 
-                $(".processing-fee-label").text(totalCharge > 0 ? (totalCharge.toFixed(2) + ' {{ __(gs("cur_text")) }}') : "{{ __('No Commission') }}");
-                $("input[name=currency]").val(gateway.currency);
-                $(".gateway-currency").text(gateway.currency);
-
-                if (amount < Number(gateway.min_limit) || amount > Number(gateway.max_limit)) {
-                    $(".withdraw-form button[type=submit]").attr('disabled', true);
-                } else {
-                    $(".withdraw-form button[type=submit]").removeAttr('disabled');
-                }
-
-                if (gateway.currency != "{{ gs('cur_text') }}") {
-                    $('.withdraw-form').addClass('adjust-height')
-                    $(".gateway-conversion, .conversion-currency").removeClass('d-none');
-                    $(".gateway-conversion").find('.deposit-info__input .text').html(
-                        `1 {{ __(gs('cur_text')) }} = <span class="rate">${parseFloat(gateway.rate).toFixed(2)}</span>  <span class="method_currency">${gateway.currency}</span>`
-                    );
-                    $('.in-currency').text(parseFloat(totalAmount * gateway.rate).toFixed(2))
-                } else {
-                    $(".gateway-conversion, .conversion-currency").addClass('d-none');
-                    $('.withdraw-form').removeClass('adjust-height')
-                }
-            }
-
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
-            const checkedType = $('.gateway-input:checked').closest('.gateway-option').data('category');
-            const initialTab = checkedType === undefined ? $('.nocturne-pay-tab:not(:disabled)').first() : $('.nocturne-pay-tab').filter('[data-filter="' + checkedType + '"]');
-            if (initialTab.length) initialTab.trigger('click');
-            else gatewayChange();
-
-            // Max button: fills the amount field with the full wallet balance minus the
-            // gateway's estimated flat+percent fee, so the user's actual payout matches
-            // their whole balance rather than overshooting and getting rejected.
-            $('#withdraw-max-btn').on('click', function() {
-                if (!gateway) return;
-                const balance = {{ (float) auth()->user()->balance }};
-                const percentCharge = parseFloat(gateway.percent_charge) || 0;
-                const fixedCharge = parseFloat(gateway.fixed_charge) || 0;
-                let max = (balance - fixedCharge) / (1 + percentCharge / 100);
-                max = Math.max(0, max);
-                $('.amount').val(max.toFixed(2)).trigger('input');
-            });
-
-            // Dropdown open/close + search filter (Step: method picker)
-            $('#pay-dropdown-toggle').on('click', function(e) {
-                e.stopPropagation();
-                $('#pay-dropdown-panel').prop('hidden', function(i, hidden) { return !hidden; });
-                if (!$('#pay-dropdown-panel').prop('hidden')) $('#pay-dropdown-search').trigger('focus');
-            });
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.nocturne-pay-dropdown').length) {
-                    $('#pay-dropdown-panel').prop('hidden', true);
-                }
-            });
-            $('.gateway-option-list').on('click', '.payment-item', function() {
-                $('#pay-dropdown-panel').prop('hidden', true);
-            });
-            $('#pay-dropdown-search').on('input', function() {
-                let term = $(this).val().toLowerCase().trim();
-                $('.gateway-option').each(function() {
-                    let matches = !term || String($(this).data('search') || '').includes(term);
-                    $(this).toggle(matches);
-                });
-            });
-        })(jQuery);
-    </script>
+    // Dropdown open/close + search
+    $('#pay-dropdown-toggle').on('click', function(e) {
+        e.stopPropagation();
+        $('#pay-dropdown-panel').prop('hidden', function(i, hidden) { return !hidden; });
+        if (!$('#pay-dropdown-panel').prop('hidden')) $('#pay-dropdown-search').trigger('focus');
+    });
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.nocturne-wallet-pick').length) $('#pay-dropdown-panel').prop('hidden', true);
+    });
+    $('.gateway-option-list').on('click', '.nocturne-wallet-option', function() {
+        $('#pay-dropdown-panel').prop('hidden', true);
+    });
+    $('#pay-dropdown-search').on('input', function() {
+        let term = $(this).val().toLowerCase().trim();
+        $('.gateway-option').each(function() {
+            let matches = !term || String($(this).data('search') || '').includes(term);
+            $(this).toggle(matches);
+        });
+    });
+})(jQuery);
+</script>
 @endpush
