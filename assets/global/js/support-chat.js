@@ -66,7 +66,9 @@
         launcher.setAttribute('aria-expanded', 'true');
         discovery.hidden = view === 'chat';
         chat.hidden = view !== 'chat';
-        if (view === 'chat') composer.focus({ preventScroll: true });
+        // Skip the auto-focus on touch devices - it pops the on-screen keyboard immediately
+        // and covers the panel before the visitor even sees it.
+        if (view === 'chat' && !window.matchMedia('(pointer: coarse)').matches) composer.focus({ preventScroll: true });
     }
 
     function hidePanel() {

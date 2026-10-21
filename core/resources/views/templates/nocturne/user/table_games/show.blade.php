@@ -747,7 +747,12 @@ async function refresh(){if(polling)return;polling=true;try{const url=new URL(st
     if(!panel||!openBtn)return;
     let unread=0;
     window.isChatPanelOpen=()=>!panel.hidden;
-    function open(){panel.hidden=false;unread=0;if(badge){badge.hidden=true;badge.textContent='0';}window.TableSound?.play?.('click');document.querySelector('#chat-input')?.focus({preventScroll:true});}
+    function open(){panel.hidden=false;unread=0;if(badge){badge.hidden=true;badge.textContent='0';}window.TableSound?.play?.('click');
+        // Auto-focusing the composer pops the on-screen keyboard immediately on touch devices,
+        // covering the panel before the player even sees it - only do this where there's no
+        // virtual keyboard to fight with.
+        if(!window.matchMedia('(pointer: coarse)').matches)document.querySelector('#chat-input')?.focus({preventScroll:true});
+    }
     function close(){panel.hidden=true;}
     openBtn.onclick=open;if(closeBtn)closeBtn.onclick=close;if(backdrop)backdrop.onclick=close;
     window.openChatPanel=open;
