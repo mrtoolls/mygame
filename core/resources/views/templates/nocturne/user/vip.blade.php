@@ -130,19 +130,23 @@
 @push('style')
 <style>
 /* VIP tier rail: badge+name float above a connecting line, card panel below.
-   True N-per-view slider sizing (not "all 5 squeezed to fit"). */
-.nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 26px) / 3) !important; }
+   True N-per-view slider sizing, with the next card peeking at the edge so
+   it's visually obvious there's more to swipe. No visible scrollbar - the
+   peek + "Swipe to explore" label are the only affordance. */
+.nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 26px) / 3.3) !important; align-items: stretch; scrollbar-width: none; }
+.nocturne-vip-tier-rail::-webkit-scrollbar { display: none !important; height: 0 !important; }
 .nocturne-vip-slide { display: flex; flex-direction: column; align-items: center; min-width: 0; scroll-snap-align: start; }
-.nocturne-vip-slide__badgewrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 6px 0 18px; }
+.nocturne-vip-slide__badgewrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 6px 0 18px; flex: 0 0 auto; }
 .nocturne-vip-slide__badgewrap::before { content: ""; position: absolute; top: 23px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--nocturne-line) 15%, var(--nocturne-line) 85%, transparent); z-index: 0; }
 .nocturne-vip-slide__badge { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(0,239,135,.35), var(--nocturne-raised) 70%); border: 2px solid rgba(0,239,135,.5); color: var(--nocturne-green); font-size: 21px; box-shadow: 0 8px 18px rgba(0,0,0,.35); overflow: hidden; }
 .nocturne-vip-slide__badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .nocturne-vip-slide.is-current .nocturne-vip-slide__badge { border-color: var(--nocturne-green); box-shadow: 0 0 0 1px rgba(0,239,135,.4), 0 8px 18px rgba(0,239,135,.25); }
-.nocturne-vip-slide__name { position: relative; z-index: 1; margin: 0; color: var(--nocturne-text); font-size: 15px; font-weight: 900; background: var(--nocturne-bg); padding: 0 8px; }
-.nocturne-vip-slide .nocturne-vip-level-card { width: 100%; }
+.nocturne-vip-slide__name { position: relative; z-index: 1; margin: 0; color: var(--nocturne-text); font-size: 15px; font-weight: 900; background: var(--nocturne-bg); padding: 0 8px; white-space: nowrap; }
+.nocturne-vip-slide .nocturne-vip-level-card { width: 100%; flex: 1; display: flex; flex-direction: column; }
+.nocturne-vip-slide .nocturne-vip-level-card__state { margin-top: auto; padding-top: 12px; }
 
 @media(max-width: 767px) {
-    .nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 10px) / 2) !important; }
+    .nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 10px) / 2.3) !important; }
     .nocturne-vip-slide__badge { width: 38px; height: 38px; font-size: 18px; }
     .nocturne-vip-slide__name { font-size: 12.5px; }
 }
