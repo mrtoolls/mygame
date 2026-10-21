@@ -31,7 +31,7 @@ class PaymentController extends Controller {
             // gateways (crypto wallets, WinxPay agent methods, code >= 1000) use `currency`
             // to label the method's own coin/currency, not the user's wallet - filtering
             // those by wallet currency hid every manual/crypto method regardless of setup.
-            if ($walletCode) $query->where(fn ($q) => $q->where('method_code', '>=', 1000)->orWhere('currency', $walletCode));
+            if ($walletCode) $query->where(fn ($q) => $q->where('method_code', '>=', 1000)->orWhereRaw('UPPER(currency) = ?', [strtoupper($walletCode)]));
         }
         $gatewayCurrency = $query->with(['method', 'supportAgent:id,name'])->orderby('name')->get()
             ->filter(fn ($gateway) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$gateway->currency, $gateway->method_code, $gateway->method?->alias, $gateway->name]))

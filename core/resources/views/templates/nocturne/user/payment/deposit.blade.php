@@ -108,41 +108,37 @@
                                         <span class="nocturne-pay-selected__badge">@lang('Selected')</span>
                                     </div>
                                     <div class="payment-system-list p-3">
-                                        <div class="deposit-info">
-                                            <div class="deposit-info__title">
-                                                <p class="text mb-0">@lang('Enter Deposit Amount')</p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <div class="deposit-info__input-group input-group">
-                                                    <span class="deposit-info__input-group-text">{{ gs('cur_sym') }}</span>
-                                                    <input type="number" inputmode="decimal" min="0" step="any" class="form-control form--control amount"
-                                                        name="amount" placeholder="@lang('00.00')"
-                                                        value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Deposit amount')">
+                                        <label class="nocturne-pay-amount-label">@lang('Enter Deposit Amount')</label>
+                                        <div class="deposit-info__input-group input-group nocturne-pay-amount-group">
+                                            <span class="deposit-info__input-group-text">{{ gs('cur_sym') }}</span>
+                                            <input type="number" inputmode="decimal" min="0" step="any" class="form-control form--control amount"
+                                                name="amount" placeholder="@lang('00.00')"
+                                                value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Deposit amount')">
+                                        </div>
+
+                                        <div class="nocturne-pay-charge-rows d-none">
+                                            <div class="deposit-info">
+                                                <div class="deposit-info__title">
+                                                    <p class="text has-icon">@lang('Processing Charge')
+                                                        <span data-bs-toggle="tooltip" title="@lang('Processing charge for payment gateways')"
+                                                            class="proccessing-fee-info"><i class="las la-info-circle"></i>
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                                <div class="deposit-info__input">
+                                                    <p class="text"><span
+                                                            class="processing-fee">@lang('0.00')</span>{{ __(gs('cur_text')) }}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <hr>
-                                        <div class="deposit-info mb-3">
-                                            <div class="deposit-info__title">
-                                                <p class="text has-icon">@lang('Processing Charge')
-                                                    <span data-bs-toggle="tooltip" title="@lang('Processing charge for payment gateways')"
-                                                        class="proccessing-fee-info"><i class="las la-info-circle"></i>
-                                                    </span>
-                                                </p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <p class="text"><span
-                                                        class="processing-fee">@lang('0.00')</span>{{ __(gs('cur_text')) }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div class="deposit-info total-amount pt-3">
-                                            <div class="deposit-info__title">
-                                                <p class="text">@lang('Total')</p>
-                                            </div>
-                                            <div class="deposit-info__input">
-                                                <p class="text"><span class="final-amount">@lang('0.00')</span>
-                                                    {{ __(gs('cur_text')) }}</p>
+                                            <div class="deposit-info total-amount pt-3">
+                                                <div class="deposit-info__title">
+                                                    <p class="text">@lang('Total')</p>
+                                                </div>
+                                                <div class="deposit-info__input">
+                                                    <p class="text"><span class="final-amount">@lang('0.00')</span>
+                                                        {{ __(gs('cur_text')) }}</p>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -167,9 +163,6 @@
                                                 </p>
 
                                             </div>
-                                        </div>
-                                        <div class="d-none crypto-message">
-                                            @lang('Conversion with') <span class="gateway-currency"></span> @lang('and final value will Show on next step')
                                         </div>
                                         <button type="submit" class="btn btn--base w-100 mt-3"
                                             disabled><i class="ph-bold ph-wallet"></i>@lang('Deposit Confirm')</button>
@@ -420,6 +413,12 @@
         .nocturne-payment-page .nocturne-pay-footrow span{color:var(--pay-muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
         .nocturne-payment-page .nocturne-pay-footrow strong{color:#f4f5fd;font-size:13.5px}
 
+        /* --- Clean, premium amount field (replaces the old boxy two-column row) --- */
+        .nocturne-payment-page .nocturne-pay-amount-label{display:block;margin-bottom:10px;color:var(--pay-muted);font-size:12.5px;font-weight:700}
+        .nocturne-payment-page .nocturne-pay-amount-group{min-height:64px;align-items:center;border:1px solid rgba(133,142,175,.2);border-radius:15px;background:#10152a;overflow:hidden}
+        .nocturne-payment-page .nocturne-pay-amount-group .amount{height:62px;border:0!important;background:transparent!important;color:#fff!important;font-size:24px;font-weight:800;box-shadow:none!important}
+        .nocturne-payment-page .nocturne-pay-charge-rows{margin-top:14px;padding-top:10px;border-top:1px solid rgba(133,142,175,.14)}
+
         @media(max-width:575.98px){
             .nocturne-payment-page .nocturne-pay-tabs--toggle .nocturne-pay-tab{min-height:78px;padding:12px}
             .nocturne-payment-page .nocturne-pay-footrow{flex-direction:column;gap:10px}
@@ -532,6 +531,7 @@
                 $(".processing-fee").text(totalCharge.toFixed(2));
                 $("input[name=currency]").val(gateway.currency);
                 $(".gateway-currency").text(gateway.currency);
+                $(".nocturne-pay-charge-rows").toggleClass('d-none', !(parseFloat(gateway.percent_charge) > 0 || parseFloat(gateway.fixed_charge) > 0));
 
                 if (amount < Number(gateway.min_amount) || amount > Number(gateway.max_amount)) {
                     $(".deposit-form button[type=submit]").attr('disabled', true);
