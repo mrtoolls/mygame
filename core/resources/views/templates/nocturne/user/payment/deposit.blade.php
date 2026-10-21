@@ -22,6 +22,8 @@
         $otherCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1 && !$g->support_agent_id)->count();
         $hasOther = $agentCount + $otherCount > 0;
         $hasCrypto = $cryptoCount > 0;
+        $preselectAgentId = request()->integer('agent') ?: null;
+        $preselectGateway = $preselectAgentId ? $gatewayCurrency->firstWhere('support_agent_id', $preselectAgentId) : null;
     @endphp
     <div class="row justify-content-center">
         <div class="col-12">
@@ -46,6 +48,7 @@
                                                 data-crypto="{{ $data->method->crypto }}"
                                                 data-category="{{ (int) $data->method->crypto === 1 ? 'crypto' : ($data->support_agent_id ? 'agent' : 'other') }}"
                                                 data-payment-agent="{{ $data->supportAgent?->name }}"
+                                                data-payment-agent-id="{{ $data->support_agent_id }}"
                                                 class="payment-item gateway-option">
                                                 <div class="payment-item__info">
                                                     <span class="payment-item__check"></span>
@@ -61,7 +64,7 @@
                                                     id="{{ titleToKey($data->name) }}" hidden
                                                     data-gateway='@json($data)' type="radio"
                                                     name="gateway" value="{{ $data->method_code }}"
-                                                    @checked(old('gateway', $loop->first ? $data->method_code : null) == $data->method_code)
+                                                    @checked(old('gateway', $preselectGateway ? $preselectGateway->method_code : ($loop->first ? $data->method_code : null)) == $data->method_code)
                                                     data-min-amount="{{ showAmount($data->min_amount) }}"
                                                     data-max-amount="{{ showAmount($data->max_amount) }}">
                                             </label>

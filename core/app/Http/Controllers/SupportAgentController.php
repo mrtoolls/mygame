@@ -205,8 +205,17 @@ class SupportAgentController extends Controller
         $speedService = app(AgentSpeed::class);
         $speedScore = $speedService->scoreFor($agent);
         $fastStreakCount = $speedService->fastStreakCountThisMonth($agent);
+        $notifications = \App\Models\AgentNotification::unreadFor('agent', $agent->id)->latest('id')->limit(10)->get();
 
-        return view('support-agent.payments.queue', compact('agent', 'deposits', 'speedScore', 'fastStreakCount'));
+        return view('support-agent.payments.queue', compact('agent', 'deposits', 'speedScore', 'fastStreakCount', 'notifications'));
+    }
+
+    public function paymentNotificationsRead()
+    {
+        $agent = Auth::guard('support_agent')->user();
+        \App\Models\AgentNotification::unreadFor('agent', $agent->id)->update(['read_at' => now()]);
+
+        return redirect()->route('support-agent.payments.queue');
     }
 
     public function paymentShow($id)

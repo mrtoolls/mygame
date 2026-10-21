@@ -32,6 +32,20 @@
             <div style="margin-bottom:18px;padding:12px 16px;border:1px solid rgba(0,239,135,.3);border-radius:12px;background:rgba(0,239,135,.08);color:#b3f9da">{{ session('status') }}</div>
         @endif
 
+        @if($notifications->isNotEmpty())
+            <div style="margin-bottom:24px;padding:16px;border:1px solid rgba(255,190,65,.3);border-radius:14px;background:rgba(255,190,65,.06)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <strong style="font-size:13px">🔔 {{ $notifications->count() }} new notification{{ $notifications->count() === 1 ? '' : 's' }}</strong>
+                    <form method="post" action="{{ route('support-agent.payments.notifications.read') }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><button type="submit" style="border:0;background:transparent;color:var(--agent-muted);font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline">Mark all read</button></form>
+                </div>
+                <div style="display:grid;gap:6px">
+                    @foreach($notifications as $n)
+                        <a href="{{ $n->click_url ?: '#' }}" style="display:block;font-size:12.5px;color:var(--agent-text);text-decoration:none"><strong>{{ $n->title }}</strong> @if($n->body)<span style="color:var(--agent-muted)"> — {{ $n->body }}</span>@endif</a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <h1 style="font-size:20px;margin-bottom:16px">Pending deposits awaiting your confirmation</h1>
 
         <div style="display:grid;gap:12px">

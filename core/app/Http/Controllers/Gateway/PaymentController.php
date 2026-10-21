@@ -275,19 +275,7 @@ class PaymentController extends Controller {
             return to_route('user.deposit.history')->withNotify($notify);
         }
 
-        $adminEmails = \App\Models\Admin::pluck('email')->filter()->all();
-        if ($adminEmails) {
-            try {
-                \Illuminate\Support\Facades\Mail::raw(
-                    "A crypto deposit from {$pendingDeposit->user->username} is awaiting confirmation.\n\nAmount: " . showAmount($pendingDeposit->amount, currencyFormat: false) . " {$pendingDeposit->method_currency}\nTrx: {$pendingDeposit->trx}\nPaid from: {$pendingDeposit->payer_wallet_address}\nConfirm by: {$pendingDeposit->confirmation_deadline_at}\n\nReview it in the admin panel.",
-                    function ($mail) use ($adminEmails) {
-                        $mail->to($adminEmails)->subject('Crypto deposit awaiting confirmation');
-                    }
-                );
-            } catch (\Throwable $exception) {
-                \Illuminate\Support\Facades\Log::warning('Admin crypto-deposit email notification failed.', ['deposit_id' => $pendingDeposit->id, 'error' => $exception->getMessage()]);
-            }
-        }
+        $this->notifySubmission($pendingDeposit, $pendingDeposit->gatewayCurrency()?->support_agent_id, 'Crypto deposit');
 
         notify($pendingDeposit->user, 'DEPOSIT_REQUEST', [
             'method_name'     => $pendingDeposit->gatewayCurrency()->name,
@@ -305,7 +293,7 @@ class PaymentController extends Controller {
     public function confirmationPending() {
         $track   = session()->get('Track');
         $deposit = Deposit::with('gateway')->where('trx', $track)->where('user_id', auth()->id())->first();
-        abort_if(!$deposit || !$deposit->payment_proof, 404);
+        abort_if(!$deposit || !$deposit->confirmation_deadline_at, 404);
         $pageTitle = 'Confirming Deposit';
         return view('Template::user.payment.crypto_pending', compact('deposit', 'pageTitle'));
     }
@@ -351,6 +339,32 @@ class PaymentController extends Controller {
                 );
             } catch (\Throwable $exception) {
                 \Illuminate\Support\Facades\Log::warning('Admin dispute email notification failed.', ['deposit_id' => $deposit->id, 'error' => $exception->getMessage()]);
+            }
+        }
+
+        if ($deposit->support_agent_id) {
+            $agent = \App\Models\SupportAgent::find($deposit->support_agent_id);
+            if ($agent) {
+                \App\Models\AgentNotification::create([
+                    'recipient_type' => 'agent',
+                    'recipient_id'   => $agent->id,
+                    'deposit_id'     => $deposit->id,
+                    'title'          => 'Deposit disputed - needs review',
+                    'body'           => $deposit->user?->username . ' · ' . showAmount($deposit->amount, currencyFormat: false) . ' ' . $deposit->method_currency,
+                    'click_url'      => route('support-agent.payments.show', $deposit->id),
+                ]);
+                if ($agent->email) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::raw(
+                            "A deposit dispute was raised by {$deposit->user?->username} on trx {$deposit->trx}.\n\nReason: " . ($request->reason ?: 'No reason given') . "\n\nReview it in your Winxpot Care payments queue.",
+                            function ($mail) use ($agent) {
+                                $mail->to($agent->email)->subject('Deposit disputed - needs review');
+                            }
+                        );
+                    } catch (\Throwable $exception) {
+                        \Illuminate\Support\Facades\Log::warning('Agent dispute email notification failed.', ['deposit_id' => $deposit->id, 'error' => $exception->getMessage()]);
+                    }
+                }
             }
         }
 
@@ -401,6 +415,8 @@ class PaymentController extends Controller {
             return to_route('user.deposit.history')->withNotify($notify);
         }
 
+        $this->notifySubmission($pendingDeposit, $gatewayCurrency->support_agent_id, 'Deposit');
+
         notify($pendingDeposit->user, 'DEPOSIT_REQUEST', [
             'method_name'     => $pendingDeposit->gatewayCurrency()->name,
             'method_currency' => $pendingDeposit->method_currency,
@@ -412,7 +428,57 @@ class PaymentController extends Controller {
         ]);
 
         $notify[] = ['success', 'You have deposit request has been taken'];
+        if ($gatewayCurrency->support_agent_id) {
+            return to_route('user.deposit.confirmation.pending');
+        }
         return to_route('user.deposit.history')->withNotify($notify);
+    }
+
+    private function notifySubmission($deposit, $supportAgentId = null, $label = 'Deposit') {
+        $adminEmails = \App\Models\Admin::pluck('email')->filter()->all();
+        if ($adminEmails) {
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "A {$label} from {$deposit->user->username} is awaiting confirmation.\n\nAmount: " . showAmount($deposit->amount, currencyFormat: false) . " {$deposit->method_currency}\nTrx: {$deposit->trx}\n\nReview it in the admin panel.",
+                    function ($mail) use ($adminEmails, $label) {
+                        $mail->to($adminEmails)->subject("{$label} awaiting confirmation");
+                    }
+                );
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Admin deposit email notification failed.', ['deposit_id' => $deposit->id, 'error' => $exception->getMessage()]);
+            }
+        }
+
+        if (!$supportAgentId) {
+            return;
+        }
+
+        $agent = \App\Models\SupportAgent::find($supportAgentId);
+        if (!$agent) {
+            return;
+        }
+
+        \App\Models\AgentNotification::create([
+            'recipient_type' => 'agent',
+            'recipient_id'   => $agent->id,
+            'deposit_id'     => $deposit->id,
+            'title'          => 'New deposit awaiting your confirmation',
+            'body'           => $deposit->user->username . ' · ' . showAmount($deposit->amount, currencyFormat: false) . ' ' . $deposit->method_currency,
+            'click_url'      => route('support-agent.payments.show', $deposit->id),
+        ]);
+
+        if ($agent->email) {
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "A new deposit from {$deposit->user->username} is waiting for your confirmation.\n\nAmount: " . showAmount($deposit->amount, currencyFormat: false) . " {$deposit->method_currency}\nTrx: {$deposit->trx}\n\nReview it in your Winxpot Care payments queue.",
+                    function ($mail) use ($agent) {
+                        $mail->to($agent->email)->subject('New deposit awaiting your confirmation');
+                    }
+                );
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Agent deposit email notification failed.', ['deposit_id' => $deposit->id, 'agent_id' => $agent->id, 'error' => $exception->getMessage()]);
+            }
+        }
     }
 
 }

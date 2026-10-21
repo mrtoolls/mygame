@@ -9,6 +9,7 @@ Route::get('/clear', function () {
 Route::get('cron', 'CronController@cron')->name('cron');
 
 Route::get('stats/live', 'StatsController@live')->name('stats.live')->middleware('throttle:30,1');
+Route::get('winxpay', 'WinxPayController@index')->name('winxpay');
 
 Route::prefix('support-chat')->name('support-chat.')->controller('SupportChatController')->group(function () {
     Route::get('active', 'active')->name('active')->middleware('throttle:30,1');
@@ -37,6 +38,7 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::post('{id}/reject', 'paymentReject')->name('reject')->whereNumber('id');
             Route::get('settings/accepted-types', 'paymentSettings')->name('settings');
             Route::post('settings/accepted-types', 'paymentSettingsUpdate')->name('settings.update');
+            Route::post('notifications/read', 'paymentNotificationsRead')->name('notifications.read');
         });
     });
 });
