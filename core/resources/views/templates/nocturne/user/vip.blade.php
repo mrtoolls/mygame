@@ -71,23 +71,27 @@
                 <div class="nocturne-vip-tier-rail" tabindex="0" aria-label="@lang('VIP tiers')">
                     @foreach($tiers as $index => $tier)
                         @php $isCurrent = $currentTier?->id === $tier->id; @endphp
-                        <article class="nocturne-vip-level-card {{ $isCurrent ? 'is-current' : '' }} {{ $nextTier?->id === $tier->id ? 'is-next' : '' }}">
-                            <div class="nocturne-vip-level-card__top"><span class="nocturne-vip-level-card__badge">@if($tier->badgeImageUrl())<img src="{{ $tier->badgeImageUrl() }}" alt="">@else<i class="ph-fill {{ $isCurrent ? 'ph-crown-simple' : 'ph-medal' }}"></i>@endif</span><span class="nocturne-vip-level-card__rank">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span></div>
-                            <h3>{{ __($tier->name) }}</h3>
-                            <span class="nocturne-vip-level-card__threshold">{{ showAmount($tier->min_wagered) }} <small>@lang('XP threshold')</small></span>
-                            <ul>
-                                @if($tier->bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->bonus_amount) }} @lang('level-up bonus')</span></li>@endif
-                                <li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('rakeback (claim anytime)')</span></li>
-                                @if($tier->daily_reward_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->daily_reward_amount) }} @lang('daily free reward')</span></li>@endif
-                                @if($tier->birthday_bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->birthday_bonus_amount) }} @lang('birthday bonus')</span></li>@endif
-                                @if($tier->withdrawal_processing_hours > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Withdrawals up to') {{ $tier->withdrawal_processing_hours }}h</span></li>@endif
-                                @if($tier->monthly_withdrawal_limit > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->monthly_withdrawal_limit) }} @lang('monthly withdrawal limit')</span></li>@endif
-                                @if($tier->max_bet > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Max bet') {{ formatUsdInWalletCurrency($tier->max_bet) }}</span></li>@endif
-                                @if($tier->referral_bonus_boost_percent > 0)<li><i class="ph-fill ph-check-circle"></i><span>+{{ showAmount($tier->referral_bonus_boost_percent, currencyFormat: false) }}% @lang('referral bonus boost')</span></li>@endif
-                                @if($tier->support_level)<li><i class="ph-fill ph-check-circle"></i><span>{{ __($tier->support_level) }} @lang('support')</span></li>@endif
-                                <li><i class="ph-fill ph-check-circle"></i><span>{{ $tier->exclusive_promotions ? __($tier->exclusive_promotions) . ' ' . __('exclusive promotions') : ($index === count($tiers) - 1 ? __('Exclusive VIP benefits') : __('Member promotions')) }}</span></li>
-                            </ul>
-                            @if($isCurrent)<span class="nocturne-vip-level-card__state"><i class="ph-bold ph-check"></i>@lang('Your current tier')</span>@elseif($nextTier?->id === $tier->id)<span class="nocturne-vip-level-card__state">{{ showAmount(max($tier->min_wagered - $wagered, 0)) }} @lang('to unlock')</span>@endif
+                        <article class="nocturne-vip-slide {{ $isCurrent ? 'is-current' : '' }} {{ $nextTier?->id === $tier->id ? 'is-next' : '' }}">
+                            <div class="nocturne-vip-slide__badgewrap">
+                                <span class="nocturne-vip-slide__badge">@if($tier->badgeImageUrl())<img src="{{ $tier->badgeImageUrl() }}" alt="">@else<i class="ph-fill {{ $isCurrent ? 'ph-crown-simple' : 'ph-medal' }}"></i>@endif</span>
+                                <h3 class="nocturne-vip-slide__name">{{ __($tier->name) }}</h3>
+                            </div>
+                            <div class="nocturne-vip-level-card">
+                                <span class="nocturne-vip-level-card__threshold">{{ showAmount($tier->min_wagered) }} <small>@lang('XP threshold')</small></span>
+                                <ul>
+                                    @if($tier->bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->bonus_amount) }} @lang('level-up bonus')</span></li>@endif
+                                    <li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('rakeback (claim anytime)')</span></li>
+                                    @if($tier->daily_reward_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->daily_reward_amount) }} @lang('daily free reward')</span></li>@endif
+                                    @if($tier->birthday_bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->birthday_bonus_amount) }} @lang('birthday bonus')</span></li>@endif
+                                    @if($tier->withdrawal_processing_hours > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Withdrawals up to') {{ $tier->withdrawal_processing_hours }}h</span></li>@endif
+                                    @if($tier->monthly_withdrawal_limit > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->monthly_withdrawal_limit) }} @lang('monthly withdrawal limit')</span></li>@endif
+                                    @if($tier->max_bet > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Max bet') {{ formatUsdInWalletCurrency($tier->max_bet) }}</span></li>@endif
+                                    @if($tier->referral_bonus_boost_percent > 0)<li><i class="ph-fill ph-check-circle"></i><span>+{{ showAmount($tier->referral_bonus_boost_percent, currencyFormat: false) }}% @lang('referral bonus boost')</span></li>@endif
+                                    @if($tier->support_level)<li><i class="ph-fill ph-check-circle"></i><span>{{ __($tier->support_level) }} @lang('support')</span></li>@endif
+                                    <li><i class="ph-fill ph-check-circle"></i><span>{{ $tier->exclusive_promotions ? __($tier->exclusive_promotions) . ' ' . __('exclusive promotions') : ($index === count($tiers) - 1 ? __('Exclusive VIP benefits') : __('Member promotions')) }}</span></li>
+                                </ul>
+                                @if($isCurrent)<span class="nocturne-vip-level-card__state"><i class="ph-bold ph-check"></i>@lang('Your current tier')</span>@elseif($nextTier?->id === $tier->id)<span class="nocturne-vip-level-card__state">{{ showAmount(max($tier->min_wagered - $wagered, 0)) }} @lang('to unlock')</span>@endif
+                            </div>
                         </article>
                     @endforeach
                 </div>
@@ -122,3 +126,25 @@
     </div>
 </div>
 @endsection
+
+@push('style')
+<style>
+/* VIP tier rail: badge+name float above a connecting line, card panel below.
+   True N-per-view slider sizing (not "all 5 squeezed to fit"). */
+.nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 26px) / 3) !important; }
+.nocturne-vip-slide { display: flex; flex-direction: column; align-items: center; min-width: 0; scroll-snap-align: start; }
+.nocturne-vip-slide__badgewrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 6px 0 18px; }
+.nocturne-vip-slide__badgewrap::before { content: ""; position: absolute; top: 23px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--nocturne-line) 15%, var(--nocturne-line) 85%, transparent); z-index: 0; }
+.nocturne-vip-slide__badge { position: relative; z-index: 1; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(0,239,135,.35), var(--nocturne-raised) 70%); border: 2px solid rgba(0,239,135,.5); color: var(--nocturne-green); font-size: 21px; box-shadow: 0 8px 18px rgba(0,0,0,.35); overflow: hidden; }
+.nocturne-vip-slide__badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.nocturne-vip-slide.is-current .nocturne-vip-slide__badge { border-color: var(--nocturne-green); box-shadow: 0 0 0 1px rgba(0,239,135,.4), 0 8px 18px rgba(0,239,135,.25); }
+.nocturne-vip-slide__name { position: relative; z-index: 1; margin: 0; color: var(--nocturne-text); font-size: 15px; font-weight: 900; background: var(--nocturne-bg); padding: 0 8px; }
+.nocturne-vip-slide .nocturne-vip-level-card { width: 100%; }
+
+@media(max-width: 767px) {
+    .nocturne-vip-tier-rail { grid-auto-columns: calc((100% - 10px) / 2) !important; }
+    .nocturne-vip-slide__badge { width: 38px; height: 38px; font-size: 18px; }
+    .nocturne-vip-slide__name { font-size: 12.5px; }
+}
+</style>
+@endpush
