@@ -81,10 +81,13 @@ Route::controller('SiteController')->group(function () {
     Route::get('policy/{slug}', 'policyPages')->name('policy.pages');
     Route::get('placeholder-image/{size}', 'placeholderImage')->withoutMiddleware('maintenance')->name('placeholder.image');
     Route::get('maintenance-mode', 'maintenance')->withoutMiddleware('maintenance')->name('maintenance');
+
+    // Arena (social feed) - must be registered before the /{slug} catch-all
+    // below, otherwise "arena" gets swallowed as a CMS page-slug lookup and
+    // 404s. Write actions live under the authenticated user.arena.* routes
+    // in routes/user.php.
+    Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');
+
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');
 });
-
-// Arena (social feed) - readable by guests, write actions live under the
-// authenticated user.arena.* routes in routes/user.php.
-Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');
