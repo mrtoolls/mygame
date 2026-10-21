@@ -77,6 +77,64 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label>@lang('Daily Free Reward')</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" class="form-control" name="daily_reward_amount" value="{{ old('daily_reward_amount', $tier->daily_reward_amount) }}">
+                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Birthday Bonus')</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" class="form-control" name="birthday_bonus_amount" value="{{ old('birthday_bonus_amount', $tier->birthday_bonus_amount) }}">
+                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Withdrawal Processing (optional)')</label>
+                                    <div class="input-group">
+                                        <input type="number" step="1" min="0" class="form-control" name="withdrawal_processing_hours" value="{{ old('withdrawal_processing_hours', $tier->withdrawal_processing_hours) }}" placeholder="24">
+                                        <div class="input-group-text">@lang('hours')</div>
+                                    </div>
+                                    <small class="text-muted">@lang('Shown as "Up to X h" on the VIP page')</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Monthly Withdrawal Limit (optional)')</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" class="form-control" name="monthly_withdrawal_limit" value="{{ old('monthly_withdrawal_limit', $tier->monthly_withdrawal_limit) }}">
+                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Support Level (optional)')</label>
+                                    <input type="text" class="form-control" name="support_level" value="{{ old('support_level', $tier->support_level) }}" placeholder="@lang('e.g. Standard, Priority, Dedicated manager')">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Exclusive Promotions (optional)')</label>
+                                    <input type="text" class="form-control" name="exclusive_promotions" value="{{ old('exclusive_promotions', $tier->exclusive_promotions) }}" placeholder="@lang('e.g. Monthly, Weekly, Personalized')">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Referral Bonus Boost')</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" max="100" class="form-control" name="referral_bonus_boost_percent" value="{{ old('referral_bonus_boost_percent', $tier->referral_bonus_boost_percent) }}">
+                                        <div class="input-group-text">%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label>@lang('Sort Order')</label>
                                     <input type="number" class="form-control" name="sort_order" value="{{ old('sort_order', $tier->sort_order) }}">
                                     <small class="text-muted">@lang('Lowest shows first (e.g. Bronze = 0, Gold = 4)')</small>

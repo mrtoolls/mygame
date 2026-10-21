@@ -150,6 +150,35 @@ function formatCurrencyAmount($amount, $currency = null, bool $amountIsMinor = f
     return $includeCode ? $formatted . ' ' . $currency->code : $formatted;
 }
 
+/**
+ * Converts a USD-denominated amount (how VIP tier rewards are configured, same convention
+ * as gift prices in GiftService::quoteInWalletCurrency()) into the given/authenticated
+ * user's wallet currency using Currency::rate_to_usd, then formats it with that currency's
+ * symbol. Falls back to the site's global currency display when no enabled, rate-current
+ * wallet currency is available (guest viewers, currencies pending their daily rate refresh).
+ */
+function formatUsdInWalletCurrency($usdAmount, $currency = null, bool $includeCode = false): string {
+    if (!$currency && auth()->check()) {
+        $currency = auth()->user()->currency;
+    }
+    if (is_string($currency)) {
+        $currency = \App\Models\Currency::where('code', strtoupper($currency))->first();
+    }
+    if (!$currency instanceof \App\Models\Currency || !$currency->enabled || !$currency->rate_to_usd) {
+        return showAmount($usdAmount);
+    }
+
+    $decimals     = min(8, max(0, (int) $currency->decimals));
+    $precision    = max(12, $decimals + 2);
+    $walletAmount = bcdiv((string) $usdAmount, (string) $currency->rate_to_usd, $precision);
+    $halfUnit     = '0.' . str_repeat('0', $decimals) . '5';
+    $rounded      = bcadd($walletAmount, $halfUnit, max(12, $decimals + 1));
+    $rounded      = bcadd($rounded, '0', $decimals);
+    $minor        = app(\App\Support\Money::class)->toMinor($rounded, $decimals);
+    $formatted    = $currency->formatMinor($minor, false);
+    return $includeCode ? $formatted . ' ' . $currency->code : $formatted;
+}
+
 function removeElement($array, $value) {
     return array_diff($array, (is_array($value) ? $value : array($value)));
 }

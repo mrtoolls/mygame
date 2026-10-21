@@ -48,7 +48,7 @@
                     <article class="nocturne-vip-tier-stop {{ $nextTier ? 'is-next' : 'is-next is-max' }}">
                         <span class="nocturne-vip-tier-stop__icon">@if($nextTier?->badgeImageUrl())<img src="{{ $nextTier->badgeImageUrl() }}" alt="">@else<i class="ph-fill {{ $nextTier ? 'ph-lock-key' : 'ph-trophy' }}"></i>@endif</span>
                         <div><small>{{ $nextTier ? __('NEXT MILESTONE') : __('TOP TIER REACHED') }}</small><strong>{{ __($nextTier?->name ?? $currentTier?->name ?? 'VIP') }}</strong><span>{{ $nextTier ? showAmount(max($nextTier->min_wagered - $wagered, 0)) . ' ' . __('to unlock') : __('You have reached the highest tier') }}</span></div>
-                        @if($nextTier && $nextTier->bonus_amount > 0)<b>{{ showAmount($nextTier->bonus_amount) }} @lang('BONUS')</b>@endif
+                        @if($nextTier && $nextTier->bonus_amount > 0)<b>{{ formatUsdInWalletCurrency($nextTier->bonus_amount) }} @lang('BONUS')</b>@endif
                     </article>
                 </div>
                 <div class="nocturne-vip-progress-track"><span style="width: {{ $progressPercent }}%"></span></div>
@@ -76,10 +76,16 @@
                             <h3>{{ __($tier->name) }}</h3>
                             <span class="nocturne-vip-level-card__threshold">{{ showAmount($tier->min_wagered) }} <small>@lang('XP threshold')</small></span>
                             <ul>
-                                @if($tier->bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->bonus_amount) }} @lang('tier bonus')</span></li>@endif
-                                <li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('daily rakeback')</span></li>
-                                @if($tier->max_bet > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Max bet') {{ showAmount($tier->max_bet) }}</span></li>@endif
-                                <li><i class="ph-fill ph-check-circle"></i><span>{{ $index === count($tiers) - 1 ? __('Exclusive VIP benefits') : __('Member promotions') }}</span></li>
+                                @if($tier->bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->bonus_amount) }} @lang('level-up bonus')</span></li>@endif
+                                <li><i class="ph-fill ph-check-circle"></i><span>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}% @lang('rakeback (claim anytime)')</span></li>
+                                @if($tier->daily_reward_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->daily_reward_amount) }} @lang('daily free reward')</span></li>@endif
+                                @if($tier->birthday_bonus_amount > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->birthday_bonus_amount) }} @lang('birthday bonus')</span></li>@endif
+                                @if($tier->withdrawal_processing_hours > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Withdrawals up to') {{ $tier->withdrawal_processing_hours }}h</span></li>@endif
+                                @if($tier->monthly_withdrawal_limit > 0)<li><i class="ph-fill ph-check-circle"></i><span>{{ formatUsdInWalletCurrency($tier->monthly_withdrawal_limit) }} @lang('monthly withdrawal limit')</span></li>@endif
+                                @if($tier->max_bet > 0)<li><i class="ph-fill ph-check-circle"></i><span>@lang('Max bet') {{ formatUsdInWalletCurrency($tier->max_bet) }}</span></li>@endif
+                                @if($tier->referral_bonus_boost_percent > 0)<li><i class="ph-fill ph-check-circle"></i><span>+{{ showAmount($tier->referral_bonus_boost_percent, currencyFormat: false) }}% @lang('referral bonus boost')</span></li>@endif
+                                @if($tier->support_level)<li><i class="ph-fill ph-check-circle"></i><span>{{ __($tier->support_level) }} @lang('support')</span></li>@endif
+                                <li><i class="ph-fill ph-check-circle"></i><span>{{ $tier->exclusive_promotions ? __($tier->exclusive_promotions) . ' ' . __('exclusive promotions') : ($index === count($tiers) - 1 ? __('Exclusive VIP benefits') : __('Member promotions')) }}</span></li>
                             </ul>
                             @if($isCurrent)<span class="nocturne-vip-level-card__state"><i class="ph-bold ph-check"></i>@lang('Your current tier')</span>@elseif($nextTier?->id === $tier->id)<span class="nocturne-vip-level-card__state">{{ showAmount(max($tier->min_wagered - $wagered, 0)) }} @lang('to unlock')</span>@endif
                         </article>
