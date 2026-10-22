@@ -1349,13 +1349,19 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-business-spotlight-card .nocturne-promo-card__body > p strong { color: var(--nocturne-text); }
 .nocturne-business-spotlight-link { display: inline-flex; align-items: center; gap: 6px; color: var(--nocturne-green); font-size: 13px; font-weight: 800; }
 .nocturne-business-promo-page { align-items: flex-start; }
-.nocturne-business-promo-hero { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 220px; margin-bottom: 24px; padding: clamp(24px, 4vw, 42px); overflow: hidden; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 88% 55%, rgba(0,231,143,.22), transparent 38%), linear-gradient(115deg,#171d36,#1b2545); }
+.nocturne-business-promo-hero { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 180px; margin-bottom: 22px; padding: clamp(20px, 3vw, 32px); overflow: hidden; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 88% 55%, rgba(0,231,143,.22), transparent 38%), linear-gradient(115deg,#171d36,#1b2545); }
 .nocturne-business-promo-hero > div { position: relative; z-index: 1; max-width: 620px; }
-.nocturne-business-promo-hero h1 { margin: 11px 0 8px; color: var(--nocturne-text); font-size: clamp(26px,3vw,38px); font-weight: 850; line-height: 1.15; }
-.nocturne-business-promo-hero p { margin: 0; color: var(--nocturne-muted); line-height: 1.65; }
-.nocturne-business-promo-hero__art { position: relative; display: grid; width: 150px; height: 150px; flex: 0 0 150px; place-items: center; border-radius: 38px; background: rgba(0,231,143,.1); color: var(--nocturne-green); transform: rotate(-7deg); }
-.nocturne-business-promo-hero__art .ph-storefront { font-size: 76px; }
-.nocturne-business-promo-hero__art .ph-sparkle { position: absolute; top: 5px; right: 3px; font-size: 30px; }
+.nocturne-business-promo-hero h1 { margin: 9px 0 7px; color: var(--nocturne-text); font-size: clamp(21px,2.3vw,28px); font-weight: 850; line-height: 1.2; }
+.nocturne-business-promo-hero p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
+.nocturne-business-promo-hero__art { position: relative; display: grid; width: 110px; height: 110px; flex: 0 0 110px; place-items: center; border-radius: 30px; background: rgba(0,231,143,.1); color: var(--nocturne-green); transform: rotate(-7deg); }
+.nocturne-business-promo-hero__art .ph-storefront,.nocturne-business-promo-hero__art .ph-handshake { font-size: 54px; }
+.nocturne-business-promo-hero__art .ph-sparkle { position: absolute; top: 5px; right: 3px; font-size: 22px; }
+/* This page's sections share .nocturne-vip-section-head/.nocturne-vip-kicker with VIP, where
+   the larger scale fits a full hero page - scoped down here so headings don't compete with
+   each other inside these more compact, card-based sections. */
+.nocturne-business-promo-page .nocturne-vip-section-head h2 { font-size: clamp(16px,1.8vw,20px); }
+.nocturne-business-promo-page .nocturne-vip-section-head p { font-size: 12px; }
+.nocturne-business-promo-side article > i { font-size: 22px; }
 .nocturne-business-promo-layout { display: grid; grid-template-columns: minmax(0,1fr) 270px; gap: 20px; align-items: start; }
 .nocturne-business-promo-form-card,.nocturne-business-promo-history,.nocturne-business-promo-side article { padding: clamp(18px,2.5vw,28px); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: var(--nocturne-panel); }
 .nocturne-business-promo-form-card .nocturne-vip-section-head,.nocturne-business-promo-history .nocturne-vip-section-head { margin-bottom: 20px; }
