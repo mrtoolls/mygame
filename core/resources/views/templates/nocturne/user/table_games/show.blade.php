@@ -1223,29 +1223,61 @@ for(let i=0;i<24;i++){const bar=document.createElement('span');bar.style.height=
 function tickRecordTimer(){const elapsed=Math.floor((Date.now()-recordStart)/1000);recordTime.textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');}
 function animateMeter(){if(!recordAnalyser)return;const data=new Uint8Array(recordAnalyser.frequencyBinCount);recordAnalyser.getByteFrequencyData(data);const bars=recordMeter.children;for(let i=0;i<bars.length;i++){const v=data[Math.floor(i*data.length/bars.length)]||0;bars[i].style.height=Math.max(10,(v/255)*100)+'%';}recordRaf=requestAnimationFrame(animateMeter);}
 let recordStream=null;
-async function startRecording(){if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){error.textContent='Voice recording is not supported by this browser.';return;}
+let recordAudioContext=null,recordAudioSource=null,recordingStarting=false,sendRecordingOnStop=false;
+const voiceButton=document.querySelector('#chat-voice');
+function cleanupRecording(){
+    if(recordStream){recordStream.getTracks().forEach(track=>track.stop());recordStream=null;}
+    if(recordAudioSource){try{recordAudioSource.disconnect();}catch(e){}recordAudioSource=null;}
+    if(recordAudioContext){const ctx=recordAudioContext;recordAudioContext=null;ctx.close?.().catch(()=>{});}
+    if(recordRaf)cancelAnimationFrame(recordRaf);recordRaf=null;
+    clearInterval(recordTimer);recordTimer=null;recordAnalyser=null;recordBar.hidden=true;
+    voiceButton?.classList.remove('is-recording');if(voiceButton)voiceButton.disabled=false;
+}
+function recordingError(e){
+    if(e?.name==='NotAllowedError'||e?.name==='PermissionDeniedError')return 'Allow microphone access in your browser settings to record a voice note.';
+    if(e?.name==='NotFoundError'||e?.name==='DevicesNotFoundError')return 'No microphone was found on this device.';
+    if(e?.name==='NotReadableError'||e?.name==='TrackStartError')return 'The microphone is busy or unavailable. Close other apps using it and try again.';
+    if(!window.isSecureContext)return 'Microphone recording requires a secure HTTPS connection.';
+    return 'The microphone could not start. Check browser permissions and try again.';
+}
+async function startRecording(){
+    if(recordingStarting||recorder?.state==='recording')return;
+    if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){error.textContent='Voice recording is not supported by this browser.';return;}
+    recordingStarting=true;if(voiceButton)voiceButton.disabled=true;error.textContent='';
     try{
-        recordStream=await navigator.mediaDevices.getUserMedia({audio:true});
-        window.TableSound?.unlock?.();
-        chunks=[];recorder=new MediaRecorder(recordStream);
-        recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};
-        recorder.onstop=()=>{recordStream.getTracks().forEach(track=>track.stop());cancelAnimationFrame(recordRaf);clearInterval(recordTimer);recordBar.hidden=true;recordAnalyser=null;};
-        recorder.start();
-        const AudioCtx=window.AudioContext||window.webkitAudioContext;
-        if(AudioCtx){const ctx=new AudioCtx();const source=ctx.createMediaStreamSource(recordStream);recordAnalyser=ctx.createAnalyser();recordAnalyser.fftSize=64;source.connect(recordAnalyser);animateMeter();}
-        recordStart=Date.now();recordTime.textContent='0:00';recordTimer=setInterval(tickRecordTimer,1000);recordBar.hidden=false;
-    }catch(e){error.textContent='Allow microphone access to record a voice note.';}
-}
-function finishRecording(shouldSend){if(recorder?.state!=='recording'){return;}
-    const onstopOriginal=recorder.onstop;
-    recorder.onstop=()=>{onstopOriginal();
-        if(shouldSend){const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(blob.size>10*1024*1024){error.textContent='Voice notes must be under 10 MB.';return;}
-            const mime=blob.type.split(';')[0],extension=mime==='audio/webm'?'webm':mime==='audio/mp4'?'m4a':(mime.split('/')[1]||'ogg');
+        recordStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+        window.TableSound?.unlock?.();chunks=[];sendRecordingOnStop=false;
+        const mimeChoices=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'];
+        const mimeType=mimeChoices.find(type=>MediaRecorder.isTypeSupported?.(type));
+        recorder=new MediaRecorder(recordStream,mimeType?{mimeType,audioBitsPerSecond:64000}:undefined);
+        const activeRecorder=recorder;
+        activeRecorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data);};
+        activeRecorder.onerror=event=>{error.textContent=recordingError(event.error);sendRecordingOnStop=false;try{if(activeRecorder.state==='recording')activeRecorder.stop();}catch(e){cleanupRecording();recorder=null;}};
+        activeRecorder.onstop=()=>{
+            const blobType=activeRecorder.mimeType||chunks.find(chunk=>chunk.type)?.type||'audio/webm';
+            const blob=new Blob(chunks,{type:blobType});const shouldSend=sendRecordingOnStop;
+            cleanupRecording();recorder=null;chunks=[];sendRecordingOnStop=false;
+            if(!shouldSend)return;
+            if(!blob.size){error.textContent='No audio was captured. Check microphone access and try again.';return;}
+            if(blob.size>10*1024*1024){error.textContent='Voice notes must be under 10 MB.';return;}
+            const mime=blob.type.split(';')[0].toLowerCase();
+            const extensions={'audio/webm':'webm','video/webm':'webm','audio/mp4':'m4a','audio/ogg':'ogg','audio/wav':'wav','audio/mpeg':'mp3','audio/3gpp':'3gp'};
+            const extension=extensions[mime]||(mime.split('/')[1]||'ogg').replace(/[^a-z0-9]/g,'');
             const data=new FormData();data.append('attachment',blob,`voice-note.${extension}`);data.append('kind','voice');send(data);
-        }
-    };
-    recorder.stop();
+        };
+        activeRecorder.start(250);
+        if(voiceButton)voiceButton.classList.add('is-recording');
+        // Waveform visualization is optional: an AudioContext failure must never
+        // interrupt an already-running recorder or leave the microphone open.
+        try{
+            const AudioCtx=window.AudioContext||window.webkitAudioContext;
+            if(AudioCtx){recordAudioContext=new AudioCtx();recordAudioSource=recordAudioContext.createMediaStreamSource(recordStream);recordAnalyser=recordAudioContext.createAnalyser();recordAnalyser.fftSize=64;recordAudioSource.connect(recordAnalyser);animateMeter();}
+        }catch(e){recordAnalyser=null;}
+        recordStart=Date.now();recordTime.textContent='0:00';recordTimer=setInterval(tickRecordTimer,1000);recordBar.hidden=false;
+    }catch(e){cleanupRecording();recorder=null;chunks=[];error.textContent=recordingError(e);}
+    finally{recordingStarting=false;if(recorder?.state!=='recording'&&voiceButton)voiceButton.disabled=false;}
 }
+function finishRecording(shouldSend){if(recorder?.state!=='recording')return;sendRecordingOnStop=shouldSend;recorder.stop();}
 document.querySelector('#chat-voice')?.addEventListener('click',startRecording);
 document.querySelector('#chat-record-stop')?.addEventListener('click',()=>finishRecording(true));
 document.querySelector('#chat-record-cancel')?.addEventListener('click',()=>finishRecording(false));

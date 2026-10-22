@@ -507,6 +507,16 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-mobile-nav a:hover, .nocturne-mobile-nav button:hover { color: var(--nocturne-green); }
 }
 
+/* The live lobby contains cards with nested grids and long currency strings.
+   Keep those intrinsic widths inside the mobile viewport so the whole page
+   cannot pan into a blank strip beside the content. */
+@media (max-width: 850px) {
+    .nocturne-live-games-page { min-width: 0; max-width: 100%; overflow-x: clip; }
+    .nocturne-live-games-page .nocturne-content,
+    .nocturne-live-games-page .nocturne-content > section,
+    .nocturne-live-games-page .nocturne-content .container { min-width: 0; max-width: 100%; }
+}
+
 /* ---- Unified support tickets and live-chat history ---- */
 .nocturne-support-page { min-width: 0; }
 .nocturne-support-heading,.nocturne-support-thread-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin:0 0 22px; }

@@ -152,7 +152,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('{id}', 'show')->whereUuid('id')->name('show');
                 Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');
                   Route::get('{id}/chat', 'messages')->whereUuid('id')->middleware('throttle:120,1')->name('chat');
-                  Route::post('{id}/chat', 'sendMessage')->whereUuid('id')->middleware('throttle:20,1')->name('chat.send');
+                  Route::post('{id}/chat', 'sendMessage')->whereUuid('id')->middleware('throttle:60,1')->name('chat.send');
                   Route::post('{id}/chat/{message}/reaction', 'react')->whereUuid('id')->whereNumber('message')->middleware('throttle:60,1')->name('chat.react');
                   Route::post('{id}/applaud', 'applaud')->whereUuid('id')->middleware('throttle:30,1')->name('chat.applaud');
                   Route::get('{id}/chat/{message}/attachment', 'attachment')->whereUuid('id')->whereNumber('message')->name('chat.attachment');
