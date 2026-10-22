@@ -144,6 +144,7 @@ Route::middleware('admin')->group(function () {
     // Competitions
     Route::controller('CompetitionController')->name('competitions.')->prefix('competitions')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::post('seed-launch', 'seedLaunch')->name('seed-launch');
         Route::get('create', 'create')->name('create');
         Route::post('create', 'store')->name('store');
         Route::get('edit/{id}', 'edit')->name('edit');

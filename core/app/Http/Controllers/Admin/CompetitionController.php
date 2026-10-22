@@ -11,6 +11,7 @@ use App\Models\CompetitionResult;
 use App\Models\Currency;
 use App\Services\CompetitionService;
 use Illuminate\Http\Request;
+use App\Services\CompetitionLaunchSeeder;
 use Illuminate\Support\Str;
 
 class CompetitionController extends Controller
@@ -19,7 +20,23 @@ class CompetitionController extends Controller
     {
         $pageTitle = 'Competitions';
         $competitions = Competition::orderByDesc('id')->paginate(getPaginate());
-        return view('admin.competitions.index', compact('pageTitle', 'competitions'));
+        $launchSeedComplete = (new CompetitionLaunchSeeder())->allSlugsExist();
+        return view('admin.competitions.index', compact('pageTitle', 'competitions', 'launchSeedComplete'));
+    }
+
+    public function seedLaunch(CompetitionLaunchSeeder $seeder)
+    {
+        $result = $seeder->seed(auth('admin')->id());
+
+        if (!$result['created'] && !$result['skipped']) {
+            $notify[] = ['error', 'Nothing to create - chess may not be available as a table game.'];
+            return back()->withNotify($notify);
+        }
+
+        $message = $result['created'] ? ('Created: ' . implode(', ', $result['created']) . '.') : 'Nothing new to create.';
+        if ($result['skipped']) $message .= ' Already existed (skipped): ' . implode(', ', $result['skipped']) . '.';
+        $notify[] = [$result['created'] ? 'success' : 'info', $message];
+        return back()->withNotify($notify);
     }
 
     public function create()

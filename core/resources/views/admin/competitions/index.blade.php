@@ -10,6 +10,21 @@
             'lucky_draw' => 'Lucky Draw', 'table_league' => 'Table League',
         ];
     @endphp
+    @if (!$launchSeedComplete)
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card mb-3">
+                    <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h6 class="mb-1">@lang('Launch competitions')</h6>
+                            <p class="text-muted mb-0">@lang('Create the five November 2026 launch competitions (scheduled, with prizes). Safe to click more than once - it skips any that already exist and never changes existing ones.')</p>
+                        </div>
+                        <button class="btn btn-outline--success confirmationBtn" data-question="@lang('Create the launch competitions that do not exist yet?')" data-action="{{ route('admin.competitions.seed-launch') }}"><i class="las la-rocket"></i>@lang('Create launch competitions')</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
