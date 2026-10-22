@@ -148,6 +148,7 @@ Route::middleware('auth')->name('user.')->group(function () {
             Route::controller('TableGameController')->prefix('tables')->name('tables.')->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'create')->name('create');
+                Route::get('leaderboard', 'leaderboard')->middleware('throttle:60,1')->name('leaderboard');
                 Route::get('{id}', 'show')->whereUuid('id')->name('show');
                 Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');
                   Route::get('{id}/chat', 'messages')->whereUuid('id')->middleware('throttle:120,1')->name('chat');

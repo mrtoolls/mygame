@@ -611,6 +611,61 @@ class TableGameService
         })->all();
     }
 
+    /**
+     * Ranked by win COUNT, not amount won - settlement_amount is stored per player in that
+     * player's own wallet currency (see settle() below), so summing it across different users
+     * would silently mix currencies. Win count is the only currency-safe ranking available
+     * without a proper multi-currency conversion layer.
+     */
+    public function hallOfFame(string $gameType, int $limit = 10): array
+    {
+        $rows = TableGamePlayer::query()
+            ->join('table_games', 'table_games.id', '=', 'table_game_players.table_game_id')
+            ->where('table_games.game_type', $gameType)
+            ->selectRaw('table_game_players.user_id,
+                SUM(CASE WHEN table_game_players.settlement_type = ? THEN 1 ELSE 0 END) as wins,
+                COUNT(*) as games', ['payout'])
+            ->groupBy('table_game_players.user_id')
+            ->havingRaw('wins > 0')
+            ->orderByDesc('wins')
+            ->limit($limit)
+            ->get();
+
+        return $this->attachLeaderboardNames($rows);
+    }
+
+    public function weeklyTopWinners(string $gameType, int $limit = 10): array
+    {
+        $rows = TableGamePlayer::query()
+            ->join('table_games', 'table_games.id', '=', 'table_game_players.table_game_id')
+            ->where('table_games.game_type', $gameType)
+            ->where('table_game_players.settlement_type', 'payout')
+            ->where('table_games.finished_at', '>=', now()->startOfWeek())
+            ->selectRaw('table_game_players.user_id, COUNT(*) as wins')
+            ->groupBy('table_game_players.user_id')
+            ->orderByDesc('wins')
+            ->limit($limit)
+            ->get();
+
+        return $this->attachLeaderboardNames($rows);
+    }
+
+    private function attachLeaderboardNames($rows): array
+    {
+        $users = User::whereIn('id', $rows->pluck('user_id'))->get(['id', 'username', 'image'])->keyBy('id');
+
+        return $rows->map(function ($row) use ($users) {
+            $user = $users->get($row->user_id);
+            return [
+                'user_id' => (int) $row->user_id,
+                'username' => $user?->username ?? 'Player',
+                'avatar' => $user?->avatarUrl(),
+                'wins' => (int) $row->wins,
+                'games' => (int) ($row->games ?? 0),
+            ];
+        })->values()->all();
+    }
+
     public function sweepExpired(): void
     {
         $this->expireWaitingTables();

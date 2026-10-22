@@ -1,14 +1,39 @@
 ﻿@extends('Template::layouts.master')
 @section('content')
-    <section class="table-lobby" data-create-url="{{ route('user.tables.create') }}" data-csrf="{{ csrf_token() }}">
+    <section class="table-lobby" data-create-url="{{ route('user.tables.create') }}" data-leaderboard-url="{{ route('user.tables.leaderboard') }}" data-csrf="{{ csrf_token() }}">
         <header class="table-lobby__hero">
             <div class="table-lobby__hero-text">
                 <span class="table-lobby__eyebrow">@lang('Play together')</span>
                 <h1>@lang('Live Tables')</h1>
                 <p>@lang('Choose a game and take your seat. Moves and table balances are confirmed by the game server.')</p>
             </div>
-            <span class="table-lobby__live-badge"><i></i>{{ count($tables) }} @lang('live now')</span>
+            <div class="table-lobby__hero-stats">
+                <span class="table-lobby__live-badge"><i></i>{{ count($tables) }} @lang('live now')</span>
+                <button type="button" class="table-lobby__fame-trigger" id="hall-of-fame-open"><i class="las la-trophy"></i>@lang('Hall of Fame')</button>
+            </div>
         </header>
+
+        <div class="hall-of-fame" id="hall-of-fame" hidden role="dialog" aria-modal="true" aria-labelledby="hall-of-fame-title">
+            <div class="hall-of-fame__backdrop" id="hall-of-fame-backdrop"></div>
+            <div class="hall-of-fame__sheet">
+                <header><span class="hall-of-fame__icon"><i class="las la-trophy"></i></span><div><h2 id="hall-of-fame-title">@lang('Hall of Fame')</h2><p>@lang('The best players of all time, by wins.')</p></div><button type="button" id="hall-of-fame-close" aria-label="@lang('Close')"><i class="las la-times"></i></button></header>
+                <div class="hall-of-fame__games" id="hall-of-fame-games">
+                    @foreach ($catalog as $game)
+                        @if ($game['available'])
+                            <button type="button" class="hall-of-fame__game{{ $game['key'] === 'ludo' ? ' is-selected' : '' }}" data-game="{{ $game['key'] }}">
+                                <span>@if($game['card_image_url'])<img src="{{ $game['card_image_url'] }}" alt="">@else<i class="las {{ $game['icon_class'] }}"></i>@endif</span>
+                                {{ __($game['name']) }}
+                            </button>
+                        @endif
+                    @endforeach
+                </div>
+                <div class="hall-of-fame__tabs">
+                    <button type="button" class="hall-of-fame__tab is-selected" data-tab="all-time">@lang('All-time')</button>
+                    <button type="button" class="hall-of-fame__tab" data-tab="weekly">@lang('This week')</button>
+                </div>
+                <div class="hall-of-fame__list" id="hall-of-fame-list"><p class="hall-of-fame__loading">@lang('Loading...')</p></div>
+            </div>
+        </div>
 
         @if ($invites->isNotEmpty())
             <section class="table-card table-invitations"><div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-envelope-open-text"></i></span><div><h2>@lang('Your Table Invitations')</h2><p>@lang('A player invited you to join a live table.')</p></div></div><div class="table-list">
@@ -145,6 +170,40 @@
         .table-game-picker__icon{display:grid;place-items:center;width:38px;height:38px;overflow:hidden;border-radius:11px;background:linear-gradient(145deg,rgba(0,239,135,.18),rgba(0,239,135,.04));color:var(--tg-green);font-size:17px}
         .table-game-picker__icon img{width:100%;height:100%;object-fit:cover}
         .table-game-picker__item small{overflow:hidden;max-width:100%;font-size:9.5px;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+        .table-lobby__hero-stats{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex:0 0 auto}
+        .table-lobby__fame-trigger{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border:1px solid var(--tg-line);border-radius:999px;background:rgba(255,255,255,.04);color:var(--tg-text);font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+        .table-lobby__fame-trigger:hover{border-color:rgba(255,181,71,.4);color:#ffb547}
+        .table-lobby__fame-trigger i{color:#ffb547}
+        .hall-of-fame{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:18px}
+        .hall-of-fame[hidden]{display:none}
+        .hall-of-fame__backdrop{position:absolute;inset:0;background:rgba(6,8,18,.72);backdrop-filter:blur(5px)}
+        .hall-of-fame__sheet{position:relative;width:min(480px,100%);max-height:86vh;display:flex;flex-direction:column;padding:22px;border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 50% 0,rgba(255,181,71,.1),transparent 45%),linear-gradient(170deg,#1a2041,#10142a);box-shadow:0 30px 70px rgba(0,0,0,.5)}
+        .hall-of-fame__sheet>header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+        .hall-of-fame__icon{display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;border-radius:13px;background:rgba(255,181,71,.14);color:#ffb547;font-size:21px}
+        .hall-of-fame__sheet>header h2{margin:0;font-size:16px;font-weight:950}
+        .hall-of-fame__sheet>header p{margin:2px 0 0;color:var(--tg-muted);font-size:10.5px}
+        .hall-of-fame__sheet>header button{margin-left:auto;display:grid;width:30px;height:30px;flex:0 0 auto;place-items:center;border:0;border-radius:9px;background:rgba(255,255,255,.06);color:var(--tg-muted);cursor:pointer}
+        .hall-of-fame__games{display:flex;gap:7px;margin-bottom:12px;padding-bottom:12px;overflow-x:auto;border-bottom:1px solid var(--tg-line)}
+        .hall-of-fame__game{display:flex;flex-direction:column;align-items:center;gap:5px;flex:0 0 auto;width:58px;padding:6px 4px;border:0;background:transparent;color:var(--tg-muted);cursor:pointer;opacity:.6}
+        .hall-of-fame__game span{display:grid;place-items:center;width:34px;height:34px;overflow:hidden;border-radius:10px;background:rgba(255,255,255,.05);color:var(--tg-green);font-size:15px}
+        .hall-of-fame__game span img{width:100%;height:100%;object-fit:cover}
+        .hall-of-fame__game small,.hall-of-fame__game{font-size:8.5px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58px}
+        .hall-of-fame__game.is-selected{opacity:1;color:var(--tg-text)}
+        .hall-of-fame__game.is-selected span{background:rgba(0,239,135,.14);color:var(--tg-green)}
+        .hall-of-fame__tabs{display:flex;gap:8px;margin-bottom:12px}
+        .hall-of-fame__tab{flex:1;padding:9px;border:1px solid var(--tg-line);border-radius:11px;background:transparent;color:var(--tg-muted);font-size:11px;font-weight:900;cursor:pointer}
+        .hall-of-fame__tab.is-selected{border-color:rgba(0,239,135,.4);background:rgba(0,239,135,.08);color:var(--tg-green)}
+        .hall-of-fame__list{display:grid;gap:7px;overflow-y:auto}
+        .hall-of-fame__row{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--tg-line);border-radius:13px;background:rgba(35,42,71,.4)}
+        .hall-of-fame__rank{display:grid;flex:0 0 22px;place-items:center;color:var(--tg-muted);font-size:11px;font-weight:950}
+        .hall-of-fame__row:nth-child(1) .hall-of-fame__rank{color:#ffd166}.hall-of-fame__row:nth-child(2) .hall-of-fame__rank{color:#cfd8e3}.hall-of-fame__row:nth-child(3) .hall-of-fame__rank{color:#d7935b}
+        .hall-of-fame__avatar{display:grid;flex:0 0 34px;width:34px;height:34px;place-items:center;overflow:hidden;border-radius:50%;background:var(--tg-raised);color:#bec8e8;font-size:12px;font-weight:950}
+        .hall-of-fame__avatar img{width:100%;height:100%;object-fit:cover}
+        .hall-of-fame__row strong{flex:1;min-width:0;overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+        .hall-of-fame__row small{color:var(--tg-muted);font-size:9.5px}
+        .hall-of-fame__wins{color:var(--tg-green);font-size:12px;font-weight:950;white-space:nowrap}
+        .hall-of-fame__loading,.hall-of-fame__empty{padding:22px;color:var(--tg-muted);font-size:11px;text-align:center}
+        @media(max-width:575px){.table-lobby__hero{flex-direction:column;align-items:flex-start}.table-lobby__hero-stats{flex-direction:row;align-items:center;width:100%;justify-content:space-between}.hall-of-fame__sheet{padding:16px;border-radius:19px}}
     </style>
 @endpush
 
@@ -169,6 +228,53 @@
             document.querySelectorAll('.join-table-form').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;button.textContent='Joining...';try{const response=await fetch(form.action,{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':form.querySelector('[name="_token"]').value}});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to join this table.');location.href=form.action.replace(/\/join$/, '');}catch(error){button.disabled=false;button.textContent='Join';window.alert(error.message);}}));
             document.querySelectorAll('.accept-invite-form').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;try{const response=await fetch(form.action,{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':form.querySelector('[name="_token"]').value}});const result=await response.json();if(!response.ok)throw new Error(result.message||'Unable to accept this invitation.');location.href=`{{ url('/user/tables') }}/${result.table.id}`;}catch(error){button.disabled=false;window.alert(error.message);}}));
             document.querySelector('#create-table-form').addEventListener('submit',async event=>{event.preventDefault();const message=document.querySelector('#table-form-message');const button=event.currentTarget.querySelector('button[type=submit]');button.disabled=true;message.textContent='';try{const response=await fetch(root.dataset.createUrl,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':root.dataset.csrf},body:JSON.stringify({game_type:gameSelect.value,player_limit:Number(seats.value),play_mode:playMode.value,stake:playMode.value==='friendly'?'0':stake.value,idempotency_key:createKey})});const raw=await response.text();let result;try{result=raw?JSON.parse(raw):{};}catch{throw new Error(response.status===419?'Your session expired. Refresh the page and try again.':`The server returned an unexpected response (${response.status}). Please refresh and try again.`);}if(!response.ok)throw new Error(result.message||result.errors&&Object.values(result.errors).flat()[0]||'Unable to create table.');if(!result.table?.id)throw new Error(result.message||'The server did not confirm that the table was created.');sessionStorage.removeItem('table-create-key');location.href=`{{ url('/user/tables') }}/${result.table.id}`;}catch(error){message.textContent=error.message;}finally{button.disabled=false;} });
+
+            (()=>{
+                const overlay=document.querySelector('#hall-of-fame');if(!overlay)return;
+                const openBtn=document.querySelector('#hall-of-fame-open'),closeBtn=document.querySelector('#hall-of-fame-close'),backdrop=document.querySelector('#hall-of-fame-backdrop');
+                const gamesRow=document.querySelector('#hall-of-fame-games'),tabs=document.querySelectorAll('.hall-of-fame__tab'),list=document.querySelector('#hall-of-fame-list');
+                let currentGame='ludo',currentTab='all-time',cache={};
+                function open(){overlay.hidden=false;load();}
+                function close(){overlay.hidden=true;}
+                openBtn?.addEventListener('click',open);closeBtn?.addEventListener('click',close);backdrop?.addEventListener('click',close);
+                gamesRow?.querySelectorAll('.hall-of-fame__game').forEach(btn=>btn.addEventListener('click',()=>{
+                    currentGame=btn.dataset.game;
+                    gamesRow.querySelectorAll('.hall-of-fame__game').forEach(item=>item.classList.toggle('is-selected',item===btn));
+                    load();
+                }));
+                tabs.forEach(tab=>tab.addEventListener('click',()=>{
+                    currentTab=tab.dataset.tab;
+                    tabs.forEach(item=>item.classList.toggle('is-selected',item===tab));
+                    render();
+                }));
+                async function load(){
+                    list.innerHTML='<p class="hall-of-fame__loading">Loading…</p>';
+                    if(cache[currentGame]){render();return;}
+                    try{
+                        const url=new URL(root.dataset.leaderboardUrl,location.href);url.searchParams.set('game',currentGame);
+                        const response=await fetch(url,{headers:{Accept:'application/json'}});
+                        if(!response.ok)throw new Error('Could not load the leaderboard.');
+                        cache[currentGame]=await response.json();
+                        render();
+                    }catch(e){list.innerHTML=`<p class="hall-of-fame__empty">${e.message}</p>`;}
+                }
+                function render(){
+                    const data=cache[currentGame];if(!data)return;
+                    const rows=currentTab==='all-time'?data.hall_of_fame:data.weekly_winners;
+                    if(!rows?.length){list.innerHTML=`<p class="hall-of-fame__empty">${currentTab==='all-time'?'No wins recorded for this game yet.':'No wins this week yet.'}</p>`;return;}
+                    list.innerHTML='';
+                    rows.forEach((row,index)=>{
+                        const item=document.createElement('div');item.className='hall-of-fame__row';
+                        const rank=document.createElement('span');rank.className='hall-of-fame__rank';rank.textContent=index<3?['🥇','🥈','🥉'][index]:String(index+1);
+                        const avatar=document.createElement('span');avatar.className='hall-of-fame__avatar';
+                        if(row.avatar){const img=document.createElement('img');img.src=row.avatar;img.alt='';avatar.append(img);}else{avatar.textContent=(row.username||'?').slice(0,1).toUpperCase();}
+                        const name=document.createElement('strong');name.textContent='@'+row.username;
+                        const wins=document.createElement('span');wins.className='hall-of-fame__wins';wins.textContent=`${row.wins} ${row.wins===1?'win':'wins'}`;
+                        item.append(rank,avatar,name,wins);
+                        list.append(item);
+                    });
+                }
+            })();
         })();
     </script>
 @endpush

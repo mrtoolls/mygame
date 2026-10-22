@@ -40,6 +40,18 @@ class TableGameController extends Controller
         ]);
     }
 
+    public function leaderboard(Request $request, TableGameService $service)
+    {
+        $gameType = (string) $request->query('game', 'ludo');
+        abort_unless(in_array($gameType, \App\Games\TableGames\TableGameRules::AVAILABLE, true), 404);
+
+        return response()->json([
+            'game' => $gameType,
+            'hall_of_fame' => $service->hallOfFame($gameType),
+            'weekly_winners' => $service->weeklyTopWinners($gameType),
+        ]);
+    }
+
     public function show(Request $request, string $id, TableGameService $service)
     {
         $table = TableGame::with(['players.user', 'currency'])->findOrFail($id);
