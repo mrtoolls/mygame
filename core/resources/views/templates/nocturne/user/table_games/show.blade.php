@@ -344,16 +344,17 @@
 .ludo-lane--yellow{left:60%;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to left,rgba(242,183,5,.12),rgba(242,183,5,.55))}
 .ludo-lane--blue{left:46.667%;top:60%;width:6.667%;height:40%;background:linear-gradient(to top,rgba(42,98,214,.12),rgba(42,98,214,.55))}
 .ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 2px 0 rgba(255,255,255,.3) inset,0 10px 18px rgba(0,0,0,.5)}
-.ludo-die{box-sizing:border-box;position:absolute;right:3%;bottom:3%;width:13%;height:13%;border:0;padding:10%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4%;cursor:default;transition:box-shadow .2s ease,transform .1s ease;transform-style:preserve-3d}
+.ludo-die{box-sizing:border-box;position:absolute;right:3%;bottom:3%;width:13%;height:13%;min-width:34px;min-height:34px;border:0;padding:10%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:block;cursor:default;transition:box-shadow .2s ease,transform .1s ease}
 .ludo-die:not(:disabled){cursor:pointer}
 .ludo-die:not(:disabled):active{transform:scale(.93)}
-.ludo-die:not(.has-rolled)::before{content:"";grid-column:2;grid-row:2;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
-.ludo-die i{border-radius:50%;background:transparent}
-.ludo-die i.is-on{background:radial-gradient(circle at 34% 28%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.4) inset}
-.ludo-die.is-rolling{animation:ludo-die-roll .12s linear infinite;cursor:wait}
-@keyframes ludo-die-roll{0%{transform:rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(.96)}25%{transform:rotateX(90deg) rotateY(65deg) rotateZ(18deg) scale(1.08)}50%{transform:rotateX(180deg) rotateY(150deg) rotateZ(-14deg) scale(.96)}75%{transform:rotateX(270deg) rotateY(235deg) rotateZ(13deg) scale(1.08)}100%{transform:rotateX(360deg) rotateY(360deg) rotateZ(0deg) scale(.96)}}
+.ludo-die:not(.has-rolled)::before{content:"";position:absolute;left:50%;top:50%;width:24%;height:24%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
+.ludo-die__face{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.ludo-pip{fill:#1b1f33}
+.ludo-pip--red{fill:#e23b3b}
+.ludo-die.is-rolling{animation:ludo-die-wobble .18s ease-in-out infinite;cursor:wait}
+@keyframes ludo-die-wobble{0%,100%{transform:rotate(-7deg) scale(.95)}50%{transform:rotate(7deg) scale(1.08)}}
 .ludo-die.is-your-turn{animation:ludo-die-blink 1.1s ease-in-out infinite}
-.ludo-die.is-your-turn.is-rolling{animation:ludo-die-roll .12s linear infinite}
+.ludo-die.is-your-turn.is-rolling{animation:ludo-die-wobble .18s ease-in-out infinite}
 @keyframes ludo-die-blink{0%,100%{box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45),0 0 0 0 rgba(0,239,135,.55)}50%{box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45),0 0 0 7px rgba(0,239,135,0)}}
 .ludo-roll-history{position:absolute;display:flex;gap:3px;z-index:3}
 .ludo-roll-history span{display:grid;place-items:center;width:15px;height:15px;border-radius:4px;background:rgba(10,13,28,.75);color:#fff;font-size:9px;font-weight:900;box-shadow:0 1px 3px rgba(0,0,0,.4)}
@@ -575,7 +576,7 @@
 @endpush
 @push('script')
 <script>
-(()=>{const root=document.querySelector('#table-match');if(!root)return;const stateUrl=root.dataset.snapshot;const api={move:root.dataset.move,start:root.dataset.start,leave:root.dataset.leave};const board=document.querySelector('#table-board');const error=document.querySelector('#match-error');const notice=document.querySelector('#match-notice');const userId=Number(root.dataset.user);const type=root.dataset.type;const turnSeconds=Number(root.dataset.turnSeconds)||60;let latest=null,clockTimer=null,polling=false,pollTimer=null,selectedSquare=null,resultShown=false,warnedDeadline=null,errorHideTimer=null;
+(()=>{const root=document.querySelector('#table-match');if(!root)return;const stateUrl=root.dataset.snapshot;const api={move:root.dataset.move,start:root.dataset.start,leave:root.dataset.leave};const board=document.querySelector('#table-board');const error=document.querySelector('#match-error');const notice=document.querySelector('#match-notice');const userId=Number(root.dataset.user);const type=root.dataset.type;const turnSeconds=Number(root.dataset.turnSeconds)||60;let latest=null,clockTimer=null,polling=false,pollTimer=null,selectedSquare=null,resultShown=false,warnedDeadline=null,errorHideTimer=null,diceAnimating=false,pendingGameState=null;
 if(error){error.innerHTML='<i class="las la-exclamation-triangle"></i><span id="match-error-text"></span>';}
 function showError(message){if(!error||!message)return;const textEl=document.querySelector('#match-error-text');if(textEl)textEl.textContent=message;error.classList.add('is-visible');window.TableSound?.play?.('lose');clearTimeout(errorHideTimer);errorHideTimer=setTimeout(clearError,4200);}
 function clearError(){if(!error)return;error.classList.remove('is-visible');clearTimeout(errorHideTimer);}
@@ -664,6 +665,10 @@ function renderWaitingRoom(data){
     document.querySelector('#waiting-room-title').textContent=remaining>0?`Waiting for ${remaining} more…`:'All seats full';
 }
 function gameState(data){
+// A Ludo roll animation is actively tumbling - let it finish its full 900ms reveal
+// undisturbed instead of a mid-flight poll yanking the die out from under it. The
+// freshest data is kept and applied the instant the animation completes.
+if(diceAnimating){pendingGameState=data;return;}
 const previous=latest;
 const newLudoRoll=type==='ludo'&&previous&&data.state?.last_roll&&Number(data.state.last_roll.version)>Number(previous.state?.last_roll?.version||0);
 latest=data;
@@ -712,7 +717,13 @@ data.players.forEach(player=>{
 existingRows.forEach(row=>row.remove());
 if(data.status==='finished'&&data.result&&(data.result==='draw'||data.result.startsWith('winner:')||data.result.startsWith('winners:')))showResultPopup(data);
 renderBoard(data);
-if(newLudoRoll)animateLudoDie(Number(data.state.last_roll.value));
+if(newLudoRoll){
+    diceAnimating=true;
+    animateLudoDie(Number(data.state.last_roll.value),()=>{
+        diceAnimating=false;
+        if(pendingGameState){const queued=pendingGameState;pendingGameState=null;gameState(queued);}
+    });
+}
 const startButton=document.querySelector('#match-start');if(startButton)startButton.hidden=!(data.status==='waiting'&&data.players.filter(p=>p.status==='seated').length>=2&&creator);
 const leaveButton=document.querySelector('#match-leave');if(leaveButton){leaveButton.hidden=!['waiting','active'].includes(data.status);leaveButton.textContent=data.status==='waiting'&&creator?'Put the table away (everyone’s stake back)':'Stand up';}
 const inviteForm=document.querySelector('#match-invite');if(inviteForm)inviteForm.hidden=data.status!=='waiting';const rematchButton=document.querySelector('#match-rematch');if(rematchButton)rematchButton.hidden=data.status!=='finished';
@@ -726,20 +737,33 @@ function send(action){if(!latest||latest.status!=='active'||latest.current_user_
     if(data.snapshot)gameState(data.snapshot);else return refresh();
 }).catch(e=>{showError(e.message);});}
 const DICE_PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+// Fixed pixel coordinates in a 100x100 viewBox, same 0-8 grid indexing as DICE_PIPS. Rendered
+// as SVG circles rather than CSS grid cells so the face can never silently collapse to zero
+// size from nested percentage sizing - it always paints the same way on every device.
+const LUDO_PIP_COORDS=[[25,25],[50,25],[75,25],[25,50],[50,50],[75,50],[25,75],[50,75],[75,75]];
+const SVG_NS='http://www.w3.org/2000/svg';
 function setLudoDieFace(die,value){
     const on=DICE_PIPS[value]||DICE_PIPS[1];
-    die.replaceChildren(...Array.from({length:9},(_,index)=>{const pip=document.createElement('i');if(on.includes(index))pip.className='is-on';return pip;}));
+    let svg=die.querySelector('svg.ludo-die__face');
+    if(!svg){svg=document.createElementNS(SVG_NS,'svg');svg.setAttribute('class','ludo-die__face');svg.setAttribute('viewBox','0 0 100 100');die.appendChild(svg);}
+    svg.replaceChildren(...on.map(index=>{
+        const [cx,cy]=LUDO_PIP_COORDS[index];
+        const circle=document.createElementNS(SVG_NS,'circle');
+        circle.setAttribute('cx',cx);circle.setAttribute('cy',cy);circle.setAttribute('r',10);
+        circle.setAttribute('class',Number(value)===1?'ludo-pip ludo-pip--red':'ludo-pip');
+        return circle;
+    }));
     die.classList.add('has-rolled');
     die.setAttribute('aria-label',`Dice result: ${value}`);
 }
-function animateLudoDie(result){
-    if(!Number.isInteger(result)||result<1||result>6)return;
-    const die=board.querySelector('.ludo-die');if(!die)return;
+function animateLudoDie(result,onDone){
+    if(!Number.isInteger(result)||result<1||result>6){onDone?.();return;}
+    const die=board.querySelector('.ludo-die');if(!die){onDone?.();return;}
     const wasDisabled=die.disabled;
     die.disabled=true;die.classList.add('is-rolling');
     const started=performance.now();let lastFrame=0;
     const animate=now=>{
-        if(!die.isConnected)return;
+        if(!die.isConnected){onDone?.();return;}
         if(now-started<900){
             if(now-lastFrame>75){setLudoDieFace(die,1+Math.floor(Math.random()*6));lastFrame=now;}
             requestAnimationFrame(animate);
@@ -748,6 +772,7 @@ function animateLudoDie(result){
         setLudoDieFace(die,result);
         die.classList.remove('is-rolling');
         die.disabled=wasDisabled;
+        onDone?.();
     };
     requestAnimationFrame(animate);
 }
