@@ -839,11 +839,19 @@ class TableGameRules
         $side = $seat === 0 ? 'w' : 'b';
         if (!$piece || strtolower($piece) !== $side) throw new InvalidArgumentException('That piece does not belong to you.');
         $captures = $this->draughtsMoves($state['board'], $seat, true);
-        $allMoves = $captures ?: $this->draughtsMoves($state['board'], $seat, false);
-        if ($state['continuing_piece'] !== null) $allMoves = array_values(array_filter($allMoves, fn ($move) => $move['from'] === $state['continuing_piece']));
+        if ($state['continuing_piece'] !== null) {
+            // Mid multi-capture: the same piece must keep capturing - no switching to a quiet
+            // move or a different piece until the jump sequence ends.
+            $allMoves = array_values(array_filter($captures, fn ($move) => $move['from'] === $state['continuing_piece']));
+        } else {
+            // Capturing is optional, not forced - a player may choose a quiet move even when a
+            // capture is available (e.g. to set up a bigger capture later), matching how the
+            // physical game is actually played.
+            $allMoves = array_merge($captures, $this->draughtsMoves($state['board'], $seat, false));
+        }
         $selected = null;
         foreach ($allMoves as $move) if ($move['from'] === $from && $move['to'] === $to) { $selected = $move; break; }
-        if (!$selected) throw new InvalidArgumentException($captures ? 'A capture is mandatory; choose a legal capturing move.' : 'That draughts move is not legal.');
+        if (!$selected) throw new InvalidArgumentException($state['continuing_piece'] !== null ? 'You must continue capturing with the same piece.' : 'That draughts move is not legal.');
         $board = $state['board']; $moving = $board[$fr][$fc]; $board[$fr][$fc] = null;
         if ($selected['capture'] !== null) { [$cr,$cc] = $selected['capture']; $board[$cr][$cc] = null; }
         $promoted = false;
@@ -869,12 +877,31 @@ class TableGameRules
         foreach ($board as $row => $line) foreach ($line as $col => $piece) {
             if (!$piece || strtolower($piece) !== $side) continue;
             $king = strtoupper($piece) === $piece;
-            $directions = $king ? [[1,1],[1,-1],[-1,1],[-1,-1]] : ($seat === 0 ? [[-1,1],[-1,-1],[1,1],[1,-1]] : [[1,1],[1,-1],[-1,1],[-1,-1]]);
+            if ($king) {
+                // Flying king: slides any number of empty squares along a diagonal, and can
+                // capture the first enemy piece it meets, landing on any empty square beyond it.
+                foreach ([[1,1],[1,-1],[-1,1],[-1,-1]] as [$dr,$dc]) {
+                    $r = $row + $dr; $c = $col + $dc;
+                    while ($r >= 0 && $r <= 7 && $c >= 0 && $c <= 7 && $board[$r][$c] === null) {
+                        if (!$captureOnly) $moves[] = ['from'=>[$row,$col],'to'=>[$r,$c],'capture'=>null];
+                        $r += $dr; $c += $dc;
+                    }
+                    if ($r < 0 || $r > 7 || $c < 0 || $c > 7) continue; // ran off the board
+                    if (strtolower($board[$r][$c]) === $side) continue; // blocked by its own piece
+                    $captureR = $r; $captureC = $c; $landR = $r + $dr; $landC = $c + $dc;
+                    while ($landR >= 0 && $landR <= 7 && $landC >= 0 && $landC <= 7 && $board[$landR][$landC] === null) {
+                        $moves[] = ['from'=>[$row,$col],'to'=>[$landR,$landC],'capture'=>[$captureR,$captureC]];
+                        $landR += $dr; $landC += $dc;
+                    }
+                }
+                continue;
+            }
+            $directions = $seat === 0 ? [[-1,1],[-1,-1],[1,1],[1,-1]] : [[1,1],[1,-1],[-1,1],[-1,-1]];
             foreach ($directions as [$dr,$dc]) {
                 $r = $row + $dr; $c = $col + $dc;
                 if ($r < 0 || $r > 7 || $c < 0 || $c > 7) continue;
                 if ($board[$r][$c] === null) {
-                    if (!$captureOnly && ($king || ($seat === 0 && $dr === -1) || ($seat === 1 && $dr === 1))) $moves[] = ['from'=>[$row,$col],'to'=>[$r,$c],'capture'=>null];
+                    if (!$captureOnly && (($seat === 0 && $dr === -1) || ($seat === 1 && $dr === 1))) $moves[] = ['from'=>[$row,$col],'to'=>[$r,$c],'capture'=>null];
                     continue;
                 }
                 if (strtolower($board[$r][$c]) === $side) continue;

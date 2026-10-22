@@ -21,8 +21,8 @@ class TableGameGuides
         'draughts' => [
             'goal' => 'Capture all of your opponent\'s pieces, or leave them with no legal move.',
             'setup' => 'Standard 8x8 international-style draughts: 12 men per side on the dark squares.',
-            'how_to_play' => ['Tap a piece to select it, then tap a highlighted square to move or capture.', 'If a capture is available you must take it.', 'A piece that captures and can capture again continues the same turn automatically.'],
-            'special_rules' => 'Captures are mandatory and multi-jumps must be completed. Men may capture both forward and backward. A man reaching the far row becomes a king, which may move one diagonal square in any direction.',
+            'how_to_play' => ['Tap a piece to select it, then tap a highlighted square to move or capture.', 'Capturing is optional - you may make a quiet move instead even when a capture is available.', 'A piece that captures and can capture again continues the same turn automatically.'],
+            'special_rules' => 'Capturing is optional, not forced - decline a capture if you prefer another move. Men may capture both forward and backward. A man reaching the far row becomes a flying king, which may slide any number of empty squares along a diagonal and capture by jumping an enemy piece to land on any empty square beyond it.',
             'draw' => 'A run of 80 half-moves with no capture or promotion ends the game as a draw and refunds both stakes.',
             'win' => 'Capture every opposing piece or leave your opponent with no legal move, or win by your opponent\'s turn-timer forfeit.',
         ],
