@@ -1,7 +1,6 @@
 @extends('Template::layouts.master')
 @section('content')
-<div class="nocturne-account nocturne-business-promo-page">
-    @include('Template::partials.account_nav')
+<div class="nocturne-account nocturne-business-promo-page nocturne-business-promo-page--full">
     <main class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Sponsor Winxpot')</span></div>
         <section class="nocturne-business-promo-hero">

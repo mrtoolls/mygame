@@ -1819,6 +1819,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 }
 .nocturne-vip-page { --vip-glow:rgba(0,239,135,.15); }
 .nocturne-vip-page--full { grid-template-columns:minmax(0,1fr); }
+.nocturne-business-promo-page--full { grid-template-columns:minmax(0,1fr); }
 .nocturne-vip-crumb { display:flex; align-items:center; gap:9px; margin:0 0 20px; color:var(--nocturne-muted); font-size:13px; font-weight:800; }
 .nocturne-vip-crumb a { color:inherit; text-decoration:none; }
 .nocturne-vip-crumb a:hover { color:var(--nocturne-green); }
