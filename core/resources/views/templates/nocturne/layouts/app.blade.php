@@ -199,6 +199,21 @@
         </section>
     </div>
 
+    {{-- Shared confirm/alert dialog - replaces the browser's native confirm()/alert()/prompt()
+         everywhere on the site. One instance, driven by window.ncConfirm()/window.ncAlert(). --}}
+    <div class="nc-confirm" id="nc-confirm" hidden>
+        <button type="button" class="nc-confirm__backdrop" aria-hidden="true" tabindex="-1"></button>
+        <section class="nc-confirm__card" role="alertdialog" aria-modal="true" aria-labelledby="nc-confirm-title" aria-describedby="nc-confirm-message">
+            <span class="nc-confirm__icon"><i class="ph-fill ph-question"></i></span>
+            <h3 class="nc-confirm__title" id="nc-confirm-title"></h3>
+            <p class="nc-confirm__message" id="nc-confirm-message"></p>
+            <div class="nc-confirm__actions">
+                <button type="button" class="nc-confirm__btn nc-confirm__btn--cancel"></button>
+                <button type="button" class="nc-confirm__btn nc-confirm__btn--ok"></button>
+            </div>
+        </section>
+    </div>
+
     <div class="pull-refresh" id="pull-refresh" aria-live="polite" aria-hidden="true"><span class="pull-refresh__spinner"></span><span class="pull-refresh__text">@lang('Pull to refresh')</span></div>
 
     <div class="win-loss-popup" aria-hidden="true" data-currency="{{ gs('cur_text') }}">
@@ -272,6 +287,73 @@
     <script src="{{ asset(activeTemplate(true) . 'js/main.js') }}"></script>
 
     @stack('script')
+
+    <script>
+        // Shared confirm/alert dialog - window.ncConfirm(message, opts) resolves true/false
+        // and window.ncAlert(message, opts) resolves once dismissed, both backed by the same
+        // #nc-confirm markup. Falls back to the native dialog only if that markup is missing.
+        (() => {
+            'use strict';
+            const root = document.querySelector('#nc-confirm');
+            if (!root) {
+                window.ncConfirm = (message) => Promise.resolve(window.confirm(message));
+                window.ncAlert = (message) => { window.alert(message); return Promise.resolve(); };
+                return;
+            }
+            const backdrop = root.querySelector('.nc-confirm__backdrop');
+            const titleEl = root.querySelector('.nc-confirm__title');
+            const messageEl = root.querySelector('.nc-confirm__message');
+            const okBtn = root.querySelector('.nc-confirm__btn--ok');
+            const cancelBtn = root.querySelector('.nc-confirm__btn--cancel');
+            let active = null;
+
+            function open({ title, message, okText, cancelText, danger, showCancel }) {
+                return new Promise(resolve => {
+                    active && active.cleanup(active.fallback);
+                    titleEl.textContent = title;
+                    messageEl.textContent = message;
+                    okBtn.textContent = okText;
+                    okBtn.classList.toggle('is-danger', !!danger);
+                    root.classList.toggle('is-danger', !!danger);
+                    cancelBtn.hidden = !showCancel;
+                    cancelBtn.textContent = cancelText || '';
+                    root.hidden = false;
+                    document.body.style.overflow = 'hidden';
+                    function cleanup(result) {
+                        root.hidden = true;
+                        document.body.style.overflow = '';
+                        okBtn.removeEventListener('click', onOk);
+                        cancelBtn.removeEventListener('click', onCancel);
+                        backdrop.removeEventListener('click', onCancel);
+                        document.removeEventListener('keydown', onKey);
+                        active = null;
+                        resolve(result);
+                    }
+                    function onOk() { cleanup(true); }
+                    function onCancel() { cleanup(false); }
+                    function onKey(e) { if (e.key === 'Escape') cleanup(false); else if (e.key === 'Enter') cleanup(true); }
+                    okBtn.addEventListener('click', onOk);
+                    cancelBtn.addEventListener('click', onCancel);
+                    backdrop.addEventListener('click', onCancel);
+                    document.addEventListener('keydown', onKey);
+                    active = { cleanup, fallback: showCancel ? false : undefined };
+                    requestAnimationFrame(() => okBtn.focus());
+                });
+            }
+
+            window.ncConfirm = (message, opts = {}) => open({
+                title: opts.title || "{{ __('Are you sure?') }}",
+                message, danger: !!opts.danger, showCancel: true,
+                okText: opts.confirmText || "{{ __('Confirm') }}",
+                cancelText: opts.cancelText || "{{ __('Cancel') }}",
+            });
+            window.ncAlert = (message, opts = {}) => open({
+                title: opts.title || "{{ __('Notice') }}",
+                message, danger: !!opts.danger, showCancel: false,
+                okText: opts.okText || "{{ __('OK') }}",
+            });
+        })();
+    </script>
 
     <script>
         (() => {

@@ -50,10 +50,10 @@ $(document).on('click', '.nocturne-arena-post__share', function() {
         navigator.share({ url: url }).catch(function() {});
     } else if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(function() {
-            window.notify ? notify('success', "{{ __('Link copied to clipboard') }}") : alert("{{ __('Link copied to clipboard') }}");
+            notify('success', "{{ __('Link copied to clipboard') }}");
         });
     } else {
-        window.prompt("{{ __('Copy this link:') }}", url);
+        ncAlert(url, { title: "{{ __('Copy this link') }}" });
     }
 });
 
@@ -74,10 +74,10 @@ $(document).on('submit', '.nocturne-arena-post__edit-form', function(event) {
     $.post(form.attr('action'), form.serialize()).done(function() { location.reload(); });
 });
 
-$(document).on('click', '.nocturne-arena-post__delete', function() {
-    if (!confirm("{{ __('Delete this post? This cannot be undone.') }}")) return;
+$(document).on('click', '.nocturne-arena-post__delete', async function() {
     var url = $(this).data('url');
     var article = $(this).closest('.nocturne-arena-post');
+    if (!await ncConfirm("{{ __('Delete this post? This cannot be undone.') }}", { danger: true, confirmText: "{{ __('Delete') }}" })) return;
     $.ajax({ url: url, method: 'DELETE', data: { _token: csrfToken } })
         .done(function() { article.fadeOut(200, function() { article.remove(); }); });
 });

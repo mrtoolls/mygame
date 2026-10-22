@@ -66,6 +66,28 @@
 .app-install-modal__tip { display: flex; gap: 7px; margin: 17px 0 0; color: #9da7c6; font-size: 11px; }
 .app-install-modal__tip i { color: #00ef87; font-size: 15px; }
 .app-install-open { overflow: hidden; }
+
+/* Shared confirm/alert dialog - replaces the browser's native confirm()/alert()/prompt()
+   sitewide. One instance, reused everywhere via window.ncConfirm()/window.ncAlert(). */
+.nc-confirm[hidden] { display: none !important; }
+.nc-confirm { position: fixed; inset: 0; z-index: 1250; display: grid; place-items: center; padding: 18px; }
+.nc-confirm__backdrop { position: absolute; inset: 0; border: 0; background: rgba(5,8,20,.78); backdrop-filter: blur(6px); cursor: default; }
+.nc-confirm__card { position: relative; display: grid; justify-items: center; gap: 4px; width: min(380px, 100%); padding: 28px 26px 24px; border: 1px solid var(--nocturne-line); border-radius: 22px; background: radial-gradient(ellipse at 50% 0%, rgba(0,239,135,.1), transparent 45%), var(--nocturne-panel); box-shadow: 0 25px 70px rgba(0,0,0,.5); text-align: center; animation: nc-confirm-in .18s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes nc-confirm-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+.nc-confirm__icon { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 6px; border-radius: 50%; background: rgba(0,239,135,.12); color: var(--nocturne-green); font-size: 26px; }
+.nc-confirm.is-danger .nc-confirm__icon { background: rgba(255,112,135,.12); color: #ff7087; }
+.nc-confirm__title { margin: 0; color: var(--nocturne-text); font-size: 17px; font-weight: 900; }
+.nc-confirm__message { margin: 2px 0 16px; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.nc-confirm__actions { display: flex; width: 100%; gap: 10px; }
+.nc-confirm__btn { flex: 1; min-height: 48px; padding: 0 14px; border: 0; border-radius: 13px; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+.nc-confirm__btn:active { transform: scale(.97); }
+.nc-confirm__btn--cancel { border: 1px solid var(--nocturne-line); background: var(--nocturne-raised); color: var(--nocturne-text); }
+.nc-confirm__btn--cancel[hidden] { display: none; }
+.nc-confirm__btn--ok { background: var(--nocturne-green); color: #062b1d; }
+.nc-confirm__btn--ok.is-danger { background: linear-gradient(135deg, #ff7087, #c23a56); color: #fff; }
+.nc-confirm__btn--ok:hover { filter: brightness(1.06); }
+@media (max-width: 420px) { .nc-confirm__card { padding: 24px 20px 20px; border-radius: 19px; } }
+
 .pull-refresh { position: fixed; z-index: 1045; top: max(8px, env(safe-area-inset-top)); left: 50%; display: flex; align-items: center; gap: 9px; padding: 9px 15px; border: 1px solid rgba(0,239,135,.2); border-radius: 999px; color: #eaf0ff; background: rgba(21,26,48,.96); box-shadow: 0 8px 30px rgba(0,0,0,.32); font-size: 12px; font-weight: 800; opacity: 0; pointer-events: none; transform: translate(-50%, calc(-100% - 10px)); transition: transform .16s ease, opacity .16s ease; }
 .pull-refresh.is-pulling { opacity: 1; transform: translate(-50%, calc(var(--pull-progress, 0px) - 100%)); }
 .pull-refresh.is-refreshing { opacity: 1; transform: translate(-50%, 0); }

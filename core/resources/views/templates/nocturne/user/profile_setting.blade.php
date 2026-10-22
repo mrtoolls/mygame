@@ -203,9 +203,13 @@
                 $('#currency-submit').prop('disabled', $(this).val() === initialCurrency);
             });
             $('#currency-form').on('submit', function(event) {
-                if (!confirm('Switch your preferred currency? Your balance will be converted to the new currency at today\'s rate.')) {
-                    event.preventDefault();
-                }
+                var form = this;
+                event.preventDefault();
+                ncConfirm('Switch your preferred currency? Your balance will be converted to the new currency at today\'s rate.', {
+                    confirmText: 'Switch currency'
+                }).then(function(ok) {
+                    if (ok) form.submit();
+                });
             });
         })(jQuery);
     </script>
