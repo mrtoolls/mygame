@@ -359,6 +359,13 @@ class TableGameService
                 $result = $this->rules->move($table->game_type, $table->state ?? [], (int) $player->seat, $action, $activeSeats);
             $table->state = $result['state'];
             $table->version++;
+            // Give each Ludo roll a stable public identifier so clients detect this specific roll,
+            // even when the same player rolls the same number twice in succession.
+            if ($table->game_type === 'ludo' && ($action['roll'] ?? false) === true && is_array($table->state['last_roll'] ?? null)) {
+                $state = $table->state;
+                $state['last_roll']['version'] = (int) $table->version;
+                $table->state = $state;
+            }
             $table->turn_started_at = now();
             $table->turn_deadline_at = now()->addSeconds((int) data_get($table->settings, 'turn_seconds', 60));
             $player->missed_turns = 0;
