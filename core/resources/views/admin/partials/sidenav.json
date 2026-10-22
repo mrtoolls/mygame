@@ -132,6 +132,37 @@
             }
         ]
     },
+    "competitions": {
+        "keyword": [
+            "Competitions",
+            "Wager Race",
+            "Biggest Win",
+            "Lucky Draw",
+            "Table League",
+            "Leaderboard",
+            "Prizes"
+        ],
+        "title": "Competitions",
+        "icon": "las la-trophy",
+        "menu_active": "admin.competitions*",
+        "submenu": [
+            {
+                "title": "All Competitions",
+                "route_name": "admin.competitions.index",
+                "menu_active": "admin.competitions.index"
+            },
+            {
+                "title": "Add New",
+                "route_name": "admin.competitions.create",
+                "menu_active": "admin.competitions.create"
+            },
+            {
+                "title": "Flags",
+                "route_name": "admin.competitions.flags",
+                "menu_active": "admin.competitions.flags"
+            }
+        ]
+    },
     "vip": {
         "keyword": [
             "VIP",

@@ -141,6 +141,22 @@ Route::middleware('admin')->group(function () {
         Route::post('delete/{id}', 'destroy')->name('destroy');
     });
 
+    // Competitions
+    Route::controller('CompetitionController')->name('competitions.')->prefix('competitions')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('create', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('edit/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'destroy')->name('destroy');
+        Route::get('{id}/results', 'results')->name('results');
+        Route::post('{id}/finalize-now', 'finalizeNow')->name('finalize-now');
+        Route::post('results/{resultId}/pay', 'payResult')->name('results.pay');
+        Route::post('results/{resultId}/disqualify', 'disqualify')->name('results.disqualify');
+        Route::get('flags', 'flags')->name('flags');
+        Route::post('flags/{id}/review', 'reviewFlag')->name('flags.review');
+    });
+
     // News
     Route::controller('NewsController')->name('news.')->prefix('news')->group(function () {
         Route::get('/', 'index')->name('index');
