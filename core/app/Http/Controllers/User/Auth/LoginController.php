@@ -65,6 +65,14 @@ class LoginController extends Controller
         return $this->sendFailedLoginResponse($request);
     }
 
+    // Always authenticate with a persistent "remember me" cookie, regardless of whether the
+    // checkbox was ticked - a social gaming platform shouldn't require that opt-in just to
+    // avoid being logged out the next time the session itself expires.
+    protected function attemptLogin(Request $request)
+    {
+        return $this->guard()->attempt($this->credentials($request), true);
+    }
+
     public function findUsername()
     {
         $login = request()->input('username');

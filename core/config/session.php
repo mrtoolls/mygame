@@ -32,7 +32,9 @@ return [
     |
      */
 
-    'lifetime'        => env('SESSION_LIFETIME', 120),
+    // A social gaming platform shouldn't log a player out mid-session just for stepping away
+    // for a while - default to 30 days of idle time rather than Laravel's stock 2 hours.
+    'lifetime'        => env('SESSION_LIFETIME', 43200),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

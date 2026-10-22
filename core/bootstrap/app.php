@@ -14,6 +14,8 @@ use App\Http\Middleware\RegistrationStep;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -86,6 +88,19 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(function ($request) {
             return $request->expectsJson() || $request->is('api/*');
+        });
+
+        // A stale CSRF token (a form left open past the session lifetime) used to dead-end on
+        // a scary "Session expired" error page. Recover silently instead: for an API/AJAX
+        // request, return a small JSON payload the existing client-side code already checks
+        // for (status 419) instead of an HTML page that breaks response.json() parsing; for a
+        // normal page request, just send the user back to try again with a fresh token rather
+        // than showing an error at all.
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Your session refreshed - please try that again.'], 419);
+            }
+            return redirect()->back()->withNotify([['error', 'Your session refreshed - please try that again.']]);
         });
         $exceptions->respond(function (Response $response) {
             if ($response->getStatusCode() === 401) {

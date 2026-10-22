@@ -76,7 +76,7 @@ class SocialLogin {
                 'token_type'   => 'Bearer',
             ];
         }
-        Auth::login($userData);
+        Auth::login($userData, true); // persistent remember cookie, matching the main login flow
         $this->loginLog($userData);
         $redirection = Intended::getRedirection();
         return $redirection ? $redirection : to_route('user.home');
