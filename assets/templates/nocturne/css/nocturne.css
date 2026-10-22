@@ -636,7 +636,9 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     /* Quick-link cards: a horizontal, swipeable strip on mobile instead of a stacked list -
        same "inline" feel as the game rows, not a vertical menu. */
     .nocturne-home-cards { display: flex; grid-template-columns: none; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 2px; }
-    .nocturne-home-cards > a { flex: 0 0 132px; scroll-snap-align: start; min-height: 108px; padding: 14px; }
+    /* Cards size to their own title length instead of a fixed width, so "Browse games",
+       "Your account" etc. always display in full on one line - never cut off/ellipsized. */
+    .nocturne-home-cards > a { flex: 0 0 auto; width: auto; min-width: 128px; scroll-snap-align: start; min-height: 108px; padding: 14px 18px; }
     .footer-area .payment-method { padding-bottom: 8px; }
     .footer-area .socket-area__wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 }
