@@ -345,31 +345,39 @@
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
 
 /* Hero carousel (announcements + live/upcoming competitions) */
-.nocturne-arena-carousel{position:relative;margin-bottom:20px}
-.nocturne-arena-carousel__track{position:relative;min-height:270px;border-radius:22px;overflow:hidden}
-.nocturne-arena-carousel__nav{position:absolute;top:50%;z-index:2;display:grid;place-items:center;width:38px;height:38px;margin-top:-19px;border:1px solid rgba(255,255,255,.14);border-radius:50%;background:rgba(6,8,18,.55);backdrop-filter:blur(4px);color:#fff;font-size:15px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
-.nocturne-arena-carousel__nav:hover{background:rgba(6,8,18,.8);border-color:rgba(0,231,138,.4)}
-.nocturne-arena-carousel__nav--prev{left:12px}
-.nocturne-arena-carousel__nav--next{right:12px}
-.nocturne-arena-carousel__dots{position:absolute;left:50%;bottom:14px;z-index:2;display:flex;gap:6px;transform:translateX(-50%)}
+.nocturne-arena-carousel{position:relative;margin-bottom:20px;touch-action:pan-y}
+.nocturne-arena-carousel__track{position:relative;min-height:380px;border-radius:22px;overflow:hidden}
+/* Nav arrows sit clear of the text column, stay invisible until a real mouse hovers the
+   carousel, and never appear at all on touch/narrow screens - swipe takes over there. */
+.nocturne-arena-carousel__nav{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:34px;height:34px;margin-top:-17px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(6,8,18,.6);backdrop-filter:blur(4px);color:#fff;font-size:14px;cursor:pointer;opacity:0;transition:opacity .2s ease,background .15s ease,border-color .15s ease;pointer-events:none}
+.nocturne-arena-carousel__nav--prev{left:8px}
+.nocturne-arena-carousel__nav--next{right:8px}
+@media (hover:hover) and (pointer:fine){
+    .nocturne-arena-carousel:hover .nocturne-arena-carousel__nav{opacity:1;pointer-events:auto}
+    .nocturne-arena-carousel__nav:hover{background:rgba(6,8,18,.85);border-color:rgba(0,231,138,.45)}
+}
+.nocturne-arena-carousel__dots{position:absolute;left:50%;bottom:12px;z-index:3;display:flex;gap:6px;transform:translateX(-50%)}
 .nocturne-arena-carousel__dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer;transition:background .15s ease,transform .15s ease}
 .nocturne-arena-carousel__dot.is-active{background:var(--arena-accent);transform:scale(1.3)}
+@media(max-width:700px){.nocturne-arena-carousel__nav{display:none}}
 
 /* Announcement/competition slide */
 .nocturne-arena-slide{position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease}
 .nocturne-arena-slide.is-active{opacity:1;visibility:visible;pointer-events:auto}
-.nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:270px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22);box-shadow:0 18px 50px rgba(0,0,0,.35)}
-.nocturne-arena-slide.nocturne-arena-announcement{position:absolute;inset:0;margin-bottom:0;border-radius:0}
+.nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:380px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 85% 15%,rgba(0,231,138,.14),transparent 45%),radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22)}
+.nocturne-arena-slide.nocturne-arena-announcement{position:absolute;inset:0;margin-bottom:0;border-radius:0;box-shadow:none}
+.nocturne-arena-announcement::before{content:'';position:absolute;right:-8%;top:50%;width:46%;aspect-ratio:1;transform:translateY(-50%);background:conic-gradient(from 180deg,rgba(0,231,138,.0),rgba(0,231,138,.16),rgba(0,231,138,.0) 60%);border-radius:50%;filter:blur(2px);pointer-events:none}
+.nocturne-arena-announcement:has(.nocturne-arena-announcement__bg)::before{display:none}
 .nocturne-arena-announcement__badge--competition{color:#ffd166}
 .nocturne-arena-announcement__badge--competition::before{background:#ffd166}
 .nocturne-arena-announcement__bg{position:absolute;right:0;top:0;width:54%;height:100%;object-fit:cover;object-position:top center;-webkit-mask-image:linear-gradient(to right,transparent,#000 20%);mask-image:linear-gradient(to right,transparent,#000 20%)}
 .nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(5,8,18,.94) 36%,rgba(5,8,18,.1))}
-.nocturne-arena-announcement__content{position:relative;z-index:1;max-width:600px;padding:clamp(24px,4vw,40px)}
+.nocturne-arena-announcement__content{position:relative;z-index:1;max-width:600px;padding:clamp(22px,3.6vw,34px)}
 .nocturne-arena-announcement__badge{position:relative;display:inline-block;margin:0 0 12px 32px;padding:3px 0;color:var(--arena-accent);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
 .nocturne-arena-announcement__badge::before{content:'';position:absolute;top:50%;left:-32px;width:24px;height:2px;background:var(--arena-accent)}
-.nocturne-arena-announcement__content h2{margin:0 0 10px;color:#fff;font-size:clamp(26px,4.2vw,42px);font-weight:950;letter-spacing:-.01em;line-height:1.08;text-transform:uppercase}
-.nocturne-arena-announcement__content p{margin:0 0 20px;color:#c7cbea;font-size:13.5px;max-width:460px;line-height:1.6}
-.nocturne-arena-announcement__timer{display:flex;gap:10px;margin-bottom:22px}
+.nocturne-arena-announcement__content h2{margin:0 0 8px;color:#fff;font-size:clamp(24px,3.6vw,38px);font-weight:950;letter-spacing:-.01em;line-height:1.1;text-transform:uppercase}
+.nocturne-arena-announcement__content p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0 0 16px;color:#c7cbea;font-size:13px;max-width:440px;line-height:1.5;max-height:40px}
+.nocturne-arena-announcement__timer{display:flex;gap:9px;margin-bottom:16px}
 .nocturne-arena-timer-unit{display:grid;justify-items:center;gap:3px;min-width:58px;padding:10px 8px;border:1px solid rgba(0,231,138,.3);border-radius:13px;background:rgba(0,231,138,.06);box-shadow:0 0 18px rgba(0,231,138,.08) inset}
 .nocturne-arena-timer-unit strong{color:#fff;font-size:21px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1}
 .nocturne-arena-timer-unit small{display:flex;align-items:center;gap:3px;color:var(--arena-muted);font-size:8.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
@@ -718,6 +726,22 @@
         restartAuto();
         carousel.addEventListener('mouseenter', function () { clearInterval(autoTimer); });
         carousel.addEventListener('mouseleave', restartAuto);
+
+        // Touch swipe (mobile has no visible nav arrows, this replaces them).
+        var touchStartX = 0, touchStartY = 0, touching = false;
+        carousel.addEventListener('touchstart', function (e) {
+            var t = e.touches[0];
+            touchStartX = t.clientX; touchStartY = t.clientY; touching = true;
+            clearInterval(autoTimer);
+        }, { passive: true });
+        carousel.addEventListener('touchend', function (e) {
+            if (!touching) return;
+            touching = false;
+            var t = e.changedTouches[0];
+            var dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+            restartAuto();
+        }, { passive: true });
 
         var pad = function (n) { return (n < 10 ? '0' : '') + n; };
         slides.forEach(function (slide) {
