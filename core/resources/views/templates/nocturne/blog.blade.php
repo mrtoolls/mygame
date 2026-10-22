@@ -116,7 +116,7 @@
     .nocturne-news-recent{grid-template-columns:1fr}
 }
 @media(max-width:575.98px){
-    .nocturne-news-page{padding:18px 14px 40px}
+    .nocturne-news-page{padding:18px 4px 40px}
     .nocturne-news-featured{min-height:260px;border-radius:18px}
     .nocturne-news-featured__title{margin:140px 16px 18px;font-size:19px}
     .nocturne-news-featured__badge{margin:14px 0 0 14px;font-size:11px;padding:6px 11px}

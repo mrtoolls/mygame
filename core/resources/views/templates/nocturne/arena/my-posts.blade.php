@@ -70,7 +70,7 @@
 #arena-load-more:disabled{opacity:.5;cursor:default}
 
 @media(max-width:575.98px){
-    .nocturne-arena-page--narrow{padding:16px 14px 40px}
+    .nocturne-arena-page--narrow{padding:16px 4px 40px}
     .nocturne-arena-post{padding:14px}
 }
 </style>

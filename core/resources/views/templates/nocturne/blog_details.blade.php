@@ -130,7 +130,7 @@
     .nocturne-news-detail__grid{grid-template-columns:1fr}
 }
 @media(max-width:575.98px){
-    .nocturne-news-page{padding:18px 14px 40px}
+    .nocturne-news-page{padding:18px 4px 40px}
     .nocturne-news-detail__main{padding:18px;border-radius:18px}
 }
 </style>

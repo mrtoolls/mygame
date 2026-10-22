@@ -378,8 +378,8 @@
 .nocturne-arena-timer-unit small{display:flex;align-items:center;gap:3px;color:var(--arena-muted);font-size:8.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
 .nocturne-arena-timer-unit small i{color:var(--arena-accent);font-size:9px}
 .nocturne-arena-announcement__foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.nocturne-arena-announcement__reward{display:inline-flex;align-items:center;gap:6px;color:var(--arena-accent);font-size:13px;font-weight:800}
-.nocturne-arena-announcement__btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:900;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
+.nocturne-arena-announcement__reward{display:inline-flex;align-items:center;gap:6px;color:var(--arena-accent);font-size:13px;font-weight:800;white-space:nowrap}
+.nocturne-arena-announcement__btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:900;text-decoration:none;white-space:nowrap;transition:transform .15s ease,box-shadow .15s ease}
 .nocturne-arena-announcement__btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,231,138,.3)}
 .nocturne-arena-announcement__btn i{font-size:15px}
 /* Mobile keeps the exact same side-by-side arrangement as desktop (text left, art bleeding in
@@ -403,7 +403,10 @@
     .nocturne-arena-timer-unit strong{font-size:14px}
     .nocturne-arena-timer-unit small{font-size:6.5px;gap:2px;white-space:nowrap}
     .nocturne-arena-timer-unit small i{font-size:7px}
-    .nocturne-arena-announcement__foot{gap:8px}
+    /* Stacked, not side-by-side: at this width reward text + button never reliably fit on one
+       line, and letting them wrap conditionally is what broke the button's own label text
+       mid-word before. Always stacking keeps the layout (and its height) predictable. */
+    .nocturne-arena-announcement__foot{flex-direction:column;align-items:flex-start;gap:8px}
     .nocturne-arena-announcement__reward{font-size:10px}
     .nocturne-arena-announcement__btn{padding:9px 14px;font-size:10.5px;gap:5px}
     .nocturne-arena-announcement__btn i{font-size:11px}
@@ -450,9 +453,12 @@
 @media(max-width:991.98px){
     .nocturne-arena-layout{grid-template-columns:1fr}
     #arena-rail-open{display:grid;place-items:center}
-    .nocturne-arena-rail-backdrop{display:block;position:fixed;inset:0;z-index:59;background:rgba(5,8,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+    /* The site's own fixed header is z-index:1060 and the mobile bottom nav is z-index:1040 -
+       the drawer previously sat at z-index:60, well BELOW both, so the header covered its
+       close button and the bottom nav covered its lower content. It needs to outrank them. */
+    .nocturne-arena-rail-backdrop{display:block;position:fixed;inset:0;z-index:1065;background:rgba(5,8,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
     .nocturne-arena-rail-backdrop.is-open{opacity:1;visibility:visible}
-    .nocturne-arena-rail{position:fixed;top:0;right:0;z-index:60;display:flex;flex-direction:column;gap:16px;width:360px;max-width:88vw;height:100%;padding:18px 16px 24px;overflow-y:auto;background:#0d1225;border-left:1px solid var(--arena-line);box-shadow:-24px 0 60px rgba(0,0,0,.45);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+    .nocturne-arena-rail{position:fixed;top:0;right:0;z-index:1070;display:flex;flex-direction:column;gap:16px;width:360px;max-width:88vw;height:100%;padding:calc(18px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));overflow-y:auto;background:#0d1225;border-left:1px solid var(--arena-line);box-shadow:-24px 0 60px rgba(0,0,0,.45);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
     .nocturne-arena-rail.is-open{transform:translateX(0)}
     .nocturne-arena-rail__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
     .nocturne-arena-rail__head strong{color:var(--arena-text);font-size:16px;font-weight:850}
@@ -461,14 +467,16 @@
 }
 @media(max-width:575.98px){
     .nocturne-arena-rail{width:100%;max-width:100vw}
-    .nocturne-arena-page{padding:16px 14px 40px}
+    /* The shell (.nocturne-main) already adds 12px of its own side padding on phones - this
+       used to add another 14px on top (26px total per side), which is what was squeezing
+       the hero banner's own content area and triggering the button text-wrap/empty-space
+       complaints. Down to a few px so the combined gutter lands around 16px, not ~26-32px. */
+    .nocturne-arena-page{padding:16px 4px 40px}
     .nocturne-arena-composer{padding:14px}
     .nocturne-arena-composer__preview,.nocturne-arena-composer__swatches,.nocturne-arena-composer__row,.nocturne-arena-win-pick,.nocturne-arena-composer__foot,.nocturne-arena-composer__note{margin-left:0}
     .nocturne-arena-composer__foot{flex-wrap:wrap}
     .nocturne-arena-post{padding:14px}
     .nocturne-arena-crumb-row{flex-wrap:wrap}
-    .nocturne-arena-announcement__content{padding:18px}
-    .nocturne-arena-announcement__foot{gap:10px}
     .nocturne-arena-bell-panel{right:-14px;width:290px}
 }
 </style>

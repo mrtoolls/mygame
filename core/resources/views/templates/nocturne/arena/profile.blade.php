@@ -81,6 +81,11 @@
 #arena-load-more:disabled{opacity:.5;cursor:default}
 
 @media(max-width:575.98px){
+    /* This page had no mobile padding override at all, so it fell back to the desktop
+       20px side padding on top of the shell's own 12px - 32px total, the worst case of
+       this bug on any Arena page. */
+    .nocturne-arena-page{padding:16px 4px 40px}
+    .nocturne-arena-profile-card{padding:16px}
     .nocturne-arena-post{padding:14px}
 }
 </style>

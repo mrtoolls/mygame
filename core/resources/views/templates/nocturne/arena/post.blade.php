@@ -88,6 +88,6 @@
 .nocturne-arena-open-btn{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px;min-height:50px;border-radius:14px;background:var(--arena-accent);color:#062a1d;text-decoration:none;font-size:13.5px;font-weight:850}
 .nocturne-arena-open-btn:hover{color:#062a1d;filter:brightness(1.05)}
 
-@media(max-width:575.98px){ .nocturne-arena-page--narrow{padding:16px 14px 40px} .nocturne-arena-post{padding:14px} }
+@media(max-width:575.98px){ .nocturne-arena-page--narrow{padding:16px 4px 40px} .nocturne-arena-post{padding:14px} }
 </style>
 @endpush
