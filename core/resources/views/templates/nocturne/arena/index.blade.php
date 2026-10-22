@@ -20,13 +20,20 @@
                     <div class="nocturne-arena-announcement">
                         @if($announcement->imageUrl())<img class="nocturne-arena-announcement__bg" src="{{ $announcement->imageUrl() }}" alt=""><div class="nocturne-arena-announcement__shade"></div>@endif
                         <div class="nocturne-arena-announcement__content">
-                            @if($announcement->badge_label)<span class="nocturne-arena-announcement__badge"><i class="ph-fill ph-megaphone"></i>{{ __($announcement->badge_label) }}</span>@endif
+                            @if($announcement->badge_label)<span class="nocturne-arena-announcement__badge">{{ __($announcement->badge_label) }}</span>@endif
                             <h2>{{ __($announcement->title) }}</h2>
                             @if($announcement->description)<p>{{ __($announcement->description) }}</p>@endif
+                            @if($announcement->ends_at)
+                                <div class="nocturne-arena-announcement__timer" id="arena-announcement-countdown" data-countdown-end="{{ $announcement->ends_at->timestamp * 1000 }}">
+                                    <div class="nocturne-arena-timer-unit"><strong data-unit="d">00</strong><small><i class="ph-bold ph-calendar"></i>@lang('Days')</small></div>
+                                    <div class="nocturne-arena-timer-unit"><strong data-unit="h">00</strong><small><i class="ph-bold ph-clock"></i>@lang('Hrs')</small></div>
+                                    <div class="nocturne-arena-timer-unit"><strong data-unit="m">00</strong><small><i class="ph-bold ph-hourglass"></i>@lang('Mins')</small></div>
+                                    <div class="nocturne-arena-timer-unit"><strong data-unit="s">00</strong><small><i class="ph-bold ph-timer"></i>@lang('Sec')</small></div>
+                                </div>
+                            @endif
                             <div class="nocturne-arena-announcement__foot">
                                 @if($announcement->reward_label)<span class="nocturne-arena-announcement__reward"><i class="ph-fill ph-trophy"></i>{{ __($announcement->reward_label) }}</span>@endif
-                                @if($announcement->ends_at)<span class="nocturne-arena-announcement__countdown" id="arena-announcement-countdown" data-countdown-end="{{ $announcement->ends_at->timestamp * 1000 }}">--:--:--</span>@endif
-                                @if($announcement->button_label && $announcement->button_url)<a href="{{ $announcement->button_url }}" class="nocturne-arena-announcement__btn">{{ __($announcement->button_label) }}</a>@endif
+                                @if($announcement->button_label && $announcement->button_url)<a href="{{ $announcement->button_url }}" class="nocturne-arena-announcement__btn">{{ __($announcement->button_label) }}<i class="ph-bold ph-arrow-right"></i></a>@endif
                             </div>
                         </div>
                     </div>
@@ -323,17 +330,33 @@
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
 
 /* Announcement card */
-.nocturne-arena-announcement{position:relative;overflow:hidden;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.2)}
-.nocturne-arena-announcement__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(5,8,18,.88),rgba(5,8,18,.4))}
-.nocturne-arena-announcement__content{position:relative;z-index:1;padding:22px}
-.nocturne-arena-announcement__badge{display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;padding:6px 12px;border-radius:999px;background:rgba(0,231,138,.16);color:var(--arena-accent);font-size:11px;font-weight:800}
-.nocturne-arena-announcement__content h2{margin:0 0 6px;color:#fff;font-size:clamp(18px,2.2vw,24px);font-weight:850}
-.nocturne-arena-announcement__content p{margin:0 0 14px;color:#c7cbea;font-size:13.5px;max-width:560px}
-.nocturne-arena-announcement__foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:270px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22);box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.nocturne-arena-announcement__bg{position:absolute;right:0;top:0;width:54%;height:100%;object-fit:cover;object-position:top center;-webkit-mask-image:linear-gradient(to right,transparent,#000 20%);mask-image:linear-gradient(to right,transparent,#000 20%)}
+.nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(5,8,18,.94) 36%,rgba(5,8,18,.1))}
+.nocturne-arena-announcement__content{position:relative;z-index:1;max-width:600px;padding:clamp(24px,4vw,40px)}
+.nocturne-arena-announcement__badge{position:relative;display:inline-block;margin:0 0 12px 32px;padding:3px 0;color:var(--arena-accent);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.nocturne-arena-announcement__badge::before{content:'';position:absolute;top:50%;left:-32px;width:24px;height:2px;background:var(--arena-accent)}
+.nocturne-arena-announcement__content h2{margin:0 0 10px;color:#fff;font-size:clamp(26px,4.2vw,42px);font-weight:950;letter-spacing:-.01em;line-height:1.08;text-transform:uppercase}
+.nocturne-arena-announcement__content p{margin:0 0 20px;color:#c7cbea;font-size:13.5px;max-width:460px;line-height:1.6}
+.nocturne-arena-announcement__timer{display:flex;gap:10px;margin-bottom:22px}
+.nocturne-arena-timer-unit{display:grid;justify-items:center;gap:3px;min-width:58px;padding:10px 8px;border:1px solid rgba(0,231,138,.3);border-radius:13px;background:rgba(0,231,138,.06);box-shadow:0 0 18px rgba(0,231,138,.08) inset}
+.nocturne-arena-timer-unit strong{color:#fff;font-size:21px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1}
+.nocturne-arena-timer-unit small{display:flex;align-items:center;gap:3px;color:var(--arena-muted);font-size:8.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.nocturne-arena-timer-unit small i{color:var(--arena-accent);font-size:9px}
+.nocturne-arena-announcement__foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .nocturne-arena-announcement__reward{display:inline-flex;align-items:center;gap:6px;color:var(--arena-accent);font-size:13px;font-weight:800}
-.nocturne-arena-announcement__countdown{padding:7px 13px;border-radius:10px;background:rgba(0,0,0,.35);color:#fff;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
-.nocturne-arena-announcement__btn{padding:9px 18px;border-radius:11px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;text-decoration:none}
+.nocturne-arena-announcement__btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:900;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
+.nocturne-arena-announcement__btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,231,138,.3)}
+.nocturne-arena-announcement__btn i{font-size:15px}
+@media(max-width:700px){
+    .nocturne-arena-announcement{flex-direction:column;align-items:stretch;min-height:0}
+    .nocturne-arena-announcement__bg{position:static;width:100%;height:150px;-webkit-mask-image:none;mask-image:none}
+    .nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,18,0) 32%,rgba(11,15,34,.97) 92%)}
+    .nocturne-arena-announcement__content{max-width:none;padding:18px}
+    .nocturne-arena-announcement__timer{gap:7px}
+    .nocturne-arena-timer-unit{min-width:0;flex:1;padding:8px 4px}
+    .nocturne-arena-timer-unit strong{font-size:16px}
+}
 
 /* Profile/level widget */
 .nocturne-arena-widget--profile{display:grid;gap:12px}
@@ -618,17 +641,25 @@
     var countdownEl = document.getElementById('arena-announcement-countdown');
     if (countdownEl) {
         var endAt = parseInt(countdownEl.getAttribute('data-countdown-end'), 10);
+        var unitD = countdownEl.querySelector('[data-unit="d"]');
+        var unitH = countdownEl.querySelector('[data-unit="h"]');
+        var unitM = countdownEl.querySelector('[data-unit="m"]');
+        var unitS = countdownEl.querySelector('[data-unit="s"]');
+        var pad = function(n) { return (n < 10 ? '0' : '') + n; };
         var tick = function() {
             var diff = endAt - Date.now();
-            if (diff <= 0) { countdownEl.textContent = "{{ __('Ended') }}"; return; }
-            var h = Math.floor(diff / 3600000);
-            var m = Math.floor((diff % 3600000) / 60000);
-            var s = Math.floor((diff % 60000) / 1000);
-            var pad = function(n) { return (n < 10 ? '0' : '') + n; };
-            countdownEl.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+            if (diff <= 0) {
+                unitD.textContent = unitH.textContent = unitM.textContent = unitS.textContent = '00';
+                clearInterval(timer);
+                return;
+            }
+            unitD.textContent = pad(Math.floor(diff / 86400000));
+            unitH.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+            unitM.textContent = pad(Math.floor((diff % 3600000) / 60000));
+            unitS.textContent = pad(Math.floor((diff % 60000) / 1000));
         };
         tick();
-        setInterval(tick, 1000);
+        var timer = setInterval(tick, 1000);
     }
 })(jQuery);
 </script>
