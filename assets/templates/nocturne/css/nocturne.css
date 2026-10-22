@@ -369,7 +369,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 
 /* Shared game lobby polish: the 19 existing games keep their own rules and controls,
    while their common shell gets consistent spacing and responsive touch targets. */
-.nocturne-game-page { overflow-x: clip; }
+.nocturne-game-page { overflow-x: hidden; }
 .nocturne-game-page .nocturne-content > section.py-100 { padding-top: clamp(24px, 4vw, 54px); padding-bottom: clamp(28px, 5vw, 64px); }
 .nocturne-game-page .container { max-width: 1220px; }
 .nocturne-game-page .headtail-wrapper,
@@ -477,7 +477,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-home-cards > a:hover { border-color: rgba(0,239,135,.3); transform: translateY(-2px); }
 .nocturne-home-cards > a > i:first-child { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 22px; }
 .nocturne-home-cards span { display: grid; gap: 3px; }
-.nocturne-home-cards strong { font-size: 13.5px; }
+.nocturne-home-cards strong { display: block; overflow: hidden; font-size: 13.5px; white-space: nowrap; text-overflow: ellipsis; }
 .nocturne-home-cards small { color: var(--nocturne-muted); font-size: 11px; }
 
 @media (max-width: 1199.98px) {
@@ -515,7 +515,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
    Keep those intrinsic widths inside the mobile viewport so the whole page
    cannot pan into a blank strip beside the content. */
 @media (max-width: 850px) {
-    .nocturne-live-games-page { min-width: 0; max-width: 100%; overflow-x: clip; }
+    .nocturne-live-games-page { min-width: 0; max-width: 100%; overflow-x: hidden; }
     .nocturne-live-games-page .nocturne-content,
     .nocturne-live-games-page .nocturne-content > section,
     .nocturne-live-games-page .nocturne-content .container { min-width: 0; max-width: 100%; }
