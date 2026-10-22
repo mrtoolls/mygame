@@ -41,6 +41,8 @@ class TableGameService
                 'max_players' => $definition['max'],
                 'enabled' => (bool) $setting->enabled,
                 'card_image' => $setting->card_image ?? null,
+                'card_image_url' => $setting->card_image ? getImage(getFilePath('game') . '/' . $setting->card_image, getFileSize('game')) : null,
+                'icon_class' => TableGameRules::GAME_ICONS[$key] ?? 'la-dice',
                 'available' => in_array($key, TableGameRules::AVAILABLE, true),
                 'commission_percent' => (float) $setting->commission_percent,
                 'min_stake' => (string) $setting->min_stake,
@@ -541,6 +543,19 @@ class TableGameService
             $to = $moveRow?->public_data['move']['to'] ?? null;
             if ($from && $to) $lastMove = ['from' => $from, 'to' => $to];
         }
+        $recentRolls = null;
+        if ($table->game_type === 'ludo') {
+            // Up to 5 most-recent rolls per seat, newest first - 40 rows comfortably covers that
+            // across a full 4-player table even with rolls interleaved between seats.
+            $recentRolls = [];
+            foreach (TableGameMove::where('table_game_id', $table->id)->where('action', 'dice_roll')->latest('id')->limit(40)->get() as $row) {
+                $rollSeat = $row->public_data['roll']['seat'] ?? null;
+                $rollValue = $row->public_data['roll']['value'] ?? null;
+                if ($rollSeat === null || $rollValue === null) continue;
+                $recentRolls[$rollSeat] ??= [];
+                if (count($recentRolls[$rollSeat]) < 5) $recentRolls[$rollSeat][] = $rollValue;
+            }
+        }
         $watchingCount = Schema::hasTable('table_game_viewers')
             ? TableGameViewer::where('table_game_id', $table->id)
                 ->where('last_seen_at', '>=', now()->subSeconds(20))
@@ -562,6 +577,7 @@ class TableGameService
             'turn_deadline_at' => $table->turn_deadline_at?->toIso8601String(),
             'settlement' => $settlement,
             'last_move' => $lastMove,
+            'recent_rolls' => $recentRolls,
             'players' => $players->map(fn ($player) => ['id' => $player->user_id, 'name' => $player->user?->username, 'avatar' => $player->user?->avatarUrl(), 'seat' => $player->seat, 'status' => $player->status])->values(),
         ];
     }

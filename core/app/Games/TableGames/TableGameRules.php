@@ -29,6 +29,28 @@ class TableGameRules
 
     public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts'];
 
+    // Default icon glyph shown until an admin uploads a real card_image for that game
+    // (Admin > Table Games). Every class here is confirmed present in line-awesome.min.css.
+    public const GAME_ICONS = [
+        'ludo' => 'la-dice-five',
+        'whot' => 'la-id-card',
+        'chess' => 'la-chess',
+        'draughts' => 'la-circle',
+        'tic_tac_toe' => 'la-th',
+        'four_in_a_row' => 'la-th-large',
+        'snakes_and_ladders' => 'la-flag-checkered',
+        'dominoes' => 'la-grip-horizontal',
+        'backgammon' => 'la-cubes',
+        'oware' => 'la-dot-circle-o',
+        'sea_battle' => 'la-ship',
+        'blackjack' => 'la-coins',
+        'texas_holdem' => 'la-money-bill-wave',
+        'rummy' => 'la-layer-group',
+        'spades' => 'la-id-card-alt',
+        'hearts' => 'la-heart',
+        'crazy_eights' => 'la-clone',
+    ];
+
     // Each seat's own start square (0,13,26,39 - see 'starts' in start()) plus the classic star
     // square 8 ahead of every start. A token sitting on any of these shared-ring squares cannot
     // be captured, no matter how many other tokens land there with it.
