@@ -25,7 +25,6 @@
                                     <div class="nocturne-arena-announcement__content">
                                         @if($slide->badge_label)<span class="nocturne-arena-announcement__badge nocturne-arena-announcement__badge--{{ $slide->type }}">{{ __($slide->badge_label) }}</span>@endif
                                         <h2>{{ __($slide->title) }}</h2>
-                                        @if($slide->description)<p>{{ __($slide->description) }}</p>@endif
                                         @if($slide->countdown_end)
                                             <div class="nocturne-arena-announcement__timer" data-countdown-end="{{ $slide->countdown_end * 1000 }}" data-countdown-label="{{ __($slide->countdown_label) }}">
                                                 <div class="nocturne-arena-timer-unit"><strong data-unit="d">00</strong><small><i class="ph-bold ph-calendar"></i>@lang('Days')</small></div>
@@ -346,7 +345,7 @@
 
 /* Hero carousel (announcements + live/upcoming competitions) */
 .nocturne-arena-carousel{position:relative;margin-bottom:20px;touch-action:pan-y}
-.nocturne-arena-carousel__track{position:relative;min-height:380px;border-radius:22px;overflow:hidden}
+.nocturne-arena-carousel__track{position:relative;min-height:300px;border-radius:22px;overflow:hidden}
 /* Nav arrows sit clear of the text column, stay invisible until a real mouse hovers the
    carousel, and never appear at all on touch/narrow screens - swipe takes over there. */
 .nocturne-arena-carousel__nav{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:34px;height:34px;margin-top:-17px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(6,8,18,.6);backdrop-filter:blur(4px);color:#fff;font-size:14px;cursor:pointer;opacity:0;transition:opacity .2s ease,background .15s ease,border-color .15s ease;pointer-events:none}
@@ -364,7 +363,7 @@
 /* Announcement/competition slide */
 .nocturne-arena-slide{position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease}
 .nocturne-arena-slide.is-active{opacity:1;visibility:visible;pointer-events:auto}
-.nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:380px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 85% 15%,rgba(0,231,138,.14),transparent 45%),radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22)}
+.nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:300px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 85% 15%,rgba(0,231,138,.14),transparent 45%),radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22)}
 .nocturne-arena-slide.nocturne-arena-announcement{position:absolute;inset:0;margin-bottom:0;border-radius:0;box-shadow:none}
 .nocturne-arena-announcement::before{content:'';position:absolute;right:-8%;top:50%;width:46%;aspect-ratio:1;transform:translateY(-50%);background:conic-gradient(from 180deg,rgba(0,231,138,.0),rgba(0,231,138,.16),rgba(0,231,138,.0) 60%);border-radius:50%;filter:blur(2px);pointer-events:none}
 .nocturne-arena-announcement:has(.nocturne-arena-announcement__bg)::before{display:none}
@@ -376,7 +375,6 @@
 .nocturne-arena-announcement__badge{position:relative;display:inline-block;margin:0 0 12px 32px;padding:3px 0;color:var(--arena-accent);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
 .nocturne-arena-announcement__badge::before{content:'';position:absolute;top:50%;left:-32px;width:24px;height:2px;background:var(--arena-accent)}
 .nocturne-arena-announcement__content h2{margin:0 0 8px;color:#fff;font-size:clamp(24px,3.6vw,38px);font-weight:950;letter-spacing:-.01em;line-height:1.1;text-transform:uppercase}
-.nocturne-arena-announcement__content p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0 0 16px;color:#c7cbea;font-size:13px;max-width:440px;line-height:1.5;max-height:40px}
 .nocturne-arena-announcement__timer{display:flex;gap:9px;margin-bottom:16px}
 .nocturne-arena-timer-unit{display:grid;justify-items:center;gap:3px;min-width:58px;padding:10px 8px;border:1px solid rgba(0,231,138,.3);border-radius:13px;background:rgba(0,231,138,.06);box-shadow:0 0 18px rgba(0,231,138,.08) inset}
 .nocturne-arena-timer-unit strong{color:#fff;font-size:21px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1}
@@ -391,14 +389,13 @@
    on the right, timer row, footer row) - everything just scales down to fit, it never
    restructures into a stacked layout. */
 @media(max-width:700px){
-    .nocturne-arena-carousel__track{min-height:200px}
-    .nocturne-arena-announcement{min-height:200px}
+    .nocturne-arena-carousel__track{min-height:165px}
+    .nocturne-arena-announcement{min-height:165px}
     .nocturne-arena-announcement__bg{width:46%}
     .nocturne-arena-announcement__content{max-width:62%;padding:14px 16px}
     .nocturne-arena-announcement__badge{margin:0 0 7px 20px;font-size:9px}
     .nocturne-arena-announcement__badge::before{width:14px;left:-20px}
     .nocturne-arena-announcement__content h2{margin:0 0 5px;font-size:clamp(15px,5.2vw,20px);line-height:1.12}
-    .nocturne-arena-announcement__content p{display:none}
     .nocturne-arena-announcement__timer{gap:5px;margin-bottom:12px}
     .nocturne-arena-timer-unit{min-width:0;flex:1;padding:5px 2px;border-radius:9px}
     .nocturne-arena-timer-unit strong{font-size:13px}
