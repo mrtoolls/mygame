@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Frontend;
+use App\Models\GeneralSetting;
 use App\Models\Page;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 class SystemController extends Controller
 {
@@ -392,9 +394,20 @@ class SystemController extends Controller
             ],
         ];
 
+        // Track which element sections have ever been seeded, independent of whether an admin
+        // later deleted some or all of those rows on purpose (e.g. removing sample placeholder
+        // cards). Checking "do any rows for this key exist right now" instead would silently
+        // re-insert the placeholders the next time this action runs after a deliberate cleanup.
+        $hasSeededColumn = Schema::hasColumn('general_settings', 'nocturne_seeded_elements');
+        $settings = $hasSeededColumn ? GeneralSetting::first() : null;
+        $seededElements = $settings ? array_filter(explode(',', (string) $settings->nocturne_seeded_elements)) : [];
+
         foreach ($aboutElements as $sectionKey => $items) {
             $elementKey = $sectionKey . '.element';
-            if (Frontend::where('data_keys', $elementKey)->where('tempname', $contentTempname)->exists()) continue;
+            $alreadySeeded = $hasSeededColumn
+                ? in_array($elementKey, $seededElements, true)
+                : Frontend::where('data_keys', $elementKey)->where('tempname', $contentTempname)->exists();
+            if ($alreadySeeded) continue;
 
             foreach ($items as $values) {
                 $element = new Frontend();
@@ -403,6 +416,11 @@ class SystemController extends Controller
                 $element->data_values = $values;
                 $element->save();
             }
+            $seededElements[] = $elementKey;
+        }
+        if ($hasSeededColumn && $settings) {
+            $settings->nocturne_seeded_elements = implode(',', array_unique($seededElements));
+            $settings->save();
         }
 
         // Seed complete, editable footer policy pages for this template. These drafts
