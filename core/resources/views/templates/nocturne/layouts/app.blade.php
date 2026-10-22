@@ -575,11 +575,15 @@
             });
 
             $.each($(".select2"), function() {
-                $(this)
-                    .wrap(`<div class="position-relative"></div>`)
-                    .select2({
-                        dropdownParent: $(this).parent(),
-                    });
+                // Pinning dropdownParent to the select's own local wrapper clipped the open
+                // dropdown panel against any ancestor with overflow:hidden (cards, modals,
+                // the page itself) - it could render cut off or invisible instead of floating
+                // over the page. Select2's default (append the panel to <body>) avoids that
+                // entirely, so only pin it to a modal - the one case that actually needs a
+                // local parent, to keep the dropdown stacked above that modal's backdrop.
+                var modalParent = $(this).closest('.modal');
+                var options = modalParent.length ? { dropdownParent: modalParent } : {};
+                $(this).select2(options);
             });
 
 
