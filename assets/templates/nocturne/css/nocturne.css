@@ -454,13 +454,16 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 @media(prefers-reduced-motion:reduce) {
     .win-loss-popup *, .win-loss-popup *::before, .win-loss-popup *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
-.nocturne-welcome { position: relative; display: flex; min-height: 350px; align-items: center; overflow: hidden; margin: 8px 0 28px; padding: clamp(28px, 5vw, 72px); border-radius: 24px; background: radial-gradient(ellipse at 90% 95%, rgba(0,239,135,.22), transparent 43%), linear-gradient(120deg,#151a31 12%,#171e38 60%,#102b33); }
+.nocturne-welcome { position: relative; display: flex; min-height: 320px; align-items: center; overflow: hidden; margin: 8px 0 28px; padding: clamp(28px, 5vw, 72px); border-radius: 24px; background: radial-gradient(ellipse at 90% 95%, rgba(0,239,135,.22), transparent 43%), radial-gradient(ellipse at 15% 10%, rgba(123,141,224,.16), transparent 40%), linear-gradient(120deg,#151a31 12%,#171e38 60%,#102b33); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
 .nocturne-welcome-copy { position: relative; z-index: 2; max-width: 660px; }
-.nocturne-welcome-copy > span { color: #a6f2d0; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.nocturne-welcome-copy h1 { margin: 12px 0; font-size: clamp(34px, 4vw, 58px); line-height: 1.08; }
-.nocturne-welcome-copy p { max-width: 520px; font-size: 17px; }
-.nocturne-welcome-actions { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 26px; }
-.nocturne-welcome-secondary { color: var(--nocturne-text); font-weight: 700; text-decoration: none; }
+.nocturne-welcome-copy > span { display: inline-flex; align-items: center; gap: 8px; color: #a6f2d0; font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.nocturne-welcome-copy > span::before { content: ''; width: 20px; height: 2px; background: var(--nocturne-green); }
+.nocturne-welcome-copy h1 { margin: 14px 0 0; font-size: clamp(32px, 4.2vw, 56px); font-weight: 950; line-height: 1.06; }
+.nocturne-welcome-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
+.nocturne-welcome-secondary { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 1px solid rgba(145,156,205,.22); border-radius: 13px; background: rgba(255,255,255,.04); color: var(--nocturne-text); font: inherit; font-size: 14px; font-weight: 800; text-decoration: none; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .1s ease; }
+.nocturne-welcome-secondary:hover { background: rgba(255,255,255,.08); border-color: rgba(0,239,135,.35); }
+.nocturne-welcome-secondary:active { transform: scale(.97); }
+.nocturne-welcome-secondary i { font-size: 17px; color: var(--nocturne-green); }
 .nocturne-welcome-art { position: absolute; inset: 0 0 0 auto; display: grid; width: 42%; place-items: center; color: var(--nocturne-green); }
 .nocturne-welcome-art > i { position: absolute; filter: drop-shadow(0 20px 34px rgba(0,0,0,.28)); }
 .nocturne-welcome-art > i:nth-of-type(1) { font-size: clamp(110px,17vw,230px); transform: rotate(-12deg); color: #44527f; }
@@ -468,12 +471,13 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-welcome-art > i:nth-of-type(3) { bottom: 18%; left: 10%; color: #00ef87; font-size: clamp(30px,5vw,60px); }
 .nocturne-orbit { position: absolute; width: 76%; aspect-ratio: 1; border: 1px solid rgba(0,239,135,.16); border-radius: 50%; }
 .orbit-two { width: 58%; border-color: rgba(135,157,224,.18); }
-.nocturne-home-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-bottom: 28px; }
-.nocturne-home-cards > a { display: flex; align-items: center; gap: 14px; min-height: 96px; padding: 18px; border-radius: 18px; background: var(--nocturne-panel); color: var(--nocturne-text); text-decoration: none; }
-.nocturne-home-cards > a > i:first-child { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 23px; }
-.nocturne-home-cards > a > i:last-child { margin-left: auto; color: var(--nocturne-muted); font-size: 19px; }
+
+.nocturne-home-cards { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
+.nocturne-home-cards > a { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-height: 108px; padding: 18px; border-radius: 18px; background: var(--nocturne-panel); border: 1px solid transparent; color: var(--nocturne-text); text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+.nocturne-home-cards > a:hover { border-color: rgba(0,239,135,.3); transform: translateY(-2px); }
+.nocturne-home-cards > a > i:first-child { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--nocturne-raised); color: var(--nocturne-green); font-size: 22px; }
 .nocturne-home-cards span { display: grid; gap: 3px; }
-.nocturne-home-cards strong { font-size: 14px; }
+.nocturne-home-cards strong { font-size: 13.5px; }
 .nocturne-home-cards small { color: var(--nocturne-muted); font-size: 11px; }
 
 @media (max-width: 1199.98px) {
@@ -620,17 +624,19 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-main h3 { font-size: 19px; }
     .nocturne-main .card, .nocturne-main .custom--card { border-radius: 15px; }
     .nocturne-main .card-body { padding: 16px; }
-    .nocturne-welcome { min-height: 390px; align-items: flex-start; padding: 28px 22px; }
+    .nocturne-welcome { min-height: 0; align-items: flex-start; padding: 24px 20px; }
     .nocturne-welcome-copy { max-width: 100%; }
-    .nocturne-welcome-copy h1 { max-width: 400px; font-size: 34px; }
-    .nocturne-welcome-copy p { max-width: 330px; font-size: 14px; }
-    .nocturne-welcome-art { width: 58%; opacity: .42; }
-    .nocturne-welcome-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: min(100%, 270px); gap: 10px; margin-top: 20px; }
-    .nocturne-welcome-actions .nocturne-deposit { width: 100%; min-height: 48px; padding: 0 16px; gap: 8px; font-size: 14px; white-space: nowrap; }
-    .nocturne-welcome-actions .nocturne-deposit i { font-size: 18px; }
-    .nocturne-welcome-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid rgba(145,156,205,.2); border-radius: 13px; background: rgba(12,15,34,.42); font-size: 14px; white-space: nowrap; }
-    .nocturne-home-cards { grid-template-columns: 1fr; gap: 10px; }
-    .nocturne-home-cards > a { min-height: 76px; padding: 13px; }
+    .nocturne-welcome-copy h1 { max-width: 320px; font-size: 28px; }
+    .nocturne-welcome-art { width: 58%; opacity: .38; }
+    /* Both hero actions stay side by side on mobile, never stacked. */
+    .nocturne-welcome-actions { display: flex; flex-wrap: nowrap; width: 100%; gap: 8px; margin-top: 22px; }
+    .nocturne-welcome-actions .nocturne-deposit { flex: 1; min-width: 0; min-height: 46px; padding: 0 12px; gap: 6px; font-size: 12.5px; white-space: nowrap; }
+    .nocturne-welcome-actions .nocturne-deposit i { font-size: 17px; }
+    .nocturne-welcome-secondary { flex: 1; min-width: 0; justify-content: center; min-height: 46px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; }
+    /* Quick-link cards: a horizontal, swipeable strip on mobile instead of a stacked list -
+       same "inline" feel as the game rows, not a vertical menu. */
+    .nocturne-home-cards { display: flex; grid-template-columns: none; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 2px; }
+    .nocturne-home-cards > a { flex: 0 0 132px; scroll-snap-align: start; min-height: 108px; padding: 14px; }
     .footer-area .payment-method { padding-bottom: 8px; }
     .footer-area .socket-area__wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 }
@@ -974,6 +980,29 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .game-item__tag { display: block; padding: 0 12px 12px; color: var(--nocturne-muted); font-size: 10.5px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: .05em; }
 @media (max-width: 575.98px) {
     .nocturne-game-scroller .nocturne-game-scroller__item { flex-basis: 136px !important; width: 136px !important; max-width: 136px !important; }
+}
+
+/* ---- Homepage News / Reviews rows - reuse .nocturne-game-row/.nocturne-game-scroller ---- */
+.nocturne-news-card { flex: 0 0 240px; width: 240px; scroll-snap-align: start; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+.nocturne-news-card:hover { border-color: rgba(0,239,135,.3); transform: translateY(-3px); }
+.nocturne-news-card__image { display: block; height: 130px; overflow: hidden; }
+.nocturne-news-card__image img { width: 100%; height: 100%; object-fit: cover; }
+.nocturne-news-card__body { display: grid; gap: 6px; padding: 14px; }
+.nocturne-news-card__body strong { color: var(--nocturne-text); font-size: 13.5px; font-weight: 800; line-height: 1.35; }
+.nocturne-news-card__body small { color: var(--nocturne-muted); font-size: 11.5px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+.nocturne-review-card { flex: 0 0 280px; width: 280px; scroll-snap-align: start; display: grid; gap: 10px; padding: 18px; border-radius: 16px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); }
+.nocturne-review-card__head { display: flex; align-items: center; gap: 10px; }
+.nocturne-review-card__avatar { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; overflow: hidden; border-radius: 50%; background: var(--nocturne-raised); color: var(--nocturne-muted); font-size: 18px; }
+.nocturne-review-card__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.nocturne-review-card__head strong { display: block; color: var(--nocturne-text); font-size: 13px; font-weight: 800; }
+.nocturne-review-card__head small { color: var(--nocturne-muted); font-size: 10.5px; }
+.nocturne-review-card__stars { color: #ffd166; font-size: 13px; letter-spacing: 2px; }
+.nocturne-review-card__stars span { color: rgba(255,255,255,.12); }
+.nocturne-review-card p { margin: 0; color: var(--nocturne-muted); font-size: 12.5px; line-height: 1.6; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+@media (max-width: 575.98px) {
+    .nocturne-news-card { flex-basis: 198px; width: 198px; }
+    .nocturne-review-card { flex-basis: 240px; width: 240px; }
 }
 
 /* =========================================================================

@@ -281,10 +281,26 @@
             const modal = document.querySelector('#app-install-modal');
             const dismiss = document.querySelector('#app-install-dismiss');
             const refresh = document.querySelector('#pull-refresh');
-            if (!notice || !action || !modal || !refresh) return;
+            // Homepage hero only - swaps between an "Install App" button and an "Arena" link
+            // depending on whether the site is already running installed. Queried up front (not
+            // gated behind the sitewide elements above) since this page-specific pair can be
+            // absent on every other page without affecting the rest of this script.
+            const heroInstallBtn = document.querySelector('#hero-install-btn');
+            const heroArenaLink = document.querySelector('#hero-arena-link');
 
             const standalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
             const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            function syncHeroInstallButton() {
+                if (!heroInstallBtn || !heroArenaLink) return;
+                const installed = standalone();
+                heroInstallBtn.hidden = installed;
+                heroArenaLink.hidden = !installed;
+            }
+            syncHeroInstallButton();
+            heroInstallBtn?.addEventListener('click', () => action?.click());
+
+            if (!notice || !action || !modal || !refresh) return;
             const dismissedKey = 'winxpot-install-dismissed-until';
             let installPrompt = null;
             let installReady = false;
@@ -315,6 +331,7 @@
                 installReady = false;
                 storage.remove(dismissedKey);
                 notice.hidden = true;
+                syncHeroInstallButton();
             });
             action.addEventListener('click', async () => {
                 if (ios || !installPrompt) {
