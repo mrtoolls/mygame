@@ -835,10 +835,21 @@ class TableGameService
         if (!$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games are unavailable for your wallet currency.');
         if (!$user->country_id || !Schema::hasTable('countries')) return;
         $country = Country::with('currency')->find($user->country_id);
-        if (!$country || !$country->is_enabled || !$country->is_allowed || !$country->currency?->enabled
-            || (int) $country->currency_id !== (int) $user->currency_id) {
-            throw new InvalidArgumentException('Staked tables are not available for your country or wallet currency.');
+        // The country itself being disabled/disallowed is a real compliance block and must
+        // still stop staking regardless of currency. It used to be bundled into the same check
+        // as "does the wallet currency match the country's default", which meant anyone who
+        // picked a different (but still enabled) currency via their own profile settings was
+        // hard-blocked from staking at all, on every table, with no way back except switching
+        // back to that one specific currency - that was the actual "Currency not available"
+        // bug, not a country restriction.
+        if (!$country || !$country->is_enabled || !$country->is_allowed) {
+            throw new InvalidArgumentException('Staked tables are not available for your country.');
         }
+        // The country's own min/max stake limits are stored in ITS currency's minor units, so
+        // they only mean anything when the player's wallet currency still matches that
+        // country's default. A player who explicitly switched currencies already passed the
+        // enabled-currency check above; there is nothing left here to validate against.
+        if (!$country->currency?->enabled || (int) $country->currency_id !== (int) $user->currency_id) return;
         $minorStake = (new Money())->toMinor($walletStake, (int) $country->currency->decimals);
         if (($country->min_table_stake_minor > 0 && bccomp($minorStake, (string) $country->min_table_stake_minor, 0) < 0)
             || ($country->max_table_stake_minor > 0 && bccomp($minorStake, (string) $country->max_table_stake_minor, 0) > 0)) {

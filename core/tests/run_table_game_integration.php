@@ -430,6 +430,21 @@ if (TableGame::find($rematch->new_table_game_id)->status !== 'waiting') throw ne
 $service->standUp($creator, $rematch->new_table_game_id);
 if ($rematch->fresh()->status !== 'cancelled') throw new RuntimeException('The requester cancelling their rematch table did not mark the rematch cancelled for everyone watching it.');
 
+// A player whose wallet currency differs from their registered country's default must still be
+// able to join a staked table - this used to hard-block staking entirely instead of just
+// skipping the (inapplicable) country-currency stake-limit comparison.
+$nigeria = DB::table('countries')->where('iso_code', 'NG')->first();
+$usd = DB::table('currencies')->where('code', 'USD')->first();
+if (!$nigeria || !$usd) throw new RuntimeException('Expected seed country/currency data is missing from the test database.');
+$mismatchedUser = $insertUser('table_mismatched_currency', '100.00000000', (int) $usd->id);
+DB::table('users')->where('id', $mismatchedUser->id)->update(['country_id' => $nigeria->id]);
+$mismatchedUser = $mismatchedUser->fresh();
+$stakedTable = $service->create($creator, 'tic_tac_toe', 2, '2.00000000', 'country_currency_key_0001');
+$stakedTable = $service->join($mismatchedUser, $stakedTable->id);
+if ($stakedTable->status !== 'active') throw new RuntimeException('A player with a wallet currency different from their country default could not join a staked table.');
+$assertBalance($mismatchedUser, '98.00000000', 'Joining a staked table did not debit the mismatched-currency player the expected stake.');
+$service->forceClose($stakedTable->id);
+
 $poorUser = $insertUser('table_low_balance', '0.50000000');
 try {
     $service->create($poorUser, 'tic_tac_toe', 2, '1.00000000', 'create_key_000006');
