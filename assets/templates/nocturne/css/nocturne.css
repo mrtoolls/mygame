@@ -91,7 +91,16 @@
     .app-install-modal__tip { margin-top: 11px; }
 }
 
-html { background: var(--nocturne-bg); scroll-behavior: smooth; }
+/* iOS Safari's elastic/rubber-band scroll operates on the actual document extent, not on
+   nested overflow:hidden containers - a handful of stray pixels of overflow ANYWHERE on a
+   page (a shadow, a transform, a long unbroken string, a fractional-px rounding) is enough
+   for iOS to let the whole page be dragged sideways and bounce back, reading as "the page
+   shakes and creates empty space." Android Chrome doesn't bounce the same way, which is why
+   per-page overflow-x:hidden fixes kept working there but not on iPhone. Locking it down at
+   the true root (html/body) is the backstop that actually matches how iOS decides whether a
+   page can be dragged sideways at all - it does not affect any element's own overflow-x:auto
+   (the carousels/scrollers keep scrolling horizontally exactly as before). */
+html { background: var(--nocturne-bg); scroll-behavior: smooth; overflow-x: hidden; }
 body {
     margin: 0;
     background: var(--nocturne-bg) !important;
@@ -99,6 +108,8 @@ body {
     font-family: var(--body-font);
     font-size: 15px;
     line-height: 1.55;
+    overflow-x: hidden;
+    max-width: 100vw;
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
