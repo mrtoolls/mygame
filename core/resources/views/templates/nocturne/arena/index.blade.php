@@ -3,15 +3,18 @@
     <div class="nocturne-arena-page">
         <div class="nocturne-arena-crumb-row">
             <div class="nocturne-arena-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Arena')</span></div>
-            @auth
-                <div class="nocturne-arena-bell-wrap">
-                    <button type="button" class="nocturne-arena-bell" id="arena-bell"><i class="ph-fill ph-bell"></i><span class="nocturne-arena-bell__count" id="arena-bell-count" hidden>0</span></button>
-                    <div class="nocturne-arena-bell-panel" id="arena-bell-panel" hidden>
-                        <div class="nocturne-arena-bell-panel__head"><strong>@lang('Notifications')</strong><button type="button" id="arena-bell-markread">@lang('Mark all read')</button></div>
-                        <div class="nocturne-arena-bell-panel__list" id="arena-bell-list"><p class="nocturne-arena-notif-empty">@lang('Loading…')</p></div>
+            <div class="nocturne-arena-crumb-tools">
+                @auth
+                    <div class="nocturne-arena-bell-wrap">
+                        <button type="button" class="nocturne-arena-bell" id="arena-bell"><i class="ph-fill ph-bell"></i><span class="nocturne-arena-bell__count" id="arena-bell-count" hidden>0</span></button>
+                        <div class="nocturne-arena-bell-panel" id="arena-bell-panel" hidden>
+                            <div class="nocturne-arena-bell-panel__head"><strong>@lang('Notifications')</strong><button type="button" id="arena-bell-markread">@lang('Mark all read')</button></div>
+                            <div class="nocturne-arena-bell-panel__list" id="arena-bell-list"><p class="nocturne-arena-notif-empty">@lang('Loading…')</p></div>
+                        </div>
                     </div>
-                </div>
-            @endauth
+                @endauth
+                <button type="button" class="nocturne-arena-bell" id="arena-rail-open" aria-label="@lang('Arena menu')"><i class="ph-fill ph-list"></i></button>
+            </div>
         </div>
 
         <div class="nocturne-arena-layout">
@@ -130,7 +133,9 @@
                 @endif
             </div>
 
-            <aside class="nocturne-arena-rail">
+            <div class="nocturne-arena-rail-backdrop" id="arena-rail-backdrop"></div>
+            <aside class="nocturne-arena-rail" id="arena-rail">
+                <div class="nocturne-arena-rail__head"><strong>@lang('Arena menu')</strong><button type="button" class="nocturne-arena-rail__close" id="arena-rail-close" aria-label="@lang('Close')"><i class="ph-bold ph-x"></i></button></div>
                 @auth
                     <div class="nocturne-arena-widget nocturne-arena-widget--profile">
                         <a href="{{ route('arena.profile', auth()->user()->username) }}" class="nocturne-arena-widget__me">
@@ -240,6 +245,7 @@
 .nocturne-arena-crumb a:hover{color:var(--arena-text)}
 .nocturne-arena-crumb span{color:var(--arena-text)}
 .nocturne-arena-crumb i{font-size:11px;opacity:.6}
+.nocturne-arena-crumb-tools{display:flex;align-items:center;gap:8px}
 
 .nocturne-arena-bell-wrap{position:relative}
 .nocturne-arena-bell{position:relative;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--arena-line);border-radius:11px;background:var(--arena-panel);color:var(--arena-muted);font-size:16px;cursor:pointer}
@@ -265,7 +271,10 @@
 .nocturne-arena-mini-follow.is-following .label-follow{display:none}
 .nocturne-arena-mini-follow.is-following .label-following{display:inline}
 
-.nocturne-arena-layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
+/* The feed is the whole page now - the right rail (profile/stats, live games, wins,
+   trending, news, suggested follows) moved into an off-canvas menu opened by the list
+   icon next to the bell, instead of permanently eating a column next to the feed. */
+.nocturne-arena-layout{display:block;max-width:680px;margin:0 auto}
 .nocturne-arena-feed{min-width:0}
 
 .nocturne-arena-composer{margin-bottom:20px;padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
@@ -368,7 +377,16 @@
 #arena-load-more:hover{border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
 #arena-load-more:disabled{opacity:.5;cursor:default}
 
-.nocturne-arena-rail{display:grid;gap:16px}
+/* Off-canvas drawer: the rail slides in from the right over a backdrop instead of sitting
+   permanently in the layout. Fixed to the viewport so it scrolls independently of the page. */
+.nocturne-arena-rail-backdrop{position:fixed;inset:0;z-index:59;background:rgba(5,8,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.nocturne-arena-rail-backdrop.is-open{opacity:1;visibility:visible}
+.nocturne-arena-rail{position:fixed;top:0;right:0;z-index:60;display:flex;flex-direction:column;gap:16px;width:360px;max-width:88vw;height:100%;padding:18px 16px 24px;overflow-y:auto;background:#0d1225;border-left:1px solid var(--arena-line);box-shadow:-24px 0 60px rgba(0,0,0,.45);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.nocturne-arena-rail.is-open{transform:translateX(0)}
+.nocturne-arena-rail__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.nocturne-arena-rail__head strong{color:var(--arena-text);font-size:16px;font-weight:850}
+.nocturne-arena-rail__close{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--arena-line);border-radius:10px;background:var(--arena-panel);color:var(--arena-muted);font-size:15px;cursor:pointer}
+.nocturne-arena-rail__close:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
 .nocturne-arena-widget{padding:18px;border:1px solid var(--arena-line);border-radius:18px;background:var(--arena-panel)}
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
@@ -527,11 +545,8 @@
 .nocturne-arena-comment__reply-btn:hover{color:var(--arena-accent)}
 .nocturne-arena-comment__replies{display:grid;gap:8px;margin-left:30px}
 
-@media(max-width:991.98px){
-    .nocturne-arena-layout{grid-template-columns:1fr}
-    .nocturne-arena-rail{order:3}
-}
 @media(max-width:575.98px){
+    .nocturne-arena-rail{width:100%;max-width:100vw}
     .nocturne-arena-page{padding:16px 14px 40px}
     .nocturne-arena-composer{padding:14px}
     .nocturne-arena-composer__preview,.nocturne-arena-composer__swatches,.nocturne-arena-composer__row,.nocturne-arena-win-pick,.nocturne-arena-composer__foot,.nocturne-arena-composer__note{margin-left:0}
@@ -868,6 +883,34 @@
     });
     loadNotifications();
     @endauth
+
+    // Arena menu: the former always-on right sidebar, now an off-canvas drawer.
+    (function() {
+        var rail = document.getElementById('arena-rail');
+        var backdrop = document.getElementById('arena-rail-backdrop');
+        var openBtn = document.getElementById('arena-rail-open');
+        var closeBtn = document.getElementById('arena-rail-close');
+        if (!rail || !backdrop || !openBtn) return;
+        function openRail() {
+            rail.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            rail.removeAttribute('inert');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeRail() {
+            rail.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            rail.setAttribute('inert', '');
+            document.body.style.overflow = '';
+        }
+        rail.setAttribute('inert', '');
+        openBtn.addEventListener('click', openRail);
+        closeBtn && closeBtn.addEventListener('click', closeRail);
+        backdrop.addEventListener('click', closeRail);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeRail();
+        });
+    })();
 
     // Hero carousel: rotates through announcement/competition slides, with per-slide countdowns.
     var carousel = document.getElementById('arena-carousel');
