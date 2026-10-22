@@ -52,6 +52,25 @@
         @media (max-width: 575.98px) {
             .nocturne-mobile-nav { padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important; }
         }
+        /* Breadcrumb trails read as clutter on a phone-width screen where there's no room for
+           them to earn their keep - hidden on mobile only, every page's breadcrumb markup and
+           desktop display is untouched. Covers every breadcrumb class used across the theme. */
+        @media (max-width: 575.98px) {
+            .nocturne-vip-crumb,
+            .nocturne-arena-crumb,
+            .nocturne-news-crumb { display: none !important; }
+            /* The Arena crumb shares its row with the notification bell - only the crumb
+               hides, and the bell (the row's only remaining child) stays pinned to the right
+               instead of collapsing to the start once its sibling is gone. */
+            .nocturne-arena-crumb-row { justify-content: flex-end !important; }
+        }
+        /* This is an app, not a webpage with visible scrollbars - hide them everywhere on
+           mobile/tablet while leaving the actual scrolling untouched. Desktop keeps native
+           scrollbars (expected there, and useful affordance with mouse/trackpad input). */
+        @media (max-width: 991.98px) {
+            * { scrollbar-width: none; -ms-overflow-style: none; }
+            *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        }
         /* The full footer (sitemap columns, newsletter, trust badges) is
            too heavy for mobile on most pages - hide it there except on the
            policy/legal pages and News, where the footer's links are the
