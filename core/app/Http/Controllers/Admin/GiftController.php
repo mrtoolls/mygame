@@ -22,6 +22,15 @@ class GiftController extends Controller
         return view('admin.gift.create', compact('pageTitle'));
     }
 
+    // Plays every gift's presentation effect (idle/hover/purchase/send) with no purchase or
+    // send calls - lets an admin review the tiers without spending anything real.
+    public function previewEffects()
+    {
+        $pageTitle = 'Gift Effects Preview';
+        $gifts = Gift::orderBy('sort_order')->get();
+        return view('admin.gift.preview', compact('pageTitle', 'gifts'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

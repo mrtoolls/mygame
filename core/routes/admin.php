@@ -172,6 +172,7 @@ Route::middleware('admin')->group(function () {
     // Gifts
     Route::controller('GiftController')->name('gift.')->prefix('gift')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('preview-effects', 'previewEffects')->name('preview-effects');
         Route::get('create', 'create')->name('create');
         Route::post('create', 'store')->name('store');
         Route::get('edit/{id}', 'edit')->name('edit');

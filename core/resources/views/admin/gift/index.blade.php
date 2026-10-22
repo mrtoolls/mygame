@@ -60,5 +60,6 @@
 @endsection
 
 @push('breadcrumb-plugins')
+    <a class="btn btn-outline--primary" href="{{ route('admin.gift.preview-effects') }}"><i class="las la-magic"></i>@lang('Preview Effects')</a>
     <a class="btn btn-outline--primary" href="{{ route('admin.gift.create') }}"><i class="las la-plus"></i>@lang('Add New')</a>
 @endpush

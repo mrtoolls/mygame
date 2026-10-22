@@ -1,6 +1,10 @@
 ﻿@extends('Template::layouts.master')
 @push('script-lib')
 <script src="{{ asset('assets/global/js/table-sound.js') }}"></script>
+<script src="{{ asset('assets/global/js/gift-effects.js') }}?v={{ @filemtime(public_path('assets/global/js/gift-effects.js')) }}"></script>
+@endpush
+@push('style')
+<link rel="stylesheet" href="{{ asset('assets/global/css/gift-effects.css') }}?v={{ @filemtime(public_path('assets/global/css/gift-effects.css')) }}">
 @endpush
 @section('content')
     <main class="table-match" id="table-match" data-id="{{ $table->id }}" data-friendly="{{ bccomp((string) $table->stake, '0', 8) === 0 ? '1' : '0' }}" data-snapshot="{{ route('user.tables.snapshot', $table->id) }}" data-chat="{{ route('user.tables.chat', $table->id) }}" data-chat-send="{{ route('user.tables.chat.send', $table->id) }}" data-reaction-template="{{ route('user.tables.chat.react', [$table->id, '__MESSAGE__']) }}" data-report-template="{{ route('user.tables.chat.report', [$table->id, '__MESSAGE__']) }}" data-block-template="{{ route('user.tables.players.block', [$table->id, '__USER__']) }}" data-player-search="{{ route('user.tables.players.search', $table->id) }}" data-move="{{ route('user.tables.move', $table->id) }}" data-start="{{ route('user.tables.start', $table->id) }}" data-leave="{{ route('user.tables.leave', $table->id) }}" data-csrf="{{ csrf_token() }}" data-user="{{ auth()->id() }}" data-type="{{ $table->game_type }}" data-turn-seconds="{{ $turnSeconds }}" data-spectator="{{ $isSpectator ? '1' : '0' }}" data-applaud="{{ route('user.tables.chat.applaud', $table->id) }}" data-gift-send-template="{{ route('user.tables.gifts.send', [$table->id, '__GIFT__']) }}" data-rematch-request="{{ route('user.tables.rematch.request', $table->id) }}" data-rematch-decline-template="{{ route('user.tables.rematch.decline', '__REMATCH__') }}" data-invite-accept-template="{{ route('user.tables.invite.accept', '__INVITE__') }}" data-table-show-template="{{ route('user.tables.show', '__TABLE__') }}">
@@ -153,8 +157,14 @@
                 <div class="gift-drawer__step" id="gift-drawer-pick">
                     <div class="gift-drawer__grid" id="gift-drawer-grid">
                         @foreach($gifts as $gift)
-                            <button type="button" class="gift-drawer__item" data-gift-id="{{ $gift->id }}" data-gift-name="{{ $gift->name }}" data-gift-image="{{ $gift->imageUrl() }}">
-                                <img src="{{ $gift->imageUrl() }}" alt="{{ $gift->name }}">
+                            <button type="button" class="gift-drawer__item gift-fx" data-gift-id="{{ $gift->id }}" data-gift-name="{{ $gift->name }}" data-gift-image="{{ $gift->imageUrl() }}" data-gift-fx="{{ $gift->slug }}" data-gift-price="{{ $gift->buy_price }}">
+                                <span class="gift-fx__media">
+                                    @if ($gift->webpImageUrl())
+                                        <picture><source srcset="{{ $gift->webpImageUrl() }}" type="image/webp"><img src="{{ $gift->imageUrl() }}" alt="{{ $gift->name }}" width="48" height="48" loading="lazy"></picture>
+                                    @else
+                                        <img src="{{ $gift->imageUrl() }}" alt="{{ $gift->name }}" width="48" height="48" loading="lazy">
+                                    @endif
+                                </span>
                                 <strong>{{ $gift->name }}</strong>
                                 <span>${{ showAmount($gift->buy_price, currencyFormat: false) }}</span>
                             </button>
@@ -173,11 +183,12 @@
                 </div>
             </div>
         </div>
-        <div class="gift-burst" id="gift-burst" hidden aria-live="polite">
-            <div class="gift-burst__sparkles" id="gift-burst-sparkles"></div>
-            <div class="gift-burst__card">
-                <img id="gift-burst-img" src="" alt="">
-                <p id="gift-burst-text"></p>
+        <div class="gift-fx-overlay" id="gift-fx-overlay" hidden aria-live="polite">
+            <div class="gift-fx-overlay__card">
+                <span class="gift-fx-overlay__extra"></span>
+                <img class="gift-fx-overlay__img" data-gift-fx-img src="" alt="">
+                <span class="gift-fx-overlay__qty" data-gift-fx-qty hidden></span>
+                <p class="gift-fx-overlay__text" data-gift-fx-text></p>
             </div>
         </div>
         @endif
@@ -261,17 +272,7 @@
 .gift-drawer__send-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 40px);min-height:46px;margin:16px 20px 0;border:0;border-radius:13px;background:var(--tm-green,#00ef87);color:#062b1d;font-size:12.5px;font-weight:950;cursor:pointer}
 .gift-drawer__send-btn:disabled{opacity:.6;cursor:not-allowed}
 .gift-drawer__error{min-height:14px;margin:8px 20px 0;color:#ff95a6;font-size:11px}
-.gift-burst{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
-.gift-burst[hidden]{display:none}
-.gift-burst__card{display:grid;justify-items:center;gap:10px;padding:26px 34px;border-radius:24px;background:linear-gradient(160deg,rgba(26,32,65,.96),rgba(16,20,42,.96));border:1px solid rgba(0,239,135,.35);box-shadow:0 0 60px rgba(0,239,135,.25),0 30px 70px rgba(0,0,0,.5);animation:gift-burst-in .45s cubic-bezier(.2,.9,.3,1.3) forwards,gift-burst-out .4s ease .22s forwards}
-.gift-burst__card img{width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 0 22px rgba(0,239,135,.45))}
-.gift-burst__card p{margin:0;max-width:260px;color:var(--tm-text,#f5f6ff);font-size:14px;font-weight:900;text-align:center}
-@keyframes gift-burst-in{0%{transform:scale(.4) translateY(30px);opacity:0}60%{transform:scale(1.12) translateY(0);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
-@keyframes gift-burst-out{to{opacity:0;transform:translateY(-16px) scale(.96)}}
-.gift-burst__sparkles{position:absolute;inset:0;overflow:hidden}
-.gift-burst__sparkles i{position:absolute;bottom:40%;font-size:18px;color:#ffd76a;opacity:0;animation:gift-burst-sparkle 1.6s ease-out forwards}
-@keyframes gift-burst-sparkle{0%{transform:translateY(0) scale(.3) rotate(0deg);opacity:0}15%{opacity:1}100%{transform:translateY(-220px) scale(1) rotate(180deg);opacity:0}}
-@media(max-width:575px){.gift-drawer__grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));padding:14px}.gift-burst__card{padding:20px 22px}.gift-burst__card img{width:84px;height:84px}}
+@media(max-width:575px){.gift-drawer__grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));padding:14px}}
 .chat-panel{position:fixed;inset:0;z-index:1150;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--kb-offset,0px);transition:padding-bottom .15s ease;overflow:hidden}
 .chat-panel[hidden]{display:none}
 .chat-panel__backdrop{position:absolute;inset:0;background:rgba(6,8,18,.68);backdrop-filter:blur(4px)}
@@ -1035,20 +1036,8 @@ const applaudBtn=document.querySelector('#match-applaud');if(applaudBtn)applaudB
             .finally(()=>{sendBtn.disabled=false;});
     };
 })();
-window.spawnGiftBurst=function(giftImage,text){
-    const burst=document.querySelector('#gift-burst');if(!burst)return;
-    document.querySelector('#gift-burst-img').src=giftImage;
-    document.querySelector('#gift-burst-text').textContent=text;
-    const sparkles=document.querySelector('#gift-burst-sparkles');sparkles.replaceChildren();
-    for(let i=0;i<14;i++){
-        const sparkle=document.createElement('i');sparkle.className='las la-star';
-        sparkle.style.left=(10+Math.random()*80)+'%';sparkle.style.animationDelay=(Math.random()*0.4)+'s';sparkle.style.color=['#ffd76a','#00ef87','#7fd9ff','#ff8aa3'][i%4];
-        sparkles.append(sparkle);
-    }
-    burst.hidden=false;window.TableSound?.play?.('win');
-    clearTimeout(window.__giftBurstTimer);
-    window.__giftBurstTimer=setTimeout(()=>{burst.hidden=true;},2400);
-}
+const giftOverlay=window.GiftEffects?window.GiftEffects.initLiveOverlay(document.querySelector('#gift-fx-overlay')):null;
+window.spawnGiftBurst=function(payload){giftOverlay?.queue(payload);}
 window.spawnChatToast=function(avatarUrl,name,text){
     const stack=document.querySelector('#chat-toast-stack');if(!stack)return;
     while(stack.children.length>=3)stack.firstElementChild.remove();
@@ -1218,7 +1207,7 @@ function renderMessage(m){
         if(mine||isAtBottom){list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;}
         if(!mine)window.markChatUnread?.();
         if(chatHistoryLoaded&&gift?.gift_image){
-            window.spawnGiftBurst?.(gift.gift_image,`${senderName} sent ${gift.quantity>1?gift.quantity+'x ':''}${gift.gift_name} to ${recipientName}!`);
+            window.spawnGiftBurst?.({key:gift.gift_name,image:gift.gift_image,giftName:gift.gift_name,senderName:senderName,recipientName:recipientName,quantity:gift.quantity});
         }
         return;
     }
