@@ -613,6 +613,16 @@
 .whot-penalty-badge b{color:#ff6b86}
 @keyframes whot-penalty-pulse{0%,100%{box-shadow:0 0 0 rgba(255,112,135,0)}50%{box-shadow:0 0 14px rgba(255,112,135,.4)}}
 @media(prefers-reduced-motion:reduce){.whot-penalty-badge{animation:none}}
+/* "Last card!" / "Check!" announcements - pure UI, no rule attached (no penalty for a player
+   who doesn't "call" it - that's explicitly left off by default). Stacks so a Last Card and a
+   Check landing close together both stay readable instead of one replacing the other. */
+.whot-announce-stack{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;z-index:1265;display:flex;flex-direction:column;align-items:center;gap:8px;transform:translateX(-50%);pointer-events:none}
+.whot-announce{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;background:linear-gradient(135deg,var(--tm-green),#00c975);color:#062b1d;font-size:12.5px;font-weight:900;white-space:nowrap;box-shadow:0 14px 34px rgba(0,0,0,.4);animation:whot-announce-in .25s cubic-bezier(.2,.8,.2,1) both,whot-announce-out .35s ease .32s forwards}
+.whot-announce.is-check{background:linear-gradient(135deg,#ffd166,#ff9f43);color:#3a2405}
+.whot-announce i{font-size:16px}
+@keyframes whot-announce-in{from{opacity:0;transform:translateY(-10px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes whot-announce-out{0%,88%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@media(prefers-reduced-motion:reduce){.whot-announce{animation:none}}
 .whot-shape-picker{position:fixed;inset:0;z-index:1270;display:grid;place-items:center;gap:16px;padding:18px;background:rgba(6,8,18,.78);backdrop-filter:blur(5px)}
 .whot-shape-picker[hidden]{display:none}
 .whot-shape-picker__title{color:var(--tm-text);font-size:14px;font-weight:900}
@@ -658,6 +668,18 @@
 if(error){error.innerHTML='<i class="las la-exclamation-triangle"></i><span id="match-error-text"></span>';}
 function showError(message){if(!error||!message)return;const textEl=document.querySelector('#match-error-text');if(textEl)textEl.textContent=message;error.classList.add('is-visible');window.TableSound?.play?.('lose');clearTimeout(errorHideTimer);errorHideTimer=setTimeout(clearError,4200);}
 function clearError(){if(!error)return;error.classList.remove('is-visible');clearTimeout(errorHideTimer);}
+// Whot "Last card!" / "Check!" calls - pure announcements, nobody is penalized for not calling
+// them (no rule change, no card effect - just a heads-up everyone at the table can see).
+function whotAnnounce(message, isCheck){
+    let stack=document.querySelector('.whot-announce-stack');
+    if(!stack){stack=document.createElement('div');stack.className='whot-announce-stack';document.body.append(stack);}
+    const toast=document.createElement('span');
+    toast.className='whot-announce'+(isCheck?' is-check':'');
+    toast.innerHTML=`<i class="ph-fill ${isCheck?'ph-check-circle':'ph-megaphone'}"></i>${message}`;
+    toast.addEventListener('animationend',e=>{if(e.animationName==='whot-announce-out')toast.remove();});
+    stack.append(toast);
+    window.TableSound?.play?.(isCheck?'win':'click');
+}
 (()=>{const control=document.querySelector('#sound-control');if(!control||!window.TableSound)return;const toggle=document.querySelector('#sound-toggle');const volume=document.querySelector('#sound-volume');const icon=toggle.querySelector('i');const sync=()=>{const on=window.TableSound.isEnabled();control.classList.toggle('is-muted',!on);icon.className=on?'las la-volume-up':'las la-volume-mute';volume.value=String(Math.round(window.TableSound.getVolume()*100));};toggle.addEventListener('click',()=>{window.TableSound.setEnabled(!window.TableSound.isEnabled());if(window.TableSound.isEnabled())window.TableSound.play('click');sync();});volume.addEventListener('input',()=>{window.TableSound.setVolume(Number(volume.value)/100);});volume.addEventListener('change',()=>window.TableSound.play('click'));sync();})();
 const resultPopup=document.querySelector('#result-popup');
 function showResultPopup(data){
@@ -749,6 +771,18 @@ function gameState(data){
 if(diceAnimating){pendingGameState=data;return;}
 const previous=latest;
 const newLudoRoll=type==='ludo'&&previous&&data.state?.last_roll&&Number(data.state.last_roll.version)>Number(previous.state?.last_roll?.version||0);
+if(type==='whot'&&previous?.state?.hand_counts&&data.state?.hand_counts){
+    data.state.hand_counts.forEach((count,seatIdx)=>{
+        if(count!==1||previous.state.hand_counts[seatIdx]===1)return;
+        const seatPlayer=data.players.find(p=>p.seat===seatIdx);
+        whotAnnounce(`${seatPlayer?.id===userId?'You have':(seatPlayer?.name||'A player')+' has'} the last card!`, false);
+    });
+    if(previous.status==='active'&&data.status==='finished'&&typeof data.result==='string'&&data.result.startsWith('winner:')){
+        const winnerSeat=Number(data.result.slice(7));
+        const winner=data.players.find(p=>p.seat===winnerSeat);
+        whotAnnounce(`Check! ${winner?.id===userId?'You win':(winner?.name||'A player')+' wins'}!`, true);
+    }
+}
 latest=data;
 if(previous&&typeof previous.version==='number'&&data.version>previous.version&&data.status==='active')window.TableSound?.play?.('move');
 if((!previous||previous.current_user_id!==userId)&&data.current_user_id===userId&&data.status==='active')window.TableSound?.play?.('turn');
