@@ -298,16 +298,26 @@ class TableGameController extends Controller
     }
 
     /**
-     * A free, unlimited "clap" - open to players and spectators alike. Reuses the chat table/
-     * poll so it shows up live for everyone watching without a separate realtime channel, but
-     * renders client-side as a compact animated chip rather than a normal bubble.
+     * A free "clap" (or, with an emoji chosen, any of the quick-reaction set) - open to players
+     * and spectators alike. Reuses the chat table/poll so it shows up live for everyone watching
+     * without a separate realtime channel, but renders client-side as a compact animated chip
+     * rather than a normal bubble. Capped per player per table so it can't be used to spam chat.
      */
     public function applaud(Request $request, string $id)
     {
         $this->authorizeViewer($request, $id);
-        $message = TableGameMessage::create(['table_game_id' => $id, 'user_id' => $request->user()->id, 'kind' => 'applause']);
+        $data = $request->validate(['emoji' => ['nullable', 'string', 'in:👍,❤️,😂,👏,😮,🎉,👎']]);
+        $cap = 20;
+        $used = TableGameMessage::where('table_game_id', $id)->where('user_id', $request->user()->id)->where('kind', 'applause')->count();
+        if ($used >= $cap) return response()->json(['message' => "You've used all {$cap} reactions for this game."], 429);
+        $message = TableGameMessage::create([
+            'table_game_id' => $id,
+            'user_id' => $request->user()->id,
+            'kind' => 'applause',
+            'body' => $data['emoji'] ?? null,
+        ]);
         $message->load('user:id,username,image');
-        return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect())], 201);
+        return response()->json(['message' => $this->messagePayload($message, collect(), (int) $request->user()->id, collect()), 'remaining' => max(0, $cap - $used - 1)], 201);
     }
 
     /**

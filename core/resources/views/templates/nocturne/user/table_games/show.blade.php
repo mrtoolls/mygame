@@ -35,6 +35,7 @@
                 <div class="table-match__toolbar-spacer"></div>
                 <button type="button" class="table-match__tool" id="match-chat-open" aria-label="@lang('Open chat')"><i class="las la-comments"></i><span class="table-match__tool-badge" id="chat-unread-badge" hidden>0</span></button>
                 <button type="button" class="table-match__tool" id="match-applaud" aria-label="@lang('Applaud')"><i class="las la-thumbs-up"></i></button>
+                <button type="button" class="table-match__tool" id="match-react" aria-label="@lang('React')"><i class="las la-grin-stars"></i></button>
                 @if($gifts->isNotEmpty())<button type="button" class="table-match__tool" id="match-gift-open" aria-label="@lang('Send a gift')"><i class="las la-gift"></i></button>@endif
                 <button type="button" class="table-match__tool" id="how-to-play-open" aria-label="@lang('How to play')"><i class="las la-info-circle"></i></button>
                 <div class="sound-control" id="sound-control"><button type="button" class="table-match__tool" id="sound-toggle" aria-label="@lang('Toggle sound')"><i class="las la-volume-up"></i></button><input type="range" id="sound-volume" min="0" max="100" value="50" aria-label="@lang('Sound volume')"></div>
@@ -919,7 +920,7 @@ async function refresh(){if(polling)return;polling=true;try{const url=new URL(st
         if(badge){badge.hidden=false;badge.textContent=unread>9?'9+':String(unread);}
     };
 })();
-const applaudBtn=document.querySelector('#match-applaud');if(applaudBtn)applaudBtn.onclick=()=>{applaudBtn.disabled=true;applaudBtn.classList.add('is-popping');setTimeout(()=>applaudBtn.classList.remove('is-popping'),350);window.TableSound?.play?.('click');fetch(root.dataset.applaud,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'}}).finally(()=>{applaudBtn.disabled=false;});};
+const applaudBtn=document.querySelector('#match-applaud');if(applaudBtn)applaudBtn.onclick=()=>{applaudBtn.disabled=true;applaudBtn.classList.add('is-popping');setTimeout(()=>applaudBtn.classList.remove('is-popping'),350);window.TableSound?.play?.('click');fetch(root.dataset.applaud,{method:'POST',headers:{'X-CSRF-TOKEN':root.dataset.csrf,'Accept':'application/json'}}).then(async response=>{if(!response.ok){const result=await response.json().catch(()=>({}));error.textContent=result.message||'Could not applaud right now.';}}).finally(()=>{applaudBtn.disabled=false;});};
 (()=>{
     const openBtn=document.querySelector('#match-gift-open');const drawer=document.querySelector('#gift-drawer');if(!openBtn||!drawer)return;
     const backdrop=document.querySelector('#gift-drawer-backdrop'),closeBtn=document.querySelector('#gift-drawer-close'),backBtn=document.querySelector('#gift-drawer-back');
@@ -1026,6 +1027,16 @@ let quickReactPopover=null;
 function closeQuickReact(){quickReactPopover?.remove();quickReactPopover=null;}
 function openQuickReact(anchorBtn,onPick){if(quickReactPopover){closeQuickReact();return;}const pop=document.createElement('div');pop.className='quick-react-popover';quickReactions.forEach(e=>{const btn=document.createElement('button');btn.type='button';btn.textContent=e;btn.onclick=ev=>{ev.stopPropagation();onPick(e);closeQuickReact();};pop.append(btn);});anchorBtn.after(pop);quickReactPopover=pop;}
 document.addEventListener('click',e=>{if(quickReactPopover&&!quickReactPopover.contains(e.target))closeQuickReact();});
+const reactBtn=document.querySelector('#match-react');
+if(reactBtn)reactBtn.onclick=ev=>{ev.stopPropagation();openQuickReact(reactBtn,async emoji=>{
+    reactBtn.disabled=true;
+    try{
+        const response=await fetch(root.dataset.applaud,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({emoji})});
+        const result=await response.json();
+        if(!response.ok)throw new Error(result.message||'Could not send that reaction.');
+    }catch(e){error.textContent=e.message;}
+    finally{reactBtn.disabled=false;}
+});};
 /* ---- Report message / block player ---- */
 let messageMenu=null;
 function closeMessageMenu(){messageMenu?.remove();messageMenu=null;}
@@ -1111,12 +1122,13 @@ function renderMessage(m){
         lastRenderedUser=null;
         const rowEl=document.createElement('div');rowEl.className='table-chat__row is-applause'+(mine?' is-mine':'');
         const bubble=document.createElement('article');bubble.className='table-chat__message';bubble.dataset.chatMessage=m.id;
-        const icon=document.createElement('i');icon.className='las la-thumbs-up';
-        bubble.append(icon,document.createTextNode(' '+(mine?'You':(m.name||'Someone'))+' applauded'));
+        const emoji=m.body&&m.body.length<=4?m.body:null;
+        if(emoji){bubble.append(document.createTextNode(emoji+' '+(mine?'You':(m.name||'Someone'))+' reacted'));}
+        else{const icon=document.createElement('i');icon.className='las la-thumbs-up';bubble.append(icon,document.createTextNode(' '+(mine?'You':(m.name||'Someone'))+' applauded'));}
         rowEl.append(bubble);list.append(rowEl);
         cursor=Math.max(cursor,Number(m.id));
         if(mine||isAtBottom){list.scrollTo({top:list.scrollHeight,behavior:'smooth'});unseenCount=0;jumpBtn.hidden=true;}
-        if(!mine&&chatHistoryLoaded){window.markChatUnread?.();if(!window.isChatPanelOpen?.())window.spawnChatToast?.(m.avatar,m.name,'👏 Applauded');}
+        if(!mine&&chatHistoryLoaded){window.markChatUnread?.();if(!window.isChatPanelOpen?.())window.spawnChatToast?.(m.avatar,m.name,(emoji||'👏')+' '+(emoji?'Reacted':'Applauded'));}
         return;
     }
     if(m.kind==='gift'){
