@@ -16,26 +16,41 @@
 
         <div class="nocturne-arena-layout">
             <div class="nocturne-arena-feed">
-                @if($announcement)
-                    <div class="nocturne-arena-announcement">
-                        @if($announcement->imageUrl())<img class="nocturne-arena-announcement__bg" src="{{ $announcement->imageUrl() }}" alt=""><div class="nocturne-arena-announcement__shade"></div>@endif
-                        <div class="nocturne-arena-announcement__content">
-                            @if($announcement->badge_label)<span class="nocturne-arena-announcement__badge">{{ __($announcement->badge_label) }}</span>@endif
-                            <h2>{{ __($announcement->title) }}</h2>
-                            @if($announcement->description)<p>{{ __($announcement->description) }}</p>@endif
-                            @if($announcement->ends_at)
-                                <div class="nocturne-arena-announcement__timer" id="arena-announcement-countdown" data-countdown-end="{{ $announcement->ends_at->timestamp * 1000 }}">
-                                    <div class="nocturne-arena-timer-unit"><strong data-unit="d">00</strong><small><i class="ph-bold ph-calendar"></i>@lang('Days')</small></div>
-                                    <div class="nocturne-arena-timer-unit"><strong data-unit="h">00</strong><small><i class="ph-bold ph-clock"></i>@lang('Hrs')</small></div>
-                                    <div class="nocturne-arena-timer-unit"><strong data-unit="m">00</strong><small><i class="ph-bold ph-hourglass"></i>@lang('Mins')</small></div>
-                                    <div class="nocturne-arena-timer-unit"><strong data-unit="s">00</strong><small><i class="ph-bold ph-timer"></i>@lang('Sec')</small></div>
+                @if($heroSlides->isNotEmpty())
+                    <div class="nocturne-arena-carousel" id="arena-carousel" data-interval="7000">
+                        <div class="nocturne-arena-carousel__track">
+                            @foreach($heroSlides as $index => $slide)
+                                <div class="nocturne-arena-announcement nocturne-arena-slide{{ $index === 0 ? ' is-active' : '' }}" data-slide="{{ $index }}">
+                                    @if($slide->image)<img class="nocturne-arena-announcement__bg" src="{{ $slide->image }}" alt="" loading="{{ $index === 0 ? 'eager' : 'lazy' }}"><div class="nocturne-arena-announcement__shade"></div>@endif
+                                    <div class="nocturne-arena-announcement__content">
+                                        @if($slide->badge_label)<span class="nocturne-arena-announcement__badge nocturne-arena-announcement__badge--{{ $slide->type }}">{{ __($slide->badge_label) }}</span>@endif
+                                        <h2>{{ __($slide->title) }}</h2>
+                                        @if($slide->description)<p>{{ __($slide->description) }}</p>@endif
+                                        @if($slide->countdown_end)
+                                            <div class="nocturne-arena-announcement__timer" data-countdown-end="{{ $slide->countdown_end * 1000 }}" data-countdown-label="{{ __($slide->countdown_label) }}">
+                                                <div class="nocturne-arena-timer-unit"><strong data-unit="d">00</strong><small><i class="ph-bold ph-calendar"></i>@lang('Days')</small></div>
+                                                <div class="nocturne-arena-timer-unit"><strong data-unit="h">00</strong><small><i class="ph-bold ph-clock"></i>@lang('Hrs')</small></div>
+                                                <div class="nocturne-arena-timer-unit"><strong data-unit="m">00</strong><small><i class="ph-bold ph-hourglass"></i>@lang('Mins')</small></div>
+                                                <div class="nocturne-arena-timer-unit"><strong data-unit="s">00</strong><small><i class="ph-bold ph-timer"></i>@lang('Sec')</small></div>
+                                            </div>
+                                        @endif
+                                        <div class="nocturne-arena-announcement__foot">
+                                            @if($slide->reward_label)<span class="nocturne-arena-announcement__reward"><i class="ph-fill ph-trophy"></i>{{ __($slide->reward_label) }}</span>@endif
+                                            @if($slide->button_label && $slide->button_url)<a href="{{ $slide->button_url }}" class="nocturne-arena-announcement__btn">{{ __($slide->button_label) }}<i class="ph-bold ph-arrow-right"></i></a>@endif
+                                        </div>
+                                    </div>
                                 </div>
-                            @endif
-                            <div class="nocturne-arena-announcement__foot">
-                                @if($announcement->reward_label)<span class="nocturne-arena-announcement__reward"><i class="ph-fill ph-trophy"></i>{{ __($announcement->reward_label) }}</span>@endif
-                                @if($announcement->button_label && $announcement->button_url)<a href="{{ $announcement->button_url }}" class="nocturne-arena-announcement__btn">{{ __($announcement->button_label) }}<i class="ph-bold ph-arrow-right"></i></a>@endif
-                            </div>
+                            @endforeach
                         </div>
+                        @if($heroSlides->count() > 1)
+                            <button type="button" class="nocturne-arena-carousel__nav nocturne-arena-carousel__nav--prev" id="arena-carousel-prev" aria-label="@lang('Previous')"><i class="ph-bold ph-caret-left"></i></button>
+                            <button type="button" class="nocturne-arena-carousel__nav nocturne-arena-carousel__nav--next" id="arena-carousel-next" aria-label="@lang('Next')"><i class="ph-bold ph-caret-right"></i></button>
+                            <div class="nocturne-arena-carousel__dots" id="arena-carousel-dots">
+                                @foreach($heroSlides as $index => $slide)
+                                    <button type="button" class="nocturne-arena-carousel__dot{{ $index === 0 ? ' is-active' : '' }}" data-dot="{{ $index }}" aria-label="@lang('Go to slide :n', ['n' => $index + 1])"></button>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @endif
 
@@ -329,8 +344,24 @@
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
 
-/* Announcement card */
+/* Hero carousel (announcements + live/upcoming competitions) */
+.nocturne-arena-carousel{position:relative;margin-bottom:20px}
+.nocturne-arena-carousel__track{position:relative;min-height:270px;border-radius:22px;overflow:hidden}
+.nocturne-arena-carousel__nav{position:absolute;top:50%;z-index:2;display:grid;place-items:center;width:38px;height:38px;margin-top:-19px;border:1px solid rgba(255,255,255,.14);border-radius:50%;background:rgba(6,8,18,.55);backdrop-filter:blur(4px);color:#fff;font-size:15px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.nocturne-arena-carousel__nav:hover{background:rgba(6,8,18,.8);border-color:rgba(0,231,138,.4)}
+.nocturne-arena-carousel__nav--prev{left:12px}
+.nocturne-arena-carousel__nav--next{right:12px}
+.nocturne-arena-carousel__dots{position:absolute;left:50%;bottom:14px;z-index:2;display:flex;gap:6px;transform:translateX(-50%)}
+.nocturne-arena-carousel__dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.28);cursor:pointer;transition:background .15s ease,transform .15s ease}
+.nocturne-arena-carousel__dot.is-active{background:var(--arena-accent);transform:scale(1.3)}
+
+/* Announcement/competition slide */
+.nocturne-arena-slide{position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease}
+.nocturne-arena-slide.is-active{opacity:1;visibility:visible;pointer-events:auto}
 .nocturne-arena-announcement{position:relative;overflow:hidden;display:flex;align-items:center;min-height:270px;margin-bottom:20px;border-radius:22px;border:1px solid var(--arena-line);background:radial-gradient(ellipse at 10% 100%,rgba(0,231,138,.18),transparent 45%),linear-gradient(120deg,#0b0f22,#171d37 65%,#0b0f22);box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.nocturne-arena-slide.nocturne-arena-announcement{position:absolute;inset:0;margin-bottom:0;border-radius:0}
+.nocturne-arena-announcement__badge--competition{color:#ffd166}
+.nocturne-arena-announcement__badge--competition::before{background:#ffd166}
 .nocturne-arena-announcement__bg{position:absolute;right:0;top:0;width:54%;height:100%;object-fit:cover;object-position:top center;-webkit-mask-image:linear-gradient(to right,transparent,#000 20%);mask-image:linear-gradient(to right,transparent,#000 20%)}
 .nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(5,8,18,.94) 36%,rgba(5,8,18,.1))}
 .nocturne-arena-announcement__content{position:relative;z-index:1;max-width:600px;padding:clamp(24px,4vw,40px)}
@@ -348,14 +379,33 @@
 .nocturne-arena-announcement__btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:900;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
 .nocturne-arena-announcement__btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,231,138,.3)}
 .nocturne-arena-announcement__btn i{font-size:15px}
+/* Mobile keeps the exact same side-by-side arrangement as desktop (text left, art bleeding in
+   on the right, timer row, footer row) - everything just scales down to fit, it never
+   restructures into a stacked layout. */
 @media(max-width:700px){
-    .nocturne-arena-announcement{flex-direction:column;align-items:stretch;min-height:0}
-    .nocturne-arena-announcement__bg{position:static;width:100%;height:150px;-webkit-mask-image:none;mask-image:none}
-    .nocturne-arena-announcement__shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,18,0) 32%,rgba(11,15,34,.97) 92%)}
-    .nocturne-arena-announcement__content{max-width:none;padding:18px}
-    .nocturne-arena-announcement__timer{gap:7px}
-    .nocturne-arena-timer-unit{min-width:0;flex:1;padding:8px 4px}
-    .nocturne-arena-timer-unit strong{font-size:16px}
+    .nocturne-arena-carousel__track{min-height:200px}
+    .nocturne-arena-announcement{min-height:200px}
+    .nocturne-arena-announcement__bg{width:46%}
+    .nocturne-arena-announcement__content{max-width:62%;padding:14px 16px}
+    .nocturne-arena-announcement__badge{margin:0 0 7px 20px;font-size:9px}
+    .nocturne-arena-announcement__badge::before{width:14px;left:-20px}
+    .nocturne-arena-announcement__content h2{margin:0 0 5px;font-size:clamp(15px,5.2vw,20px);line-height:1.12}
+    .nocturne-arena-announcement__content p{display:none}
+    .nocturne-arena-announcement__timer{gap:5px;margin-bottom:12px}
+    .nocturne-arena-timer-unit{min-width:0;flex:1;padding:5px 2px;border-radius:9px}
+    .nocturne-arena-timer-unit strong{font-size:13px}
+    .nocturne-arena-timer-unit small{font-size:6.5px;gap:2px}
+    .nocturne-arena-timer-unit small i{font-size:7px}
+    .nocturne-arena-announcement__foot{gap:8px}
+    .nocturne-arena-announcement__reward{font-size:10px}
+    .nocturne-arena-announcement__btn{padding:8px 13px;font-size:10.5px;gap:5px}
+    .nocturne-arena-announcement__btn i{font-size:11px}
+    .nocturne-arena-carousel__nav{width:28px;height:28px;font-size:13px}
+    .nocturne-arena-carousel__dots{bottom:8px}
+}
+@media(max-width:380px){
+    .nocturne-arena-announcement__content{max-width:58%}
+    .nocturne-arena-announcement__content h2{font-size:clamp(13px,5vw,17px)}
 }
 
 /* Profile/level widget */
@@ -637,29 +687,62 @@
     loadNotifications();
     @endauth
 
-    // Announcement countdown
-    var countdownEl = document.getElementById('arena-announcement-countdown');
-    if (countdownEl) {
-        var endAt = parseInt(countdownEl.getAttribute('data-countdown-end'), 10);
-        var unitD = countdownEl.querySelector('[data-unit="d"]');
-        var unitH = countdownEl.querySelector('[data-unit="h"]');
-        var unitM = countdownEl.querySelector('[data-unit="m"]');
-        var unitS = countdownEl.querySelector('[data-unit="s"]');
-        var pad = function(n) { return (n < 10 ? '0' : '') + n; };
-        var tick = function() {
-            var diff = endAt - Date.now();
-            if (diff <= 0) {
-                unitD.textContent = unitH.textContent = unitM.textContent = unitS.textContent = '00';
-                clearInterval(timer);
-                return;
-            }
-            unitD.textContent = pad(Math.floor(diff / 86400000));
-            unitH.textContent = pad(Math.floor((diff % 86400000) / 3600000));
-            unitM.textContent = pad(Math.floor((diff % 3600000) / 60000));
-            unitS.textContent = pad(Math.floor((diff % 60000) / 1000));
+    // Hero carousel: rotates through announcement/competition slides, with per-slide countdowns.
+    var carousel = document.getElementById('arena-carousel');
+    if (carousel) {
+        var slides = Array.prototype.slice.call(carousel.querySelectorAll('.nocturne-arena-slide'));
+        var dots = Array.prototype.slice.call(carousel.querySelectorAll('.nocturne-arena-carousel__dot'));
+        var prevBtn = document.getElementById('arena-carousel-prev');
+        var nextBtn = document.getElementById('arena-carousel-next');
+        var current = 0;
+        var autoTimer = null;
+        var interval = parseInt(carousel.getAttribute('data-interval'), 10) || 7000;
+
+        var goTo = function (index) {
+            index = (index + slides.length) % slides.length;
+            slides[current].classList.remove('is-active');
+            if (dots[current]) dots[current].classList.remove('is-active');
+            current = index;
+            slides[current].classList.add('is-active');
+            if (dots[current]) dots[current].classList.add('is-active');
         };
-        tick();
-        var timer = setInterval(tick, 1000);
+        var next = function () { goTo(current + 1); };
+        var prev = function () { goTo(current - 1); };
+        var restartAuto = function () {
+            clearInterval(autoTimer);
+            if (slides.length > 1) autoTimer = setInterval(next, interval);
+        };
+        if (nextBtn) nextBtn.addEventListener('click', function () { next(); restartAuto(); });
+        if (prevBtn) prevBtn.addEventListener('click', function () { prev(); restartAuto(); });
+        dots.forEach(function (dot, i) { dot.addEventListener('click', function () { goTo(i); restartAuto(); }); });
+        restartAuto();
+        carousel.addEventListener('mouseenter', function () { clearInterval(autoTimer); });
+        carousel.addEventListener('mouseleave', restartAuto);
+
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        slides.forEach(function (slide) {
+            var timerEl = slide.querySelector('.nocturne-arena-announcement__timer');
+            if (!timerEl) return;
+            var endAt = parseInt(timerEl.getAttribute('data-countdown-end'), 10);
+            var unitD = timerEl.querySelector('[data-unit="d"]');
+            var unitH = timerEl.querySelector('[data-unit="h"]');
+            var unitM = timerEl.querySelector('[data-unit="m"]');
+            var unitS = timerEl.querySelector('[data-unit="s"]');
+            var tick = function () {
+                var diff = endAt - Date.now();
+                if (diff <= 0) {
+                    unitD.textContent = unitH.textContent = unitM.textContent = unitS.textContent = '00';
+                    clearInterval(slideTimer);
+                    return;
+                }
+                unitD.textContent = pad(Math.floor(diff / 86400000));
+                unitH.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+                unitM.textContent = pad(Math.floor((diff % 3600000) / 60000));
+                unitS.textContent = pad(Math.floor((diff % 60000) / 1000));
+            };
+            tick();
+            var slideTimer = setInterval(tick, 1000);
+        });
     }
 })(jQuery);
 </script>

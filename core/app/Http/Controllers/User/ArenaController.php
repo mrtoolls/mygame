@@ -11,6 +11,7 @@ use App\Models\ArenaNotification;
 use App\Models\ArenaPost;
 use App\Models\ArenaPostVote;
 use App\Models\ArenaReaction;
+use App\Models\Competition;
 use App\Models\Game;
 use App\Models\GameLog;
 use App\Models\NewsPost;
@@ -41,7 +42,42 @@ class ArenaController extends Controller
             ]);
         }
 
-        $announcement = ArenaAnnouncement::active()->latest()->first();
+        // Hero carousel: admin announcements and live/upcoming competitions, newest and most
+        // urgent first. Each slide is normalized to the same shape so the view can render one
+        // template regardless of source.
+        $announcementSlides = ArenaAnnouncement::active()->orderByDesc('id')->get()->map(fn ($a) => (object) [
+            'type' => 'announcement',
+            'badge_label' => $a->badge_label ?: 'Announcement',
+            'title' => $a->title,
+            'description' => $a->description,
+            'image' => $a->imageUrl(),
+            'countdown_end' => $a->ends_at?->timestamp,
+            'countdown_label' => 'Ends in',
+            'reward_label' => $a->reward_label,
+            'button_label' => $a->button_label ?: ($a->button_url ? 'Learn more' : null),
+            'button_url' => $a->button_url,
+        ]);
+
+        $liveCompetitions = Competition::where('status', Competition::STATUS_LIVE)->with('prizes')->orderBy('end_at')->limit(4)->get();
+        $upcomingCompetitions = Competition::where('status', Competition::STATUS_SCHEDULED)->with('prizes')->orderBy('start_at')->limit(4)->get();
+        $competitionSlides = $liveCompetitions->concat($upcomingCompetitions)->map(function ($c) {
+            $isLive = $c->status === Competition::STATUS_LIVE;
+            $pool = $c->prizes->sum('amount_usd');
+            return (object) [
+                'type' => 'competition',
+                'badge_label' => $isLive ? 'Live now' : 'Registration opened',
+                'title' => $c->title,
+                'description' => $c->description,
+                'image' => $c->banner_image ? getImage('assets/images/competitions/' . $c->banner_image, '1200x600') : null,
+                'countdown_end' => ($isLive ? $c->end_at : $c->start_at)?->timestamp,
+                'countdown_label' => $isLive ? 'Ends in' : 'Starts in',
+                'reward_label' => $pool > 0 ? '$' . number_format($pool, 0) . ' prize pool' : null,
+                'button_label' => 'View competition',
+                'button_url' => route('user.competitions.show', $c->slug),
+            ];
+        });
+
+        $heroSlides = $announcementSlides->concat($competitionSlides)->values();
 
         $tableGameService = app(TableGameService::class);
         $catalog           = collect($tableGameService->catalog())->keyBy('key');
@@ -91,7 +127,7 @@ class ArenaController extends Controller
         }
 
         return view('Template::arena.index', compact(
-            'pageTitle', 'posts', 'recentWins', 'announcement', 'catalog', 'liveTables',
+            'pageTitle', 'posts', 'recentWins', 'heroSlides', 'catalog', 'liveTables',
             'recentSiteWins', 'trendingGames', 'trendingNews', 'userStats', 'currentTier',
             'nextTier', 'wagered', 'tierProgressPercent', 'suggestedFollows'
         ));
