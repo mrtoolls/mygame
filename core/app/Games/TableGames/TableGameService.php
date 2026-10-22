@@ -1097,6 +1097,18 @@ class TableGameService
             $state['dealer_hand'] = array_slice($state['dealer_hand'], 0, 1);
         }
 
+        // The face-down draw pile's contents (and therefore its exact future order) must never
+        // reach a client - only its remaining count. 'stock' (Whot/Rummy/Crazy Eights/Dominoes)
+        // and 'deck' (Blackjack) are the two field names used across the games that keep one.
+        // The discard/played pile is intentionally left untouched - those cards are genuinely
+        // public knowledge in every one of these games.
+        foreach (['stock', 'deck'] as $pileKey) {
+            if (isset($state[$pileKey]) && is_array($state[$pileKey])) {
+                $state[$pileKey . '_count'] = count($state[$pileKey]);
+                unset($state[$pileKey]);
+            }
+        }
+
         return $state;
     }
 }

@@ -352,13 +352,35 @@ class TableGameRules
         return $this->backgammonAllHome($state, $seat) && $from !== -1;
     }
 
+    /** Shuffle the discard pile (every card except its current top) back into the stock using
+     *  the same secure RNG as the initial deal, when the stock has run dry. No-op if the stock
+     *  still has cards, or if there is nothing worth reshuffling (fewer than 2 cards in the
+     *  discard pile - that one card has to stay as the active top card). Mirrors the pattern
+     *  already used by rummy() and crazyEights(). */
+    private function reshuffleStockFromDiscard(array &$state): void
+    {
+        if ($state['stock'] || count($state['discard']) <= 1) return;
+        $top = array_pop($state['discard']);
+        $state['stock'] = array_values($state['discard']);
+        for ($i = count($state['stock']) - 1; $i > 0; $i--) {
+            $swap = random_int(0, $i);
+            [$state['stock'][$i], $state['stock'][$swap]] = [$state['stock'][$swap], $state['stock'][$i]];
+        }
+        $state['discard'] = [$top];
+    }
+
     private function whot(array $state, int $seat, array $action): array
     {
         $hand = $state['hands'][$seat] ?? null;
         if (!is_array($hand)) throw new InvalidArgumentException('Your hand is unavailable.');
         if (($action['type'] ?? '') === 'draw') {
             foreach ($hand as $card) if ($card['number'] === 20 || $card['number'] === $state['discard'][array_key_last($state['discard'])]['number'] || $card['shape'] === $state['active_shape']) throw new InvalidArgumentException('Play a matching card before drawing.');
-            if (!$state['stock']) throw new InvalidArgumentException('The draw pile is empty.');
+            $this->reshuffleStockFromDiscard($state);
+            // Mirrors the existing Rummy/Crazy Eights fallback for this same edge case (fewer
+            // than 2 cards left anywhere outside hands, so there is nothing left to reshuffle
+            // either) - end the round as a draw through the existing draw/refund path instead
+            // of erroring out.
+            if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => true];
             $hand[] = array_pop($state['stock']); $state['hands'][$seat] = $hand;
             $state['turn'] = ($seat + 1) % count($state['hands']); $state['moves']++;
             return ['state' => $state, 'winner' => null, 'draw' => false];
@@ -377,13 +399,20 @@ class TableGameRules
             $next = $seat; // Hold On: the current player takes another turn.
         } elseif ($card['number'] === 2 || $card['number'] === 5) {
             $penalty = $card['number'] === 2 ? 2 : 3;
-            for ($i = 0; $i < $penalty && $state['stock']; $i++) $state['hands'][$next][] = array_pop($state['stock']);
+            for ($i = 0; $i < $penalty; $i++) {
+                $this->reshuffleStockFromDiscard($state);
+                if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
+                $state['hands'][$next][] = array_pop($state['stock']);
+            }
             $next = ($next + 1) % $count;
         } elseif ($card['number'] === 8) {
             $next = ($next + 1) % $count; // Suspension: skip the next player.
         } elseif ($card['number'] === 14) {
             for ($player = 0; $player < $count; $player++) {
-                if ($player !== $seat && $state['stock']) $state['hands'][$player][] = array_pop($state['stock']);
+                if ($player === $seat) continue;
+                $this->reshuffleStockFromDiscard($state);
+                if (!$state['stock']) break;
+                $state['hands'][$player][] = array_pop($state['stock']);
             }
             $next = $seat; // General Market: other players draw; this player continues.
         }
@@ -399,11 +428,8 @@ class TableGameRules
                 if (count($state['discard']) < 2) throw new InvalidArgumentException('There is no discard card to pick up.');
                 $card = array_pop($state['discard']);
             } elseif ($type === 'draw_stock') {
-                if (!$state['stock']) {
-                    if (count($state['discard']) <= 1) return ['state' => $state, 'winner' => null, 'draw' => true];
-                    $top = array_pop($state['discard']); $state['stock'] = $state['discard']; $state['discard'] = [$top];
-                    for ($i = count($state['stock']) - 1; $i > 0; $i--) { $swap = random_int(0, $i); [$state['stock'][$i], $state['stock'][$swap]] = [$state['stock'][$swap], $state['stock'][$i]]; }
-                }
+                $this->reshuffleStockFromDiscard($state);
+                if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => true];
                 $card = array_pop($state['stock']);
             } else throw new InvalidArgumentException('Draw from the stock or take the top discard.');
             $state['hands'][$seat][] = $card; $state['phase'] = 'discard'; $state['moves']++;
@@ -563,16 +589,11 @@ class TableGameRules
 
         if (($action['type'] ?? '') === 'draw') {
             if (array_filter($hand, $canPlay)) throw new InvalidArgumentException('You have a playable card.');
-            if (!$state['stock'] && count($state['discard']) > 1) {
-                $top = array_pop($state['discard']);
-                $state['stock'] = array_values($state['discard']);
-                for ($index = count($state['stock']) - 1; $index > 0; $index--) {
-                    $swap = random_int(0, $index);
-                    [$state['stock'][$index], $state['stock'][$swap]] = [$state['stock'][$swap], $state['stock'][$index]];
-                }
-                $state['discard'] = [$top];
-            }
-            if (!$state['stock']) throw new InvalidArgumentException('There are no cards left to draw.');
+            $this->reshuffleStockFromDiscard($state);
+            // Nothing anywhere left to draw - the existing 'pass' action (below) already handles
+            // ending the round once every seat is blocked, so just let this draw be a no-op turn
+            // pass rather than erroring; the client is expected to call 'pass' next.
+            if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => false];
             $card = array_pop($state['stock']);
             $hand[] = $card;
             $state['hands'][$seat] = $hand;
