@@ -14,6 +14,7 @@ class TableGame extends Model
     protected $casts = [
         'state' => 'array',
         'settings' => 'array',
+        'rules_version' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
         'turn_started_at' => 'datetime',

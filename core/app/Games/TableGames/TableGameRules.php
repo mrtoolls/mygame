@@ -83,14 +83,14 @@ class TableGameRules
         };
     }
 
-    public function move(string $game, array $state, int $seat, array $action, array $activeSeats = []): array
+    public function move(string $game, array $state, int $seat, array $action, array $activeSeats = [], int $rulesVersion = 1): array
     {
         if (($state['turn'] ?? null) !== $seat) {
             throw new InvalidArgumentException('It is not your turn.');
         }
 
         return match ($game) {
-            'ludo' => $this->ludo($state, $seat, $action),
+            'ludo' => $this->ludo($state, $seat, $action, $rulesVersion),
             'chess' => $this->chess($state, $seat, $action),
             'draughts' => $this->draughts($state, $seat, $action),
             'tic_tac_toe' => $this->ticTacToe($state, $seat, $action),
@@ -939,11 +939,13 @@ class TableGameRules
         return $moves;
     }
 
-    private function ludo(array $state, int $seat, array $action): array
+    private function ludo(array $state, int $seat, array $action, int $rulesVersion = 1): array
     {
         if ($state['pending_roll'] === null) {
             if (($action['roll'] ?? false) !== true) throw new InvalidArgumentException('Roll the die to take your turn.');
-            $roll = random_int(1, 6);
+            $roll = $this->rollLudoDie();
+            $isBonusRoll = $rulesVersion >= 2 && (bool) ($state['bonus_roll_pending'] ?? false);
+            if ($rulesVersion >= 2) $state['bonus_roll_pending'] = false;
             $state['pending_roll'] = $roll;
             $state['last_roll'] = ['seat' => $seat, 'value' => $roll];
             $movable = [];
@@ -951,10 +953,12 @@ class TableGameRules
                 if ($position === -1 ? $roll === 6 : ($position < 58 && $position + $roll <= 57)) $movable[] = $index;
             }
             $state['moves']++;
-            if ($movable) return ['state' => $state, 'winner' => null, 'draw' => false];
+            if ($movable) return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $rulesVersion >= 2 && $isBonusRoll ? 'Bonus roll — choose a token.' : null];
             $state['pending_roll'] = null;
-            if ($roll !== 6) $state['turn'] = ($seat + 1) % count($state['tokens']);
-            return ['state' => $state, 'winner' => null, 'draw' => false];
+            $turnPassed = $roll !== 6 || $isBonusRoll;
+            if ($turnPassed) $state['turn'] = ($seat + 1) % count($state['tokens']);
+            $message = $isBonusRoll ? 'No legal move on the bonus roll — turn passed.' : ($turnPassed ? 'No legal move — turn passed.' : 'Rolled a six, but no token can move — roll again.');
+            return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $message];
         }
 
         $token = filter_var($action['token'] ?? null, FILTER_VALIDATE_INT);
@@ -976,11 +980,12 @@ class TableGameRules
         } else {
             $isSafe = true; // not on the shared ring at all
         }
+        $captured = 0;
         if ($position < 52 && !$isSafe) {
             foreach ($state['tokens'] as $otherSeat => &$otherTokens) {
                 if ($otherSeat === $seat) continue;
                 foreach ($otherTokens as &$otherPosition) {
-                    if ($otherPosition >= 0 && $otherPosition < 52 && ((int) $state['starts'][$otherSeat] + $otherPosition) % 52 === $landing) $otherPosition = -1;
+                    if ($otherPosition >= 0 && $otherPosition < 52 && ((int) $state['starts'][$otherSeat] + $otherPosition) % 52 === $landing) { $otherPosition = -1; $captured++; }
                 }
                 unset($otherPosition);
             }
@@ -988,11 +993,26 @@ class TableGameRules
         }
         $state['moves']++;
         // 57 is the final safe square; mark finished tokens separately from active tokens.
-        if ($state['tokens'][$seat][$token] === 57) $state['tokens'][$seat][$token] = 58;
-        if (count(array_filter($state['tokens'][$seat], fn ($value) => $value === 58)) === 4) return ['state' => $state, 'winner' => $seat, 'draw' => false];
+        $reachedHome = $state['tokens'][$seat][$token] === 57;
+        if ($reachedHome) $state['tokens'][$seat][$token] = 58;
+        if (count(array_filter($state['tokens'][$seat], fn ($value) => $value === 58)) === 4) {
+            $state['pending_roll'] = null;
+            if ($rulesVersion >= 2) $state['bonus_roll_pending'] = false;
+            return ['state' => $state, 'winner' => $seat, 'draw' => false, 'message' => 'All tokens reached home — game complete.'];
+        }
         $state['pending_roll'] = null;
-        if ($roll !== 6) $state['turn'] = ($seat + 1) % count($state['tokens']);
-        return ['state' => $state, 'winner' => null, 'draw' => false];
+        $bonus = $rulesVersion >= 2 && ($roll === 6 || $captured > 0 || $reachedHome);
+        if ($rulesVersion >= 2) $state['bonus_roll_pending'] = $bonus;
+        if (!$bonus && $roll !== 6) $state['turn'] = ($seat + 1) % count($state['tokens']);
+        $message = $rulesVersion >= 2 && $captured > 0
+            ? 'Captured ' . $captured . ' token' . ($captured === 1 ? '' : 's') . ' — roll again.'
+            : ($rulesVersion >= 2 && $reachedHome ? 'Token reached home — roll again.' : ($roll === 6 ? 'Rolled a six — roll again.' : null));
+        return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $message];
+    }
+
+    protected function rollLudoDie(): int
+    {
+        return random_int(1, 6);
     }
 
     private function ticTacToe(array $state, int $seat, array $action): array

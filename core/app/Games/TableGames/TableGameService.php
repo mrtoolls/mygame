@@ -80,6 +80,7 @@ class TableGameService
                 'join_deadline_at' => now()->addHours(24),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
             ];
+            if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = $gameType === 'ludo' ? 2 : 1;
             if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
             $table = TableGame::create($tableData);
             $this->debit($lockedUser, $table, 'creator_stake');
@@ -356,7 +357,7 @@ class TableGameService
             }
             if ((int) $table->current_user_id !== (int) $user->id) throw new InvalidArgumentException('It is not your turn at this table.');
                 $activeSeats = $table->players()->where('status', 'seated')->pluck('seat')->map(fn ($seat) => (int) $seat)->all();
-                $result = $this->rules->move($table->game_type, $table->state ?? [], (int) $player->seat, $action, $activeSeats);
+                $result = $this->rules->move($table->game_type, $table->state ?? [], (int) $player->seat, $action, $activeSeats, (int) ($table->rules_version ?? 1));
             $table->state = $result['state'];
             $table->version++;
             // Give each Ludo roll a stable public identifier so clients detect this specific roll,
@@ -376,7 +377,7 @@ class TableGameService
                 'user_id' => $user->id,
                 'version' => $table->version,
                 'action' => (($action['roll'] ?? false) === true) ? 'dice_roll' : 'move',
-                'public_data' => ['move' => $action, 'roll' => data_get($table->state, 'roll') ?? data_get($table->state, 'last_roll')],
+                'public_data' => ['move' => $action, 'roll' => data_get($table->state, 'roll') ?? data_get($table->state, 'last_roll'), 'message' => $result['message'] ?? null],
                 'idempotency_key' => $idempotencyKey,
             ]);
             if ($result['winner'] !== null || $result['draw']) {
@@ -464,7 +465,10 @@ class TableGameService
                 if (is_array($table->state)) {
                     $state = $table->state;
                     $state['turn'] = (int) $table->players()->where('user_id', $table->current_user_id)->value('seat');
-                    if ($table->game_type === 'ludo') $state['pending_roll'] = null;
+                    if ($table->game_type === 'ludo') {
+                        $state['pending_roll'] = null;
+                        if ((int) ($table->rules_version ?? 1) >= 2) $state['bonus_roll_pending'] = false;
+                    }
                 if ($table->game_type === 'backgammon') $state['dice'] = null;
                     $table->state = $state;
                 }
@@ -549,6 +553,10 @@ class TableGameService
             $from = $moveRow?->public_data['move']['from'] ?? null;
             $to = $moveRow?->public_data['move']['to'] ?? null;
             if ($from && $to) $lastMove = ['from' => $from, 'to' => $to];
+        } elseif ($table->game_type === 'ludo') {
+            $moveRow = TableGameMove::where('table_game_id', $table->id)
+                ->whereIn('action', ['move', 'dice_roll'])->latest('id')->first();
+            if ($moveRow && !empty($moveRow->public_data['message'])) $lastMove = ['message' => $moveRow->public_data['message']];
         }
         $recentRolls = null;
         if ($table->game_type === 'ludo') {
@@ -974,7 +982,10 @@ class TableGameService
         if (is_array($table->state)) {
             $state = $table->state;
             $state['turn'] = (int) $table->players()->where('user_id', $table->current_user_id)->value('seat');
-            if ($table->game_type === 'ludo') $state['pending_roll'] = null;
+            if ($table->game_type === 'ludo') {
+                $state['pending_roll'] = null;
+                if ((int) ($table->rules_version ?? 1) >= 2) $state['bonus_roll_pending'] = false;
+            }
             $table->state = $state;
         }
         $table->turn_started_at = now();

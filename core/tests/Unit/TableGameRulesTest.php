@@ -7,6 +7,16 @@ use App\Games\TableGames\TableGameSettlementMath;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
+class DeterministicLudoRules extends TableGameRules
+{
+    public array $rolls = [];
+
+    protected function rollLudoDie(): int
+    {
+        return array_shift($this->rolls) ?? 1;
+    }
+}
+
 class TableGameRulesTest extends TestCase
 {
     private TableGameRules $rules;
@@ -51,6 +61,100 @@ class TableGameRulesTest extends TestCase
         self::assertGreaterThanOrEqual(1, $result['state']['roll']['value']);
         self::assertLessThanOrEqual(6, $result['state']['roll']['value']);
         self::assertSame(0, $result['state']['roll']['seat']);
+    }
+
+    public function test_ludo_v2_capture_gives_one_bonus_roll_even_when_multiple_tokens_are_captured(): void
+    {
+        $state = ['tokens' => [[4, -1, -1, -1], [44, 44, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $result = $this->rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+
+        self::assertSame(-1, $result['state']['tokens'][1][0]);
+        self::assertSame(-1, $result['state']['tokens'][1][1]);
+        self::assertSame(0, $result['state']['turn']);
+        self::assertTrue($result['state']['bonus_roll_pending']);
+        self::assertSame('Captured 2 tokens — roll again.', $result['message']);
+    }
+
+    public function test_ludo_v2_safe_square_does_not_capture_or_award_a_capture_bonus(): void
+    {
+        $state = ['tokens' => [[7, -1, -1, -1], [47, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $result = $this->rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+
+        self::assertSame(47, $result['state']['tokens'][1][0]);
+        self::assertSame(1, $result['state']['turn']);
+        self::assertFalse($result['state']['bonus_roll_pending']);
+        self::assertNull($result['message']);
+    }
+
+    public function test_ludo_v2_non_capture_move_does_not_award_a_bonus_roll(): void
+    {
+        $state = ['tokens' => [[4, -1, -1, -1], [-1, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $result = $this->rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+
+        self::assertSame(1, $result['state']['turn']);
+        self::assertFalse($result['state']['bonus_roll_pending']);
+        self::assertNull($result['message']);
+    }
+
+    public function test_ludo_v2_home_entry_awards_bonus_but_finishing_the_last_token_does_not(): void
+    {
+        $rules = new DeterministicLudoRules();
+        $state = ['tokens' => [[56, -1, -1, -1], [-1, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $bonus = $rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+        self::assertSame(58, $bonus['state']['tokens'][0][0]);
+        self::assertSame(0, $bonus['state']['turn']);
+        self::assertTrue($bonus['state']['bonus_roll_pending']);
+        self::assertSame('Token reached home — roll again.', $bonus['message']);
+
+        $state['tokens'][0] = [56, 58, 58, 58];
+        $win = $rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+        self::assertSame(0, $win['winner']);
+        self::assertSame(58, $win['state']['tokens'][0][0]);
+        self::assertNull($win['state']['pending_roll']);
+        self::assertFalse($win['state']['bonus_roll_pending']);
+    }
+
+    public function test_ludo_v2_bonus_roll_without_a_legal_move_passes_even_on_a_six(): void
+    {
+        $rules = new DeterministicLudoRules();
+        $rules->rolls = [6];
+        $state = ['tokens' => [[58, 58, 58, 58], [-1, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => null, 'last_roll' => null, 'bonus_roll_pending' => true];
+        $result = $rules->move('ludo', $state, 0, ['roll' => true], [], 2);
+
+        self::assertSame(1, $result['state']['turn']);
+        self::assertNull($result['state']['pending_roll']);
+        self::assertFalse($result['state']['bonus_roll_pending']);
+        self::assertSame('No legal move on the bonus roll — turn passed.', $result['message']);
+    }
+
+    public function test_ludo_finished_token_remains_serialized_as_finished_and_old_rules_do_not_add_capture_bonus(): void
+    {
+        $state = ['tokens' => [[56, 58, 58, 58], [-1, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $finished = $this->rules->move('ludo', $state, 0, ['token' => 0], [], 2)['state'];
+        $reloaded = json_decode(json_encode($finished), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(58, $reloaded['tokens'][0][0]);
+
+        $oldRulesState = ['tokens' => [[4, -1, -1, -1], [44, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 1, 'last_roll' => ['seat' => 0, 'value' => 1]];
+        $oldRules = $this->rules->move('ludo', $oldRulesState, 0, ['token' => 0], [], 1);
+        self::assertSame(1, $oldRules['state']['turn']);
+        self::assertArrayNotHasKey('bonus_roll_pending', $oldRules['state']);
+        self::assertSame(-1, $oldRules['state']['tokens'][1][0]);
+    }
+
+    public function test_ludo_bonus_chain_keeps_the_turn_for_a_six_then_passes_after_a_normal_move(): void
+    {
+        $rules = new DeterministicLudoRules();
+        $rules->rolls = [6];
+        $state = ['tokens' => [[4, -1, -1, -1], [49, -1, -1, -1]], 'starts' => [0, 13], 'turn' => 0, 'moves' => 0, 'pending_roll' => 6, 'last_roll' => ['seat' => 0, 'value' => 6], 'bonus_roll_pending' => false];
+        $capture = $rules->move('ludo', $state, 0, ['token' => 0], [], 2);
+        self::assertSame(0, $capture['state']['turn']);
+        self::assertTrue($capture['state']['bonus_roll_pending']);
+        $roll = $rules->move('ludo', $capture['state'], 0, ['roll' => true], [], 2);
+        self::assertSame(6, $roll['state']['pending_roll']);
+        self::assertSame(0, $roll['state']['turn']);
+        $move = $rules->move('ludo', $roll['state'], 0, ['token' => 0], [], 2);
+        self::assertSame(10, $move['state']['tokens'][0][0]);
+        self::assertSame(1, $move['state']['turn']);
     }
 
     public function test_chess_validates_legal_moves_and_rejects_illegal_moves(): void
