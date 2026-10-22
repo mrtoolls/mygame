@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('currencies:update-rates')->dailyAt('03:00')->withoutOverlapping();
 Schedule::command('table-games:sweep-expired')->everyMinute()->withoutOverlapping();
+Schedule::command('competitions:sweep')->everyFiveMinutes()->withoutOverlapping();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
