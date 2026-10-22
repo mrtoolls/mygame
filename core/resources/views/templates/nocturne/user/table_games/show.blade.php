@@ -583,6 +583,56 @@
 .board-card[data-suit="S"],.board-card[data-suit="C"]{color:#15182a}
 .board-card-pile{margin:6px 0 10px;padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.04);color:#c7cfea;font-size:11.5px;font-weight:700;text-align:center}
 .board-card-suit{min-height:38px;margin:0 auto 10px;padding:0 12px;border:1px solid var(--tm-line,rgba(145,156,205,.16));border-radius:10px;background:var(--tm-raised,#232a47);color:var(--tm-text,#f5f6ff);display:block}
+
+/* ---- Whot: market pile, played pile, shape picker, scrolling hand ---- */
+.whot-table{display:grid;gap:14px}
+.whot-center{display:flex;align-items:center;justify-content:center;gap:clamp(18px,6vw,40px);margin:8px 0 4px;flex-wrap:wrap}
+.whot-card-back{width:52px;height:74px;border-radius:9px;background:linear-gradient(145deg,#1f2745,#10152a);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 14px rgba(0,0,0,.35);border:2px solid rgba(0,239,135,.22)}
+.whot-market{position:relative;display:grid;justify-items:center;gap:6px;padding:0;border:0;background:transparent;cursor:default}
+.whot-market__stack{position:relative;width:52px;height:74px}
+.whot-market__stack .whot-card-back{position:absolute;inset:0;transition:transform .15s ease}
+.whot-market__stack .whot-card-back:nth-child(1){transform:translate(0,0)}
+.whot-market__stack .whot-card-back:nth-child(2){transform:translate(3px,-3px)}
+.whot-market__stack .whot-card-back:nth-child(3){transform:translate(6px,-6px)}
+.whot-market.is-drawable{cursor:pointer}
+.whot-market.is-drawable .whot-market__stack{animation:whot-market-pulse 1.8s ease-in-out infinite}
+@keyframes whot-market-pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(0,239,135,0))}50%{filter:drop-shadow(0 0 8px rgba(0,239,135,.5))}}
+@media(prefers-reduced-motion:reduce){.whot-market.is-drawable .whot-market__stack{animation:none}}
+.whot-market:disabled{cursor:default;opacity:.65}
+.whot-market__count{color:var(--tm-text);font-size:15px;font-weight:950}
+.whot-market__label{margin-top:-4px;color:var(--tm-muted);font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.whot-pile{position:relative;width:52px;height:74px}
+.whot-pile__behind{position:absolute;inset:0;animation:none!important;pointer-events:none}
+.whot-pile__behind--1{transform:translate(4px,-4px) rotate(-4deg);opacity:.75}
+.whot-pile__behind--2{transform:translate(8px,-8px) rotate(-8deg);opacity:.5}
+.whot-pile__top{position:relative;width:64px;height:90px;font-size:19px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 10px 22px rgba(0,0,0,.4)}
+.whot-pile__top .board-card__pip{font-size:26px}
+.whot-shape-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.08);color:var(--tm-text);font-size:12.5px;font-weight:900}
+.whot-shape-badge b{color:var(--tm-green)}
+.whot-shape-picker{position:fixed;inset:0;z-index:1270;display:grid;place-items:center;gap:16px;padding:18px;background:rgba(6,8,18,.78);backdrop-filter:blur(5px)}
+.whot-shape-picker[hidden]{display:none}
+.whot-shape-picker__title{color:var(--tm-text);font-size:14px;font-weight:900}
+.whot-shape-picker__row{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:320px}
+.whot-shape-picker__btn{display:grid;justify-items:center;gap:6px;width:92px;min-height:92px;border:1px solid var(--tm-line);border-radius:18px;background:linear-gradient(155deg,var(--tm-raised),#11162c);color:var(--tm-text);cursor:pointer;transition:transform .12s ease,border-color .12s ease}
+.whot-shape-picker__btn i{font-style:normal;font-size:30px;color:var(--tm-green)}
+.whot-shape-picker__btn span{font-size:11px;font-weight:800}
+.whot-shape-picker__btn:hover,.whot-shape-picker__btn:active{transform:translateY(-3px);border-color:rgba(0,239,135,.5)}
+.whot-shape-picker__cancel{min-height:42px;padding:0 22px;border:1px solid var(--tm-line);border-radius:12px;background:transparent;color:var(--tm-muted);font-size:12px;font-weight:800;cursor:pointer}
+.whot-hand-wrap{margin:4px -4px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.whot-hand-wrap::-webkit-scrollbar{display:none}
+.whot-hand{display:flex;align-items:flex-end;gap:10px;padding:14px 10px 6px;min-width:min-content}
+.whot-card{flex:0 0 auto;transition:transform .15s ease,filter .15s ease,box-shadow .15s ease}
+.whot-card:not(.is-playable){filter:grayscale(.6);opacity:.55}
+.whot-card:not(.is-playable):hover{transform:none}
+.whot-card.is-playable{box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 4px 16px rgba(0,239,135,.3);transform:translateY(-8px)}
+.whot-card.is-playable:hover{transform:translateY(-14px) rotateX(8deg)}
+@media(max-width:575px){
+    .whot-center{gap:16px}
+    .whot-card-back,.whot-market__stack{width:44px;height:62px}
+    .whot-pile__top{width:56px;height:78px;font-size:16px}
+    .whot-shape-picker__btn{width:78px;min-height:78px}
+    .whot-shape-picker__btn i{font-size:24px}
+}
 /* ---- Dice pip graphics (Ludo roll, Backgammon dice) ---- */
 .dice-roll-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;color:var(--tm-muted,#929abc);font-size:11px;font-weight:800;perspective:500px}
 .dice-face{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:44px;height:44px;padding:7px;border-radius:10px;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 4px 5px rgba(0,0,0,.08) inset,4px 9px 0 -2px rgba(150,155,175,.85),6px 13px 16px rgba(0,0,0,.4);animation:dice-tumble .5s cubic-bezier(.2,.8,.3,1.05);transform-style:preserve-3d}
@@ -715,6 +765,7 @@ data.players.forEach(player=>{
     const isTurn=active&&player.id===data.current_user_id;
     const statusText=player.status==='refunded'?'Refunded':player.status==='out'?'Out':player.id===data.current_user_id?'Playing':'Seated';
     const homeCount=type==='ludo'?(data.state?.tokens?.[player.seat]||[]).filter(value=>value===58).length:null;
+    const cardCount=['whot','rummy','crazy_eights','dominoes'].includes(type)?(data.state?.hand_counts?.[player.seat]??null):null;
     const key=String(player.id);
     let row=existingRows.get(key);
     if(!row){
@@ -727,12 +778,14 @@ data.players.forEach(player=>{
         const name=document.createElement('strong');name.textContent=player.name||`Player ${player.seat+1}`;
         const status=document.createElement('small');status.textContent=statusText;
         if(homeCount!==null){const home=document.createElement('b');home.className='match-player__home';home.textContent=`\u{1F3E0}${homeCount}/4`;status.append(' ',home);}
+        if(cardCount!==null){const cards=document.createElement('b');cards.className='match-player__home match-player__cards';cards.textContent=`\u{1F0A0}${cardCount}`;status.append(' ',cards);}
         info.append(name,status);
         row.append(ring,info);
     }else{
         existingRows.delete(key);
         const status=row.querySelector('small');status.textContent=statusText;
         if(homeCount!==null){const home=document.createElement('b');home.className='match-player__home';home.textContent=`\u{1F3E0}${homeCount}/4`;status.append(' ',home);}
+        if(cardCount!==null){const cards=document.createElement('b');cards.className='match-player__home match-player__cards';cards.textContent=`\u{1F0A0}${cardCount}`;status.append(' ',cards);}
     }
     const className='match-player'+(isTurn?' is-turn':'');
     if(row.className!==className)row.className=className; // reassigning the same value would restart the pulse animation
@@ -869,7 +922,69 @@ function renderBoard(data) {
         board.append(bgBoard);
         const status=document.createElement('p');status.className='board-scorebar';status.textContent=`Bar: you ${state.bar?.[seat]||0} · opponent ${state.bar?.[1-seat]||0}  |  Off: you ${state.off?.[seat]||0} · opponent ${state.off?.[1-seat]||0}`;board.append(status);const diceRow=document.createElement('div');diceRow.className='dice-roll-row';if(state.dice?.length){state.dice.forEach(value=>diceRow.append(diceFace(value)));}else{const label=document.createElement('span');label.textContent='Dice not rolled';diceRow.append(label);}board.append(diceRow);if(active){if(state.dice===null){const roll=document.createElement('button');roll.type='button';roll.className='table-match__start';roll.textContent='Roll dice';roll.onclick=()=>send({type:'roll'});board.append(roll);}else if(state.dice.length){const controls=document.createElement('div');controls.className='board-select-row';const from=document.createElement('select');const barOption=document.createElement('option');barOption.value='-1';barOption.textContent='From bar';if(!state.bar?.[seat])barOption.disabled=true;from.append(barOption);state.points?.forEach((count,index)=>{if(count*(seat===0?1:-1)>0){const option=document.createElement('option');option.value=String(index);option.textContent=`Point ${index+1} (${Math.abs(count)} checkers)`;from.append(option);}});const die=document.createElement('select');[...new Set(state.dice)].forEach(value=>{const option=document.createElement('option');option.value=String(value);option.textContent=`Die ${value}`;die.append(option);});const move=document.createElement('button');move.type='button';move.className='table-match__start';move.textContent='Move checker';move.onclick=()=>send({type:'move',from:Number(from.value),die:Number(die.value)});controls.append(from,die,move);board.append(controls);}}
     } else if (type === 'whot') {
-        const seat=latest.players.find(p=>p.id===userId)?.seat||0;const top=state.discard?.at(-1)||{};const hand=state.hands?.[seat]||[];const playable=card=>card.number===20||card.number===top.number||card.shape===state.active_shape;const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`${top.shape||'—'} ${top.number||''} · Active shape: ${state.active_shape} · Stock ${state.stock_count||0}`;board.append(pile);if(active&&hand.some(card=>card.number===20)){const shape=document.createElement('select');shape.id='whot-shape';shape.className='board-card-suit';['Circle','Triangle','Cross','Square','Star'].forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;shape.append(option);});board.append(shape);}const cards=document.createElement('div');cards.className='board-card-hand';hand.forEach((card,index)=>{const button=document.createElement('button');button.type='button';button.className='board-card';button.dataset.suit=card.number===20?'W':'';button.append(cardFace(card.number===20?'20':String(card.number),WHOT_SHAPE_GLYPH[card.shape]||''));button.disabled=!active||!playable(card);button.onclick=()=>send({type:'play',card:index,...(card.number===20?{shape:document.querySelector('#whot-shape')?.value}:{})});cards.append(button);});board.append(cards);if(active&&!hand.some(playable)&&state.stock_count){const draw=document.createElement('button');draw.type='button';draw.className='table-match__start';draw.textContent='Draw a card';draw.onclick=()=>send({type:'draw'});board.append(draw);}if(!active){const counts=document.createElement('p');counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
+        const seat=latest.players.find(p=>p.id===userId)?.seat||0;
+        const discard=state.discard||[];const top=discard.at(-1)||{};const behind=discard.slice(-3,-1).reverse();
+        const hand=state.hands?.[seat]||[];
+        const playable=card=>card.number===20||card.number===top.number||card.shape===state.active_shape;
+        const canDraw=active&&!hand.some(playable)&&(state.stock_count||0)>0;
+        const whotTable=document.createElement('div');whotTable.className='whot-table';
+
+        const center=document.createElement('div');center.className='whot-center';
+        const market=document.createElement('button');market.type='button';market.className='whot-market'+(canDraw?' is-drawable':'');market.disabled=!active;
+        const marketStack=document.createElement('div');marketStack.className='whot-market__stack';
+        for(let i=0;i<(state.stock_count?Math.min(3,state.stock_count):0);i++){marketStack.append(document.createElement('span'));marketStack.lastChild.className='whot-card-back';}
+        market.append(marketStack);
+        const marketCount=document.createElement('span');marketCount.className='whot-market__count';marketCount.textContent=String(state.stock_count||0);
+        const marketLabel=document.createElement('span');marketLabel.className='whot-market__label';marketLabel.textContent='Market';
+        market.append(marketCount,marketLabel);
+        market.onclick=()=>{if(!active)return;if(hand.some(playable)){showError('Play a matching card before drawing.');return;}if(!state.stock_count){showError('The market is empty right now.');return;}send({type:'draw'});};
+        center.append(market);
+
+        const pileWrap=document.createElement('div');pileWrap.className='whot-pile';
+        behind.forEach((card,index)=>{const b=document.createElement('div');b.className='board-card whot-pile__behind whot-pile__behind--'+(index+1);b.append(cardFace(card.number===20?'20':String(card.number),WHOT_SHAPE_GLYPH[card.shape]||''));pileWrap.append(b);});
+        if(top.number!==undefined){const topCard=document.createElement('div');topCard.className='board-card whot-pile__top';topCard.append(cardFace(top.number===20?'20':String(top.number),WHOT_SHAPE_GLYPH[top.shape]||''));pileWrap.append(topCard);}
+        center.append(pileWrap);
+
+        const shapeBadge=document.createElement('span');shapeBadge.className='whot-shape-badge';shapeBadge.innerHTML=`${WHOT_SHAPE_GLYPH[state.active_shape]||''} <b>${state.active_shape||'—'}</b>`;
+        center.append(shapeBadge);
+        whotTable.append(center);
+
+        const picker=document.createElement('div');picker.className='whot-shape-picker';picker.hidden=true;
+        let pendingWhotIndex=null;
+        const pickerTitle=document.createElement('span');pickerTitle.className='whot-shape-picker__title';pickerTitle.textContent='Choose a shape';
+        const pickerRow=document.createElement('div');pickerRow.className='whot-shape-picker__row';
+        ['Circle','Triangle','Cross','Square','Star'].forEach(shapeName=>{
+            const btn=document.createElement('button');btn.type='button';btn.className='whot-shape-picker__btn';
+            btn.innerHTML=`<i>${WHOT_SHAPE_GLYPH[shapeName]}</i><span>${shapeName}</span>`;
+            btn.onclick=()=>{if(pendingWhotIndex===null)return;send({type:'play',card:pendingWhotIndex,shape:shapeName});picker.hidden=true;pendingWhotIndex=null;};
+            pickerRow.append(btn);
+        });
+        const pickerCancel=document.createElement('button');pickerCancel.type='button';pickerCancel.className='whot-shape-picker__cancel';pickerCancel.textContent='Cancel';
+        pickerCancel.onclick=()=>{picker.hidden=true;pendingWhotIndex=null;};
+        picker.append(pickerTitle,pickerRow,pickerCancel);
+        whotTable.append(picker);
+
+        const handWrap=document.createElement('div');handWrap.className='whot-hand-wrap';
+        const handRow=document.createElement('div');handRow.className='whot-hand';
+        hand.forEach((card,index)=>{
+            const legal=playable(card);
+            const button=document.createElement('button');button.type='button';
+            button.className='board-card whot-card'+(active&&legal?' is-playable':'');
+            button.dataset.suit=card.number===20?'W':'';
+            button.append(cardFace(card.number===20?'20':String(card.number),WHOT_SHAPE_GLYPH[card.shape]||''));
+            button.disabled=!active;
+            button.onclick=()=>{
+                if(!legal){showError(card.number===20?'A Whot card can always be played.':`Play a card that matches ${state.active_shape} or ${top.number}.`);return;}
+                if(card.number===20){pendingWhotIndex=index;picker.hidden=false;return;}
+                send({type:'play',card:index});
+            };
+            handRow.append(button);
+        });
+        handWrap.append(handRow);
+        whotTable.append(handWrap);
+        board.append(whotTable);
+
+        if(!active){const counts=document.createElement('p');counts.className='board-scorebar';counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
     } else if (type === 'rummy') {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;const cards=state.hands?.[seat]||[];const suitNames={S:'♠',H:'♥',D:'♦',C:'♣'};const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`Discard pile: ${state.discard?.at(-1)?.rank||'—'} ${suitNames[state.discard?.at(-1)?.suit]||''} · Stock ${state.stock_count||0}`;board.append(pile);const hand=document.createElement('div');hand.className='board-card-hand';cards.forEach((card,index)=>{const button=document.createElement('button');button.type='button';button.className='board-card';button.dataset.suit=card.suit;button.append(cardFace(card.rank,suitNames[card.suit]||''));button.disabled=!active||state.phase!=='discard';button.onclick=()=>send({type:'discard',card:index});hand.append(button);});board.append(hand);if(active&&state.phase==='draw'){const stock=document.createElement('button');stock.type='button';stock.className='table-match__start';stock.textContent='Draw from stock';stock.onclick=()=>send({type:'draw_stock'});const discard=document.createElement('button');discard.type='button';discard.className='table-match__leave';discard.textContent='Take discard';discard.disabled=(state.discard||[]).length<2;discard.onclick=()=>send({type:'draw_discard'});board.append(stock,discard);}if(!active){const counts=document.createElement('p');counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
     } else if (type === 'blackjack') {
