@@ -287,12 +287,18 @@ class TableGameService
                 }
             }
 
+            // Stays open as long as the new waiting table itself does (the same 24-hour window
+            // every other waiting table gets - see create()) rather than a separate, much
+            // shorter clock of its own. The old 10-minute expiry here meant a rematch request
+            // usually died silently before the other player even noticed the banner, with no
+            // way to ask again (one rematch per original table - see the migration's unique
+            // constraint) - that was the actual "it doesn't work" bug.
             $rematch = TableGameRematch::create([
                 'original_table_game_id' => $table->id,
                 'new_table_game_id' => $newTable->id,
                 'requested_by' => $user->id,
                 'status' => 'pending',
-                'expires_at' => now()->addMinutes(10),
+                'expires_at' => $newTable->join_deadline_at,
             ]);
             $rematch->invite_failures = $failures;
             return $rematch;
@@ -306,13 +312,13 @@ class TableGameService
             if ($rematch->status !== 'pending') return $rematch;
             $invite = TableGameInvite::where('table_game_id', $rematch->new_table_game_id)->where('invitee_id', $user->id)->first();
             if (!$invite) throw new InvalidArgumentException('This rematch invitation does not belong to you.');
+            // Declining is personal, not a vote that ends it for everyone - it used to also mark
+            // the whole rematch 'declined' and stand the requester up out of their own new table,
+            // so with more than two original players, one decline silently cancelled it for
+            // everyone else too. Only this player's own invite is resolved; the rematch (and
+            // everyone else's pending invite) stays open until the requester themselves cancels
+            // it (standing up their own waiting table - see standUp()).
             $invite->forceFill(['status' => 'declined'])->save();
-            $rematch->status = 'declined';
-            $rematch->save();
-            $requester = User::find($rematch->requested_by);
-            if ($requester) {
-                try { $this->standUp($requester, $rematch->new_table_game_id); } catch (Throwable) {}
-            }
             return $rematch;
         }, 3);
     }
@@ -430,6 +436,12 @@ class TableGameService
                 $table->finished_at = now();
                 $table->version++;
                 $table->save();
+                // If this waiting table is a rematch's new table, the requester standing it up
+                // IS the "cancel the rematch" action - mark it so every other invited player's
+                // banner clears instead of staying stuck on a now-dead table.
+                if (Schema::hasTable('table_game_rematches')) {
+                    TableGameRematch::where('new_table_game_id', $table->id)->where('status', 'pending')->update(['status' => 'cancelled']);
+                }
                 return $table->fresh(['players.user']);
             }
             $player->status = 'out';

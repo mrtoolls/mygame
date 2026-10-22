@@ -4,8 +4,11 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use App\Games\TableGames\TableGameService;
 use App\Models\TableGame;
+use App\Models\TableGameInvite;
 use App\Models\TableGameMessage;
 use App\Models\TableGameMessageReaction;
+use App\Models\TableGamePlayer;
+use App\Models\TableGameRematch;
 use App\Models\User;
 use App\Http\Controllers\User\TableGameController;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
@@ -398,6 +401,35 @@ $bjSnapshot = $service->snapshot($creator, $bjTable->id);
 if (array_key_exists('deck', $bjSnapshot['state'])) throw new RuntimeException('A Blackjack snapshot exposed the deck contents.');
 if (!is_int($bjSnapshot['state']['deck_count'] ?? null)) throw new RuntimeException('A Blackjack snapshot did not report the deck count.');
 $service->forceClose($bjTable->id);
+
+// --- Rematch: a decline from one invited player must not cancel it for everyone else, and it
+// should stay open until the requester themselves cancels it (not a short fixed timer). ---
+$thirdPlayer = $insertUser('table_third_player', '50.00000000');
+$remTable = $service->create($creator, 'dominoes', 3, '0.00000000', 'rematch_create_key_1');
+$remTable = $service->join($opponent, $remTable->id);
+$remTable = $service->join($thirdPlayer, $remTable->id);
+TableGame::whereKey($remTable->id)->update(['status' => 'finished', 'result' => 'winner:0', 'finished_at' => now()]);
+$rematch = $service->requestRematch($creator, $remTable->id);
+if ($rematch->status !== 'pending' || !$rematch->expires_at) throw new RuntimeException('A rematch request was not created as pending with an expiry.');
+if (!$rematch->expires_at || $rematch->expires_at->lessThan(now()->addHours(20))) throw new RuntimeException('A rematch expires too soon to realistically be accepted (should match the 24h waiting window, not a short fixed timer).');
+
+$opponentInvite = TableGameInvite::where('table_game_id', $rematch->new_table_game_id)->where('invitee_id', $opponent->id)->first();
+$thirdInvite = TableGameInvite::where('table_game_id', $rematch->new_table_game_id)->where('invitee_id', $thirdPlayer->id)->first();
+if (!$opponentInvite || !$thirdInvite) throw new RuntimeException('A rematch did not invite every other original player.');
+
+$service->declineRematch($thirdPlayer, $rematch->id);
+if ($rematch->fresh()->status !== 'pending') throw new RuntimeException('One player declining a rematch cancelled it for everyone instead of staying open.');
+if ($thirdInvite->fresh()->status !== 'declined') throw new RuntimeException('Declining a rematch invite did not mark that invite declined.');
+
+$service->acceptInvite($opponent, $opponentInvite->id);
+if (!TableGamePlayer::where('table_game_id', $rematch->new_table_game_id)->where('user_id', $opponent->id)->where('status', 'seated')->exists()) {
+    throw new RuntimeException('A player could not accept a still-open rematch after another player had already declined it.');
+}
+if (TableGame::find($rematch->new_table_game_id)->status !== 'waiting') throw new RuntimeException('A rematch table closed on its own instead of staying open for the requester to cancel.');
+
+$service->standUp($creator, $rematch->new_table_game_id);
+if ($rematch->fresh()->status !== 'cancelled') throw new RuntimeException('The requester cancelling their rematch table did not mark the rematch cancelled for everyone watching it.');
+
 $poorUser = $insertUser('table_low_balance', '0.50000000');
 try {
     $service->create($poorUser, 'tic_tac_toe', 2, '1.00000000', 'create_key_000006');
