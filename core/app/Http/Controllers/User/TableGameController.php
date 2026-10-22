@@ -260,7 +260,11 @@ class TableGameController extends Controller
         if (!$request->hasFile('attachment') && $body === '') return response()->json(['message' => 'Write a message or attach a file.'], 422);
         $file = $request->file('attachment');
         $kind = $file ? ($request->input('kind') === 'voice' ? 'voice' : 'file') : 'text';
-        if ($kind === 'voice' && (!$file || !str_starts_with((string) $file->getMimeType(), 'audio/'))) return response()->json(['message' => 'Voice notes must be an audio recording.'], 422);
+        // Audio-only WebM/Opus from MediaRecorder is frequently fileinfo-sniffed as video/webm
+        // (the container is generic and the magic database often guesses "video" unless it
+        // parses track entries) - this app never records real video, so that's unambiguous.
+        $voiceMime = (string) $file?->getMimeType();
+        if ($kind === 'voice' && (!$file || (!str_starts_with($voiceMime, 'audio/') && $voiceMime !== 'video/webm'))) return response()->json(['message' => 'Voice notes must be an audio recording.'], 422);
         $replyToId = null;
         if ($request->filled('reply_to_id') && Schema::hasColumn('table_game_messages', 'reply_to_id')) {
             $replyToId = TableGameMessage::where('table_game_id', $id)->whereKey($request->input('reply_to_id'))->value('id');
@@ -377,8 +381,9 @@ class TableGameController extends Controller
         $record = TableGameMessage::where('table_game_id', $id)->whereKey($message)->firstOrFail();
         abort_unless($record->attachment_path && Storage::disk('local')->exists($record->attachment_path), 404);
         $mime = (string) $record->attachment_mime;
-        if (str_starts_with($mime, 'audio/') || in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true)) {
-            return response()->file(Storage::disk('local')->path($record->attachment_path), ['Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff']);
+        $isVoiceWebm = $record->kind === 'voice' && $mime === 'video/webm';
+        if (str_starts_with($mime, 'audio/') || $isVoiceWebm || in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true)) {
+            return response()->file(Storage::disk('local')->path($record->attachment_path), ['Content-Type' => $isVoiceWebm ? 'audio/webm' : $mime, 'X-Content-Type-Options' => 'nosniff']);
         }
         return Storage::disk('local')->download($record->attachment_path, $record->attachment_name ?: 'table-attachment', ['X-Content-Type-Options' => 'nosniff']);
     }
