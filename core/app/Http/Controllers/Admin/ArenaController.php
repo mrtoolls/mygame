@@ -18,8 +18,11 @@ class ArenaController extends Controller
 
     public function settingsUpdate(Request $request)
     {
-        $general                              = gs();
+        $request->validate(['arena_video_max_mb' => 'required|integer|min:1|max:500']);
+
+        $general                               = gs();
         $general->arena_post_approval_required = $request->status ? Status::ENABLE : Status::DISABLE;
+        $general->arena_video_max_mb           = $request->arena_video_max_mb;
         $general->save();
 
         $notify[] = ['success', 'Arena settings updated successfully'];

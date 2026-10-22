@@ -46,4 +46,9 @@ class ArenaPost extends Model
     {
         return $this->image ? getImage('assets/images/arena-posts/' . $this->image) : null;
     }
+
+    public function videoUrl(): ?string
+    {
+        return $this->video ? getImage('assets/images/arena-posts/' . $this->video) : null;
+    }
 }

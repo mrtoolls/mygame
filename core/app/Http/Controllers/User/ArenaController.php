@@ -135,16 +135,19 @@ class ArenaController extends Controller
 
     public function store(Request $request)
     {
+        $videoMaxKb = (int) (gs('arena_video_max_mb') ?: 25) * 1024;
+
         $request->validate([
             'body'              => 'nullable|string|max:2000',
             'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'video'             => 'nullable|file|mimes:mp4,mov,webm|max:' . $videoMaxKb,
             'background_style'  => 'nullable|string|in:' . implode(',', ArenaPost::BACKGROUNDS),
             'type'              => 'nullable|string|in:' . implode(',', ArenaPost::TYPES),
             'linked_game_log_id' => 'nullable|integer',
         ]);
 
-        if (!$request->filled('body') && !$request->hasFile('image')) {
-            $notify[] = ['error', 'Write something or add an image before posting.'];
+        if (!$request->filled('body') && !$request->hasFile('image') && !$request->hasFile('video')) {
+            $notify[] = ['error', 'Write something or add a photo or video before posting.'];
             return back()->withNotify($notify);
         }
 
@@ -156,16 +159,23 @@ class ArenaController extends Controller
             }
         }
 
+        $hasMedia = $request->hasFile('image') || $request->hasFile('video');
         $post                    = new ArenaPost();
         $post->user_id           = auth()->id();
         $post->body              = $request->body;
         $post->type              = $request->type ?: 'general';
         $post->linked_game_log_id = $linkedGameLogId;
-        if (!$request->hasFile('image')) {
+        if (!$hasMedia) {
             $post->background_style = $request->background_style ?: ArenaPost::BACKGROUNDS[array_rand(ArenaPost::BACKGROUNDS)];
         }
         if ($request->hasFile('image')) {
+            // Intervention already re-encodes every upload at a fixed box size and jpg/webp
+            // quality=82 (FileManager::uploadImage) - that resize/re-encode step is the
+            // compression for images, there's nothing extra to do here.
             $post->image = fileUploader($request->file('image'), 'assets/images/arena-posts', '1000x1000');
+        } elseif ($request->hasFile('video')) {
+            $post->video = fileUploader($request->file('video'), 'assets/images/arena-posts');
+            $this->compressVideoIfPossible('assets/images/arena-posts/' . $post->video);
         }
         $post->status = gs('arena_post_approval_required') ? 'pending' : 'approved';
         $post->save();
@@ -174,6 +184,49 @@ class ArenaController extends Controller
             ? 'Your post has been submitted and is awaiting moderator approval.'
             : 'Your post is live on the Arena.'];
         return back()->withNotify($notify);
+    }
+
+    // Re-encodes the just-uploaded video at a lower bitrate to save server space, entirely
+    // best-effort: shared hosting frequently has shell_exec disabled or no ffmpeg binary at
+    // all, so every failure path here just leaves the original (already size-validated)
+    // upload in place rather than ever blocking or breaking the post itself.
+    private function compressVideoIfPossible(string $relativePath): void
+    {
+        try {
+            if (!function_exists('shell_exec') || !function_exists('exec')) return;
+            $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+            if (in_array('shell_exec', $disabled, true) || in_array('exec', $disabled, true)) return;
+
+            $ffmpegCheck = @shell_exec('ffmpeg -version 2>&1');
+            if (!$ffmpegCheck || !str_contains(strtolower($ffmpegCheck), 'ffmpeg version')) return;
+
+            // Plain relative path, matching getImage()/fileUploader()'s convention elsewhere in
+            // this codebase (resolved against the working directory, not base_path()/public_path()
+            // - this app's assets/ lives alongside, not necessarily under, the Laravel app root).
+            $inputPath = $relativePath;
+            if (!is_file($inputPath)) return;
+            $originalSize = filesize($inputPath);
+            if (!$originalSize) return;
+
+            $outputPath = $inputPath . '.compressed.mp4';
+            $command = sprintf(
+                'ffmpeg -y -i %s -vcodec libx264 -crf 28 -preset veryfast -vf "scale=\'min(1280,iw)\':-2" -movflags +faststart -acodec aac -b:a 96k %s 2>&1',
+                escapeshellarg($inputPath),
+                escapeshellarg($outputPath)
+            );
+            @shell_exec($command);
+
+            // Only swap in the compressed file if it actually encoded successfully and is
+            // genuinely smaller - never trade a working upload for a broken or larger one.
+            if (is_file($outputPath) && filesize($outputPath) > 0 && filesize($outputPath) < $originalSize) {
+                @unlink($inputPath);
+                @rename($outputPath, $inputPath);
+            } elseif (is_file($outputPath)) {
+                @unlink($outputPath);
+            }
+        } catch (\Throwable $exception) {
+            // Compression is a nice-to-have, never worth failing the post over.
+        }
     }
 
     public function vote(Request $request, ArenaPost $post)

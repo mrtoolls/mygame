@@ -59,10 +59,11 @@
                             @csrf
                             <div class="nocturne-arena-composer__top">
                                 <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
-                                <textarea name="body" rows="2" maxlength="2000" placeholder="@lang('Share a win, ask for a competition, or say something...')" id="arena-composer-body">{{ old('body') }}</textarea>
+                                <textarea name="body" rows="1" maxlength="2000" placeholder="@lang('Share a win, ask for a competition, or say something...')" id="arena-composer-body">{{ old('body') }}</textarea>
                             </div>
 
                             <div class="nocturne-arena-composer__preview" id="arena-image-preview" hidden><img src="" alt=""><button type="button" id="arena-image-remove"><i class="ph-bold ph-x"></i></button></div>
+                            <div class="nocturne-arena-composer__preview" id="arena-video-preview" hidden><video src="" controls muted></video><button type="button" id="arena-video-remove"><i class="ph-bold ph-x"></i></button></div>
 
                             <div class="nocturne-arena-composer__swatches" id="arena-swatches">
                                 @foreach(\App\Models\ArenaPost::BACKGROUNDS as $swatch)
@@ -95,7 +96,10 @@
                             @endif
 
                             <div class="nocturne-arena-composer__foot">
-                                <label class="nocturne-arena-image-btn"><i class="ph-bold ph-image"></i>@lang('Photo')<input type="file" name="image" id="arena-image-input" accept=".png,.jpg,.jpeg,.webp" hidden></label>
+                                <div class="nocturne-arena-attach-tools">
+                                    <label class="nocturne-arena-attach-btn" title="@lang('Add a photo')"><i class="ph-fill ph-image-square"></i><input type="file" name="image" id="arena-image-input" accept=".png,.jpg,.jpeg,.webp" hidden></label>
+                                    <label class="nocturne-arena-attach-btn" title="@lang('Add a video')"><i class="ph-fill ph-video-camera"></i><input type="file" name="video" id="arena-video-input" accept=".mp4,.mov,.webm" hidden></label>
+                                </div>
                                 <button type="submit" class="nocturne-arena-post-btn"><i class="ph-bold ph-paper-plane-tilt"></i>@lang('Post')</button>
                             </div>
 
@@ -266,7 +270,7 @@
 
 .nocturne-arena-composer{margin-bottom:20px;padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
 .nocturne-arena-composer__top{display:flex;gap:12px;align-items:flex-start}
-.nocturne-arena-composer textarea{flex:1;min-width:0;min-height:44px;padding:10px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;resize:vertical;outline:0}
+.nocturne-arena-composer textarea{flex:1;min-width:0;min-height:28px;max-height:260px;padding:10px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;resize:none;overflow-y:auto;outline:0}
 .nocturne-arena-composer textarea::placeholder{color:#606986}
 .nocturne-arena-composer__preview{position:relative;margin:12px 0 0 56px;border-radius:14px;overflow:hidden;max-width:320px}
 .nocturne-arena-composer__preview img{display:block;width:100%;max-height:220px;object-fit:cover}
@@ -295,8 +299,10 @@
 .nocturne-arena-win-pick select{width:100%;max-width:360px;padding:10px 12px;border:1px solid var(--arena-line);border-radius:12px;background:var(--arena-bg);color:var(--arena-text);font:inherit;font-size:13px}
 
 .nocturne-arena-composer__foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 0 56px}
-.nocturne-arena-image-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid var(--arena-line);border-radius:11px;background:var(--arena-bg);color:var(--arena-muted);font-size:12.5px;font-weight:750;cursor:pointer}
-.nocturne-arena-image-btn:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
+.nocturne-arena-attach-tools{display:flex;align-items:center;gap:8px}
+.nocturne-arena-attach-btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--arena-line);border-radius:50%;background:var(--arena-bg);color:var(--arena-muted);font-size:19px;cursor:pointer;transition:color .15s ease,border-color .15s ease,background .15s ease}
+.nocturne-arena-attach-btn:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.08)}
+.nocturne-arena-composer__preview video{display:block;width:100%;max-height:260px;object-fit:cover;background:#000}
 .nocturne-arena-post-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;cursor:pointer}
 .nocturne-arena-composer__note{display:flex;align-items:center;gap:6px;margin:12px 0 0 56px;color:var(--arena-muted);font-size:11.5px}
 .nocturne-arena-composer__note i{color:var(--arena-accent)}
@@ -314,9 +320,14 @@
 .nocturne-arena-post__identity strong{color:var(--arena-text);font-size:13.5px;font-weight:800}
 .nocturne-arena-post__identity small{color:var(--arena-muted);font-size:11px}
 .nocturne-arena-post__type{display:inline-flex;align-items:center;gap:5px;flex:none;padding:5px 11px;border-radius:999px;background:rgba(133,142,175,.12);color:var(--arena-muted);font-size:10.5px;font-weight:800}
-.nocturne-arena-post__body{margin:0 0 4px;color:#d7dafa;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.nocturne-arena-post__body-wrap{margin:0 0 4px}
+.nocturne-arena-post__body{margin:0;color:#d7dafa;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.nocturne-arena-post__body.is-clamped{max-height:4.95em;overflow:hidden}
+.nocturne-arena-seemore{display:inline-block;margin-top:4px;padding:0;border:0;background:none;color:var(--arena-accent);font-size:12.5px;font-weight:800;cursor:pointer}
 .nocturne-arena-post__image{margin-top:10px;border-radius:14px;overflow:hidden}
 .nocturne-arena-post__image img{display:block;width:100%;max-height:420px;object-fit:cover}
+.nocturne-arena-post__video{margin-top:10px;border-radius:14px;overflow:hidden;background:#000}
+.nocturne-arena-post__video video{display:block;width:100%;max-height:420px}
 .nocturne-arena-post__colored{display:grid;place-items:center;min-height:140px;padding:24px;border-radius:16px;text-align:center}
 .nocturne-arena-post__colored p{margin:0;color:#fff;font-size:17px;font-weight:800;line-height:1.5;overflow-wrap:anywhere}
 .nocturne-arena-post__colored--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
@@ -507,9 +518,16 @@
 <script>
 "use strict";
 (function($) {
+    // Facebook/X-style auto-growing composer - no manual drag handle, it just grows with content.
+    var composerBody = document.getElementById('arena-composer-body');
+    function autoGrow() { composerBody.style.height = 'auto'; composerBody.style.height = Math.min(composerBody.scrollHeight, 260) + 'px'; }
+    if (composerBody) { composerBody.addEventListener('input', autoGrow); autoGrow(); }
+
     $('#arena-image-input').on('change', function() {
         var file = this.files[0];
         if (!file) return;
+        $('#arena-video-input').val('');
+        $('#arena-video-preview').prop('hidden', true).find('video').attr('src', '');
         var reader = new FileReader();
         reader.onload = function(e) {
             $('#arena-image-preview img').attr('src', e.target.result);
@@ -521,6 +539,22 @@
     $('#arena-image-remove').on('click', function() {
         $('#arena-image-input').val('');
         $('#arena-image-preview').prop('hidden', true).find('img').attr('src', '');
+        $('#arena-swatches').show();
+    });
+    $('#arena-video-input').on('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        $('#arena-image-input').val('');
+        $('#arena-image-preview').prop('hidden', true).find('img').attr('src', '');
+        $('#arena-video-preview img').remove();
+        var url = URL.createObjectURL(file);
+        $('#arena-video-preview video').attr('src', url);
+        $('#arena-video-preview').prop('hidden', false);
+        $('#arena-swatches').hide();
+    });
+    $('#arena-video-remove').on('click', function() {
+        $('#arena-video-input').val('');
+        $('#arena-video-preview').prop('hidden', true).find('video').attr('src', '');
         $('#arena-swatches').show();
     });
 
@@ -544,6 +578,7 @@
         $.ajax({ url: url, data: { page: page }, headers: { 'Accept': 'application/json' } })
             .done(function(res) {
                 $('#arena-feed').append(res.html);
+                setupSeeMore(document.getElementById('arena-feed'));
                 if (res.hasMore) {
                     btn.data('next-page', page + 1).prop('disabled', false).text("{{ __('Load More') }}");
                 } else {
@@ -552,6 +587,29 @@
             })
             .fail(function() { btn.prop('disabled', false).text("{{ __('Load More') }}"); });
     });
+
+    // Clamp long post text to ~3 lines with a "See more" toggle - only added when the text
+    // actually overflows that height, never on short posts.
+    function setupSeeMore(scope) {
+        (scope || document).querySelectorAll('[data-seemore]:not([data-seemore-ready])').forEach(function(body) {
+            body.setAttribute('data-seemore-ready', '1');
+            body.classList.add('is-clamped');
+            var button = body.nextElementSibling;
+            if (!button || !button.classList.contains('nocturne-arena-seemore')) return;
+            if (body.scrollHeight > body.clientHeight + 2) {
+                button.hidden = false;
+                button.addEventListener('click', function() {
+                    var expanded = !body.classList.contains('is-clamped');
+                    body.classList.toggle('is-clamped', expanded);
+                    button.textContent = expanded ? "{{ __('See more') }}" : "{{ __('See less') }}";
+                });
+                button.textContent = "{{ __('See more') }}";
+            } else {
+                body.classList.remove('is-clamped');
+            }
+        });
+    }
+    setupSeeMore(document);
 
     var csrfToken = "{{ csrf_token() }}";
     var voteUrlTpl = "{{ route('user.arena.vote', ['post' => '__ID__']) }}";

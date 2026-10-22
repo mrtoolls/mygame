@@ -44,15 +44,17 @@
         </div>
 
         @if($post->body)
-            @if(!$post->image && $post->background_style)
+            @if(!$post->image && !$post->video && $post->background_style)
                 <div class="nocturne-arena-post__colored nocturne-arena-post__colored--{{ $post->background_style }}"><p>{{ $post->body }}</p></div>
             @else
-                <p class="nocturne-arena-post__body">{{ $post->body }}</p>
+                <div class="nocturne-arena-post__body-wrap"><p class="nocturne-arena-post__body" data-seemore>{{ $post->body }}</p><button type="button" class="nocturne-arena-seemore" hidden>@lang('See more')</button></div>
             @endif
         @endif
 
         @if($post->image)
             <div class="nocturne-arena-post__image"><img src="{{ $post->imageUrl() }}" alt="" loading="lazy"></div>
+        @elseif($post->video)
+            <div class="nocturne-arena-post__video"><video src="{{ $post->videoUrl() }}" controls preload="metadata" playsinline></video></div>
         @endif
 
         @if($post->linkedGameLog)

@@ -14,6 +14,13 @@
                                 <small class="text-muted d-block mt-2">@lang('When on, new Arena posts stay hidden from the public feed until an admin or a moderator-flagged support agent approves them.')</small>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>@lang('Max video upload size (MB)')</label>
+                                <input type="number" min="1" max="500" class="form-control" name="arena_video_max_mb" value="{{ @gs('arena_video_max_mb') ?: 25 }}" required>
+                                <small class="text-muted d-block mt-2">@lang('Videos are compressed automatically on upload when the server supports it, and always rejected above this size.')</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer">
