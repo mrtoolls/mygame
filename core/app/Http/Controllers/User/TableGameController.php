@@ -262,9 +262,17 @@ class TableGameController extends Controller
     public function sendMessage(Request $request, string $id)
     {
         $this->authorizeViewer($request, $id);
+        // Voice notes skip the file-attachment mimes allow-list: some Android browsers'
+        // MediaRecorder only emits audio/aac (no container extension in that static list),
+        // which Laravel's content-sniffed mimes check would reject even though it's a
+        // legitimate recording - the audio/* + video/webm sniff below already gates this.
+        $isVoice = $request->input('kind') === 'voice';
         $request->validate([
             'body' => 'nullable|string|max:1000|required_without:attachment',
-            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,webm,mp4,3gp|required_without:body',
+            'attachment' => array_filter([
+                'nullable', 'file', 'max:10240', 'required_without:body',
+                $isVoice ? null : 'mimes:jpg,jpeg,png,gif,webp,pdf,txt,csv,zip,mp3,wav,ogg,m4a,weba,webm,mp4,3gp',
+            ]),
             'kind' => 'nullable|in:text,file,voice',
             'reply_to_id' => 'nullable|integer',
         ]);
