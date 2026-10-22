@@ -1275,8 +1275,28 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-license-row p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
 @media (max-width: 575.98px) { .nocturne-license-row { flex-direction: column; align-items: flex-start; } }
 
+/* Dedicated hero (not the generic .nocturne-page-hero/.nocturne-eyebrow shared with About) so
+   this page can go richer without changing anything else that reuses those classes. */
+.nocturne-sponsor-hero { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-bottom: 36px; padding: clamp(28px,4vw,48px); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: linear-gradient(120deg,#171d37 10%,#1b2545 55%,#102b33); }
+.nocturne-sponsor-hero__glow { position: absolute; top: -45%; right: -8%; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(0,231,143,.22), transparent 70%); pointer-events: none; }
+.nocturne-sponsor-hero__copy { position: relative; z-index: 1; max-width: 640px; }
+.nocturne-sponsor-hero__kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--nocturne-green); font-size: 11px; font-weight: 950; letter-spacing: .12em; }
+.nocturne-sponsor-hero__copy h1 { margin: 0 0 10px; color: var(--nocturne-text); font-size: clamp(26px,3.4vw,40px); font-weight: 900; letter-spacing: -.02em; line-height: 1.1; }
+.nocturne-sponsor-hero__copy p { margin: 0 0 22px; max-width: 480px; color: var(--nocturne-muted); font-size: 14px; line-height: 1.65; }
+.nocturne-sponsor-hero__art { position: relative; z-index: 1; display: grid; flex: 0 0 150px; width: 150px; height: 150px; place-items: center; border-radius: 40px; background: rgba(0,231,143,.1); color: var(--nocturne-green); font-size: 72px; transform: rotate(-6deg); }
+@media (max-width: 767.98px) { .nocturne-sponsor-hero { flex-direction: column; text-align: center; } .nocturne-sponsor-hero__copy { max-width: 100%; } .nocturne-sponsor-hero__copy p { margin-left: auto; margin-right: auto; } .nocturne-sponsor-hero__art { width: 90px; height: 90px; flex-basis: 90px; font-size: 44px; border-radius: 26px; } }
+
+.nocturne-sponsor-benefits { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.nocturne-sponsor-benefits article { padding: 22px; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: var(--nocturne-panel); }
+.nocturne-sponsor-benefits span { display: grid; width: 44px; height: 44px; margin-bottom: 14px; place-items: center; border-radius: 13px; background: rgba(0,231,143,.12); color: var(--nocturne-green); font-size: 22px; }
+.nocturne-sponsor-benefits h3 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 15px; font-weight: 800; }
+.nocturne-sponsor-benefits p { margin: 0; color: var(--nocturne-muted); font-size: 12.5px; line-height: 1.6; }
+@media (max-width: 767.98px) { .nocturne-sponsor-benefits { grid-template-columns: 1fr; } }
+
 .nocturne-sponsor-cta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 9px; min-height: 48px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--nocturne-green); color: #062a23; font-weight: 850; font-size: 14px; text-decoration: none; white-space: nowrap; }
 .nocturne-sponsor-cta:hover { color: #062a23; filter: brightness(1.05); }
+.nocturne-sponsor-cta--ghost { background: rgba(0,231,143,.12); color: var(--nocturne-green); border: 1px solid rgba(0,231,143,.3); margin-top: 6px; }
+.nocturne-sponsor-cta--ghost:hover { color: var(--nocturne-green); background: rgba(0,231,143,.18); }
 .nocturne-sponsor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
 .nocturne-sponsor-card { position: relative; display: grid; gap: 10px; padding: 26px 22px; overflow: hidden; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: linear-gradient(160deg, var(--nocturne-panel), rgba(9,13,28,.6)); transition: transform .2s ease, border-color .2s ease; }
 .nocturne-sponsor-card:hover { transform: translateY(-4px); border-color: rgba(0,231,143,.35); }
@@ -1287,12 +1307,16 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-sponsor-card p { position: relative; z-index: 1; margin: 0; color: var(--nocturne-muted); font-size: 13.5px; line-height: 1.65; }
 .nocturne-sponsor-card__link { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--nocturne-green); font-size: 12.5px; font-weight: 750; text-decoration: none; }
 .nocturne-sponsor-card__link:hover { text-decoration: underline; }
-.nocturne-sponsor-empty { display: grid; justify-items: center; gap: 8px; padding: 48px; border: 1px dashed var(--nocturne-line); border-radius: var(--nocturne-radius-lg); color: var(--nocturne-muted); text-align: center; }
-.nocturne-sponsor-empty i { color: var(--nocturne-green); font-size: 34px; }
-.nocturne-sponsor-empty h3 { margin: 0; color: var(--nocturne-text); }
-.nocturne-sponsor-footer-cta { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 28px; padding: 28px 32px; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 85% 50%, rgba(0,231,143,.16), transparent 45%), var(--nocturne-panel); }
-.nocturne-sponsor-footer-cta h3 { margin: 0 0 4px; color: var(--nocturne-text); }
+.nocturne-sponsor-empty { display: grid; justify-items: center; gap: 10px; padding: 52px 28px; border: 1px dashed rgba(0,231,143,.3); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 50% 0, rgba(0,231,143,.08), transparent 55%); color: var(--nocturne-muted); text-align: center; }
+.nocturne-sponsor-empty__icon { display: grid; width: 60px; height: 60px; margin-bottom: 4px; place-items: center; border-radius: 50%; background: rgba(0,231,143,.12); color: var(--nocturne-green); font-size: 28px; }
+.nocturne-sponsor-empty h3 { margin: 0; color: var(--nocturne-text); font-size: 18px; font-weight: 850; }
+.nocturne-sponsor-empty p { margin: 0; max-width: 420px; font-size: 13px; line-height: 1.6; }
+.nocturne-sponsor-footer-cta { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 28px; padding: 28px 32px; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: radial-gradient(ellipse at 85% 50%, rgba(0,231,143,.16), transparent 45%), var(--nocturne-panel); }
+.nocturne-sponsor-footer-cta__glow { position: absolute; top: -60%; left: -5%; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(0,231,143,.14), transparent 70%); pointer-events: none; }
+.nocturne-sponsor-footer-cta > div { position: relative; z-index: 1; }
+.nocturne-sponsor-footer-cta h3 { margin: 0 0 4px; color: var(--nocturne-text); font-size: 19px; font-weight: 850; }
 .nocturne-sponsor-footer-cta p { margin: 0; color: var(--nocturne-muted); font-size: 13.5px; }
+.nocturne-sponsor-footer-cta .nocturne-sponsor-cta { position: relative; z-index: 1; }
 @media (max-width: 767.98px) { .nocturne-sponsor-grid { grid-template-columns: 1fr; } .nocturne-sponsor-footer-cta { flex-direction: column; align-items: stretch; text-align: center; } }
 
 .nocturne-promo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
