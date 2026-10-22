@@ -2,9 +2,12 @@
 @section('content')
     <section class="table-lobby" data-create-url="{{ route('user.tables.create') }}" data-csrf="{{ csrf_token() }}">
         <header class="table-lobby__hero">
-            <span class="table-lobby__eyebrow">@lang('Play together')</span>
-            <h1>@lang('Live Tables')</h1>
-            <p>@lang('Choose a game and take your seat. Moves and table balances are confirmed by the game server.')</p>
+            <div class="table-lobby__hero-text">
+                <span class="table-lobby__eyebrow">@lang('Play together')</span>
+                <h1>@lang('Live Tables')</h1>
+                <p>@lang('Choose a game and take your seat. Moves and table balances are confirmed by the game server.')</p>
+            </div>
+            <span class="table-lobby__live-badge"><i></i>{{ count($tables) }} @lang('live now')</span>
         </header>
 
         @if ($invites->isNotEmpty())
@@ -52,17 +55,28 @@
                 <div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-satellite-dish"></i></span><div><h2>@lang('Live Games')</h2><p>@lang('Tables currently waiting for players or in progress.')</p></div><span class="table-live-count">{{ count($tables) }} @lang('live')</span></div>
                 <div class="table-list" id="live-table-list">
                     @forelse ($tables as $table)
-                        <article class="table-list-item" data-table-id="{{ $table['id'] }}">
-                            @php($isSeated = collect($table['players'])->contains('id', (int) auth()->id()))
-                            @php($game = collect($catalog)->firstWhere('key', $table['game']))
-                            <div class="table-list-item__game"><span class="table-game-badge">@if($game['card_image_url'] ?? null)<img src="{{ $game['card_image_url'] }}" alt="">@else<i class="las {{ $game['icon_class'] ?? 'la-dice' }}"></i>@endif</span><div><strong>{{ __($game['name'] ?? $table['game']) }}</strong><small>{{ __(ucfirst($table['status'])) }} · {{ count($table['players']) }}/{{ $table['player_limit'] }} @lang('seats')</small></div></div>
+                        @php($isSeated = collect($table['players'])->contains('id', (int) auth()->id()))
+                        @php($game = collect($catalog)->firstWhere('key', $table['game']))
+                        @php($seatedCount = count($table['players']))
+                        <article class="table-list-item table-list-item--{{ $table['status'] }}" data-table-id="{{ $table['id'] }}">
+                            <div class="table-list-item__game">
+                                <span class="table-game-badge">@if($game['card_image_url'] ?? null)<img src="{{ $game['card_image_url'] }}" alt="">@else<i class="las {{ $game['icon_class'] ?? 'la-dice' }}"></i>@endif</span>
+                                <div>
+                                    <strong>{{ __($game['name'] ?? $table['game']) }}</strong>
+                                    <div class="table-list-item__meta">
+                                        <span class="table-status-pill table-status-pill--{{ $table['status'] }}"><i></i>{{ __(ucfirst($table['status'])) }}</span>
+                                        <span class="table-occupancy" aria-hidden="true">@for ($i = 0; $i < $table['player_limit']; $i++)<span class="{{ $i < $seatedCount ? 'is-filled' : '' }}"></span>@endfor</span>
+                                        <small>{{ $seatedCount }}/{{ $table['player_limit'] }} @lang('seats')</small>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="table-list-item__stake"><small>@lang('Your stake')</small><strong>@if (bccomp((string) $table['stake'], '0', 8) === 0) @lang('Friendly · Free') @else {{ $table['wallet_stake_formatted'] ?? __('Rate unavailable') }} @endif</strong></div>
                             @if ($table['status'] === 'waiting' && !$isSeated)
                                 <form method="post" action="{{ route('user.tables.join', $table['id']) }}" class="join-table-form">@csrf<button type="submit" class="table-join-button" @disabled(!$table['can_join'])>@lang('Join')</button></form>
                             @elseif ($isSeated)
                                 <a class="table-join-button table-join-button--open" href="{{ route('user.tables.show', $table['id']) }}">@lang('Open')</a>
                             @else
-                                <span class="table-join-button table-join-button--open table-join-button--disabled">@lang('In progress')</span>
+                                <a class="table-join-button table-join-button--watch" href="{{ route('user.tables.show', $table['id']) }}"><i class="las la-eye"></i>@lang('Watch')</a>
                             @endif
                         </article>
                     @empty
@@ -78,14 +92,48 @@
 @push('style')
     <style>
         .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);max-width:1120px;margin:auto;color:var(--tg-text)}
-        .table-lobby__hero{position:relative;overflow:hidden;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
+        .table-lobby__hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
+        .table-lobby__hero-text{min-width:0}
         .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
+        .table-lobby__live-badge{display:inline-flex;flex:0 0 auto;align-items:center;gap:8px;padding:10px 16px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:12px;font-weight:950;white-space:nowrap}
+        .table-lobby__live-badge i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:table-status-pulse 1.4s ease-in-out infinite}
         .table-lobby__layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:16px;align-items:start}.table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
         .table-card__heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}.table-card__icon{display:grid;flex:0 0 44px;width:44px;height:44px;place-items:center;border-radius:14px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:23px}.table-card__icon--live{background:rgba(122,151,255,.14);color:#a7bbff}.table-card__heading h2{margin:0;font-size:18px;font-weight:900}.table-card__heading p{margin:3px 0 0;color:var(--tg-muted);font-size:11px}.table-live-count{margin-left:auto;padding:7px 10px;border:1px solid rgba(0,239,135,.2);border-radius:20px;color:var(--tg-green);font-size:10px;font-weight:900;white-space:nowrap}
         .table-field{display:grid;gap:7px;min-width:0;margin-bottom:14px}.table-field>span{color:#b5bdd8;font-size:11px;font-weight:850}.table-field select,.table-field input{width:100%;height:47px;min-width:0;padding:0 13px;border:1px solid var(--tg-line);border-radius:12px;background:#11162c;color:var(--tg-text);font:inherit;font-size:13px;outline:none}.table-field select:focus,.table-field input:focus{border-color:rgba(0,239,135,.6);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.table-field option:disabled{color:#778}.table-field-row{display:grid;grid-template-columns:.7fr 1.3fr;gap:12px}.table-field__money{position:relative}.table-field__money>span{position:absolute;top:50%;left:12px;transform:translateY(-50%);color:var(--tg-muted);font-size:12px}.table-field__money input{padding-left:31px}
         .table-cost-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:3px 0 13px;padding:13px;border:1px solid var(--tg-line);border-radius:15px;background:rgba(10,13,28,.55)}.table-cost-preview>div{display:grid;gap:5px;min-width:0}.table-cost-preview span{color:var(--tg-muted);font-size:9px}.table-cost-preview strong{font-size:12px;font-weight:900;overflow-wrap:anywhere}.table-cost-preview__net strong{color:var(--tg-green)}.table-rules-note{margin:0 0 10px;color:#a8b4d6;font-size:10px;line-height:1.5}.table-disclaimer{margin:0;padding:12px;border-left:2px solid rgba(0,239,135,.65);border-radius:0 10px 10px 0;background:rgba(0,239,135,.045);color:#929abc;font-size:10px;line-height:1.6}
-        .table-create-button,.table-join-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:0 16px;border:0;border-radius:13px;background:linear-gradient(105deg,#00ef87,#00d77a);color:#062b1d;font-size:12px;font-weight:950;text-decoration:none}.table-create-button{width:100%;margin-top:14px}.table-create-button i{font-size:17px}.table-form-message{min-height:15px;margin:8px 0 0;color:#ff9eab;font-size:11px}.table-list{display:grid;gap:9px}.table-list-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--tg-line);border-radius:15px;background:rgba(35,42,71,.46)}.table-list-item__game{display:flex;align-items:center;gap:10px;min-width:0}.table-game-badge{display:grid;flex:0 0 39px;width:39px;height:39px;place-items:center;overflow:hidden;border-radius:12px;background:linear-gradient(145deg,rgba(0,239,135,.18),rgba(0,239,135,.04));color:var(--tg-green);font-size:18px}.table-game-badge img{width:100%;height:100%;object-fit:cover}.table-list-item__game div{display:grid;gap:4px;min-width:0}.table-list-item__game strong{overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.table-list-item small{color:var(--tg-muted);font-size:9px}.table-list-item__stake{display:grid;gap:4px;text-align:right;white-space:nowrap}.table-list-item__stake strong{font-size:11px}.join-table-form{margin:0}.table-join-button{min-height:36px;padding:0 13px;border-radius:10px;font-size:10px}.table-join-button--open{border:1px solid var(--tg-line);background:var(--tg-raised);color:var(--tg-text)}.table-empty{display:grid;justify-items:center;gap:6px;padding:28px 14px;text-align:center}.table-empty>span{display:grid;width:45px;height:45px;place-items:center;border-radius:50%;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:22px}.table-empty strong{font-size:13px}.table-empty p{margin:0;color:var(--tg-muted);font-size:10px}.table-history-link{display:flex;justify-content:center;gap:7px;margin-top:14px;color:var(--tg-muted);font-size:10px;font-weight:800;text-decoration:none}
-        .table-join-button--disabled{display:inline-flex;align-items:center;justify-content:center;opacity:.6;cursor:not-allowed}@media(max-width:850px){.table-lobby__layout{grid-template-columns:1fr}.table-card--live{order:-1}}@media(max-width:575px){.table-lobby__hero{margin-inline:-2px;padding:20px;border-radius:19px}.table-lobby__layout{gap:12px}.table-card{padding:16px;border-radius:18px}.table-field-row{grid-template-columns:1fr 1fr;gap:9px}.table-cost-preview{padding:10px 8px;gap:5px}.table-cost-preview span{font-size:8px}.table-cost-preview strong{font-size:10px}.table-list-item{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:10px}.table-list-item__stake{grid-column:2;grid-row:1;text-align:right}.join-table-form,.table-join-button--open{grid-column:1/-1;width:100%}.table-list-item__game{grid-column:1;grid-row:1}.table-card__heading{gap:9px}.table-live-count{font-size:9px}}
+        .table-create-button,.table-join-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:0 16px;border:0;border-radius:13px;background:linear-gradient(105deg,#00ef87,#00d77a);color:#062b1d;font-size:12px;font-weight:950;text-decoration:none;transition:transform .1s ease,filter .15s ease}.table-create-button{width:100%;margin-top:14px}.table-create-button i{font-size:17px}.table-create-button:active,.table-join-button:active{transform:scale(.96)}.table-form-message{min-height:15px;margin:8px 0 0;color:#ff9eab;font-size:11px}.table-list{display:grid;gap:9px}.table-list-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:13px;border:1px solid var(--tg-line);border-radius:16px;background:rgba(35,42,71,.46);transition:border-color .15s ease,background .15s ease}.table-list-item:hover{border-color:rgba(0,239,135,.3);background:rgba(35,42,71,.65)}.table-list-item--waiting{border-left:2px solid rgba(0,239,135,.5)}.table-list-item--active{border-left:2px solid rgba(255,181,71,.45)}.table-list-item__game{display:flex;align-items:center;gap:10px;min-width:0}.table-game-badge{display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;overflow:hidden;border-radius:13px;background:linear-gradient(145deg,rgba(0,239,135,.18),rgba(0,239,135,.04));color:var(--tg-green);font-size:19px;box-shadow:0 4px 10px rgba(0,0,0,.2)}.table-game-badge img{width:100%;height:100%;object-fit:cover}.table-list-item__game>div{display:grid;gap:5px;min-width:0}.table-list-item__game strong{overflow:hidden;font-size:12.5px;font-weight:850;text-overflow:ellipsis;white-space:nowrap}.table-list-item small{color:var(--tg-muted);font-size:9px}.table-list-item__meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+        .table-status-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-size:8.5px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}.table-status-pill i{width:5px;height:5px;border-radius:50%;background:currentColor}.table-status-pill--waiting{background:rgba(0,239,135,.14);color:var(--tg-green)}.table-status-pill--waiting i{animation:table-status-pulse 1.4s ease-in-out infinite}.table-status-pill--active{background:rgba(255,181,71,.16);color:#ffb547}
+        @keyframes table-status-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+        .table-occupancy{display:inline-flex;gap:3px}.table-occupancy span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.14)}.table-occupancy span.is-filled{background:var(--tg-green)}
+        .table-list-item__stake{display:grid;gap:4px;text-align:right;white-space:nowrap}.table-list-item__stake strong{font-size:11px}.join-table-form{margin:0}.table-join-button{min-height:37px;padding:0 13px;border-radius:11px;font-size:10px}.table-join-button--open{border:1px solid var(--tg-line);background:var(--tg-raised);color:var(--tg-text)}.table-join-button--watch{border:1px solid rgba(122,151,255,.3);background:rgba(122,151,255,.1);color:#a7bbff}.table-empty{display:grid;justify-items:center;gap:6px;padding:28px 14px;text-align:center}.table-empty>span{display:grid;width:45px;height:45px;place-items:center;border-radius:50%;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:22px}.table-empty strong{font-size:13px}.table-empty p{margin:0;color:var(--tg-muted);font-size:10px}.table-history-link{display:flex;justify-content:center;gap:7px;margin-top:14px;color:var(--tg-muted);font-size:10px;font-weight:800;text-decoration:none}
+        .table-join-button--disabled{display:inline-flex;align-items:center;justify-content:center;opacity:.6;cursor:not-allowed}
+        @media(max-width:850px){.table-lobby__layout{grid-template-columns:1fr}.table-card--live{order:-1}}
+        @media(max-width:575px){
+            .table-lobby{overflow-x:hidden}
+            .table-lobby__hero{margin-inline:-2px;padding:18px;border-radius:19px;gap:12px}
+            .table-lobby__hero h1{font-size:23px}
+            .table-lobby__hero p{font-size:12.5px}
+            .table-lobby__live-badge{padding:8px 13px;font-size:11px}
+            .table-lobby__layout{gap:12px}
+            .table-card{padding:15px;border-radius:17px}
+            .table-card__heading{gap:9px;margin-bottom:16px}
+            .table-card__icon{flex:0 0 38px;width:38px;height:38px;font-size:19px}
+            .table-card__heading h2{font-size:15px}
+            .table-live-count{font-size:9px}
+            .table-game-picker{gap:7px}
+            .table-game-picker__item{width:64px;padding:8px 5px}
+            .table-game-picker__icon{width:34px;height:34px;font-size:15px}
+            .table-field-row{grid-template-columns:1fr 1fr;gap:9px}
+            .table-cost-preview{grid-template-columns:1fr 1fr;gap:8px 6px}
+            .table-cost-preview__net{grid-column:1/-1;padding-top:7px;border-top:1px dashed var(--tg-line)}
+            .table-cost-preview span{font-size:9px}
+            .table-cost-preview strong{font-size:11px}
+            .table-list-item{grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;padding:12px}
+            .table-list-item__stake{grid-column:2;grid-row:1;text-align:right}
+            .join-table-form,.table-join-button--open,.table-join-button--watch{grid-column:1/-1;width:100%}
+            .table-list-item__game{grid-column:1;grid-row:1}
+            .table-game-badge{flex:0 0 38px;width:38px;height:38px}
+        }
     </style>
     <style>.table-mode-hint{display:block;margin-top:-2px;color:var(--tg-muted);font-size:10px;line-height:1.5}.table-field input:disabled{opacity:.58;cursor:not-allowed}
         .table-field__sr-select{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
