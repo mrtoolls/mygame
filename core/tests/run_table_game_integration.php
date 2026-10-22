@@ -273,10 +273,13 @@ $whotTable = $service->move($creator, $whotTable->fresh()->id, ['type' => 'draw'
 if (count($whotTable->state['hands'][0]) !== 2) throw new RuntimeException('Drawing with an empty Whot stock did not deal a card after reshuffling.');
 if (count($whotTable->state['stock']) !== 1 || count($whotTable->state['discard']) !== 1) throw new RuntimeException('An empty Whot stock did not reshuffle the discard pile (minus its top card) correctly.');
 
-// Now exhaust everything outside hands entirely - a draw must end the round as a draw/refund
-// through the existing settlement path instead of throwing.
+// Now exhaust everything outside hands entirely - with both hands tied on card total (3 each),
+// this must end the round as a draw/refund through the existing settlement path instead of
+// throwing. (The lowest-total-wins case itself, and an actual tie, are both covered in their
+// own right by the Phase 3 block below - this one is specifically about not throwing.)
 $whotState = $whotTable->state;
 $whotState['hands'][0] = [['shape' => 'Square', 'number' => 3]];
+$whotState['hands'][1] = [['shape' => 'Circle', 'number' => 3]];
 $whotState['stock'] = [];
 $whotState['discard'] = [['shape' => 'Triangle', 'number' => 11]];
 $whotState['active_shape'] = 'Triangle';
@@ -332,7 +335,41 @@ try {
     $service->move($opponent, $whotV2Table->fresh()->id, ['type' => 'draw'], 'whot_stack_key_5', (int) $whotV2Table->fresh()->version);
     throw new RuntimeException('Drawing was accepted while holding a card that could defend the pending penalty.');
 } catch (InvalidArgumentException) {}
+
+// When the stock and discard pile are both truly exhausted, the round now ends by lowest hand
+// total (a Whot card counts as 20) instead of always refunding everyone.
+$whotState = $whotV2Table->state;
+$whotState['hands'][0] = [['shape' => 'Square', 'number' => 3]];
+$whotState['hands'][1] = [['shape' => 'Circle', 'number' => 9], ['shape' => 'Star', 'number' => 2]];
+$whotState['stock'] = [];
+$whotState['discard'] = [['shape' => 'Triangle', 'number' => 11]];
+$whotState['active_shape'] = 'Triangle';
+$whotState['pending_penalty'] = null;
+$whotState['turn'] = 0;
+TableGame::whereKey($whotV2Table->id)->update(['state' => $whotState, 'current_user_id' => $creator->id]);
+$whotV2Table = $service->move($creator, $whotV2Table->fresh()->id, ['type' => 'draw'], 'whot_lowest_key_1', (int) $whotV2Table->fresh()->version);
+if ($whotV2Table->status !== 'finished' || $whotV2Table->result !== 'winner:0') throw new RuntimeException('An exhausted Whot stock did not settle on the lower card total (3 vs. 11).');
+// Stake 1 each, pot 2, 5% commission -> winner nets 1.9 on top of their own already-debited stake.
+$assertBalance($creator, '108.90000000', 'The lowest-card-total winner was not paid out through the normal settlement.');
+$assertBalance($opponent, '89.90000000', 'The lowest-card-total loser was incorrectly refunded instead of losing their stake.');
 $service->forceClose($whotV2Table->id);
+
+// An exact tie on the lowest total still falls back to the existing draw/refund path.
+$whotTieTable = $service->create($creator, 'whot', 2, '1.00000000', 'create_key_000017');
+$whotTieTable = $service->join($opponent, $whotTieTable->id);
+$whotState = $whotTieTable->state;
+$whotState['hands'][0] = [['shape' => 'Square', 'number' => 3]];
+$whotState['hands'][1] = [['shape' => 'Circle', 'number' => 3]];
+$whotState['stock'] = [];
+$whotState['discard'] = [['shape' => 'Triangle', 'number' => 11]];
+$whotState['active_shape'] = 'Triangle';
+$whotState['pending_penalty'] = null;
+$whotState['turn'] = 0;
+TableGame::whereKey($whotTieTable->id)->update(['state' => $whotState, 'current_user_id' => $creator->id]);
+$whotTieTable = $service->move($creator, $whotTieTable->fresh()->id, ['type' => 'draw'], 'whot_lowest_key_2', (int) $whotTieTable->fresh()->version);
+if ($whotTieTable->status !== 'finished' || $whotTieTable->result !== 'draw') throw new RuntimeException('An exact tie on card total did not fall back to the draw/refund path.');
+$assertBalance($creator, '108.90000000', 'A tied Whot settlement did not return the creator stake.');
+$assertBalance($opponent, '89.90000000', 'A tied Whot settlement did not return the opponent stake.');
 
 // A table created before this phase shipped must keep playing by the old rules for its whole
 // lifetime - no stacking, the Pick Two resolves and passes immediately, same as always.

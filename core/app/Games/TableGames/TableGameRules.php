@@ -305,7 +305,20 @@ class TableGameRules
         for ($i = count($deck) - 1; $i > 0; $i--) { $swap = random_int(0, $i); [$deck[$i], $deck[$swap]] = [$deck[$swap], $deck[$i]]; }
         $hands = [];
         for ($seat = 0; $seat < $playerCount; $seat++) $hands[$seat] = array_splice($deck, 0, 6);
-        do { $top = array_pop($deck); } while ($top['number'] === 20 && $deck);
+        // Pop cards off until a non-Whot one turns up to open the discard pile - any Whot cards
+        // drawn along the way go back into the stock instead of vanishing from the game, which
+        // the previous version of this loop did (it kept re-popping over a Whot card without
+        // ever returning it anywhere), silently shrinking the deck by one or more cards whenever
+        // a Whot card happened to land at the exact spot being checked.
+        $top = null; $setAside = [];
+        while ($deck) {
+            $candidate = array_pop($deck);
+            if ($candidate['number'] === 20) { $setAside[] = $candidate; continue; }
+            $top = $candidate;
+            break;
+        }
+        if ($top === null) { $top = array_pop($setAside); } // Degenerate case: nothing but Whot cards left.
+        foreach ($setAside as $card) $deck[] = $card;
         return ['hands' => $hands, 'stock' => $deck, 'discard' => [$top], 'active_shape' => $top['shape'], 'pending_penalty' => null, 'turn' => 0, 'moves' => 0];
     }
 
@@ -386,6 +399,22 @@ class TableGameRules
         $state['discard'] = [$top];
     }
 
+    /** v2 only: when the stock is exhausted and the discard pile has nothing left to reshuffle
+     *  either, end the round by card total instead of forcing play to grind on with an empty
+     *  draw pile. Each card counts as its printed number (a Whot card counts as 20). A single
+     *  lowest total wins through the normal settlement; an exact tie among the lowest hands
+     *  falls back to the existing draw/refund path (every stake returned, no payout) - the same
+     *  mechanism every other draw in this file already uses, not a new one. */
+    private function whotEndOnLowestHand(array $state): array
+    {
+        $totals = array_map(fn (array $hand) => array_sum(array_map(fn ($card) => (int) $card['number'], $hand)), $state['hands']);
+        $lowest = min($totals);
+        $winners = array_keys($totals, $lowest, true);
+        return count($winners) === 1
+            ? ['state' => $state, 'winner' => (int) $winners[0], 'draw' => false]
+            : ['state' => $state, 'winner' => null, 'draw' => true];
+    }
+
     private function whot(array $state, int $seat, array $action, int $rulesVersion = 1): array
     {
         $hand = $state['hands'][$seat] ?? null;
@@ -402,9 +431,11 @@ class TableGameRules
         if (($action['type'] ?? '') === 'draw') {
             if ($pending) {
                 if ($canDefend) throw new InvalidArgumentException("You have a {$pending['rank']} - play it to pass the penalty along, or draw {$pending['amount']}.");
+                $this->reshuffleStockFromDiscard($state);
+                if (!$state['stock']) return $this->whotEndOnLowestHand($state); // Nothing left anywhere, not even for part of the penalty.
                 for ($i = 0; $i < $pending['amount']; $i++) {
                     $this->reshuffleStockFromDiscard($state);
-                    if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
+                    if (!$state['stock']) break; // The penalty itself exhausted what remained.
                     $hand[] = array_pop($state['stock']);
                 }
                 $state['hands'][$seat] = $hand;
@@ -414,11 +445,10 @@ class TableGameRules
             }
             foreach ($hand as $card) if ($card['number'] === 20 || $card['number'] === $top['number'] || $card['shape'] === $state['active_shape']) throw new InvalidArgumentException('Play a matching card before drawing.');
             $this->reshuffleStockFromDiscard($state);
-            // Mirrors the existing Rummy/Crazy Eights fallback for this same edge case (fewer
-            // than 2 cards left anywhere outside hands, so there is nothing left to reshuffle
-            // either) - end the round as a draw through the existing draw/refund path instead
-            // of erroring out.
-            if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => true];
+            // Fewer than 2 cards left anywhere outside hands, so there is nothing left to
+            // reshuffle either - end the round instead of erroring out. v2 settles by lowest
+            // card total; v1 keeps its original plain draw/refund.
+            if (!$state['stock']) return $rulesVersion >= 2 ? $this->whotEndOnLowestHand($state) : ['state' => $state, 'winner' => null, 'draw' => true];
             $hand[] = array_pop($state['stock']); $state['hands'][$seat] = $hand;
             $state['turn'] = ($seat + 1) % count($state['hands']); $state['moves']++;
             return ['state' => $state, 'winner' => null, 'draw' => false];
