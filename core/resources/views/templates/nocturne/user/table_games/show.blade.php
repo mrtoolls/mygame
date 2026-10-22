@@ -1366,3 +1366,29 @@ getMessages().then(()=>{chatHistoryLoaded=true;});const poll=()=>setTimeout(asyn
 })();
 </script>
 @endpush
+
+@push('style')
+<style>
+.table-match{box-sizing:border-box}
+.table-match{overflow-x:visible}
+.table-match__layout{grid-template-columns:minmax(0,1fr) minmax(0,300px)}
+.table-match__play,.table-match__side,#match-actions-home{min-width:0}
+.table-match__side{width:100%}
+#match-actions-home{display:grid;gap:12px}
+.table-match__invite{width:100%;min-width:0}
+.table-match__invite-control{min-width:0}
+.table-match__invite input{width:100%;min-width:0}
+.table-match__invite button{flex:0 0 auto;min-width:96px}
+.table-match__leave,.table-match__start,.table-match__rematch{width:100%;min-width:0;min-height:50px;padding:12px 16px;white-space:normal;overflow-wrap:anywhere}
+.table-match__leave{border-color:rgba(255,112,135,.4);background:linear-gradient(135deg,rgba(255,82,112,.12),rgba(112,28,58,.18));box-shadow:inset 0 1px rgba(255,255,255,.025);line-height:1.35;transition:background .18s,border-color .18s,transform .18s}
+.table-match__leave:hover{border-color:rgba(255,112,135,.68);background:rgba(255,82,112,.18);color:#ffabb7;transform:translateY(-1px)}
+.table-match__leave:focus-visible,.table-match__start:focus-visible,.table-match__invite button:focus-visible{outline:2px solid var(--tm-green);outline-offset:3px}
+.waiting-room__sheet{box-sizing:border-box;width:min(420px,100%);min-width:0}
+.waiting-room__actions{min-width:0}
+.waiting-room__actions>*{width:100%;min-width:0}
+.table-match__suggestions{inset-inline:0;max-width:100%;box-sizing:border-box}
+@media(max-width:800px){.table-match__layout{grid-template-columns:minmax(0,1fr)}.table-match__side{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:575px){.table-match{width:100%;max-width:100%;padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}.table-match__invite-control{flex-direction:column;align-items:stretch}.table-match__invite input,.table-match__invite button{width:100%;min-height:48px}.table-match__invite button{flex-basis:48px}.table-match__leave,.table-match__start,.table-match__rematch{min-height:50px}.waiting-room{padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}}
+@media(max-width:420px){.table-match__invite-control{gap:10px}.table-match__invite input{font-size:14px}.table-match__invite button{font-size:14px}}
+</style>
+@endpush
