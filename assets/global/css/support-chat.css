@@ -9,16 +9,21 @@
     color: var(--support-text); font-family: "Mulish", Inter, system-ui, sans-serif; line-height: 1.45;
 }
 .winx-support-launcher {
-    position: relative; display: grid; place-items: center; width: 78px; height: 78px; padding: 16px;
-    border: 0; border-radius: 50%; background: var(--support-green); color: var(--support-ink);
-    box-shadow: 0 14px 38px rgba(0,239,135,.25), 0 5px 20px rgba(0,0,0,.28); cursor: pointer;
+    position: relative; display: grid; place-items: center; width: 52px; height: 52px; padding: 13px;
+    border: 0; border-radius: 50%; background: linear-gradient(145deg, #0fffa0, #00c975); color: var(--support-ink);
+    box-shadow: 0 10px 28px rgba(0,239,135,.3), 0 4px 14px rgba(0,0,0,.3); cursor: pointer;
     transition: transform .2s ease, box-shadow .2s ease;
 }
-.winx-support-launcher:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 18px 44px rgba(0,239,135,.32), 0 5px 20px rgba(0,0,0,.28); }
+.winx-support-launcher::before {
+    content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgba(0,239,135,.5);
+    animation: winx-support-ring 2.2s ease-out infinite; pointer-events: none;
+}
+@keyframes winx-support-ring { 0% { transform: scale(.82); opacity: .8; } 100% { transform: scale(1.22); opacity: 0; } }
+.winx-support-launcher:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 14px 34px rgba(0,239,135,.38), 0 4px 14px rgba(0,0,0,.3); }
 .winx-support-launcher svg,.winx-support-header__mark svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
-.winx-support-unread { position: absolute; top: -2px; right: -1px; min-width: 22px; height: 22px; display: grid; place-items: center; padding: 0 5px; border: 2px solid var(--support-bg); border-radius: 999px; background: #ff5578; color: #fff; font: 800 11px/1 system-ui; }
+.winx-support-unread { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 4px; border: 2px solid var(--support-bg); border-radius: 999px; background: #ff5578; color: #fff; font: 800 10px/1 system-ui; }
 .winx-support-panel {
-    position: absolute; right: 0; bottom: 94px; display: flex; flex-direction: column; width: min(392px, calc(100vw - 28px));
+    position: absolute; right: 0; bottom: 64px; display: flex; flex-direction: column; width: min(392px, calc(100vw - 28px));
     height: min(640px, calc(100dvh - 118px)); min-height: 450px; overflow: hidden; border: 1px solid rgba(145,156,205,.25);
     border-radius: 25px; background: var(--support-bg); box-shadow: 0 30px 90px rgba(0,0,0,.52); animation: winx-support-enter .22s ease-out;
 }
@@ -90,7 +95,7 @@
 .winx-support-footer span { padding: 0 3px; color: var(--support-green); }
 @media (max-width: 575.98px) {
     .winx-support-widget { right: max(12px, env(safe-area-inset-right)); bottom: max(84px, calc(env(safe-area-inset-bottom) + 78px)); }
-    .winx-support-launcher { width: 62px; height: 62px; padding: 13px; }
+    .winx-support-launcher { width: 46px; height: 46px; padding: 11px; }
     .winx-support-panel { position: fixed; inset: auto 12px max(88px, calc(env(safe-area-inset-bottom) + 74px)); width: auto; height: min(690px, calc(100dvh - 110px)); min-height: min(510px, calc(100dvh - 110px)); border-radius: 22px; }
     .winx-support-header { padding: 15px 16px; }
     .winx-support-discovery { padding: 19px 16px 15px; }

@@ -35,6 +35,16 @@
         rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/global/css/mobile-inputs.css') }}?v={{ @filemtime(public_path('assets/global/css/mobile-inputs.css')) }}">
     <style>
+        /* Sitewide guard against any single page's element pushing the document wider than the
+           viewport (several pages have hit this independently - a fixed/absolute-positioned
+           element whose content extends past the viewport edge can still widen the page's own
+           scrollable area even though it looks visually "contained"). Elements with their own
+           explicit overflow-x:auto/scroll (carousels, horizontally-scrolling tab rows, etc.)
+           keep scrolling internally regardless of this - it only stops the whole document from
+           scrolling sideways. */
+        html, body { max-width: 100%; overflow-x: hidden; }
+        /* No "back to top" button anywhere, on any device. */
+        .scroll-top { display: none !important; }
         /* Sitewide mobile polish: the bottom tab bar sat flush against the
            very edge of the screen (home-indicator area on notched phones),
            reading as cramped rather than a native app's tab bar, which
@@ -113,8 +123,6 @@
     <div class="body-overlay"></div>
 
     <div class="sidebar-overlay"></div>
-
-    <a class="scroll-top"><i class="fas fa-angle-double-up"></i></a>
 
     @yield('app')
 

@@ -116,7 +116,7 @@
 
 @push('style')
     <style>
-        .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);max-width:1120px;margin:auto;color:var(--tg-text)}
+        .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);max-width:1120px;margin:auto;color:var(--tg-text);overflow-x:hidden}
         .table-lobby__hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
         .table-lobby__hero-text{min-width:0}
         .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
@@ -174,7 +174,7 @@
         .table-lobby__fame-trigger{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border:1px solid var(--tg-line);border-radius:999px;background:rgba(255,255,255,.04);color:var(--tg-text);font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
         .table-lobby__fame-trigger:hover{border-color:rgba(255,181,71,.4);color:#ffb547}
         .table-lobby__fame-trigger i{color:#ffb547}
-        .hall-of-fame{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:18px}
+        .hall-of-fame{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
         .hall-of-fame[hidden]{display:none}
         .hall-of-fame__backdrop{position:absolute;inset:0;background:rgba(6,8,18,.72);backdrop-filter:blur(5px)}
         .hall-of-fame__sheet{position:relative;width:min(480px,100%);max-height:86vh;display:flex;flex-direction:column;padding:22px;border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 50% 0,rgba(255,181,71,.1),transparent 45%),linear-gradient(170deg,#1a2041,#10142a);box-shadow:0 30px 70px rgba(0,0,0,.5)}
