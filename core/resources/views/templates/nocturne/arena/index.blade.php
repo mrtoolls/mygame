@@ -320,14 +320,33 @@
 .nocturne-arena-post__identity strong{color:var(--arena-text);font-size:13.5px;font-weight:800}
 .nocturne-arena-post__identity small{color:var(--arena-muted);font-size:11px}
 .nocturne-arena-post__type{display:inline-flex;align-items:center;gap:5px;flex:none;padding:5px 11px;border-radius:999px;background:rgba(133,142,175,.12);color:var(--arena-muted);font-size:10.5px;font-weight:800}
+.nocturne-arena-post__menu-wrap{position:relative;flex:0 0 auto}
+.nocturne-arena-post__menu-btn{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--arena-muted);font-size:17px;cursor:pointer}
+.nocturne-arena-post__menu-btn:hover{background:rgba(255,255,255,.06);color:var(--arena-text)}
+.nocturne-arena-post__menu{position:absolute;top:34px;right:0;z-index:5;display:grid;min-width:150px;padding:6px;border:1px solid var(--arena-line);border-radius:13px;background:var(--arena-panel);box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.nocturne-arena-post__menu[hidden]{display:none}
+.nocturne-arena-post__menu button{display:flex;align-items:center;gap:9px;padding:9px 10px;border:0;border-radius:9px;background:transparent;color:var(--arena-text);font-size:12.5px;font-weight:700;text-align:left;cursor:pointer}
+.nocturne-arena-post__menu button:hover{background:rgba(255,255,255,.06)}
+.nocturne-arena-post__menu .nocturne-arena-post__delete{color:#ff6b86}
+.nocturne-arena-post__edit-form{display:grid;gap:8px;margin:0 0 10px}
+.nocturne-arena-post__edit-form textarea{width:100%;padding:10px;border:1px solid var(--arena-line);border-radius:12px;background:var(--arena-bg);color:var(--arena-text);font:inherit;font-size:13.5px;resize:vertical}
+.nocturne-arena-post__edit-actions{display:flex;justify-content:flex-end;gap:8px}
+.nocturne-arena-post__edit-actions button{min-height:34px;padding:0 16px;border:0;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer}
+.nocturne-arena-post__edit-cancel{background:rgba(255,255,255,.06);color:var(--arena-muted)}
+.nocturne-arena-post__edit-actions button[type=submit]{background:var(--arena-accent);color:#062a1d}
 .nocturne-arena-post__body-wrap{margin:0 0 4px}
 .nocturne-arena-post__body{margin:0;color:#d7dafa;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
 .nocturne-arena-post__body.is-clamped{max-height:4.95em;overflow:hidden}
 .nocturne-arena-seemore{display:inline-block;margin-top:4px;padding:0;border:0;background:none;color:var(--arena-accent);font-size:12.5px;font-weight:800;cursor:pointer}
-.nocturne-arena-post__image{margin-top:10px;border-radius:14px;overflow:hidden}
-.nocturne-arena-post__image img{display:block;width:100%;max-height:420px;object-fit:cover}
-.nocturne-arena-post__video{margin-top:10px;border-radius:14px;overflow:hidden;background:#000}
-.nocturne-arena-post__video video{display:block;width:100%;max-height:420px}
+.nocturne-arena-post__image{position:relative;margin-top:10px;aspect-ratio:16/10;border-radius:14px;overflow:hidden;cursor:zoom-in}
+.nocturne-arena-post__image img{display:block;width:100%;height:100%;object-fit:cover}
+.nocturne-arena-post__video{position:relative;margin-top:10px;aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:#000}
+.nocturne-arena-post__video video{display:block;width:100%;height:100%;object-fit:cover}
+.nocturne-arena-post__mute-btn{position:absolute;right:10px;bottom:10px;z-index:1;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:rgba(6,8,18,.65);color:#fff;font-size:16px;cursor:pointer}
+.nocturne-arena-lightbox{position:fixed;inset:0;z-index:1400;display:grid;place-items:center;padding:24px;background:rgba(4,6,16,.92);backdrop-filter:blur(3px)}
+.nocturne-arena-lightbox[hidden]{display:none}
+.nocturne-arena-lightbox img{max-width:100%;max-height:92vh;border-radius:10px;object-fit:contain}
+.nocturne-arena-lightbox__close{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer}
 .nocturne-arena-post__colored{display:grid;place-items:center;min-height:140px;padding:24px;border-radius:16px;text-align:center}
 .nocturne-arena-post__colored p{margin:0;color:#fff;font-size:17px;font-weight:800;line-height:1.5;overflow-wrap:anywhere}
 .nocturne-arena-post__colored--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
@@ -579,6 +598,7 @@
             .done(function(res) {
                 $('#arena-feed').append(res.html);
                 setupSeeMore(document.getElementById('arena-feed'));
+                window.arenaObserveFeedVideos && window.arenaObserveFeedVideos(document.getElementById('arena-feed'));
                 if (res.hasMore) {
                     btn.data('next-page', page + 1).prop('disabled', false).text("{{ __('Load More') }}");
                 } else {
@@ -616,6 +636,93 @@
     var reactUrl = "{{ route('user.arena.react') }}";
     var commentsIndexUrlTpl = "{{ route('arena.comments.index', ['post' => '__ID__']) }}";
     var commentsStoreUrlTpl = "{{ route('user.arena.comments.store', ['post' => '__ID__']) }}";
+
+    // Post menu (Share / Edit / Delete) - event-delegated since posts load via AJAX.
+    $(document).on('click', '.nocturne-arena-post__menu-btn', function(event) {
+        event.stopPropagation();
+        var menu = $(this).siblings('.nocturne-arena-post__menu');
+        var isHidden = menu.prop('hidden');
+        $('.nocturne-arena-post__menu').prop('hidden', true);
+        menu.prop('hidden', !isHidden);
+    });
+    $(document).on('click', function() { $('.nocturne-arena-post__menu').prop('hidden', true); });
+    $(document).on('click', '.nocturne-arena-post__menu', function(event) { event.stopPropagation(); });
+
+    $(document).on('click', '.nocturne-arena-post__share', function() {
+        var url = $(this).data('url');
+        if (navigator.share) {
+            navigator.share({ url: url }).catch(function() {});
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function() {
+                window.notify ? notify('success', "{{ __('Link copied to clipboard') }}") : alert("{{ __('Link copied to clipboard') }}");
+            });
+        } else {
+            window.prompt("{{ __('Copy this link:') }}", url);
+        }
+    });
+
+    $(document).on('click', '.nocturne-arena-post__edit', function() {
+        var article = $(this).closest('.nocturne-arena-post');
+        article.find('.nocturne-arena-post__edit-form').prop('hidden', false);
+        article.find('.nocturne-arena-post__body-wrap, .nocturne-arena-post__colored').hide();
+        article.find('.nocturne-arena-post__edit-form textarea').trigger('focus');
+    });
+    $(document).on('click', '.nocturne-arena-post__edit-cancel', function() {
+        var article = $(this).closest('.nocturne-arena-post');
+        article.find('.nocturne-arena-post__edit-form').prop('hidden', true);
+        article.find('.nocturne-arena-post__body-wrap, .nocturne-arena-post__colored').show();
+    });
+    $(document).on('submit', '.nocturne-arena-post__edit-form', function(event) {
+        event.preventDefault();
+        var form = $(this);
+        $.post(form.attr('action'), form.serialize()).done(function() { location.reload(); });
+    });
+
+    $(document).on('click', '.nocturne-arena-post__delete', function() {
+        if (!confirm("{{ __('Delete this post? This cannot be undone.') }}")) return;
+        var url = $(this).data('url');
+        var article = $(this).closest('.nocturne-arena-post');
+        $.ajax({ url: url, method: 'DELETE', data: { _token: csrfToken } })
+            .done(function() { article.fadeOut(200, function() { article.remove(); }); });
+    });
+
+    // Fixed-size media frame - click a post image to open it full size.
+    var lightbox = $('<div class="nocturne-arena-lightbox" hidden><button type="button" class="nocturne-arena-lightbox__close"><i class="ph-bold ph-x"></i></button><img src="" alt=""></div>').appendTo('body');
+    $(document).on('click', '[data-lightbox] img', function() {
+        lightbox.find('img').attr('src', $(this).attr('src'));
+        lightbox.prop('hidden', false);
+    });
+    lightbox.on('click', function(event) {
+        if (event.target === this || $(event.target).closest('.nocturne-arena-lightbox__close').length) {
+            lightbox.prop('hidden', true).find('img').attr('src', '');
+        }
+    });
+
+    // Feed videos: muted + play only while actually visible (Facebook/Instagram pattern),
+    // tap the speaker to unmute. Never plays with sound unless the viewer asks for it.
+    if ('IntersectionObserver' in window) {
+        var videoObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                var video = entry.target;
+                if (entry.isIntersecting) { video.play().catch(function() {}); }
+                else { video.pause(); }
+            });
+        }, { threshold: 0.6 });
+        function observeFeedVideos(scope) {
+            (scope || document).querySelectorAll('[data-feed-video]:not([data-observed])').forEach(function(video) {
+                video.setAttribute('data-observed', '1');
+                videoObserver.observe(video);
+            });
+        }
+        observeFeedVideos(document);
+        window.arenaObserveFeedVideos = observeFeedVideos;
+    }
+    $(document).on('click', '.nocturne-arena-post__mute-btn', function() {
+        var video = $(this).siblings('[data-feed-video]')[0];
+        if (!video) return;
+        video.muted = !video.muted;
+        $(this).find('i').attr('class', video.muted ? 'ph-fill ph-speaker-x' : 'ph-fill ph-speaker-high');
+    });
 
     // Upvote / downvote
     $(document).on('click', '.nocturne-arena-vote__btn:not(:disabled)', function() {

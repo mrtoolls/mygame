@@ -5,17 +5,11 @@
         $activeLanguage = $languages->where('code', session('lang'))->first();
     @endphp
     <li class="{{ $class }}">
-        <div class="language dropdown">
-            <button class="language-wrapper" data-bs-toggle="dropdown" aria-expanded="false">
-                <div class="language-content">
-                    <div class="language_flag">
-                        <img src="{{ getImage(getFilePath('language') . '/' . @$activeLanguage->image, getFileSize('language')) }}" alt="flag">
-                    </div>
-                    <p class="language_text_select">{{ __(@$activeLanguage->name) }}</p>
-                </div>
-                <span class="collapse-icon"><i class="las la-angle-down"></i></span>
+        <div class="language dropdown nocturne-lang">
+            <button class="language-wrapper nocturne-lang__trigger" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Change language') }}" title="{{ __(@$activeLanguage->name ?: 'Language') }}">
+                <span class="language_flag"><img src="{{ getImage(getFilePath('language') . '/' . @$activeLanguage->image, getFileSize('language')) }}" alt=""></span>
             </button>
-            <div class="dropdown-menu langList_dropdow py-2" style="">
+            <div class="dropdown-menu langList_dropdow py-2">
                 <ul class="langList">
                     @foreach ($language as $item)
                         <li class="language-list langSel" data-lang_code="{{ $item->code }}">
@@ -35,17 +29,17 @@
     <script>
         $(document).ready(function() {
             const $mainlangList = $(".langList");
-            const $langBtn = $(".language-content");
+            const $langBtn = $(".nocturne-lang__trigger");
             const $langListItem = $mainlangList.children();
 
             $langListItem.each(function() {
                 const $innerItem = $(this);
-                const $languageText = $innerItem.find(".language_text");
                 const $languageFlag = $innerItem.find(".language_flag");
+                const $languageText = $innerItem.find(".language_text");
 
                 $innerItem.on("click", function(e) {
-                    $langBtn.find(".language_text_select").text($languageText.text());
                     $langBtn.find(".language_flag").html($languageFlag.html());
+                    $langBtn.attr("title", $languageText.text());
                 });
             });
         });
@@ -54,52 +48,28 @@
 
 @push('style')
     <style>
-        .language-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+        /* Compact icon-only trigger (flag only, no label/chevron) - matches the rest of the
+           sidebar's icon-first nav items instead of a full-width text row. Full language names
+           still show inside the dropdown list itself. */
+        .nocturne-lang__trigger {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
             padding: 0;
-            border-radius: 4px;
-            width: max-content;
-            height: 38px;
+            border: 1px solid var(--nocturne-line, rgba(145, 156, 205, .16));
+            border-radius: 13px;
+            background: var(--nocturne-raised, #232a47);
+            cursor: pointer;
         }
-
-        .language_flag {
-            flex-shrink: 0
-        }
-
-        .language_flag img {
-            height: 30px;
-            width: 30px;
+        .nocturne-lang__trigger:hover { border-color: rgba(0, 239, 135, .4); }
+        .nocturne-lang .language_flag { flex-shrink: 0; }
+        .nocturne-lang__trigger .language_flag img {
+            height: 22px;
+            width: 22px;
             object-fit: cover;
             border-radius: 50%;
         }
-
-        .language-wrapper.show .collapse-icon {
-            transform: rotate(180deg)
-        }
-
-        .collapse-icon {
-            font-size: 14px;
-            display: flex;
-            transition: all linear 0.2s;
-            color: hsl(var(--white));
-        }
-
-        .language_text_select {
-            font-weight: 600 !important;
-            font-family: var(--heading-font);
-            font-size: 22px !important;
-            color: hsl(var(--white));
-        }
-
-        .language-content {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
 
         .language_text {
             color: #ffffff;
@@ -118,26 +88,28 @@
         .language-list .language_flag img {
             height: 20px;
             width: 20px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
-        .language .dropdown-menu {
+        .nocturne-lang .dropdown-menu {
             position: absolute;
-            -webkit-transition: ease-in-out 0.1s;
             transition: ease-in-out 0.1s;
             opacity: 0;
             visibility: hidden;
-            top: 100%;
+            bottom: 100%;
+            top: auto;
+            margin-bottom: 8px;
             display: unset;
             background: #2a313b;
-            -webkit-transform: scaleY(1);
-            transform: scaleY(1);
             width: max-content;
             padding: 7px 0 !important;
-            border-radius: 8px;
+            border-radius: 12px;
             border: 1px solid rgb(255 255 255 / 10%);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, .35);
         }
 
-        .language .dropdown-menu.show {
+        .nocturne-lang .dropdown-menu.show {
             visibility: visible;
             opacity: 1;
         }

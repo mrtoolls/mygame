@@ -94,6 +94,8 @@ Route::middleware('auth')->name('user.')->group(function () {
             // Arena (social feed) - the feed itself is public, see routes/web.php
             Route::controller('ArenaController')->prefix('arena')->name('arena.')->group(function () {
                 Route::post('post', 'store')->name('store');
+                Route::post('post/{post}', 'update')->name('update');
+                Route::delete('post/{post}', 'destroy')->name('destroy');
                 Route::post('post/{post}/vote', 'vote')->name('vote');
                 Route::post('react', 'react')->name('react');
                 Route::get('notifications', 'notifications')->name('notifications');

@@ -41,6 +41,16 @@
                 </button>
             @endif
             <span class="nocturne-arena-post__type"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
+            <div class="nocturne-arena-post__menu-wrap">
+                <button type="button" class="nocturne-arena-post__menu-btn" aria-label="@lang('Post options')"><i class="ph-bold ph-dots-three-vertical"></i></button>
+                <div class="nocturne-arena-post__menu" hidden>
+                    <button type="button" class="nocturne-arena-post__share" data-url="{{ route('arena.post.show', $post->id) }}"><i class="ph-bold ph-share-network"></i>@lang('Share')</button>
+                    @if($isOwnPost)
+                        <button type="button" class="nocturne-arena-post__edit"><i class="ph-bold ph-pencil-simple"></i>@lang('Edit')</button>
+                        <button type="button" class="nocturne-arena-post__delete" data-url="{{ route('user.arena.destroy', $post->id) }}"><i class="ph-bold ph-trash"></i>@lang('Delete')</button>
+                    @endif
+                </div>
+            </div>
         </div>
 
         @if($post->body)
@@ -51,10 +61,25 @@
             @endif
         @endif
 
+        @if($isOwnPost)
+            <form method="post" action="{{ route('user.arena.update', $post->id) }}" class="nocturne-arena-post__edit-form" hidden>
+                @csrf
+                <input type="hidden" name="type" value="{{ $post->type }}">
+                <textarea name="body" maxlength="2000" rows="3">{{ $post->body }}</textarea>
+                <div class="nocturne-arena-post__edit-actions">
+                    <button type="button" class="nocturne-arena-post__edit-cancel">@lang('Cancel')</button>
+                    <button type="submit">@lang('Save')</button>
+                </div>
+            </form>
+        @endif
+
         @if($post->image)
-            <div class="nocturne-arena-post__image"><img src="{{ $post->imageUrl() }}" alt="" loading="lazy"></div>
+            <div class="nocturne-arena-post__image" data-lightbox><img src="{{ $post->imageUrl() }}" alt="" loading="lazy"></div>
         @elseif($post->video)
-            <div class="nocturne-arena-post__video"><video src="{{ $post->videoUrl() }}" controls preload="metadata" playsinline></video></div>
+            <div class="nocturne-arena-post__video">
+                <video src="{{ $post->videoUrl() }}" preload="metadata" playsinline muted loop data-feed-video></video>
+                <button type="button" class="nocturne-arena-post__mute-btn" aria-label="@lang('Toggle sound')"><i class="ph-fill ph-speaker-x"></i></button>
+            </div>
         @endif
 
         @if($post->linkedGameLog)

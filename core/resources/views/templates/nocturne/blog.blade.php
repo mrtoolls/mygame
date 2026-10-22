@@ -84,7 +84,7 @@
 .nocturne-news-grid-heading{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:var(--news-text);font-size:22px;font-weight:850}
 .nocturne-news-grid-heading i{color:var(--news-accent)}
 
-.nocturne-news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.nocturne-news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 20px;align-items:start}
 .nocturne-news-card{border:1px solid var(--news-line);border-radius:20px;overflow:hidden;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16);transition:transform .18s,border-color .18s}
 .nocturne-news-card:hover{transform:translateY(-3px);border-color:rgba(0,231,138,.35)}
 .nocturne-news-card__thumb{display:block;aspect-ratio:16/10;background:#0d1225}

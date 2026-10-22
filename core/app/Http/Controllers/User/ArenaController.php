@@ -361,4 +361,55 @@ class ArenaController extends Controller
         $pageTitle = 'My Arena Posts';
         return view('Template::arena.my-posts', compact('pageTitle', 'posts'));
     }
+
+    // Permalink page a Share button can send someone to - works even if the post has since
+    // scrolled off the feed's first page or the recipient isn't logged in at all.
+    public function show(ArenaPost $post)
+    {
+        abort_unless($post->status === 'approved' || (auth()->check() && auth()->id() === $post->user_id), 404);
+        $pageTitle = 'Post by ' . ($post->user->username ?? 'a player');
+        $posts = collect([$post]);
+        return view('Template::arena.post', compact('pageTitle', 'post', 'posts'));
+    }
+
+    public function update(Request $request, ArenaPost $post)
+    {
+        abort_unless(auth()->id() === $post->user_id, 403);
+        $request->validate([
+            'body' => 'nullable|string|max:2000',
+            'type' => 'nullable|string|in:' . implode(',', ArenaPost::TYPES),
+        ]);
+        if (!$request->filled('body') && !$post->image && !$post->video) {
+            $notify[] = ['error', 'A post needs some text, unless it already has a photo or video.'];
+            return back()->withNotify($notify);
+        }
+
+        $post->body = $request->body;
+        $post->type = $request->type ?: $post->type;
+        // An already-approved post goes back to pending on edit, same as a fresh submission -
+        // otherwise someone could get an innocuous post approved and edit it into anything.
+        if (gs('arena_post_approval_required') && $post->status === 'approved') {
+            $post->status = 'pending';
+        }
+        $post->save();
+
+        $notify[] = ['success', $post->status === 'pending'
+            ? 'Post updated and resubmitted for moderator approval.'
+            : 'Post updated.'];
+        return back()->withNotify($notify);
+    }
+
+    public function destroy(ArenaPost $post)
+    {
+        abort_unless(auth()->id() === $post->user_id, 403);
+        if ($post->image) @unlink('assets/images/arena-posts/' . $post->image);
+        if ($post->video) @unlink('assets/images/arena-posts/' . $post->video);
+        // Comments/votes cascade via a real FK; reactions are polymorphic (reactable_type +
+        // reactable_id, no FK possible) so they'd otherwise be left orphaned.
+        ArenaReaction::where('reactable_type', 'post')->where('reactable_id', $post->id)->delete();
+        $post->delete();
+
+        $notify[] = ['success', 'Post deleted.'];
+        return back()->withNotify($notify);
+    }
 }
