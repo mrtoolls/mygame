@@ -291,8 +291,18 @@
 .ludo-lane--yellow{left:60%;top:46.667%;width:40%;height:6.667%;background:linear-gradient(to left,rgba(242,183,5,.12),rgba(242,183,5,.55))}
 .ludo-lane--blue{left:46.667%;top:60%;width:6.667%;height:40%;background:linear-gradient(to top,rgba(42,98,214,.12),rgba(42,98,214,.55))}
 .ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 2px 0 rgba(255,255,255,.3) inset,0 10px 18px rgba(0,0,0,.5)}
-.ludo-die{position:absolute;right:3%;bottom:3%;width:11%;height:11%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:grid;place-items:center}
-.ludo-die::before{content:"";width:34%;height:34%;border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
+.ludo-die{position:absolute;right:3%;bottom:3%;width:13%;height:13%;border:0;padding:3%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:4%;cursor:default;transition:box-shadow .2s ease,transform .1s ease}
+.ludo-die:not(:disabled){cursor:pointer}
+.ludo-die:not(:disabled):active{transform:scale(.93)}
+.ludo-die:not(.has-rolled)::before{content:"";grid-column:2;grid-row:2;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
+.ludo-die i{border-radius:50%;background:transparent}
+.ludo-die i.is-on{background:radial-gradient(circle at 34% 28%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.4) inset}
+.ludo-die.is-your-turn{animation:ludo-die-blink 1.1s ease-in-out infinite}
+@keyframes ludo-die-blink{0%,100%{box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45),0 0 0 0 rgba(0,239,135,.55)}50%{box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45),0 0 0 7px rgba(0,239,135,0)}}
+.ludo-roll-history{position:absolute;display:flex;gap:3px;z-index:3}
+.ludo-roll-history span{display:grid;place-items:center;width:15px;height:15px;border-radius:4px;background:rgba(10,13,28,.75);color:#fff;font-size:9px;font-weight:900;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.ludo-roll-history--red{top:1%;left:1%}.ludo-roll-history--green{top:1%;right:1%}.ludo-roll-history--yellow{bottom:1%;right:1%}.ludo-roll-history--blue{bottom:1%;left:1%}
+.ludo-status{grid-column:1/-1;margin:10px 0 0;color:var(--tm-muted);font-size:11.5px;font-weight:700;text-align:center}
 .ludo-token{position:absolute;width:6.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:1.5px solid rgba(0,0,0,.38);box-shadow:0 2px 2px rgba(255,255,255,.55) inset,0 -5px 6px rgba(0,0,0,.4) inset,0 1px 2px rgba(0,0,0,.55),0 7px 11px rgba(0,0,0,.45);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
 .ludo-token.is-movable{cursor:pointer;animation:ludo-token-pulse 1s ease-in-out infinite;z-index:2}
 @keyframes ludo-token-pulse{0%,100%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 0 rgba(0,239,135,.6)}50%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 7px rgba(0,239,135,0)}}
@@ -748,9 +758,25 @@ function renderBoard(data) {
         ['red','green','yellow','blue'].forEach(name=>{const lane=document.createElement('div');lane.className='ludo-lane ludo-lane--'+name;wrap.append(lane);});
         const center=document.createElement('div');center.className='ludo-center';wrap.append(center);
         LUDO_SAFE_SQUARES.forEach(squareIndex=>{const cell=LUDO_TRACK[squareIndex];if(!cell)return;const pct=ludoCellPercent(cell);const star=document.createElement('span');star.className='ludo-star';star.style.left=pct.left;star.style.top=pct.top;star.textContent='★';wrap.append(star);});
-        const die=document.createElement('div');die.className='ludo-die';wrap.append(die);
         const movable=[];
         if(active&&state.pending_roll!==null){(state.tokens?.[seat]||[]).forEach((position,index)=>{const can=position===58?false:(position===-1?state.pending_roll===6:position+state.pending_roll<=57);if(can)movable.push(index);});}
+        // Roll-history tiles near each color's own yard, newest first.
+        ['red','green','yellow','blue'].forEach((name,seatIndex)=>{
+            const rolls=data.recent_rolls?.[seatIndex];
+            if(!rolls?.length)return;
+            const strip=document.createElement('div');strip.className='ludo-roll-history ludo-roll-history--'+name;
+            rolls.forEach(value=>{const tile=document.createElement('span');tile.textContent=value;strip.append(tile);});
+            wrap.append(strip);
+        });
+        // The die itself is the roll button - tap it directly instead of a separate text button.
+        const die=document.createElement('button');die.type='button';die.className='ludo-die';
+        const canRoll=active&&state.pending_roll===null;
+        die.disabled=!canRoll;
+        die.classList.toggle('is-your-turn',canRoll);
+        if(state.pending_roll!==null){die.classList.add('has-rolled');const on=DICE_PIPS[state.pending_roll]||[];for(let i=0;i<9;i++){const dot=document.createElement('i');dot.className=on.includes(i)?'is-on':'';die.append(dot);}}
+        die.onclick=()=>{if(canRoll)send({roll:true});};
+        die.setAttribute('aria-label','Roll the die');
+        wrap.append(die);
         (state.tokens||[]).forEach((seatTokens,tokenSeat)=>{seatTokens.forEach((position,tokenIndex)=>{
             const cell=ludoTokenCell(tokenSeat,tokenIndex,position,state.starts);if(!cell)return;
             const pct=ludoCellPercent(cell);
@@ -764,9 +790,10 @@ function renderBoard(data) {
             wrap.append(peg);
         });});
         board.append(wrap);
-        if(active&&state.pending_roll===null){const roll=document.createElement('button');roll.type='button';roll.className='table-match__start';roll.textContent='Roll the die';roll.onclick=()=>send({roll:true});board.append(roll);}
-        else if(active&&state.pending_roll!==null){const rollRow=document.createElement('div');rollRow.className='dice-roll-row';rollRow.append(diceFace(state.pending_roll));const label=document.createElement('span');label.textContent=movable.length?'Tap a glowing token to move it':'No token can move with this roll';rollRow.append(label);board.append(rollRow);}
-        if(!active){const positions=document.createElement('p');positions.className='board-scorebar';positions.textContent=state.tokens?.map((tokens,index)=>`${latest.players.find(p=>p.seat===index)?.name||'Player '+(index+1)}: ${tokens.filter(p=>p===58).length}/4 home`).join('  ')||'';board.append(positions);}
+        const statusLine=document.createElement('p');statusLine.className='ludo-status';
+        const turnPlayerName=latest.players.find(p=>p.id===data.current_user_id)?.name||'your opponent';
+        statusLine.textContent=canRoll?'Your turn: tap the die':!active&&state.pending_roll===null?`Waiting for ${turnPlayerName} to roll`:active&&state.pending_roll!==null?(movable.length?'Tap a glowing token to move it':'No token can move with this roll - tap the die again next turn'):`${turnPlayerName} is moving…`;
+        board.append(statusLine);
     } else if (type === 'chess' || type === 'draughts') {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;const white=seat===0;const grid=document.createElement('div');grid.className='board-grid board-grid--chess';
         const chessSymbolIds={K:'p-king',Q:'p-queen',R:'p-rook',B:'p-bishop',N:'p-knight',P:'p-pawn'};
