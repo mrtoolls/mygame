@@ -29,6 +29,11 @@ class TableGameRules
 
     public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts'];
 
+    // Each seat's own start square (0,13,26,39 - see 'starts' in start()) plus the classic star
+    // square 8 ahead of every start. A token sitting on any of these shared-ring squares cannot
+    // be captured, no matter how many other tokens land there with it.
+    public const LUDO_SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
+
     public function start(string $game, int $playerCount): array
     {
         if (!isset(self::GAMES[$game]) || $playerCount < self::GAMES[$game]['min'] || $playerCount > self::GAMES[$game]['max']) {
@@ -945,6 +950,11 @@ class TableGameRules
         $state['tokens'][$seat][$token] = $position;
         if ($position < 52) {
             $landing = ((int) $state['starts'][$seat] + $position) % 52;
+            $isSafe = in_array($landing, self::LUDO_SAFE_SQUARES, true);
+        } else {
+            $isSafe = true; // not on the shared ring at all
+        }
+        if ($position < 52 && !$isSafe) {
             foreach ($state['tokens'] as $otherSeat => &$otherTokens) {
                 if ($otherSeat === $seat) continue;
                 foreach ($otherTokens as &$otherPosition) {

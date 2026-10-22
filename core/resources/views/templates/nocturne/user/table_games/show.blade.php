@@ -292,9 +292,10 @@
 .ludo-center{position:absolute;left:40%;top:40%;width:20%;height:20%;background:conic-gradient(#1f9e5c 0deg 90deg,#f2b705 90deg 180deg,#2a62d6 180deg 270deg,#d32f2f 270deg 360deg);box-shadow:0 0 0 2px #2a2140,0 2px 0 rgba(255,255,255,.3) inset,0 10px 18px rgba(0,0,0,.5)}
 .ludo-die{position:absolute;right:3%;bottom:3%;width:11%;height:11%;border-radius:22%;background:linear-gradient(160deg,#fff,#dfe2ea);box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 3px 4px rgba(0,0,0,.08) inset,3px 7px 0 -1px rgba(160,165,185,.9),4px 10px 14px rgba(0,0,0,.45);display:grid;place-items:center}
 .ludo-die::before{content:"";width:34%;height:34%;border-radius:50%;background:radial-gradient(circle at 32% 30%,#4a5068,#1b1f33 70%);box-shadow:0 1px 1px rgba(255,255,255,.5)}
-.ludo-token{position:absolute;width:6.2%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:2px solid rgba(0,0,0,.4);background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.85),rgba(255,255,255,0) 55%);box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
+.ludo-token{position:absolute;width:6.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:1.5px solid rgba(0,0,0,.38);box-shadow:0 2px 2px rgba(255,255,255,.55) inset,0 -5px 6px rgba(0,0,0,.4) inset,0 1px 2px rgba(0,0,0,.55),0 7px 11px rgba(0,0,0,.45);transition:left .25s ease,top .25s ease;cursor:default;padding:0}
 .ludo-token.is-movable{cursor:pointer;animation:ludo-token-pulse 1s ease-in-out infinite;z-index:2}
 @keyframes ludo-token-pulse{0%,100%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 0 rgba(0,239,135,.6)}50%{box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 4px 6px rgba(0,0,0,.5),0 7px 9px rgba(0,0,0,.25),0 0 0 7px rgba(0,239,135,0)}}
+.ludo-star{position:absolute;display:grid;place-items:center;width:5%;aspect-ratio:1;transform:translate(-50%,-50%);color:rgba(255,255,255,.55);font-size:11px;line-height:1;text-shadow:0 1px 1px rgba(0,0,0,.4);pointer-events:none;z-index:1}
 @media(max-width:575px){.ludo-die{right:2%;bottom:2%}.ludo-wrap{transform:rotateX(4deg)}}
 .bg-board{display:flex;flex-direction:column;gap:6px;width:min(94vw,520px);margin:10px auto;padding:10px;border-radius:14px;background:linear-gradient(155deg,#5c3a1d,#39230f);box-shadow:0 14px 34px rgba(0,0,0,.45)}
 .bg-row{display:flex;gap:2px;height:clamp(90px,16vw,128px)}
@@ -632,10 +633,15 @@ const LUDO_YARD=[
     [[10,1],[10,4],[13,1],[13,4]],
 ];
 const LUDO_COLORS=['#d32f2f','#1f9e5c','#f2b705','#2a62d6'];
+// Mirrors TableGameRules::LUDO_SAFE_SQUARES server-side - every seat's start square plus the
+// star square 8 ahead of it. Tokens resting here can't be captured.
+const LUDO_SAFE_SQUARES=[0,8,13,21,26,34,39,47];
 function ludoCellPercent([r,c]){return{left:((c+0.5)/15*100)+'%',top:((r+0.5)/15*100)+'%'};}
 function ludoTokenCell(seat,tokenIndex,position,starts){
-    if(position<0)return LUDO_YARD[seat][tokenIndex];
-    if(position>=58)return null;
+    // Finished tokens (58) rest back in their home yard slot, same as a token that hasn't left
+    // yet - exactly like a physical board, where the home base holds not-yet-started pieces and
+    // already-finished ones with no visual difference between the two.
+    if(position<0||position>=58)return LUDO_YARD[seat][tokenIndex];
     if(position>=52)return LUDO_HOME[seat][position-52];
     return LUDO_TRACK[((starts?.[seat]??[0,13,26,39][seat])+position)%52];
 }
@@ -735,15 +741,15 @@ function renderBoard(data) {
         const armH=document.createElement('div');armH.className='ludo-arm-h';wrap.append(armH);
         ['red','green','yellow','blue'].forEach(name=>{const lane=document.createElement('div');lane.className='ludo-lane ludo-lane--'+name;wrap.append(lane);});
         const center=document.createElement('div');center.className='ludo-center';wrap.append(center);
+        LUDO_SAFE_SQUARES.forEach(squareIndex=>{const cell=LUDO_TRACK[squareIndex];if(!cell)return;const pct=ludoCellPercent(cell);const star=document.createElement('span');star.className='ludo-star';star.style.left=pct.left;star.style.top=pct.top;star.textContent='★';wrap.append(star);});
         const die=document.createElement('div');die.className='ludo-die';wrap.append(die);
         const movable=[];
         if(active&&state.pending_roll!==null){(state.tokens?.[seat]||[]).forEach((position,index)=>{const can=position===58?false:(position===-1?state.pending_roll===6:position+state.pending_roll<=57);if(can)movable.push(index);});}
         (state.tokens||[]).forEach((seatTokens,tokenSeat)=>{seatTokens.forEach((position,tokenIndex)=>{
-            if(position>=58)return;
             const cell=ludoTokenCell(tokenSeat,tokenIndex,position,state.starts);if(!cell)return;
             const pct=ludoCellPercent(cell);
             const peg=document.createElement('button');peg.type='button';peg.className='ludo-token';
-            peg.style.left=pct.left;peg.style.top=pct.top;peg.style.background=`radial-gradient(circle at 32% 26%,#fff,${LUDO_COLORS[tokenSeat]} 62%,#000 140%)`;
+            peg.style.left=pct.left;peg.style.top=pct.top;peg.style.background=`radial-gradient(circle at 30% 22%,#fff 0%,${LUDO_COLORS[tokenSeat]} 48%,${LUDO_COLORS[tokenSeat]} 80%,rgba(0,0,0,.55) 138%)`;
             const canMoveThis=tokenSeat===seat&&movable.includes(tokenIndex);
             peg.classList.toggle('is-movable',canMoveThis);
             peg.disabled=!canMoveThis;
