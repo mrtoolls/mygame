@@ -27,6 +27,7 @@
             @auth
                 <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
                 <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-sword nocturne-live-pulse"></i><span>@lang('Live Games')</span></a>
+                <a href="{{ route('user.competitions.index') }}" class="{{ request()->routeIs('user.competitions.*') ? 'is-active' : '' }}"><i class="ph-fill ph-trophy"></i><span>@lang('Competitions')</span></a>
                 <a href="javascript:void(0)" data-open-support><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
                 <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i><span>@lang('Deposit')</span></a>
                 <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i><span>@lang('Withdraw')</span></a>

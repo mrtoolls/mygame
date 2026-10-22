@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Competition;
+use App\Models\CompetitionAuditLog;
 use App\Models\CompetitionFlag;
 use App\Models\CompetitionPrize;
+use App\Models\CompetitionResult;
 use App\Models\Currency;
 use App\Services\CompetitionService;
 use Illuminate\Http\Request;
@@ -102,7 +104,7 @@ class CompetitionController extends Controller
 
     public function payResult(Request $request, $resultId)
     {
-        $result = \App\Models\CompetitionResult::findOrFail($resultId);
+        $result = CompetitionResult::findOrFail($resultId);
         if ($result->isPaid()) {
             $notify[] = ['error', 'This prize has already been marked as paid'];
             return back()->withNotify($notify);
@@ -129,7 +131,7 @@ class CompetitionController extends Controller
 
     public function disqualify(Request $request, $resultId)
     {
-        $result = \App\Models\CompetitionResult::findOrFail($resultId);
+        $result = CompetitionResult::findOrFail($resultId);
         if ($result->competition->hasAnyPaidResult()) {
             $notify[] = ['error', 'Results are locked: at least one prize for this competition has already been paid'];
             return back()->withNotify($notify);
@@ -273,7 +275,7 @@ class CompetitionController extends Controller
 
     private function logAudit(Competition $competition, string $action, array $details = []): void
     {
-        \App\Models\CompetitionAuditLog::create([
+        CompetitionAuditLog::create([
             'competition_id' => $competition->id,
             'admin_id' => auth('admin')->id(),
             'action' => $action,

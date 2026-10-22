@@ -204,9 +204,9 @@ class CompetitionService
 
         DB::transaction(function () use ($competition) {
             match ($competition->type) {
-                Competition::TYPE_WAGER_RACE => $this->finalizeWagerRace($competition),
-                Competition::TYPE_TABLE_LEAGUE => $this->finalizeTableLeague($competition),
-                Competition::TYPE_BIGGEST_WIN => $this->finalizeBiggestWin($competition),
+                Competition::TYPE_WAGER_RACE => $this->writeResults($competition, $this->rankWagerRace($competition), 'usd'),
+                Competition::TYPE_TABLE_LEAGUE => $this->writeResults($competition, $this->rankTableLeague($competition), 'points'),
+                Competition::TYPE_BIGGEST_WIN => $this->writeResults($competition, $this->rankBiggestWin($competition), 'multiplier'),
                 Competition::TYPE_LUCKY_DRAW => $this->finalizeLuckyDraw($competition),
                 default => null,
             };
@@ -217,6 +217,43 @@ class CompetitionService
         });
 
         return true;
+    }
+
+    /**
+     * Compute the current standings without writing anything - used to show a live
+     * leaderboard preview on a competition that hasn't been finalized yet. For an already
+     * finalized/paid competition, read the frozen competition_results instead of this.
+     */
+    public function previewRanking(Competition $competition): array
+    {
+        return match ($competition->type) {
+            Competition::TYPE_WAGER_RACE => ['rows' => $this->rankWagerRace($competition), 'metric_label' => 'usd'],
+            Competition::TYPE_TABLE_LEAGUE => ['rows' => $this->rankTableLeague($competition), 'metric_label' => 'points'],
+            Competition::TYPE_BIGGEST_WIN => ['rows' => $this->rankBiggestWin($competition), 'metric_label' => 'multiplier'],
+            Competition::TYPE_LUCKY_DRAW => ['rows' => $this->previewTickets($competition), 'metric_label' => 'tickets'],
+            default => ['rows' => collect(), 'metric_label' => null],
+        };
+    }
+
+    private function previewTickets(Competition $competition): Collection
+    {
+        $rows = CompetitionGameEntry::query()
+            ->where('competition_id', $competition->id)
+            ->selectRaw('user_id, SUM(counted_usd) as total_usd')
+            ->groupBy('user_id')
+            ->havingRaw('SUM(counted_usd) > 0')
+            ->get();
+
+        return $rows->map(function ($row) use ($competition) {
+            $tickets = $competition->ticket_usd_per_ticket
+                ? (int) floor(((float) $row->total_usd) / (float) $competition->ticket_usd_per_ticket)
+                : 0;
+            if ($competition->max_tickets_per_user) {
+                $tickets = min($tickets, $competition->max_tickets_per_user);
+            }
+            $row->metric_value = $tickets;
+            return $row;
+        })->filter(fn ($row) => $row->metric_value > 0)->sortByDesc('metric_value')->values();
     }
 
     private function writeResults(Competition $competition, Collection $ranked, string $metricLabel): void
@@ -237,7 +274,7 @@ class CompetitionService
         }
     }
 
-    private function finalizeWagerRace(Competition $competition): void
+    private function rankWagerRace(Competition $competition): Collection
     {
         $rows = CompetitionGameEntry::query()
             ->where('competition_id', $competition->id)
@@ -250,15 +287,13 @@ class CompetitionService
             $rows = $rows->filter(fn ($row) => $row->games_played >= $competition->min_games)->values();
         }
 
-        $ranked = $rows->sort(function ($a, $b) {
+        return $rows->sort(function ($a, $b) {
             $cmp = bccomp((string) $b->metric_value, (string) $a->metric_value, 8);
             return $cmp !== 0 ? $cmp : strcmp((string) $a->first_seen, (string) $b->first_seen);
         })->values();
-
-        $this->writeResults($competition, $ranked, 'usd');
     }
 
-    private function finalizeTableLeague(Competition $competition): void
+    private function rankTableLeague(Competition $competition): Collection
     {
         $rows = CompetitionGameEntry::query()
             ->where('competition_id', $competition->id)
@@ -289,17 +324,15 @@ class CompetitionService
         })->values();
 
         // Tie-break order per the approved spec: points -> win rate -> distinct opponents -> earlier last result.
-        $ranked = $rows->sort(function ($a, $b) {
+        return $rows->sort(function ($a, $b) {
             if ($a->metric_value != $b->metric_value) return $b->metric_value <=> $a->metric_value;
             if ($a->win_rate != $b->win_rate) return $b->win_rate <=> $a->win_rate;
             if ($a->distinct_opponents != $b->distinct_opponents) return $b->distinct_opponents <=> $a->distinct_opponents;
             return strcmp((string) $a->last_result_at, (string) $b->last_result_at);
         })->values();
-
-        $this->writeResults($competition, $ranked, 'points');
     }
 
-    private function finalizeBiggestWin(Competition $competition): void
+    private function rankBiggestWin(Competition $competition): Collection
     {
         // game_logs has no historical FX rate-lock, so this intentionally ranks by the
         // currency-agnostic win multiplier (win_amo / invest) rather than a USD amount.
@@ -314,12 +347,10 @@ class CompetitionService
             $query->whereIn('game_id', $competition->eligible_games);
         }
 
-        $rows = $query->selectRaw('user_id, MAX(win_amo / invest) as metric_value')
+        return $query->selectRaw('user_id, MAX(win_amo / invest) as metric_value')
             ->groupBy('user_id')
             ->orderByDesc('metric_value')
             ->get();
-
-        $this->writeResults($competition, $rows, 'multiplier');
     }
 
     /**
