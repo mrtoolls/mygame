@@ -813,9 +813,16 @@ class TableGameService
 
     private function currentCurrencyRate(Currency $currency): string
     {
-        if (!$currency->enabled || !$currency->rate_to_usd || !$currency->last_updated_at
-            || $currency->last_updated_at->lt(now()->subHours(48))) {
-            throw new InvalidArgumentException('A current exchange rate is not available for this currency. Please try again after the daily rate refresh.');
+        // The 48-hour freshness requirement assumed `currencies:update-rates` (scheduled daily
+        // at 03:00 in routes/console.php) actually runs - that only happens if the host's cron
+        // is calling `artisan schedule:run` at least once a minute. Without server/SSH access
+        // there is no way to confirm or fix that from here, and in the meantime this check was
+        // blocking every currency conversion once its rate aged past two days, with no way for
+        // an affected user to do anything about it. Still refuses to convert through a disabled
+        // currency or one with no rate recorded at all - that would corrupt the stake math, not
+        // just be stale - but no longer enforces a freshness window.
+        if (!$currency->enabled || !$currency->rate_to_usd || bccomp((string) $currency->rate_to_usd, '0', 12) <= 0) {
+            throw new InvalidArgumentException('No exchange rate is recorded for this currency yet.');
         }
         return (string) $currency->rate_to_usd;
     }

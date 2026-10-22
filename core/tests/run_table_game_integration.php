@@ -62,6 +62,7 @@ $followUpMigrations = array_map(
     fn (string $file) => require dirname(__DIR__) . '/database/migrations/' . $file,
     [
         '2026_10_20_000001_add_wallet_stake_to_table_game_players.php',
+        '2026_10_20_000002_enable_automatic_currency_rates.php',
         '2026_10_20_000003_add_locked_fx_rates_to_table_game_players.php',
         '2026_10_20_000004_add_settlement_amount_to_table_game_players.php',
         '2026_10_20_000009_create_table_game_viewers.php',
@@ -444,6 +445,19 @@ $stakedTable = $service->join($mismatchedUser, $stakedTable->id);
 if ($stakedTable->status !== 'active') throw new RuntimeException('A player with a wallet currency different from their country default could not join a staked table.');
 $assertBalance($mismatchedUser, '98.00000000', 'Joining a staked table did not debit the mismatched-currency player the expected stake.');
 $service->forceClose($stakedTable->id);
+
+// A currency's exchange rate is no longer required to be "fresh" (there is no guaranteed
+// automatic refresh without host cron access - see currentCurrencyRate()). Confirm a genuinely
+// cross-currency stake conversion still succeeds even though the seeded GBP rate is already
+// well past the old 48-hour cutoff by the time this test runs.
+$gbp = DB::table('currencies')->where('code', 'GBP')->first();
+if (!$gbp || !$gbp->last_updated_at) throw new RuntimeException('Expected seed currency data (GBP) is missing from the test database.');
+if (\Carbon\Carbon::parse($gbp->last_updated_at)->gt(now()->subHours(48))) throw new RuntimeException('Test assumption broke: the seeded GBP rate is expected to already be older than 48 hours.');
+$crossCurrencyUser = $insertUser('table_cross_currency', '100.00000000', (int) $gbp->id);
+$crossTable = $service->create($creator, 'tic_tac_toe', 2, '2.00000000', 'cross_currency_key_0001');
+$crossTable = $service->join($crossCurrencyUser, $crossTable->id);
+if ($crossTable->status !== 'active') throw new RuntimeException('A stale (but present) exchange rate still blocked a cross-currency stake conversion.');
+$service->forceClose($crossTable->id);
 
 $poorUser = $insertUser('table_low_balance', '0.50000000');
 try {
