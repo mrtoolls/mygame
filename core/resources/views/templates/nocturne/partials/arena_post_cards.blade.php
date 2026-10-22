@@ -40,7 +40,7 @@
                     <span class="label-follow">@lang('Follow')</span><span class="label-following">@lang('Following')</span>
                 </button>
             @endif
-            <span class="nocturne-arena-post__type"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
+            <span class="nocturne-arena-post__type nocturne-arena-post__type--{{ $post->type }}"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
             <div class="nocturne-arena-post__menu-wrap">
                 <button type="button" class="nocturne-arena-post__menu-btn" aria-label="@lang('Post options')"><i class="ph-bold ph-dots-three-vertical"></i></button>
                 <div class="nocturne-arena-post__menu" hidden>

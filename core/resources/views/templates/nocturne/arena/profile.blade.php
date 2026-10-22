@@ -42,6 +42,11 @@
 @push('style')
 <style>
 :root{--arena-accent:#00e78a;--arena-bg:#10152a;--arena-panel:#151a31;--arena-raised:#1b2140;--arena-muted:#858eaf;--arena-line:rgba(133,142,175,.18);--arena-text:#f5f6ff}
+{{-- Shared post-card styling (card shell, vote/reaction/comment bar, media, lightbox, menu) -
+     this page renders the same arena_post_cards partial as the main feed but previously had
+     none of the matching CSS, so posts here showed up completely unstyled. --}}
+@include('Template::partials.arena_post_card_styles')
+.nocturne-arena-list{display:grid;gap:14px}
 .nocturne-arena-page{max-width:760px;margin:0 auto;padding:24px 20px 60px}
 .nocturne-arena-crumb{display:flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--arena-muted);font-size:13px;font-weight:700}
 .nocturne-arena-crumb a{color:var(--arena-muted);text-decoration:none}
@@ -66,6 +71,18 @@
 
 .nocturne-arena-post__avatar{display:grid;place-items:center;border-radius:50%;background:rgba(0,231,138,.12);color:var(--arena-accent);font-weight:800;overflow:hidden}
 .nocturne-arena-post__avatar img{width:100%;height:100%;object-fit:cover}
+
+.nocturne-arena-empty{display:grid;justify-items:center;gap:8px;padding:50px 20px;border:1px dashed var(--arena-line);border-radius:18px;color:var(--arena-muted);text-align:center}
+.nocturne-arena-empty i{color:var(--arena-accent);font-size:28px}
+.nocturne-arena-empty h3{margin:0;color:var(--arena-text);font-size:16px}
+.nocturne-arena-loadmore{display:flex;justify-content:center;margin-top:20px}
+#arena-load-more{padding:12px 26px;border:1px solid var(--arena-line);border-radius:14px;background:var(--arena-panel);color:var(--arena-text);font-size:13px;font-weight:800;cursor:pointer}
+#arena-load-more:hover{border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
+#arena-load-more:disabled{opacity:.5;cursor:default}
+
+@media(max-width:575.98px){
+    .nocturne-arena-post{padding:14px}
+}
 </style>
 @endpush
 
@@ -95,11 +112,15 @@
         $.ajax({ url: btn.data('url'), data: { page: page }, headers: { 'Accept': 'application/json' } })
             .done(function(res) {
                 $('#arena-feed').append(res.html);
+                setupSeeMore(document.getElementById('arena-feed'));
+                window.arenaObserveFeedVideos && window.arenaObserveFeedVideos(document.getElementById('arena-feed'));
                 if (res.hasMore) { btn.data('next-page', page + 1).prop('disabled', false).text("{{ __('Load More') }}"); }
                 else { btn.remove(); }
             })
             .fail(function() { btn.prop('disabled', false).text("{{ __('Load More') }}"); });
     });
+
+    @include('Template::partials.arena_post_card_scripts')
 })(jQuery);
 </script>
 @endpush

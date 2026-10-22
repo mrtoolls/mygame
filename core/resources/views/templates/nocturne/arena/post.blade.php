@@ -19,7 +19,7 @@
                     <a href="{{ route('arena.profile', $post->user->username ?? '') }}"><strong>{{ $post->user->username ?? 'Deleted user' }}</strong></a>
                     <small>{{ diffForHumans($post->created_at) }}</small>
                 </div>
-                <span class="nocturne-arena-post__type"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
+                <span class="nocturne-arena-post__type nocturne-arena-post__type--{{ $post->type }}"><i class="ph-fill {{ $meta['icon'] }}"></i>{{ __($meta['label']) }}</span>
             </div>
 
             @if($post->body)
@@ -66,6 +66,9 @@
 .nocturne-arena-post__identity strong{color:var(--arena-text);font-size:13.5px;font-weight:800}
 .nocturne-arena-post__identity small{display:block;color:var(--arena-muted);font-size:11px}
 .nocturne-arena-post__type{display:inline-flex;align-items:center;gap:5px;margin-left:auto;padding:5px 11px;border-radius:999px;background:rgba(133,142,175,.12);color:var(--arena-muted);font-size:10.5px;font-weight:800}
+.nocturne-arena-post__type--win{background:rgba(0,231,138,.14);color:var(--arena-accent)}
+.nocturne-arena-post__type--challenge{background:rgba(249,115,22,.14);color:#ffa958}
+.nocturne-arena-post__type--question{background:rgba(14,165,233,.14);color:#5fc5f5}
 .nocturne-arena-post__body{margin:0 0 4px;color:#d7dafa;font-size:14.5px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .nocturne-arena-post__image,.nocturne-arena-post__video{margin-top:10px;border-radius:14px;overflow:hidden;background:#000}
 .nocturne-arena-post__image img{display:block;width:100%;max-height:480px;object-fit:cover}
