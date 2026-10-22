@@ -271,11 +271,13 @@
 .nocturne-arena-mini-follow.is-following .label-follow{display:none}
 .nocturne-arena-mini-follow.is-following .label-following{display:inline}
 
-/* The feed is the whole page now - the right rail (profile/stats, live games, wins,
-   trending, news, suggested follows) moved into an off-canvas menu opened by the list
-   icon next to the bell, instead of permanently eating a column next to the feed. */
-.nocturne-arena-layout{display:block;max-width:680px;margin:0 auto}
+/* Desktop keeps the sidebar inline, same as before. It only becomes an off-canvas
+   drawer (opened by the list icon) below the 991.98px breakpoint, where it used to
+   stack under the feed instead - see the @media block for that swap. */
+.nocturne-arena-layout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
 .nocturne-arena-feed{min-width:0}
+.nocturne-arena-rail-backdrop{display:none}
+#arena-rail-open{display:none}
 
 .nocturne-arena-composer{margin-bottom:20px;padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
 .nocturne-arena-composer__top{display:flex;gap:12px;align-items:flex-start}
@@ -377,16 +379,8 @@
 #arena-load-more:hover{border-color:rgba(0,231,138,.4);color:var(--arena-accent)}
 #arena-load-more:disabled{opacity:.5;cursor:default}
 
-/* Off-canvas drawer: the rail slides in from the right over a backdrop instead of sitting
-   permanently in the layout. Fixed to the viewport so it scrolls independently of the page. */
-.nocturne-arena-rail-backdrop{position:fixed;inset:0;z-index:59;background:rgba(5,8,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
-.nocturne-arena-rail-backdrop.is-open{opacity:1;visibility:visible}
-.nocturne-arena-rail{position:fixed;top:0;right:0;z-index:60;display:flex;flex-direction:column;gap:16px;width:360px;max-width:88vw;height:100%;padding:18px 16px 24px;overflow-y:auto;background:#0d1225;border-left:1px solid var(--arena-line);box-shadow:-24px 0 60px rgba(0,0,0,.45);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
-.nocturne-arena-rail.is-open{transform:translateX(0)}
-.nocturne-arena-rail__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-.nocturne-arena-rail__head strong{color:var(--arena-text);font-size:16px;font-weight:850}
-.nocturne-arena-rail__close{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--arena-line);border-radius:10px;background:var(--arena-panel);color:var(--arena-muted);font-size:15px;cursor:pointer}
-.nocturne-arena-rail__close:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
+.nocturne-arena-rail{display:grid;gap:16px}
+.nocturne-arena-rail__head{display:none}
 .nocturne-arena-widget{padding:18px;border:1px solid var(--arena-line);border-radius:18px;background:var(--arena-panel)}
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
@@ -545,6 +539,21 @@
 .nocturne-arena-comment__reply-btn:hover{color:var(--arena-accent)}
 .nocturne-arena-comment__replies{display:grid;gap:8px;margin-left:30px}
 
+/* Below this width the sidebar used to stack directly under the feed (easy to miss,
+   made the page feel endless). Instead it becomes an off-canvas drawer, opened with
+   the list icon next to the bell, so it's reachable in one tap but out of the way. */
+@media(max-width:991.98px){
+    .nocturne-arena-layout{grid-template-columns:1fr}
+    #arena-rail-open{display:grid;place-items:center}
+    .nocturne-arena-rail-backdrop{display:block;position:fixed;inset:0;z-index:59;background:rgba(5,8,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+    .nocturne-arena-rail-backdrop.is-open{opacity:1;visibility:visible}
+    .nocturne-arena-rail{position:fixed;top:0;right:0;z-index:60;display:flex;flex-direction:column;gap:16px;width:360px;max-width:88vw;height:100%;padding:18px 16px 24px;overflow-y:auto;background:#0d1225;border-left:1px solid var(--arena-line);box-shadow:-24px 0 60px rgba(0,0,0,.45);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+    .nocturne-arena-rail.is-open{transform:translateX(0)}
+    .nocturne-arena-rail__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+    .nocturne-arena-rail__head strong{color:var(--arena-text);font-size:16px;font-weight:850}
+    .nocturne-arena-rail__close{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--arena-line);border-radius:10px;background:var(--arena-panel);color:var(--arena-muted);font-size:15px;cursor:pointer}
+    .nocturne-arena-rail__close:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4)}
+}
 @media(max-width:575.98px){
     .nocturne-arena-rail{width:100%;max-width:100vw}
     .nocturne-arena-page{padding:16px 14px 40px}
@@ -891,7 +900,11 @@
         var openBtn = document.getElementById('arena-rail-open');
         var closeBtn = document.getElementById('arena-rail-close');
         if (!rail || !backdrop || !openBtn) return;
+        // Drawer behavior (and the inert lock) only applies below the 991.98px
+        // breakpoint - on desktop the rail stays inline and must stay interactive.
+        var drawerMq = window.matchMedia('(max-width: 991.98px)');
         function openRail() {
+            if (!drawerMq.matches) return;
             rail.classList.add('is-open');
             backdrop.classList.add('is-open');
             rail.removeAttribute('inert');
@@ -900,10 +913,21 @@
         function closeRail() {
             rail.classList.remove('is-open');
             backdrop.classList.remove('is-open');
-            rail.setAttribute('inert', '');
+            if (drawerMq.matches) rail.setAttribute('inert', '');
             document.body.style.overflow = '';
         }
-        rail.setAttribute('inert', '');
+        function syncRailMode() {
+            if (drawerMq.matches) {
+                if (!rail.classList.contains('is-open')) rail.setAttribute('inert', '');
+            } else {
+                rail.removeAttribute('inert');
+                rail.classList.remove('is-open');
+                backdrop.classList.remove('is-open');
+                document.body.style.overflow = '';
+            }
+        }
+        syncRailMode();
+        drawerMq.addEventListener('change', syncRailMode);
         openBtn.addEventListener('click', openRail);
         closeBtn && closeBtn.addEventListener('click', closeRail);
         backdrop.addEventListener('click', closeRail);
