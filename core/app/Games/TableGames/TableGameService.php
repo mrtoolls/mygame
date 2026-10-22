@@ -80,7 +80,7 @@ class TableGameService
                 'join_deadline_at' => now()->addHours(24),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
             ];
-            if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = $gameType === 'ludo' ? 2 : 1;
+            if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = in_array($gameType, ['ludo', 'whot'], true) ? 2 : 1;
             if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
             $table = TableGame::create($tableData);
             $this->debit($lockedUser, $table, 'creator_stake');
@@ -740,7 +740,7 @@ class TableGameService
     private function startLocked(TableGame $table): void
     {
         $players = $table->players()->where('status', 'seated')->orderBy('seat')->get();
-        $table->state = $this->rules->start($table->game_type, $players->count());
+        $table->state = $this->rules->start($table->game_type, $players->count(), (int) ($table->rules_version ?? 1));
         $table->status = 'active';
         $table->current_user_id = $players->first()->user_id;
         $table->started_at = now();

@@ -609,6 +609,10 @@
 .whot-pile__top .board-card__pip{font-size:26px}
 .whot-shape-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.08);color:var(--tm-text);font-size:12.5px;font-weight:900}
 .whot-shape-badge b{color:var(--tm-green)}
+.whot-penalty-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border:1px solid rgba(255,112,135,.35);border-radius:999px;background:rgba(255,112,135,.1);color:#ff95a6;font-size:12.5px;font-weight:900;animation:whot-penalty-pulse 1.6s ease-in-out infinite}
+.whot-penalty-badge b{color:#ff6b86}
+@keyframes whot-penalty-pulse{0%,100%{box-shadow:0 0 0 rgba(255,112,135,0)}50%{box-shadow:0 0 14px rgba(255,112,135,.4)}}
+@media(prefers-reduced-motion:reduce){.whot-penalty-badge{animation:none}}
 .whot-shape-picker{position:fixed;inset:0;z-index:1270;display:grid;place-items:center;gap:16px;padding:18px;background:rgba(6,8,18,.78);backdrop-filter:blur(5px)}
 .whot-shape-picker[hidden]{display:none}
 .whot-shape-picker__title{color:var(--tm-text);font-size:14px;font-weight:900}
@@ -925,7 +929,10 @@ function renderBoard(data) {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;
         const discard=state.discard||[];const top=discard.at(-1)||{};const behind=discard.slice(-3,-1).reverse();
         const hand=state.hands?.[seat]||[];
-        const playable=card=>card.number===20||card.number===top.number||card.shape===state.active_shape;
+        const pending=state.pending_penalty||null;
+        // While a Pick Two/Three is pending, only a matching-rank card can defend it - nothing
+        // else is legal, not even a normal shape/number match or a Whot card.
+        const playable=card=>pending?card.number===pending.rank:(card.number===20||card.number===top.number||card.shape===state.active_shape);
         const canDraw=active&&!hand.some(playable)&&(state.stock_count||0)>0;
         const whotTable=document.createElement('div');whotTable.className='whot-table';
 
@@ -937,7 +944,7 @@ function renderBoard(data) {
         const marketCount=document.createElement('span');marketCount.className='whot-market__count';marketCount.textContent=String(state.stock_count||0);
         const marketLabel=document.createElement('span');marketLabel.className='whot-market__label';marketLabel.textContent='Market';
         market.append(marketCount,marketLabel);
-        market.onclick=()=>{if(!active)return;if(hand.some(playable)){showError('Play a matching card before drawing.');return;}if(!state.stock_count){showError('The market is empty right now.');return;}send({type:'draw'});};
+        market.onclick=()=>{if(!active)return;if(hand.some(playable)){showError(pending?`You have a ${pending.rank} - play it to pass the penalty along, or draw ${pending.amount}.`:'Play a matching card before drawing.');return;}if(!state.stock_count){showError('The market is empty right now.');return;}send({type:'draw'});};
         center.append(market);
 
         const pileWrap=document.createElement('div');pileWrap.className='whot-pile';
@@ -947,6 +954,7 @@ function renderBoard(data) {
 
         const shapeBadge=document.createElement('span');shapeBadge.className='whot-shape-badge';shapeBadge.innerHTML=`${WHOT_SHAPE_GLYPH[state.active_shape]||''} <b>${state.active_shape||'—'}</b>`;
         center.append(shapeBadge);
+        if(pending){const penaltyBadge=document.createElement('span');penaltyBadge.className='whot-penalty-badge';penaltyBadge.innerHTML=`<i class="las la-exclamation-triangle"></i> Pick ${pending.rank} pending <b>x${pending.amount}</b>`;center.append(penaltyBadge);}
         whotTable.append(center);
 
         const picker=document.createElement('div');picker.className='whot-shape-picker';picker.hidden=true;
@@ -974,7 +982,7 @@ function renderBoard(data) {
             button.append(cardFace(card.number===20?'20':String(card.number),WHOT_SHAPE_GLYPH[card.shape]||''));
             button.disabled=!active;
             button.onclick=()=>{
-                if(!legal){showError(card.number===20?'A Whot card can always be played.':`Play a card that matches ${state.active_shape} or ${top.number}.`);return;}
+                if(!legal){showError(pending?`A Pick ${pending.amount} is pending - play a ${pending.rank} or draw.`:`Play a card that matches ${state.active_shape} or ${top.number}.`);return;}
                 if(card.number===20){pendingWhotIndex=index;picker.hidden=false;return;}
                 send({type:'play',card:index});
             };

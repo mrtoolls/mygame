@@ -56,7 +56,20 @@ class TableGameRules
     // be captured, no matter how many other tokens land there with it.
     public const LUDO_SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 
-    public function start(string $game, int $playerCount): array
+    // Standard 54-card Whot deck (rules_version >= 2 - new tables only; a table created before
+    // this shipped keeps the original 75-card deck for its whole lifetime, since mid-game rules
+    // must never change). Circle/Triangle run 1-5,7,8,10-14 (12 cards each); Cross/Square run
+    // 1,2,3,5,7,10,11,13,14 (9 cards each); Star runs 1-5,7,8 (7 cards) - plus 5 Whot(20) cards,
+    // for 54 total.
+    public const WHOT_STANDARD_NUMBERS = [
+        'Circle' => [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
+        'Triangle' => [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
+        'Cross' => [1, 2, 3, 5, 7, 10, 11, 13, 14],
+        'Square' => [1, 2, 3, 5, 7, 10, 11, 13, 14],
+        'Star' => [1, 2, 3, 4, 5, 7, 8],
+    ];
+
+    public function start(string $game, int $playerCount, int $rulesVersion = 1): array
     {
         if (!isset(self::GAMES[$game]) || $playerCount < self::GAMES[$game]['min'] || $playerCount > self::GAMES[$game]['max']) {
             throw new InvalidArgumentException('Unsupported game or player count.');
@@ -71,7 +84,7 @@ class TableGameRules
             'sea_battle' => $this->seaBattleStartingState(),
             'blackjack' => $this->blackjackStartingState($playerCount),
             'rummy' => $this->rummyStartingState($playerCount),
-            'whot' => $this->whotStartingState($playerCount),
+            'whot' => $this->whotStartingState($playerCount, $rulesVersion),
             'backgammon' => ['points' => [2,0,0,0,0,-5,0,-3,0,0,0,5,-5,0,0,0,3,0,5,0,0,0,0,-2], 'bar' => [0,0], 'off' => [0,0], 'dice' => null, 'turn' => 0, 'moves' => 0],
             'texas_holdem' => $this->holdemStartingState($playerCount),
             'spades', 'hearts' => $this->trickStartingState($game, $playerCount),
@@ -98,7 +111,7 @@ class TableGameRules
             'sea_battle' => $this->seaBattle($state, $seat, $action),
             'blackjack' => $this->blackjack($state, $seat, $action, $activeSeats),
             'rummy' => $this->rummy($state, $seat, $action),
-            'whot' => $this->whot($state, $seat, $action),
+            'whot' => $this->whot($state, $seat, $action, $rulesVersion),
             'backgammon' => $this->backgammon($state, $seat, $action),
             'texas_holdem' => $this->holdem($state, $seat, $action, $activeSeats),
             'spades', 'hearts' => $this->trickMove($game, $state, $seat, $action),
@@ -280,16 +293,20 @@ class TableGameRules
         return ['hands' => $hands, 'stock' => $deck, 'discard' => [$top], 'turn' => 0, 'phase' => 'draw', 'moves' => 0];
     }
 
-    private function whotStartingState(int $playerCount): array
+    private function whotStartingState(int $playerCount, int $rulesVersion = 1): array
     {
         $deck = [];
-        foreach (['Circle','Triangle','Cross','Square','Star'] as $shape) for ($number = 1; $number <= 14; $number++) $deck[] = ['shape' => $shape, 'number' => $number];
+        if ($rulesVersion >= 2) {
+            foreach (self::WHOT_STANDARD_NUMBERS as $shape => $numbers) foreach ($numbers as $number) $deck[] = ['shape' => $shape, 'number' => $number];
+        } else {
+            foreach (['Circle','Triangle','Cross','Square','Star'] as $shape) for ($number = 1; $number <= 14; $number++) $deck[] = ['shape' => $shape, 'number' => $number];
+        }
         for ($i = 0; $i < 5; $i++) $deck[] = ['shape' => 'Whot', 'number' => 20];
         for ($i = count($deck) - 1; $i > 0; $i--) { $swap = random_int(0, $i); [$deck[$i], $deck[$swap]] = [$deck[$swap], $deck[$i]]; }
         $hands = [];
         for ($seat = 0; $seat < $playerCount; $seat++) $hands[$seat] = array_splice($deck, 0, 6);
         do { $top = array_pop($deck); } while ($top['number'] === 20 && $deck);
-        return ['hands' => $hands, 'stock' => $deck, 'discard' => [$top], 'active_shape' => $top['shape'], 'turn' => 0, 'moves' => 0];
+        return ['hands' => $hands, 'stock' => $deck, 'discard' => [$top], 'active_shape' => $top['shape'], 'pending_penalty' => null, 'turn' => 0, 'moves' => 0];
     }
 
     private function backgammon(array $state, int $seat, array $action): array
@@ -369,12 +386,33 @@ class TableGameRules
         $state['discard'] = [$top];
     }
 
-    private function whot(array $state, int $seat, array $action): array
+    private function whot(array $state, int $seat, array $action, int $rulesVersion = 1): array
     {
         $hand = $state['hands'][$seat] ?? null;
         if (!is_array($hand)) throw new InvalidArgumentException('Your hand is unavailable.');
+        $top = $state['discard'][array_key_last($state['discard'])];
+        // v2 only: while a Pick Two/Three is pending against the current player, the only
+        // legal response is a card of the matching rank (another 2 defends a 2, another 5
+        // defends a 5) - everything else, including a normal shape/number match or a Whot
+        // card, is blocked until the penalty is defended or drawn away.
+        $pending = $rulesVersion >= 2 ? ($state['pending_penalty'] ?? null) : null;
+        $canDefend = false;
+        if ($pending) foreach ($hand as $card) if ($card['number'] === $pending['rank']) { $canDefend = true; break; }
+
         if (($action['type'] ?? '') === 'draw') {
-            foreach ($hand as $card) if ($card['number'] === 20 || $card['number'] === $state['discard'][array_key_last($state['discard'])]['number'] || $card['shape'] === $state['active_shape']) throw new InvalidArgumentException('Play a matching card before drawing.');
+            if ($pending) {
+                if ($canDefend) throw new InvalidArgumentException("You have a {$pending['rank']} - play it to pass the penalty along, or draw {$pending['amount']}.");
+                for ($i = 0; $i < $pending['amount']; $i++) {
+                    $this->reshuffleStockFromDiscard($state);
+                    if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
+                    $hand[] = array_pop($state['stock']);
+                }
+                $state['hands'][$seat] = $hand;
+                $state['pending_penalty'] = null;
+                $state['turn'] = ($seat + 1) % count($state['hands']); $state['moves']++;
+                return ['state' => $state, 'winner' => null, 'draw' => false];
+            }
+            foreach ($hand as $card) if ($card['number'] === 20 || $card['number'] === $top['number'] || $card['shape'] === $state['active_shape']) throw new InvalidArgumentException('Play a matching card before drawing.');
             $this->reshuffleStockFromDiscard($state);
             // Mirrors the existing Rummy/Crazy Eights fallback for this same edge case (fewer
             // than 2 cards left anywhere outside hands, so there is nothing left to reshuffle
@@ -388,23 +426,35 @@ class TableGameRules
         if (($action['type'] ?? '') !== 'play') throw new InvalidArgumentException('Play a matching Whot card or draw when blocked.');
         $index = filter_var($action['card'] ?? null, FILTER_VALIDATE_INT);
         if ($index === false || $index < 0 || $index >= count($hand)) throw new InvalidArgumentException('Choose a card from your hand.');
-        $card = $hand[$index]; $top = $state['discard'][array_key_last($state['discard'])];
-        if ($card['number'] !== 20 && $card['number'] !== $top['number'] && $card['shape'] !== $state['active_shape']) throw new InvalidArgumentException('That card must match the active shape or card number.');
+        $card = $hand[$index];
+        if ($pending) {
+            if ($card['number'] !== $pending['rank']) throw new InvalidArgumentException("A Pick {$pending['amount']} is pending - play a {$pending['rank']} or draw.");
+        } elseif ($card['number'] !== 20 && $card['number'] !== $top['number'] && $card['shape'] !== $state['active_shape']) {
+            throw new InvalidArgumentException('That card must match the active shape or card number.');
+        }
         $shape = $card['number'] === 20 ? (string) ($action['shape'] ?? '') : $card['shape'];
         if (!in_array($shape, ['Circle','Triangle','Cross','Square','Star'], true)) throw new InvalidArgumentException('Choose a shape for the Whot card.');
         array_splice($hand, $index, 1); $state['hands'][$seat] = $hand; $state['discard'][] = $card; $state['active_shape'] = $shape; $state['moves']++;
-        if (!$hand) return ['state' => $state, 'winner' => $seat, 'draw' => false];
+        if (!$hand) { $state['pending_penalty'] = null; return ['state' => $state, 'winner' => $seat, 'draw' => false]; }
         $count = count($state['hands']); $next = ($seat + 1) % $count;
-        if ($card['number'] === 1) {
+        if ($pending) {
+            // Defended - the penalty stacks and moves on to the next player instead of
+            // resolving now; nobody draws until someone can't (or won't) defend it.
+            $state['pending_penalty'] = ['rank' => $card['number'], 'amount' => $pending['amount'] + ($card['number'] === 2 ? 2 : 3)];
+        } elseif ($card['number'] === 1) {
             $next = $seat; // Hold On: the current player takes another turn.
         } elseif ($card['number'] === 2 || $card['number'] === 5) {
             $penalty = $card['number'] === 2 ? 2 : 3;
-            for ($i = 0; $i < $penalty; $i++) {
-                $this->reshuffleStockFromDiscard($state);
-                if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
-                $state['hands'][$next][] = array_pop($state['stock']);
+            if ($rulesVersion >= 2) {
+                $state['pending_penalty'] = ['rank' => $card['number'], 'amount' => $penalty];
+            } else {
+                for ($i = 0; $i < $penalty; $i++) {
+                    $this->reshuffleStockFromDiscard($state);
+                    if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
+                    $state['hands'][$next][] = array_pop($state['stock']);
+                }
+                $next = ($next + 1) % $count;
             }
-            $next = ($next + 1) % $count;
         } elseif ($card['number'] === 8) {
             $next = ($next + 1) % $count; // Suspension: skip the next player.
         } elseif ($card['number'] === 14) {

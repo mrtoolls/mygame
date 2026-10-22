@@ -258,7 +258,8 @@ $whotTable = $service->create($creator, 'whot', 2, '1.00000000', 'create_key_000
 $whotTable = $service->join($opponent, $whotTable->id);
 $whotSnapshot = $service->snapshot($creator, $whotTable->id);
 if (array_key_exists('stock', $whotSnapshot['state'])) throw new RuntimeException('A Whot snapshot exposed the stock pile contents.');
-if (($whotSnapshot['state']['stock_count'] ?? null) !== 62) throw new RuntimeException('A Whot snapshot did not report the correct stock count.');
+// Standard 54-card deck (Phase 3) - 12 dealt, 1 discard top, 41 left in stock.
+if (($whotSnapshot['state']['stock_count'] ?? null) !== 41) throw new RuntimeException('A Whot snapshot did not report the correct stock count.');
 if ($whotSnapshot['state']['hands'][1] !== [] || ($whotSnapshot['state']['hand_counts'][1] ?? null) !== 6) throw new RuntimeException('A Whot snapshot exposed the opponent\'s hand.');
 
 $whotState = $whotTable->state;
@@ -285,6 +286,74 @@ $whotTable = $service->move($creator, $whotTable->fresh()->id, ['type' => 'draw'
 if ($whotTable->status !== 'finished' || $whotTable->result !== 'draw') throw new RuntimeException('A fully exhausted Whot stock did not end the round as a draw instead of throwing.');
 $assertBalance($creator, '108.00000000', 'A Whot draw/refund did not return the creator stake.');
 $assertBalance($opponent, '90.90000000', 'A Whot draw/refund did not return the opponent stake.');
+
+// --- Phase 3: standard 54-card deck and Pick Two/Three stacking/defense, both gated behind
+// rules_version so an in-progress table never has its rules change under it. ---
+$whotV2Table = $service->create($creator, 'whot', 2, '1.00000000', 'create_key_000014');
+$whotV2Table = $service->join($opponent, $whotV2Table->id);
+if ((int) $whotV2Table->rules_version !== 2) throw new RuntimeException('A newly created Whot table was not put on rules_version 2.');
+$whotV2Snapshot = $service->snapshot($creator, $whotV2Table->id);
+// 54-card deck - 12 dealt (6 each) - 1 discard top = 41 left in the stock.
+if (($whotV2Snapshot['state']['stock_count'] ?? null) !== 41) throw new RuntimeException('A rules_version 2 Whot table did not start with the standard 54-card deck.');
+
+$whotState = $whotV2Table->state;
+$whotState['hands'][0] = [['shape' => 'Circle', 'number' => 2], ['shape' => 'Square', 'number' => 7]];
+$whotState['hands'][1] = [['shape' => 'Triangle', 'number' => 2], ['shape' => 'Star', 'number' => 3]];
+$whotState['discard'] = [['shape' => 'Circle', 'number' => 9]];
+$whotState['stock'] = array_fill(0, 10, ['shape' => 'Star', 'number' => 1]);
+$whotState['active_shape'] = 'Circle';
+$whotState['pending_penalty'] = null;
+$whotState['turn'] = 0;
+TableGame::whereKey($whotV2Table->id)->update(['state' => $whotState, 'current_user_id' => $creator->id]);
+$whotV2Table = $service->move($creator, $whotV2Table->fresh()->id, ['type' => 'play', 'card' => 0], 'whot_stack_key_1', (int) $whotV2Table->fresh()->version);
+if (($whotV2Table->state['pending_penalty']['amount'] ?? null) !== 2 || ($whotV2Table->state['pending_penalty']['rank'] ?? null) !== 2) throw new RuntimeException('Playing a 2 did not set a pending Pick Two instead of dealing it immediately.');
+if ((int) $whotV2Table->current_user_id !== (int) $opponent->id) throw new RuntimeException('A pending Pick Two did not pass the turn to the next player untouched.');
+
+$whotV2Table = $service->move($opponent, $whotV2Table->fresh()->id, ['type' => 'play', 'card' => 0], 'whot_stack_key_2', (int) $whotV2Table->fresh()->version);
+if (($whotV2Table->state['pending_penalty']['amount'] ?? null) !== 4) throw new RuntimeException('Defending a Pick Two with another 2 did not stack the penalty to 4.');
+if ((int) $whotV2Table->current_user_id !== (int) $creator->id) throw new RuntimeException('A stacked Pick Two did not pass back to the original player (2-player table).');
+
+try {
+    $service->move($creator, $whotV2Table->fresh()->id, ['type' => 'play', 'card' => 0], 'whot_stack_key_3', (int) $whotV2Table->fresh()->version);
+    throw new RuntimeException('A non-defending card was accepted while a Pick Two was pending.');
+} catch (InvalidArgumentException) {}
+$beforeHandCount = count($whotV2Table->fresh()->state['hands'][0]);
+$whotV2Table = $service->move($creator, $whotV2Table->fresh()->id, ['type' => 'draw'], 'whot_stack_key_4', (int) $whotV2Table->fresh()->version);
+if (count($whotV2Table->state['hands'][0]) - $beforeHandCount !== 4) throw new RuntimeException('Failing to defend a stacked Pick Two did not draw the full accumulated penalty (4).');
+if ($whotV2Table->state['pending_penalty'] !== null) throw new RuntimeException('Drawing a pending penalty did not clear it.');
+if ((int) $whotV2Table->current_user_id !== (int) $opponent->id) throw new RuntimeException('Drawing a pending penalty did not pass the turn onward as normal.');
+
+$whotState = $whotV2Table->state;
+$whotState['hands'][1] = [['shape' => 'Cross', 'number' => 2]];
+$whotState['pending_penalty'] = ['rank' => 2, 'amount' => 2];
+$whotState['turn'] = 1;
+TableGame::whereKey($whotV2Table->id)->update(['state' => $whotState, 'current_user_id' => $opponent->id]);
+try {
+    $service->move($opponent, $whotV2Table->fresh()->id, ['type' => 'draw'], 'whot_stack_key_5', (int) $whotV2Table->fresh()->version);
+    throw new RuntimeException('Drawing was accepted while holding a card that could defend the pending penalty.');
+} catch (InvalidArgumentException) {}
+$service->forceClose($whotV2Table->id);
+
+// A table created before this phase shipped must keep playing by the old rules for its whole
+// lifetime - no stacking, the Pick Two resolves and passes immediately, same as always.
+$whotV1Table = $service->create($creator, 'whot', 2, '1.00000000', 'create_key_000016');
+$whotV1Table = $service->join($opponent, $whotV1Table->id);
+TableGame::whereKey($whotV1Table->id)->update(['rules_version' => 1]);
+$whotState = $whotV1Table->fresh()->state;
+$whotState['hands'][0] = [['shape' => 'Circle', 'number' => 2], ['shape' => 'Square', 'number' => 7]];
+$whotState['discard'] = [['shape' => 'Circle', 'number' => 9]];
+$whotState['stock'] = array_fill(0, 10, ['shape' => 'Star', 'number' => 1]);
+$whotState['active_shape'] = 'Circle';
+$whotState['turn'] = 0;
+$beforeOpponentHand = count($whotState['hands'][1]);
+TableGame::whereKey($whotV1Table->id)->update(['state' => $whotState, 'current_user_id' => $creator->id]);
+$whotV1Table = $service->move($creator, $whotV1Table->fresh()->id, ['type' => 'play', 'card' => 0], 'whot_v1_key_1', (int) $whotV1Table->fresh()->version);
+if (array_key_exists('pending_penalty', $whotV1Table->state) && $whotV1Table->state['pending_penalty'] !== null) throw new RuntimeException('A legacy rules_version 1 Whot table used the new stacking penalty instead of its original immediate one.');
+if (count($whotV1Table->state['hands'][1]) - $beforeOpponentHand !== 2) throw new RuntimeException('A legacy Whot table did not immediately deal the Pick Two penalty the old way.');
+// With only 2 players, the old code advances past the penalized seat and wraps back to the
+// player who played the 2 - this is the pre-existing behavior, unchanged here.
+if ((int) $whotV1Table->current_user_id !== (int) $creator->id) throw new RuntimeException('A legacy 2-player Whot Pick Two did not keep its original turn-order quirk.');
+$service->forceClose($whotV1Table->id);
 
 $bjTable = $service->create($creator, 'blackjack', 2, '1.00000000', 'create_key_000013');
 $bjTable = $service->join($opponent, $bjTable->id);
