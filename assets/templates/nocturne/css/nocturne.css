@@ -541,17 +541,35 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-shell.menu-open .nocturne-sidebar { transform: translateX(0); }
     .nocturne-shell.menu-open .nocturne-sidebar-backdrop { display: block; opacity: 1; visibility: visible; }
     .nocturne-main { margin-left: 0; padding: 94px 20px 90px; }
+    /* Floating pill bar, not an edge-to-edge strip: inactive tabs collapse to just their icon,
+       and whichever one is active expands into a filled pill with its icon plus label - the
+       current item is the only one that needs reading, everything else is a quiet icon-only
+       target until tapped. */
     .nocturne-mobile-nav {
-        position: fixed; z-index: 1040; inset: auto 0 0; display: flex; align-items: stretch; justify-content: space-around; min-height: 68px;
-        padding: 6px 10px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--nocturne-line); background: rgba(17,20,41,.97);
-        /* No backdrop-filter here: this bar is fixed and on-screen for every scroll frame on every
-           page, and at 97% background opacity the blur was doing almost nothing visible anyway while
-           still paying its full GPU compositing cost every frame - a classic mobile scroll-jank cause. */
-        transform: translateZ(0);
+        position: fixed; z-index: 1040; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
+        transform: translateX(-50%) translateZ(0);
+        display: flex; align-items: center; gap: 4px;
+        width: calc(100% - 28px); max-width: 420px;
+        padding: 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08);
+        background: #0d0f20; box-shadow: 0 16px 40px rgba(0,0,0,.5);
+        /* No backdrop-filter: this bar is fixed and on-screen for every scroll frame on every
+           page, and the blur cost outweighs any visible difference at this background opacity -
+           a classic mobile scroll-jank cause. */
     }
-    .nocturne-mobile-nav a, .nocturne-mobile-nav button { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 0; background: transparent; color: var(--nocturne-muted); text-decoration: none; font-size: 10px; font-weight: 700; }
-    .nocturne-mobile-nav i { font-size: 21px; }
+    .nocturne-mobile-nav a, .nocturne-mobile-nav button {
+        display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 7px;
+        min-height: 44px; min-width: 0; padding: 0 6px; border: 0; border-radius: 999px;
+        background: transparent; color: var(--nocturne-muted); text-decoration: none;
+        font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden;
+        transition: background .2s ease, color .2s ease, flex-grow .25s ease, padding .25s ease;
+    }
+    .nocturne-mobile-nav i { flex: 0 0 auto; font-size: 19px; }
+    .nocturne-mobile-nav span { display: none; }
     .nocturne-mobile-nav a:hover, .nocturne-mobile-nav button:hover { color: var(--nocturne-green); }
+    .nocturne-mobile-nav a.is-active, .nocturne-mobile-nav button.is-active {
+        flex-grow: 2.2; padding: 0 16px; background: var(--nocturne-raised); color: var(--nocturne-text);
+    }
+    .nocturne-mobile-nav a.is-active span, .nocturne-mobile-nav button.is-active span { display: inline; }
 }
 
 /* The live lobby contains cards with nested grids and long currency strings.
@@ -1607,12 +1625,6 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-rakeback-card__claim .btn--base { display: inline-flex; align-items: center; gap: 8px; }
 .nocturne-rakeback-card__claim .btn--base:disabled { opacity: .45; cursor: not-allowed; }
 
-/* =========================================================================
-   Mobile bottom nav — icon + label tab bar
-   ========================================================================= */
-@media (max-width: 1199.98px) {
-    .nocturne-mobile-nav a.is-active, .nocturne-mobile-nav button.is-active { color: var(--nocturne-green); }
-}
 
 /* About page: match the layered Nocturne reference layout. */
 .nocturne-about-section { margin: 34px 0 42px; }
