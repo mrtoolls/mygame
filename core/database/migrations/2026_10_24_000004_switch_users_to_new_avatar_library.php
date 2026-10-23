@@ -18,8 +18,9 @@ return new class extends Migration
     {
         if (!Schema::hasTable('users') || !Schema::hasColumn('users', 'image')) return;
 
-        User::whereNull('image')
-            ->orWhere('image', 'like', 'assets/images/profilepics/%')
+        User::where(function ($q) {
+                $q->whereNull('image')->orWhere('image', 'like', 'assets/images/profilepics/%');
+            })
             ->chunkById(200, function ($users) {
                 foreach ($users as $user) {
                     $avatarPath = AvatarLibrary::randomPath(AvatarLibrary::normalizeGender($user->gender));
