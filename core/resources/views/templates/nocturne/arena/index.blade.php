@@ -179,17 +179,25 @@
 
                 <div class="nocturne-arena-widget">
                     <h3><i class="ph-fill ph-trophy"></i>@lang('Recent Wins')</h3>
-                    @forelse($recentSiteWins as $log)
-                        <div class="nocturne-arena-widget-row">
-                            <span class="nocturne-arena-widget-row__icon nocturne-arena-widget-row__icon--win"><i class="ph-fill ph-coin"></i></span>
-                            <div>
-                                <strong>{{ showAmount($log->amount) }}</strong>
-                                <small>{{ $log->username ?? 'Someone' }} &middot; {{ __($log->game_name) }}</small>
+                    @if($recentSiteWins->isNotEmpty())
+                        <div class="nocturne-arena-wins-ticker">
+                            <div class="nocturne-arena-wins-ticker__track" style="--win-count:{{ $recentSiteWins->count() }}">
+                                @for($pass = 0; $pass < 2; $pass++)
+                                    @foreach($recentSiteWins as $log)
+                                        <div class="nocturne-arena-widget-row" aria-hidden="{{ $pass === 1 ? 'true' : 'false' }}">
+                                            <span class="nocturne-arena-widget-row__icon nocturne-arena-widget-row__icon--win"><i class="ph-fill ph-coin"></i></span>
+                                            <div>
+                                                <strong>{{ showAmount($log->amount) }}</strong>
+                                                <small>{{ $log->username ?? 'Someone' }} &middot; {{ __($log->game_name) }}</small>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endfor
                             </div>
                         </div>
-                    @empty
+                    @else
                         <p class="nocturne-arena-widget-empty">@lang('No wins yet.')</p>
-                    @endforelse
+                    @endif
                 </div>
 
                 <div class="nocturne-arena-widget">
@@ -332,6 +340,11 @@
 .nocturne-arena-widget{padding:18px;border:1px solid var(--arena-line);border-radius:18px;background:var(--arena-panel)}
 .nocturne-arena-widget h3{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--arena-text);font-size:14.5px;font-weight:800}
 .nocturne-arena-widget h3 i{color:var(--arena-accent)}
+.nocturne-arena-wins-ticker{position:relative;height:150px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(180deg,transparent,#000 10%,#000 90%,transparent)}
+.nocturne-arena-wins-ticker__track{animation:nocturneArenaWinsScroll calc(var(--win-count,6) * 2.6s) linear infinite}
+.nocturne-arena-wins-ticker:hover .nocturne-arena-wins-ticker__track{animation-play-state:paused}
+@keyframes nocturneArenaWinsScroll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@media(prefers-reduced-motion:reduce){.nocturne-arena-wins-ticker__track{animation:none}.nocturne-arena-wins-ticker{height:150px;overflow-y:auto;-webkit-mask-image:none;mask-image:none}}
 
 /* Hero carousel (announcements + live/upcoming competitions) */
 .nocturne-arena-carousel{position:relative;margin-bottom:20px;touch-action:pan-y}

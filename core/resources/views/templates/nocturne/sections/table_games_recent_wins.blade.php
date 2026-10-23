@@ -23,27 +23,31 @@
 <div class="recent-wins">
     <div class="recent-wins__head"><i class="las la-trophy"></i><span>@lang('Recent Wins')</span><small>@lang('Live tables')</small></div>
     @if($liveWins->isNotEmpty())
-        <div class="recent-wins__list">
-            @foreach($liveWins as $win)
-                @php
-                    $player = $win->username ?: __('Player');
-                    $maskedPlayer = mb_substr($player, 0, 2) . str_repeat('•', max(2, min(5, mb_strlen($player) - 2)));
-                @endphp
-                <div class="recent-wins__item">
-                    <span class="recent-wins__badge">
-                        @if($win->image)
-                            <img src="{{ $win->image }}" alt="" loading="lazy" decoding="async">
-                        @else
-                            <i class="las {{ $win->icon }}"></i>
-                        @endif
-                    </span>
-                    <div class="recent-wins__info">
-                        <strong>{{ __($win->game_name) }}</strong>
-                        <small>{{ $maskedPlayer }} · {{ $win->at?->diffForHumans() ?? __('Recently') }}</small>
-                    </div>
-                    <span class="recent-wins__amount">{{ showAmount($win->amount) }}</span>
-                </div>
-            @endforeach
+        <div class="recent-wins__viewport">
+            <div class="recent-wins__track" style="--win-count:{{ $liveWins->count() }}">
+                @for($pass = 0; $pass < 2; $pass++)
+                    @foreach($liveWins as $win)
+                        @php
+                            $player = $win->username ?: __('Player');
+                            $maskedPlayer = mb_substr($player, 0, 2) . str_repeat('•', max(2, min(5, mb_strlen($player) - 2)));
+                        @endphp
+                        <div class="recent-wins__item" aria-hidden="{{ $pass === 1 ? 'true' : 'false' }}">
+                            <span class="recent-wins__badge">
+                                @if($win->image)
+                                    <img src="{{ $win->image }}" alt="" loading="lazy" decoding="async">
+                                @else
+                                    <i class="las {{ $win->icon }}"></i>
+                                @endif
+                            </span>
+                            <div class="recent-wins__info">
+                                <strong>{{ __($win->game_name) }}</strong>
+                                <small>{{ $maskedPlayer }} · {{ $win->at?->diffForHumans() ?? __('Recently') }}</small>
+                            </div>
+                            <span class="recent-wins__amount">{{ showAmount($win->amount) }}</span>
+                        </div>
+                    @endforeach
+                @endfor
+            </div>
         </div>
     @else
         <div class="recent-wins__empty"><i class="las la-trophy"></i><span>@lang('Live table wins will appear here as games finish.')</span></div>
