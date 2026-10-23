@@ -21,12 +21,12 @@
         }
     }
 @endphp
-@if($liveWins->isNotEmpty())
-    <section class="nocturne-ticker-wins nocturne-ticker-wins--static">
-        <div class="nocturne-ticker-wins__head">
-            <h2><i class="ph-fill ph-trophy"></i>@lang('Recent Wins')</h2>
-            <span class="nocturne-ticker-wins__live"><i></i>@lang('LIVE TABLES')</span>
-        </div>
+<section class="nocturne-ticker-wins nocturne-ticker-wins--static">
+    <div class="nocturne-ticker-wins__head">
+        <h2><i class="ph-fill ph-trophy"></i>@lang('Recent Wins')</h2>
+        <span class="nocturne-ticker-wins__live"><i></i>@lang('LIVE TABLES')</span>
+    </div>
+    @if($liveWins->isNotEmpty())
         <div class="nocturne-game-scroller">
             @foreach($liveWins as $i => $win)
                 @php
@@ -51,5 +51,7 @@
                 </article>
             @endforeach
         </div>
-    </section>
-@endif
+    @else
+        <div class="nocturne-community-empty"><i class="ph-fill ph-trophy"></i><span>@lang('Live table wins will appear here as games finish.')</span></div>
+    @endif
+</section>

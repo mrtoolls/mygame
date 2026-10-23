@@ -47,12 +47,12 @@
     // continuous ticker that's supposed to represent the whole site, not just one game type.
     $bigWins = $normalWins->take(16)->merge($tableWins->take(8))->sortByDesc('at')->values();
 @endphp
-@if($bigWins->isNotEmpty())
-    <section class="nocturne-ticker-wins">
-        <div class="nocturne-ticker-wins__head">
-            <h2><i class="ph-fill ph-lightning"></i>@lang('Latest Big Wins')</h2>
-            <span class="nocturne-ticker-wins__live"><i></i>@lang('LIVE')</span>
-        </div>
+<section class="nocturne-ticker-wins">
+    <div class="nocturne-ticker-wins__head">
+        <h2><i class="ph-fill ph-lightning"></i>@lang('Latest Big Wins')</h2>
+        <span class="nocturne-ticker-wins__live"><i></i>@lang('LIVE')</span>
+    </div>
+    @if($bigWins->isNotEmpty())
         <div class="nocturne-ticker-wins__viewport">
             <div class="nocturne-ticker-wins__track" style="--ticker-count:{{ $bigWins->count() }}">
                 @for($pass = 0; $pass < 2; $pass++)
@@ -81,5 +81,7 @@
                 @endfor
             </div>
         </div>
-    </section>
-@endif
+    @else
+        <div class="nocturne-community-empty"><i class="ph-fill ph-lightning"></i><span>@lang('Big wins will appear here as activity is recorded.')</span></div>
+    @endif
+</section>
