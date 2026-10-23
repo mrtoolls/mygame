@@ -217,9 +217,14 @@
             .table-card__icon{flex:0 0 38px;width:38px;height:38px;font-size:19px}
             .table-card__heading h2{font-size:15px}
             .table-live-count{font-size:9px}
-            .table-game-picker{gap:7px}
-            .table-game-picker__item{flex:0 0 30%;padding:8px 5px}
-            .table-game-picker__icon{width:34px;height:34px;font-size:15px}
+            .table-game-picker{gap:7px !important}
+            /* !important: this media query sits in an earlier <style> block than the
+               unconditional base .table-game-picker__item rule further down the page, and with
+               equal selector specificity the later block always wins regardless of viewport -
+               same cross-block cascade fight .nocturne-game-scroller__item already has to win
+               elsewhere in this theme. */
+            .table-game-picker__item{flex:0 0 30% !important;padding:8px 5px}
+            .table-game-picker__icon{width:34px !important;height:34px !important;font-size:15px !important}
             .table-field-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
             .table-cost-preview{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 6px}
             .table-cost-preview__net{grid-column:1/-1;padding-top:7px;border-top:1px dashed var(--tg-line)}
@@ -252,7 +257,7 @@
            fit" scales with the actual column width instead of a fixed px count. Touch users
            swipe it directly; the arrow pair is a desktop-only affordance next to it, external
            to the scroller rather than overlaid, so it can never cover a tile's icon or label. */
-        .table-game-picker-wrap{display:flex;align-items:center;gap:8px}
+        .table-game-picker-wrap{display:flex;align-items:center;gap:8px;min-width:0}
         .table-game-picker-nav{display:none;flex:0 0 auto;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--tg-line);border-radius:50%;background:var(--tg-raised);color:var(--tg-text);cursor:pointer;font-size:12px;transition:border-color .15s ease,color .15s ease,background .15s ease}
         .table-game-picker-nav:hover{border-color:rgba(0,239,135,.5);color:var(--tg-green);background:rgba(0,239,135,.08)}
         .table-game-picker-nav:disabled{opacity:.3;cursor:default}
