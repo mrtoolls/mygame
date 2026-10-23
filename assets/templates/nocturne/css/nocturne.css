@@ -657,7 +657,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-actions .nocturne-deposit i, .nocturne-actions .nocturne-login i, .nocturne-actions .nocturne-register i { font-size: 19px; }
     .nocturne-avatar, .nocturne-notifications { width: 32px; height: 36px; font-size: 21px; }
     .nocturne-user-dropdown { right: -4px; }
-    .nocturne-main { padding: 82px 12px 86px; }
+    .nocturne-main { padding: 82px 6px 86px; }
     .nocturne-main .py-100 { padding-top: 12px !important; padding-bottom: 30px !important; }
     .nocturne-main h1 { font-size: 25px; }
     .nocturne-main h2 { font-size: 22px; }
