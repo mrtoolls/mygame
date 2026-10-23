@@ -57,7 +57,12 @@
 @push('style')
 <style>
 :root{--news-accent:#00e78a;--news-bg:#10152a;--news-panel:#151a31;--news-muted:#858eaf;--news-line:rgba(133,142,175,.18);--news-text:#f5f6ff}
-.nocturne-news-page{max-width:1480px;margin:0 auto;padding:24px 20px 60px}
+/* No cap of its own beyond the shell's own content area (.nocturne-content, 1680px) - an
+   extra, tighter max-width here was the actual issue: it left a large chunk of the available
+   width next to the sidebar unused on anything wider than that, shrinking the cards into a
+   narrow column instead of letting them use the space the page actually has, the way the
+   reference site does. */
+.nocturne-news-page{max-width:1680px;margin:0 auto;padding:24px 20px 60px}
 .nocturne-news-crumb{display:flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--news-muted);font-size:13px;font-weight:700}
 .nocturne-news-crumb a{color:var(--news-muted);text-decoration:none}
 .nocturne-news-crumb a:hover{color:var(--news-text)}
