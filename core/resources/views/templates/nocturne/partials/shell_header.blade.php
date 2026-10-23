@@ -7,9 +7,11 @@
             <i class="ph-fill ph-caret-left"></i>
         </button>
     </div>
-    <button class="nocturne-menu-toggle" type="button" aria-label="@lang('Toggle menu')" aria-expanded="false">
-        <i class="ph-fill ph-list"></i>
-    </button>
+    @unless(!empty($hideMenuForGuest))
+        <button class="nocturne-menu-toggle" type="button" aria-label="@lang('Toggle menu')" aria-expanded="false">
+            <i class="ph-fill ph-list"></i>
+        </button>
+    @endunless
     <nav class="nocturne-topnav" aria-label="@lang('Primary navigation')">
         <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
         @auth

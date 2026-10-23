@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends Controller {
+    /** Pages under the generic {slug} catch-all that stay public for guests - everything else
+     *  behind it now requires login, per the same policy as every other page on the site. */
+    public const GUEST_ALLOWED_PAGE_SLUGS = ['about-us', 'licenses-security'];
+
     public function index() {
         if (isset($_GET['reference'])) {
             $reference = $_GET['reference'];
@@ -32,7 +36,28 @@ class SiteController extends Controller {
         return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage'));
     }
 
+    /** Public landing page at "/" for first-time/logged-out visitors. Logged-in users are sent
+     *  on to the real homepage (now at /home) instead of seeing the marketing page again. */
+    public function landing() {
+        if (auth()->check()) {
+            return redirect()->route('home');
+        }
+
+        $pageTitle = 'Winxpot - Gamers worldwide, communities everywhere';
+        $communityUsers = \App\Models\User::whereNotNull('image')
+            ->where('status', Status::USER_ACTIVE)
+            ->inRandomOrder()
+            ->limit(10)
+            ->get(['id', 'username', 'image']);
+
+        return view('Template::landing', compact('pageTitle', 'communityUsers'));
+    }
+
     public function pages($slug) {
+        if (!auth()->check() && !in_array($slug, self::GUEST_ALLOWED_PAGE_SLUGS, true)) {
+            return redirect()->route('user.login');
+        }
+
         $page        = Page::where('tempname', activeTemplate())->where('slug', $slug)->firstOrFail();
         $pageTitle   = $page->name;
         $sections    = $page->secs;
@@ -43,7 +68,8 @@ class SiteController extends Controller {
         }
         $seoContents = $page->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
-        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage'), isset($feedbacks) ? compact('feedbacks', 'feedbackStats') : []);
+        $hideMenuForGuest = $slug === 'about-us' && !auth()->check();
+        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'hideMenuForGuest'), isset($feedbacks) ? compact('feedbacks', 'feedbackStats') : []);
     }
 
     public function games() {

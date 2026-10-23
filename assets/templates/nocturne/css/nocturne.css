@@ -269,6 +269,9 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-logout { display: flex; align-items: center; gap: 10px; padding: 12px 18px; color: var(--nocturne-muted); text-decoration: none; font-weight: 700; }
 .nocturne-sidebar-backdrop { display: none; }
 .nocturne-main { min-height: 100vh; margin-left: 316px; padding: 112px clamp(20px, 3vw, 50px) 36px; }
+/* About Us, viewed signed out: the sidebar is hidden entirely (frontend.blade.php), so the
+   content area shouldn't keep reserving the fixed sidebar's width as empty space next to it. */
+.nocturne-shell--no-sidebar .nocturne-main { margin-left: 0; }
 .nocturne-content { width: 100%; max-width: 1680px; margin: 0 auto; }
 .nocturne-content > .container, .nocturne-main > .container { width: 100%; max-width: none; padding-right: 0; padding-left: 0; }
 .nocturne-main .py-100 { padding-top: 18px !important; padding-bottom: 55px !important; }

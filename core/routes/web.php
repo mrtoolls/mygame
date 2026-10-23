@@ -92,7 +92,7 @@ Route::controller('SiteController')->group(function () {
     Route::post('/subscribe', 'subscribe')->name('subscribe.post');
     Route::get('cookie-policy', 'cookiePolicy')->name('cookie.policy');
     Route::get('/cookie/accept', 'cookieAccept')->name('cookie.accept');
-    Route::get('games', 'games')->name('games');
+    Route::get('games', 'games')->middleware('auth')->name('games');
     Route::get('blog', 'blog')->name('blog');
     Route::get('blog/{slug}', 'blogDetails')->name('blog.details');
     Route::post('blog/{slug}/comment', 'blogCommentStore')->middleware(['auth', 'throttle:10,1'])->name('blog.comment.store');
@@ -103,12 +103,23 @@ Route::controller('SiteController')->group(function () {
     // Arena (social feed) - must be registered before the /{slug} catch-all
     // below, otherwise "arena" gets swallowed as a CMS page-slug lookup and
     // 404s. Write actions live under the authenticated user.arena.* routes
-    // in routes/user.php.
-    Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->name('arena.index');
-    Route::get('arena/post/{post}/comments', [\App\Http\Controllers\User\ArenaCommentController::class, 'index'])->name('arena.comments.index');
-    Route::get('arena/post/{post}', [\App\Http\Controllers\User\ArenaController::class, 'show'])->name('arena.post.show');
-    Route::get('arena/u/{username}', [\App\Http\Controllers\User\ArenaController::class, 'profile'])->name('arena.profile');
+    // in routes/user.php. Login-only, same as everything else besides the
+    // explicit public allowlist (blog, about-us, licenses-security, the 4
+    // policy pages, and the public landing page itself).
+    Route::get('arena', [\App\Http\Controllers\User\ArenaController::class, 'index'])->middleware('auth')->name('arena.index');
+    Route::get('arena/post/{post}/comments', [\App\Http\Controllers\User\ArenaCommentController::class, 'index'])->middleware('auth')->name('arena.comments.index');
+    Route::get('arena/post/{post}', [\App\Http\Controllers\User\ArenaController::class, 'show'])->middleware('auth')->name('arena.post.show');
+    Route::get('arena/u/{username}', [\App\Http\Controllers\User\ArenaController::class, 'profile'])->middleware('auth')->name('arena.profile');
+
+    // "/home" must be registered before the /{slug} catch-all below, same reasoning as the
+    // arena routes above - otherwise "home" gets swallowed as a CMS page-slug lookup and 404s
+    // instead of ever reaching this route. "/" is the public marketing landing page (guests, or
+    // logged-in users get bounced onward to /home from inside landing()); the real homepage/
+    // dashboard moved to /home, login-only - kept the route *name* "home" unchanged since
+    // dozens of views/redirects already call route('home') expecting "take the user to their
+    // home base", which is still correct now that it resolves to /home instead of /.
+    Route::get('/home', 'index')->middleware('auth')->name('home');
 
     Route::get('/{slug}', 'pages')->name('pages');
-    Route::get('/', 'index')->name('home');
+    Route::get('/', 'landing')->name('landing');
 });
