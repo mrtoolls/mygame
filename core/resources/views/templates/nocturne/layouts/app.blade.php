@@ -750,7 +750,9 @@
             })();
         </script>
     @endauth
-    @include('partials.support_chat_widget')
+    @unless(request()->routeIs('landing'))
+        @include('partials.support_chat_widget')
+    @endunless
 </body>
 
 </html>
