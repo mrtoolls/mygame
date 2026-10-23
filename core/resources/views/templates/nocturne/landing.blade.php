@@ -13,7 +13,7 @@
 
             <div class="wx-landing__account">
                 <button type="button" class="wx-landing__account-btn" id="wx-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="@lang('Account menu')">
-                    <i class="ph-fill ph-user-circle"></i>
+                    <i class="ph-fill ph-user"></i>
                 </button>
                 <div class="wx-landing__account-menu" id="wx-account-menu" hidden>
                     <a href="{{ route('user.login') }}"><i class="ph-bold ph-sign-in"></i>@lang('Sign In')</a>
@@ -45,6 +45,26 @@
                 </svg>
                 @lang('Install App')
             </button>
+        </div>
+    </div>
+
+    {{-- Same live endpoint/format as the "Winxpot Statistics" section on the About Us page
+         (resources/views/templates/nocturne/sections/about_statistics.blade.php -> StatsController@live),
+         so the numbers shown here always agree with it. --}}
+    <div class="wx-landing__stats" id="wx-stats" aria-hidden="true">
+        <div class="wx-landing__stat">
+            <strong data-stat="online">0</strong>
+            <span>@lang('Total Players Online')</span>
+        </div>
+        <span class="wx-landing__stat-sep"></span>
+        <div class="wx-landing__stat">
+            <strong data-stat="registered">0</strong>
+            <span>@lang('Total Registered Players')</span>
+        </div>
+        <span class="wx-landing__stat-sep"></span>
+        <div class="wx-landing__stat">
+            <strong data-stat="games">0</strong>
+            <span>@lang('Total Games Available')</span>
         </div>
     </div>
 
@@ -88,7 +108,14 @@
    mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow-y stays
    auto purely as a safety net for an unusually short/zoomed viewport; content below is sized so
    it shouldn't ever need it. */
-.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:4.5rem 0 0;margin:calc(-1 * clamp(0px,0px,0px))}
+.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:4.5rem 0 1.4rem;margin:calc(-1 * clamp(0px,0px,0px));scrollbar-width:thin;scrollbar-color:rgba(0,238,136,.4) transparent}
+/* Slim, on-brand scrollbar instead of the browser's default wide one - this section is
+   effectively the whole page, so its own scrollbar (the overflow-y:auto safety net) reads as
+   "the page's" scrollbar. */
+.wx-landing::-webkit-scrollbar{width:6px}
+.wx-landing::-webkit-scrollbar-track{background:transparent}
+.wx-landing::-webkit-scrollbar-thumb{background:rgba(0,238,136,.35);border-radius:10px}
+.wx-landing::-webkit-scrollbar-thumb:hover{background:rgba(0,238,136,.55)}
 .wx-landing::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(0,238,136,.03) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(70,60,200,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 .wx-landing__topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2.5rem;padding:1.2rem 2rem;z-index:20;background:linear-gradient(to bottom,rgba(7,10,24,.85) 0%,rgba(7,10,24,.4) 70%,transparent 100%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -104,8 +131,8 @@
 .wx-landing__nav>a:hover::after{width:100%}
 
 .wx-landing__account{position:relative}
-.wx-landing__account-btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:rgba(255,255,255,.06);color:var(--wxl-ink);font-size:21px;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
-.wx-landing__account-btn:hover,.wx-landing__account-btn[aria-expanded="true"]{border-color:rgba(0,238,136,.5);color:var(--wxl-green);background:rgba(0,238,136,.1)}
+.wx-landing__account-btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:linear-gradient(145deg,rgba(0,238,136,.18),rgba(255,255,255,.04));color:var(--wxl-ink);font-size:19px;cursor:pointer;transition:border-color .2s,background .2s,color .2s,box-shadow .2s}
+.wx-landing__account-btn:hover,.wx-landing__account-btn[aria-expanded="true"]{border-color:rgba(0,238,136,.6);color:var(--wxl-green);background:linear-gradient(145deg,rgba(0,238,136,.3),rgba(255,255,255,.06));box-shadow:0 0 0 4px rgba(0,238,136,.12)}
 .wx-landing__account-menu{position:absolute;top:calc(100% + 10px);right:0;z-index:30;display:grid;gap:2px;width:170px;padding:7px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:#10142a;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .wx-landing__account-menu a{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;color:var(--wxl-ink);text-decoration:none;font-size:13.5px;font-weight:700}
 .wx-landing__account-menu a i{color:var(--wxl-green);font-size:16px}
@@ -121,6 +148,15 @@
 .wx-landing__oa:nth-child(1){left:6%;top:14%}
 .wx-landing__oa:nth-child(2){left:100%;top:38%}
 
+/* Small "online" status dot on each avatar (ring + map clusters), alternating green/white per
+   instance and gently blinking rather than sitting static. Inset (not overflowing the edge) -
+   the avatar itself is a circular overflow:hidden clip, so a dot hanging past its border would
+   get cut off. */
+.wx-landing__dot{position:absolute;right:7%;bottom:7%;width:26%;height:26%;min-width:6px;min-height:6px;max-width:11px;max-height:11px;border-radius:50%;border:1.5px solid var(--wxl-bg);z-index:7;animation:wxlDotBlink 1.8s ease-in-out infinite}
+.wx-landing__dot--green{background:var(--wxl-green);box-shadow:0 0 6px rgba(0,238,136,.7)}
+.wx-landing__dot--white{background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
+@keyframes wxlDotBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
 .wx-landing__copy{position:relative;z-index:10;flex:none;padding:0 20px;margin-top:5.5rem}
 .wx-landing__copy h1{margin:0 auto;max-width:19em;text-wrap:balance;font-size:clamp(22px,min(4.2vw,6.2vh),58px);line-height:1.12;font-weight:700;letter-spacing:-.025em;background:linear-gradient(135deg,#f2f5ff 0%,#c8d0f0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 2px 30px rgba(0,238,136,.08)}
 
@@ -135,6 +171,14 @@
 .wx-landing__btn--ghost svg{color:var(--wxl-green)}
 .wx-landing__btn--ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-3px) scale(1.02);border-color:rgba(0,238,136,.35);box-shadow:0 0 0 5px rgba(0,238,136,.08),0 14px 36px rgba(0,0,0,.4)}
 
+/* Live counters, same endpoint/format as the About Us "Winxpot Statistics" section (see the
+   script block below) - a glass strip that stays a single inline row on every screen size. */
+.wx-landing__stats{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:22px;margin-top:clamp(16px,2.6vh,28px);padding:14px 28px;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.wx-landing__stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:1}
+.wx-landing__stat strong{font-size:clamp(16px,2vw,22px);font-weight:800;letter-spacing:-.01em;line-height:1.15;background:linear-gradient(135deg,#eafff5,var(--wxl-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap}
+.wx-landing__stat span{font-size:10.5px;font-weight:700;letter-spacing:.02em;line-height:1.3;color:var(--wxl-mute);white-space:nowrap}
+.wx-landing__stat-sep{width:1px;align-self:stretch;background:rgba(255,255,255,.14);flex:none}
+
 .wx-landing__map{position:relative;flex:none;left:50%;transform:translateX(-50%);margin-top:clamp(20px,4vh,40px);margin-bottom:-2vh;z-index:2}
 .wx-landing__map canvas{display:block;-webkit-mask-image:radial-gradient(ellipse at 50% 58%,#000 52%,transparent 100%);mask-image:radial-gradient(ellipse at 50% 58%,#000 52%,transparent 100%)}
 .wx-landing__cl{position:absolute;display:flex;transform:translate(-50%,-50%);--a:clamp(24px,2.7vw,42px);z-index:6}
@@ -145,7 +189,10 @@
 .wx-landing__tag{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:5px 11px;border-radius:999px;background:#10142a;border:1px solid rgba(0,238,136,.4);color:var(--wxl-green);font-size:11px;font-weight:800;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .15s ease}
 .wx-landing__tag.is-visible{opacity:1}
 
-.wx-landing__footer{position:relative;z-index:20;padding:0 1rem 1.6rem;margin-top:auto}
+/* A fixed gap (not margin-top:auto) so leftover vertical space on a tall viewport splits evenly
+   above the whole group and below the footer via the section's own justify-content:center,
+   instead of all of it pooling into one large gap right above the footer. */
+.wx-landing__footer{position:relative;z-index:20;padding:0 1rem;margin-top:clamp(14px,2.4vh,28px)}
 .wx-landing__footer-links{display:flex;justify-content:center;gap:1.8rem;flex-wrap:wrap;margin-bottom:10px}
 .wx-landing__footer-links a{display:inline-flex;align-items:center;gap:6px;color:var(--wxl-mute);text-decoration:none;font-size:.85rem;font-weight:600;letter-spacing:.02em;transition:color .2s,text-shadow .2s}
 .wx-landing__footer-links a i{font-size:13px;color:rgba(141,149,189,.7);transition:color .2s}
@@ -183,21 +230,22 @@
 
 @media(max-width:640px){
     /* Height/overflow/justify-content:center are inherited from the base rule above, so the
-       whole in-flow group (logo + headline + buttons + map + footer, topbar included - see
-       below) is centered as ONE unit within the single viewport. Any slack splits evenly above
-       the logo and below the footer, instead of pooling into one large gap between the buttons
-       and the map like a plain flex-start/space-between layout produced. */
-    .wx-landing{padding-top:0;padding-bottom:.6rem}
-    /* On mobile the topbar joins the normal flex flow (not absolutely pinned to the very top)
-       so the logo moves down a little along with the rest of the group when it's centered,
-       while still rendering first/above everything else. Nav (Home/Arena/Blogs/Sign in) moves
-       to the footer hamburger sheet instead, so the topbar doesn't compete with the headline
-       for room right below it. */
-    .wx-landing__topbar{position:relative;top:auto;left:auto;right:auto;justify-content:center;padding:.3rem 1rem .4rem;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+       copy/stats/map/footer group is centered as one unit within the single viewport - any
+       slack splits evenly above and below it instead of pooling into one large gap between the
+       buttons and the map like a plain flex-start/space-between layout produced. The topbar
+       stays absolutely pinned to the very top (not part of that group) so the logo and account
+       icon sit fixed at the corners regardless of how that group is centered. */
+    .wx-landing{padding-top:4.1rem;padding-bottom:.6rem}
+    /* Logo pinned top-left, account icon (Sign In/Up dropdown) pinned top-right - the ordinary
+       nav links (Home/Arena/Blogs) move to the footer hamburger sheet instead so the topbar
+       doesn't compete with the headline for room right below it. */
+    .wx-landing__topbar{justify-content:space-between;padding:.9rem 1rem}
     .wx-landing__logo{position:relative;padding:4px 10px}
     .wx-landing__logo::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,238,136,.16),transparent 72%);border-radius:999px;z-index:-1}
     .wx-landing__logo img{max-width:106px;max-height:28px}
-    .wx-landing__nav{display:none}
+    .wx-landing__nav{gap:0}
+    .wx-landing__nav>a{display:none}
+    .wx-landing__account-btn{width:36px;height:36px;font-size:17px}
     .wx-landing__footer-actions{display:flex;margin-bottom:8px}
     .wx-landing__copy{margin-top:.6rem;padding:0 16px}
     .wx-landing__hl-break{display:block}
@@ -209,7 +257,12 @@
     .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1rem;width:100%;padding:0 16px}
     .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:46px;padding:0 10px;font-size:12.5px;gap:6px}
     .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
-    .wx-landing__map{margin-top:.45rem;margin-bottom:0}
+    /* Stays one inline row even on narrow phones - labels are allowed to wrap to two short
+       lines rather than forcing the three columns themselves to stack. */
+    .wx-landing__stats{gap:6px;padding:9px 8px;margin-top:.5rem;border-radius:14px}
+    .wx-landing__stat strong{font-size:13.5px}
+    .wx-landing__stat span{font-size:7.6px;white-space:normal;line-height:1.15}
+    .wx-landing__map{margin-top:.4rem;margin-bottom:0}
     /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
        actually shrinks enough), and the thin ring line alone serves no purpose without them -
        hidden entirely on mobile rather than trying to miniaturize something that only reads
@@ -262,12 +315,19 @@
     // A named global (not inline-HTML-string injection into onerror) avoids any quote-escaping
     // fragility between this attribute and the fallback markup's own attributes.
     window.__wxAvatarFallback = function (img, letter) { img.outerHTML = letterFallbackHtml(letter); };
+    // A sibling dot, not a child of the <img> - the outerHTML swap above only touches the <img>
+    // tag itself, so this is untouched either way.
+    function statusDotHtml() {
+        var color = Math.random() < 0.5 ? 'green' : 'white';
+        return '<i class="wx-landing__dot wx-landing__dot--' + color + '" aria-hidden="true"></i>';
+    }
     function avatarMarkup(i) {
         var u = COMMUNITY[i % COMMUNITY.length];
+        var dot = statusDotHtml();
         if (u && u.avatar) {
-            return '<img src="' + u.avatar + '" alt="" loading="eager" onerror="window.__wxAvatarFallback(this,\'' + avatarLetter(u) + '\')">';
+            return '<img src="' + u.avatar + '" alt="" loading="eager" onerror="window.__wxAvatarFallback(this,\'' + avatarLetter(u) + '\')">' + dot;
         }
-        return letterFallbackHtml(avatarLetter(u));
+        return letterFallbackHtml(avatarLetter(u)) + dot;
     }
     function usernameFor(i) {
         var u = COMMUNITY[i % COMMUNITY.length];
@@ -403,6 +463,48 @@
     }
     draw();
     addEventListener('resize', draw);
+
+    // ── live stats strip (same endpoint/format as the About Us "Winxpot Statistics" section,
+    //    resources/views/templates/nocturne/sections/about_statistics.blade.php) ──
+    (function () {
+        var nodes = document.querySelectorAll('[data-stat]');
+        if (!nodes.length) return;
+        function trimZeros(str) {
+            return str.indexOf('.') === -1 ? str : str.replace(/0+$/, '').replace(/\.$/, '');
+        }
+        function compact(value) {
+            value = Number(value);
+            if (value >= 1e6) return trimZeros((value / 1e6).toFixed(1)) + 'M';
+            if (value >= 1e3) return trimZeros((value / 1e3).toFixed(1)) + 'K';
+            return value.toLocaleString('en-US');
+        }
+        function formatStat(key, value) {
+            var text = key === 'online' ? Math.round(value).toLocaleString('en-US') : compact(value);
+            return text + (key !== 'games' ? '+' : '');
+        }
+        // Fast eased count-up (not a slow 1-by-1 tick) from 0 to the real fetched value.
+        function countUp(node, key, target) {
+            var duration = 900, start = null;
+            function tick(now) {
+                if (start === null) start = now;
+                var p = Math.min((now - start) / duration, 1), eased = 1 - Math.pow(1 - p, 3);
+                node.textContent = formatStat(key, target * eased);
+                if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+        fetch('{{ route('stats.live') }}', { headers: { Accept: 'application/json' } })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+                nodes.forEach(function (node) {
+                    var key = node.dataset.stat;
+                    if (data[key] === undefined) return;
+                    countUp(node, key, Number(data[key]));
+                });
+            })
+            .catch(function () {});
+    })();
 
     // ── account dropdown (Sign In / Sign Up) ──
     var toggle = document.getElementById('wx-account-toggle'), menu = document.getElementById('wx-account-menu');
