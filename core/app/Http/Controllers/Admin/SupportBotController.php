@@ -106,7 +106,13 @@ class SupportBotController extends Controller
 
     private function savePhoto(Request $request): string
     {
-        $directory = public_path('assets/images/chatbot');
+        // Plain relative path, not public_path() - every other upload in this codebase
+        // (fileUploader()/FileManager) writes with a bare relative path like this one, which is
+        // what actually lands inside the "assets" directory that asset() URLs resolve against
+        // on this deployment. public_path() resolves to core/public/..., a location nothing
+        // else here writes to or serves "assets/..." URLs from - that mismatch was why an
+        // uploaded chatbot photo never actually showed up where its <img src> pointed.
+        $directory = 'assets/images/chatbot';
         File::ensureDirectoryExists($directory);
         $photo = $request->file('chatbot_photo');
         $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
@@ -118,7 +124,7 @@ class SupportBotController extends Controller
     private function deletePhoto(?string $filename): void
     {
         if ($filename) {
-            $path = public_path('assets/images/chatbot/' . basename($filename));
+            $path = 'assets/images/chatbot/' . basename($filename);
             if (File::exists($path)) {
                 File::delete($path);
             }

@@ -750,9 +750,7 @@
             })();
         </script>
     @endauth
-    @if (request()->routeIs('home') || request()->routeIs('user.home'))
-        @include('partials.support_chat_widget')
-    @endif
+    @include('partials.support_chat_widget')
 </body>
 
 </html>
