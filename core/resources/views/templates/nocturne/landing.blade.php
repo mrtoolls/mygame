@@ -26,7 +26,7 @@
     <div class="wx-landing__ring" aria-hidden="true" id="wx-ring"></div>
 
     <div class="wx-landing__copy">
-        <h1>@lang('Play, compete and connect')<br class="wx-landing__hl-break"> @lang('with gamers worldwide')</h1>
+        <h1>@lang('Play, Compete and Connect')<br class="wx-landing__hl-break"> @lang('with Gamers Worldwide')</h1>
         <div class="wx-landing__cta">
             <a class="wx-landing__btn wx-landing__btn--primary" href="{{ route('user.login') }}">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -84,7 +84,11 @@
 @push('style')
 <style>
 :root{--wxl-bg:#070a18;--wxl-ink:#f2f5ff;--wxl-mute:#8d95bd;--wxl-green:#00ee88;--wxl-green-d:#04301f}
-.wx-landing{position:relative;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:4.5rem 0 0;margin:calc(-1 * clamp(0px,0px,0px))}
+/* Hard-capped to exactly one viewport height (not min-height) on every breakpoint, not just
+   mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow-y stays
+   auto purely as a safety net for an unusually short/zoomed viewport; content below is sized so
+   it shouldn't ever need it. */
+.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:4.5rem 0 0;margin:calc(-1 * clamp(0px,0px,0px))}
 .wx-landing::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(0,238,136,.03) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(70,60,200,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 .wx-landing__topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2.5rem;padding:1.2rem 2rem;z-index:20;background:linear-gradient(to bottom,rgba(7,10,24,.85) 0%,rgba(7,10,24,.4) 70%,transparent 100%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -178,24 +182,26 @@
 .wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
 
 @media(max-width:640px){
-    /* Fixed to exactly one screen, not min-height - the whole point is nothing scrolls here.
-       overflow-y stays auto (not hidden) purely as a safety net on an unusually short/zoomed
-       viewport; everything below is sized so it shouldn't ever need it. justify-content:
-       space-between replaces the old flex-start + footer margin-top:auto combo - it distributes
-       the gap evenly between the copy/map/footer blocks instead of letting it all pool into one
-       large empty gap wherever the auto-margin happened to land. */
-    .wx-landing{height:100dvh;min-height:0;overflow-y:auto;padding-top:4.2rem;padding-bottom:.9rem;justify-content:space-between}
-    /* Logo alone, centered - nav (Home/Arena/Blogs/Sign in) moves to the footer hamburger sheet
-       instead, so the topbar doesn't compete with the headline for room right below it. */
-    .wx-landing__topbar{justify-content:center;padding:1.4rem 1rem .6rem}
+    /* Height/overflow/justify-content:center are inherited from the base rule above, so the
+       whole in-flow group (logo + headline + buttons + map + footer, topbar included - see
+       below) is centered as ONE unit within the single viewport. Any slack splits evenly above
+       the logo and below the footer, instead of pooling into one large gap between the buttons
+       and the map like a plain flex-start/space-between layout produced. */
+    .wx-landing{padding-top:0;padding-bottom:.6rem}
+    /* On mobile the topbar joins the normal flex flow (not absolutely pinned to the very top)
+       so the logo moves down a little along with the rest of the group when it's centered,
+       while still rendering first/above everything else. Nav (Home/Arena/Blogs/Sign in) moves
+       to the footer hamburger sheet instead, so the topbar doesn't compete with the headline
+       for room right below it. */
+    .wx-landing__topbar{position:relative;top:auto;left:auto;right:auto;justify-content:center;padding:.3rem 1rem .4rem;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
     .wx-landing__logo{position:relative;padding:4px 10px}
     .wx-landing__logo::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,238,136,.16),transparent 72%);border-radius:999px;z-index:-1}
     .wx-landing__logo img{max-width:106px;max-height:28px}
     .wx-landing__nav{display:none}
     .wx-landing__footer-actions{display:flex;margin-bottom:8px}
-    .wx-landing__copy{margin-top:1.4rem;padding:0 16px}
+    .wx-landing__copy{margin-top:.6rem;padding:0 16px}
     .wx-landing__hl-break{display:block}
-    /* Sized so "Play, compete and connect" (the longer of the two forced lines) reliably fits
+    /* Sized so "Play, Compete and Connect" (the longer of the two forced lines) reliably fits
        on one line down to ~360px-wide phones, rather than wrapping a third time on its own. */
     .wx-landing__copy h1{font-size:clamp(18px,5.3vw,22px);line-height:1.22;max-width:none}
     /* Side by side, native-app style, not stacked full-width - each button shrinks to fit
@@ -203,7 +209,7 @@
     .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1rem;width:100%;padding:0 16px}
     .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:46px;padding:0 10px;font-size:12.5px;gap:6px}
     .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
-    .wx-landing__map{margin-top:.6rem;margin-bottom:0}
+    .wx-landing__map{margin-top:.45rem;margin-bottom:0}
     /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
        actually shrinks enough), and the thin ring line alone serves no purpose without them -
        hidden entirely on mobile rather than trying to miniaturize something that only reads
@@ -214,7 +220,7 @@
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
        on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row. */
     .wx-landing__footer-links{display:none}
-    .wx-landing__footer{padding:0 1rem;margin-top:0}
+    .wx-landing__footer{padding:0 1rem;margin-top:.8rem}
     .wx-landing__copyright{font-size:.65rem;margin-top:6px}
 }
 @media(min-width:641px) and (max-width:1024px){
@@ -366,10 +372,11 @@
 
     function draw() {
         var vw = innerWidth, vh = innerHeight, mobile = vw <= 640,
-            // Mobile needs a noticeably smaller share of the screen than desktop so the whole
-            // page (logo, headline, buttons, map, footer) fits in one view without scrolling.
+            // Mobile still needs a smaller share of the screen than desktop so the whole page
+            // (logo, headline, buttons, map, footer) fits in one view without scrolling, but a
+            // little bigger than before now that the gap above it has been tightened up.
             H = mobile
-                ? Math.max(Math.min(vh * 0.2, vw / 2.6), vh * 0.14)
+                ? Math.max(Math.min(vh * 0.24, vw / 2.3), vh * 0.18)
                 : Math.max(Math.min(vh * 0.46, vw / 2.9), vh * 0.3),
             W = H * 2.9,
             k = Math.min(devicePixelRatio || 1, 2);
