@@ -178,10 +178,10 @@
 .wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
 
 @media(max-width:640px){
-    .wx-landing{padding-top:4rem;min-height:100dvh;justify-content:flex-start;padding-bottom:2.5rem}
+    .wx-landing{padding-top:4.8rem;min-height:100dvh;justify-content:flex-start;padding-bottom:2.5rem}
     /* Logo alone, centered - nav (Home/Arena/Blogs/Sign in) moves to the footer hamburger sheet
        instead, so the topbar doesn't compete with the headline for room right below it. */
-    .wx-landing__topbar{justify-content:center;padding:.8rem 1rem}
+    .wx-landing__topbar{justify-content:center;padding:1.6rem 1rem .8rem}
     .wx-landing__logo{position:relative;padding:4px 10px}
     .wx-landing__logo::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,238,136,.16),transparent 72%);border-radius:999px;z-index:-1}
     .wx-landing__logo img{max-width:118px;max-height:32px}
