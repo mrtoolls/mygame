@@ -119,12 +119,27 @@ function showAmount($amount, $decimal = 2, $separate = true, $exceptZeros = fals
         }
     }
     if ($currencyFormat) {
+        // Show the signed-in viewer's own chosen wallet currency instead of the sitewide
+        // default, when they have one set. Switching currency (ProfileController::
+        // updateCurrency()) converts the real stored balance, not just a display label, so the
+        // amount this function receives is already denominated in that currency - only the
+        // symbol/code shown next to it needs to follow, which is the one thing this function
+        // never did, leaving every one of its (hundreds of) existing call sites stuck showing
+        // the site's own default currency regardless of what a user picked. auth()->check()
+        // only resolves the default 'web' (user) guard, so admin-panel screens - a separate
+        // guard - are unaffected and keep showing the site default as before.
+        $currencySymbol = gs('cur_sym');
+        $currencyText = gs('cur_text');
+        if (auth()->check() && ($walletCurrency = auth()->user()->walletCurrency) && $walletCurrency->enabled) {
+            $currencySymbol = $walletCurrency->symbol;
+            $currencyText = $walletCurrency->code;
+        }
         if (gs('currency_format') == Status::CUR_BOTH) {
-            return gs('cur_sym') . $printAmount . ' ' . __(gs('cur_text'));
+            return $currencySymbol . $printAmount . ' ' . __($currencyText);
         } else if (gs('currency_format') == Status::CUR_TEXT) {
-            return $printAmount . ' ' . __(gs('cur_text'));
+            return $printAmount . ' ' . __($currencyText);
         } else {
-            return gs('cur_sym') . $printAmount;
+            return $currencySymbol . $printAmount;
         }
     }
     return $printAmount;
