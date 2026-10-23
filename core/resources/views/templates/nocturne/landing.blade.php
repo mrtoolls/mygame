@@ -8,6 +8,7 @@
 
         <nav class="wx-landing__nav" aria-label="Main navigation">
             <a href="{{ route('landing') }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
+            <a href="{{ route('pages', 'about-us') }}"><i class="ph-fill ph-info"></i><span>@lang('About Us')</span></a>
             <a href="{{ route('arena.index') }}"><i class="ph-fill ph-fire"></i><span>@lang('Arena')</span></a>
             <a href="{{ route('blog') }}"><i class="ph-fill ph-newspaper-clipping"></i><span>@lang('Blogs')</span></a>
 
@@ -94,6 +95,7 @@
         <div class="wx-landing__sheet-panel" role="dialog" aria-modal="true" aria-label="@lang('Menu')">
             <button type="button" class="wx-landing__sheet-close" data-sheet-close="wx-menu-sheet" aria-label="@lang('Close')">&times;</button>
             <a href="{{ route('landing') }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
+            <a href="{{ route('pages', 'about-us') }}"><i class="ph-fill ph-info"></i><span>@lang('About Us')</span></a>
             <a href="{{ route('arena.index') }}"><i class="ph-fill ph-fire"></i><span>@lang('Arena')</span></a>
             <a href="{{ route('blog') }}"><i class="ph-fill ph-newspaper-clipping"></i><span>@lang('Blogs')</span></a>
             <a href="{{ route('user.login') }}"><i class="ph-bold ph-sign-in"></i><span>@lang('Sign In')</span></a>
@@ -105,22 +107,17 @@
 <style>
 :root{--wxl-bg:#070a18;--wxl-ink:#f2f5ff;--wxl-mute:#8d95bd;--wxl-green:#00ee88;--wxl-green-d:#04301f}
 /* Hard-capped to exactly one viewport height (not min-height) on every breakpoint, not just
-   mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow-y stays
-   auto purely as a safety net for an unusually short/zoomed viewport; content below is sized so
-   it shouldn't ever need it. Top-anchored (flex-start), not centered - centering a variable-
-   height block inside a fixed-height viewport looks fine on one aspect ratio and produces either
-   a cramped top gap or a huge empty band on another, which is exactly the inconsistent spacing
-   this replaces. Every gap below is now a small fixed value instead of a vh-based clamp, so the
-   rhythm stays the same regardless of viewport shape; the footer alone keeps margin-top:auto so
-   it - and only it - anchors to the bottom edge and absorbs whatever space is left over. */
-.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:6rem 0 1.5rem;margin:calc(-1 * clamp(0px,0px,0px));scrollbar-width:thin;scrollbar-color:rgba(0,238,136,.4) transparent}
-/* Slim, on-brand scrollbar instead of the browser's default wide one - this section is
-   effectively the whole page, so its own scrollbar (the overflow-y:auto safety net) reads as
-   "the page's" scrollbar. */
-.wx-landing::-webkit-scrollbar{width:6px}
-.wx-landing::-webkit-scrollbar-track{background:transparent}
-.wx-landing::-webkit-scrollbar-thumb{background:rgba(0,238,136,.35);border-radius:10px}
-.wx-landing::-webkit-scrollbar-thumb:hover{background:rgba(0,238,136,.55)}
+   mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow is
+   hidden on both axes - a hard clip, not an auto-scrolling safety net - because an auto
+   scrollbar on this element turns ANY descendant that happens to compute past its edge (the
+   decorative ring was one) into a scrollable page; a hard clip guarantees it never scrolls,
+   full stop. Top-anchored (flex-start), not centered - centering a variable-height block inside
+   a fixed-height viewport looks fine on one aspect ratio and produces either a cramped top gap
+   or a huge empty band on another, which is exactly the inconsistent spacing this replaces.
+   Every gap below is now a small fixed value instead of a vh-based clamp, so the rhythm stays
+   the same regardless of viewport shape; the footer alone keeps margin-top:auto so it - and only
+   it - anchors to the bottom edge and absorbs whatever space is left over. */
+.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:6rem 0 1.5rem;margin:calc(-1 * clamp(0px,0px,0px))}
 .wx-landing::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(0,238,136,.03) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(70,60,200,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 .wx-landing__topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2.5rem;padding:1.2rem 2rem;z-index:20;background:linear-gradient(to bottom,rgba(7,10,24,.85) 0%,rgba(7,10,24,.4) 70%,transparent 100%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -145,8 +142,12 @@
 
 /* Pushed well below the headline (top:26vh, not the mockup's -2vh) - at the original offset
    the ring's avatars sat right behind/beside "Play, compete..." on most viewports, reading as
-   clutter instead of decoration. */
-.wx-landing__ring{position:absolute;left:50%;top:26vh;width:min(86vw,125vh);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
+   clutter instead of decoration. Sized off vh alone, not min(86vw,...) - on a short, very wide
+   desktop window the old vw-driven size let this absolutely-positioned circle's bottom edge
+   extend well past the viewport, and since it's a descendant of the overflow-y:auto section,
+   the browser made the whole page scrollable just to reach that empty tail of circle. 64vh at
+   top:26vh always lands its bottom edge at 90vh, safely inside the viewport on any width. */
+.wx-landing__ring{position:absolute;left:50%;top:26vh;width:64vh;max-width:86vw;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
 @keyframes wxlSway{from{transform:translateX(-50%) rotate(-3deg)}to{transform:translateX(-50%) rotate(3deg)}}
 .wx-landing__oa{position:absolute;width:clamp(46px,5.2vw,70px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:5;cursor:pointer}
 .wx-landing__oa:nth-child(1){left:6%;top:14%}
@@ -171,8 +172,8 @@
 .wx-landing__copy h1{margin:0 auto;max-width:19em;text-wrap:balance;font-size:clamp(22px,min(4.2vw,6.2vh),58px);line-height:1.12;font-weight:700;letter-spacing:-.025em;background:linear-gradient(135deg,#f2f5ff 0%,#c8d0f0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 2px 30px rgba(0,238,136,.08)}
 
 .wx-landing__cta{margin-top:1.4rem;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.wx-landing__btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 28px 0 24px;border:0;border-radius:99px;text-decoration:none;font:700 15px/1 "Montserrat",system-ui,sans-serif;letter-spacing:.01em;cursor:pointer;transition:transform .18s ease,box-shadow .25s ease,background .25s ease;position:relative;overflow:hidden}
-.wx-landing__btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;transition:transform .2s}
+.wx-landing__btn{display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 22px 0 20px;border:0;border-radius:99px;text-decoration:none;font:700 13.5px/1 "Montserrat",system-ui,sans-serif;letter-spacing:.01em;cursor:pointer;transition:transform .18s ease,box-shadow .25s ease,background .25s ease;position:relative;overflow:hidden}
+.wx-landing__btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;transition:transform .2s}
 .wx-landing__btn:hover svg{transform:scale(1.08)}
 .wx-landing__btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .wx-landing__btn--primary{background:var(--wxl-green);color:var(--wxl-green-d);box-shadow:0 10px 30px rgba(0,238,136,.28),0 0 0 1px rgba(0,238,136,.15)}
@@ -185,7 +186,7 @@
    script block below) - plain inline numbers, no card/background, sized to its own content
    (align-self:center overrides the section's default flex stretch, which was otherwise pulling
    this to the full section width edge-to-edge). */
-.wx-landing__stats{position:relative;z-index:10;display:flex;align-self:center;align-items:center;justify-content:center;flex-wrap:nowrap;gap:28px;margin-top:1.1rem;max-width:100%}
+.wx-landing__stats{position:relative;z-index:10;display:flex;align-self:center;align-items:center;justify-content:center;flex-wrap:nowrap;gap:28px;margin-top:1.5rem;max-width:100%}
 .wx-landing__stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
 .wx-landing__stat strong{font-size:clamp(16px,2vw,22px);font-weight:800;letter-spacing:-.01em;line-height:1.15;background:linear-gradient(135deg,#eafff5,var(--wxl-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap}
 .wx-landing__stat span{font-size:10.5px;font-weight:700;letter-spacing:.02em;line-height:1.3;color:var(--wxl-mute);white-space:nowrap}
@@ -206,13 +207,13 @@
    exactly one predictable thing: pushes the footer down to the bottom edge and soaks up
    whatever space is left, while everything above it stays tightly packed near the top with its
    own small fixed gaps. */
-.wx-landing__footer{position:relative;z-index:20;padding:0 1rem;margin-top:auto}
-.wx-landing__footer-links{display:flex;justify-content:center;gap:1.8rem;flex-wrap:wrap;margin-bottom:10px}
-.wx-landing__footer-links a{display:inline-flex;align-items:center;gap:6px;color:var(--wxl-mute);text-decoration:none;font-size:.85rem;font-weight:600;letter-spacing:.02em;transition:color .2s,text-shadow .2s}
-.wx-landing__footer-links a i{font-size:13px;color:rgba(141,149,189,.7);transition:color .2s}
+.wx-landing__footer{position:relative;z-index:20;padding:0 1rem .4rem;margin-top:auto}
+.wx-landing__footer-links{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:8px}
+.wx-landing__footer-links a{display:inline-flex;align-items:center;gap:5px;color:var(--wxl-mute);text-decoration:none;font-size:.75rem;font-weight:600;letter-spacing:.02em;transition:color .2s,text-shadow .2s}
+.wx-landing__footer-links a i{font-size:11.5px;color:rgba(141,149,189,.7);transition:color .2s}
 .wx-landing__footer-links a:hover{color:var(--wxl-green);text-shadow:0 0 20px rgba(0,238,136,.35)}
 .wx-landing__footer-links a:hover i{color:var(--wxl-green)}
-.wx-landing__copyright{margin:10px 0 0;color:rgba(141,149,189,.6);font-size:.72rem;font-weight:600;letter-spacing:.03em}
+.wx-landing__copyright{margin:8px 0 0;color:rgba(141,149,189,.6);font-size:.65rem;font-weight:600;letter-spacing:.03em}
 
 /* Forces exactly two lines on mobile (a real device's width is too variable for natural
    wrapping to reliably land on 2 lines on its own) while leaving the desktop headline flowing
@@ -243,11 +244,14 @@
 .wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
 
 @media(max-width:640px){
-    /* Height/overflow/justify-content:flex-start are inherited from the base rule above. The
-       topbar stays absolutely pinned to the very top so the logo and account icon sit fixed at
-       the corners; this padding-top just clears room below it for the rest of the content,
-       which stays tightly packed with its own small fixed gaps while the footer (margin-top:
-       auto, see its own rule) is pushed down to the bottom edge. */
+    /* Height/overflow are inherited from the base rule above. The topbar stays absolutely
+       pinned to the very top so the logo and account icon sit fixed at the corners; this
+       padding-top just clears room below it. Unlike desktop, the content group itself
+       (.wx-landing__copy down to .wx-landing__map) gets margin-top:auto AND .wx-landing__map
+       gets margin-bottom:auto - two equal auto-margin slots, so whatever vertical space is left
+       over splits evenly between "gap above the content" and "gap below it, before the footer"
+       instead of all piling into just one of those gaps. The footer itself switches to a small
+       fixed margin-top here (not the base rule's auto) so it isn't a third competing auto slot. */
     .wx-landing{padding-top:4.3rem;padding-bottom:.6rem}
     /* Logo pinned top-left, account icon (Sign In/Up dropdown) pinned top-right - the ordinary
        nav links (Home/Arena/Blogs) move to the footer hamburger sheet instead so the topbar
@@ -260,7 +264,7 @@
     .wx-landing__nav>a{display:none}
     .wx-landing__account-btn{width:36px;height:36px;font-size:17px}
     .wx-landing__footer-actions{display:flex;margin-bottom:8px}
-    .wx-landing__copy{margin-top:.6rem;padding:0 16px}
+    .wx-landing__copy{margin-top:auto;padding:0 16px}
     .wx-landing__hl-break{display:block}
     /* Sized so "Play, Compete and Connect" (the longer of the two forced lines) reliably fits
        on one line down to ~360px-wide phones, rather than wrapping a third time on its own. */
@@ -268,15 +272,15 @@
     /* Side by side, native-app style, not stacked full-width - each button shrinks to fit
        rather than forcing a tall vertical stack of two giant pills. */
     .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1rem;width:100%;padding:0 16px}
-    .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:46px;padding:0 10px;font-size:12.5px;gap:6px}
-    .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
+    .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:40px;padding:0 8px;font-size:11px;gap:5px}
+    .wx-landing__btn svg{width:15px;height:15px;flex-shrink:0}
     /* Stays one inline row even on narrow phones - labels are allowed to wrap to two short
        lines rather than forcing the three columns themselves to stack. */
-    .wx-landing__stats{gap:16px;margin-top:.55rem}
+    .wx-landing__stats{gap:16px;margin-top:.85rem}
     .wx-landing__stat strong{font-size:13.5px}
     .wx-landing__stat span{font-size:7.6px;white-space:normal;line-height:1.15;max-width:72px}
     .wx-landing__stat-sep{height:20px}
-    .wx-landing__map{margin-top:1.2rem;margin-bottom:0}
+    .wx-landing__map{margin-top:1.2rem;margin-bottom:auto}
     /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
        actually shrinks enough), and the thin ring line alone serves no purpose without them -
        hidden entirely on mobile rather than trying to miniaturize something that only reads
@@ -285,11 +289,12 @@
     .wx-landing__cl{--a:24px}
     .wx-landing__cl i .wx-landing__avatar-clip{border-width:1.5px}
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
-       on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row.
-       margin-top stays the base rule's auto (not overridden here) so the footer - and the
-       hamburger/Official/copyright inside it - sits pinned to the bottom edge. */
+       on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row. A
+       small fixed margin-top (not the base rule's auto) - .wx-landing__copy/.wx-landing__map
+       already claim the auto-margin slots above, so the footer sits right after that bottom gap
+       instead of adding a third competing auto slot. */
     .wx-landing__footer-links{display:none}
-    .wx-landing__footer{padding:0 1rem}
+    .wx-landing__footer{padding:0 1rem;margin-top:.8rem}
     .wx-landing__copyright{font-size:.65rem;margin-top:6px}
 }
 @media(min-width:641px) and (max-width:1024px){
