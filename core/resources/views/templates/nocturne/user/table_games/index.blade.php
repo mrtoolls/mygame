@@ -35,8 +35,6 @@
             </div>
         </div>
 
-        @include('Template::sections.table_games_recent_wins')
-
         @if ($invites->isNotEmpty())
             <section class="table-card table-invitations"><div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-envelope-open-text"></i></span><div><h2>@lang('Your Table Invitations')</h2><p>@lang('A player invited you to join a live table.')</p></div></div><div class="table-list">
                 @foreach ($invites as $invite)
@@ -118,6 +116,10 @@
                     @endforelse
                 </div>
                 <a class="table-history-link" href="{{ route('user.tables.index') }}">@lang('Refresh live tables') <i class="las la-sync"></i></a>
+
+                <div class="table-card__recent-wins">
+                    @include('Template::sections.table_games_recent_wins')
+                </div>
             </section>
         </div>
     </section>
@@ -131,7 +133,23 @@
         .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
         .table-lobby__live-badge{display:inline-flex;flex:0 0 auto;align-items:center;gap:8px;padding:10px 16px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:12px;font-weight:950;white-space:nowrap}
         .table-lobby__live-badge i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:table-status-pulse 1.4s ease-in-out infinite}
-        .table-lobby__layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:16px;align-items:start}.table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
+        .table-lobby__layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:16px;align-items:stretch}.table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
+        /* Right column (Live Games + Recent Wins) is stretched by the grid to match the left
+           column's (Create a Table) natural height - that form has fixed, bounded content, so
+           it's the one side that should set the row height. The right column becomes a flex
+           column so its own natural content (heading/list/refresh-link) keeps its size while
+           .table-card__recent-wins, the last child, absorbs whatever space is left and scrolls
+           internally - the whole point being the right column can never grow taller than the
+           left no matter how many live tables or recent wins there are. */
+        .table-card--live{display:flex;flex-direction:column;min-height:0}
+        .table-card__recent-wins{flex:1;min-height:120px;margin-top:16px;overflow-y:auto}
+        .recent-wins__head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--tg-text);font-size:13px;font-weight:900}.recent-wins__head i{color:#ffb547}.recent-wins__head small{margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(122,151,255,.12);color:#a7bbff;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+        .recent-wins__list{display:grid;gap:7px}
+        .recent-wins__item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px;border:1px solid var(--tg-line);border-radius:13px;background:rgba(35,42,71,.4)}
+        .recent-wins__badge{display:grid;place-items:center;width:34px;height:34px;overflow:hidden;border-radius:10px;background:linear-gradient(145deg,rgba(0,239,135,.18),rgba(0,239,135,.04));color:var(--tg-green);font-size:15px}.recent-wins__badge img{width:100%;height:100%;object-fit:cover}
+        .recent-wins__info{min-width:0;display:grid;gap:2px}.recent-wins__info strong{overflow:hidden;font-size:11.5px;font-weight:850;text-overflow:ellipsis;white-space:nowrap;color:var(--tg-text)}.recent-wins__info small{overflow:hidden;color:var(--tg-muted);font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}
+        .recent-wins__amount{color:var(--tg-green);font-size:11.5px;font-weight:950;white-space:nowrap}
+        .recent-wins__empty{display:grid;justify-items:center;gap:6px;padding:20px 10px;text-align:center;color:var(--tg-muted)}.recent-wins__empty i{color:#ffb547;font-size:20px}.recent-wins__empty span{font-size:10.5px}
         .table-card__heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}.table-card__icon{display:grid;flex:0 0 44px;width:44px;height:44px;place-items:center;border-radius:14px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:23px}.table-card__icon--live{background:rgba(122,151,255,.14);color:#a7bbff}.table-card__heading h2{margin:0;font-size:18px;font-weight:900}.table-card__heading p{margin:3px 0 0;color:var(--tg-muted);font-size:11px}.table-live-count{margin-left:auto;padding:7px 10px;border:1px solid rgba(0,239,135,.2);border-radius:20px;color:var(--tg-green);font-size:10px;font-weight:900;white-space:nowrap}
         .table-field{display:grid;gap:7px;min-width:0;margin-bottom:14px}.table-field>span{color:#b5bdd8;font-size:11px;font-weight:850}.table-field select,.table-field input{width:100%;height:47px;min-width:0;padding:0 13px;border:1px solid var(--tg-line);border-radius:12px;background:#11162c;color:var(--tg-text);font:inherit;font-size:13px;outline:none}.table-field select:focus,.table-field input:focus{border-color:rgba(0,239,135,.6);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.table-field option:disabled{color:#778}.table-field-row{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:12px}.table-field__money{position:relative}.table-field__money>span{position:absolute;top:50%;left:12px;transform:translateY(-50%);color:var(--tg-muted);font-size:12px}.table-field__money input{padding-left:31px}
         .table-cost-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:3px 0 13px;padding:13px;border:1px solid var(--tg-line);border-radius:15px;background:rgba(10,13,28,.55)}.table-cost-preview>div{display:grid;gap:5px;min-width:0}.table-cost-preview span{color:var(--tg-muted);font-size:9px}.table-cost-preview strong{font-size:12px;font-weight:900;overflow-wrap:anywhere}.table-cost-preview__net strong{color:var(--tg-green)}.table-rules-note{margin:0 0 10px;color:#a8b4d6;font-size:10px;line-height:1.5;overflow-wrap:anywhere}.table-disclaimer{margin:0;padding:12px;border-left:2px solid rgba(0,239,135,.65);border-radius:0 10px 10px 0;background:rgba(0,239,135,.045);color:#929abc;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
