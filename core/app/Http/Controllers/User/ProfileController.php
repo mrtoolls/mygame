@@ -59,6 +59,32 @@ class ProfileController extends Controller {
         return back()->withNotify($notify);
     }
 
+    public function avatarPicker() {
+        $pageTitle = 'Choose Your Avatar';
+        $user      = auth()->user();
+        $gender    = \App\Support\AvatarLibrary::normalizeGender($user->gender);
+        $avatars   = \App\Support\AvatarLibrary::filenames($gender);
+        return view('Template::user.avatar_picker', compact('pageTitle', 'user', 'gender', 'avatars'));
+    }
+
+    public function avatarSelect(Request $request) {
+        $user   = auth()->user();
+        $gender = \App\Support\AvatarLibrary::normalizeGender($user->gender);
+
+        $request->validate(['avatar' => 'required|string']);
+
+        if (!\App\Support\AvatarLibrary::isValid($gender, $request->avatar)) {
+            $notify[] = ['error', 'Please pick a valid avatar from the list.'];
+            return back()->withNotify($notify);
+        }
+
+        $user->image = \App\Support\AvatarLibrary::pathFor($gender, $request->avatar);
+        $user->save();
+
+        $notify[] = ['success', 'Avatar updated successfully'];
+        return back()->withNotify($notify);
+    }
+
     // Switching currency re-prices balance/demo_balance through USD (the same rate_to_usd
     // mechanism TableGameService already uses for cross-currency stakes) so the real-world
     // value of a user's funds survives the switch - the stored figure changes, not what it's

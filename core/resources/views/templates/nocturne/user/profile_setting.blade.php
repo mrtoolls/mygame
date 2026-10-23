@@ -23,6 +23,9 @@
                                 <i class="las la-camera"></i> @lang('Change photo')
                                 <input type="file" id="avatar-input" name="image" accept="image/png,image/jpeg,image/webp" hidden>
                             </label>
+                            <a href="{{ route('user.profile.avatar') }}" class="profile-avatar-field__upload profile-avatar-field__upload--library">
+                                <i class="las la-images"></i> @lang('Choose an avatar')
+                            </a>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
@@ -136,7 +139,7 @@
 @endsection
 @push('style')
     <style>
-        .profile-avatar-field { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+        .profile-avatar-field { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 22px; }
         .profile-avatar-field__preview {
             display: grid; place-items: center; width: 76px; height: 76px; flex: 0 0 auto;
             border-radius: 50%; overflow: hidden; background: var(--nocturne-raised, #232a47);

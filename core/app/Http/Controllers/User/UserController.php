@@ -197,13 +197,14 @@ class UserController extends Controller {
         $user->dial_code     = $request->mobile_code;
         $user->gender        = $request->gender;
 
-        // glob() resolves a bare relative path against the PHP process's
-        // working directory, which isn't reliably "public/" on every host -
-        // anchor it with public_path() so the scan can't silently come back
-        // empty (leaving the user with no avatar) depending on server config.
-        $pool = glob(public_path('assets/images/profilepics/' . $request->gender . '*.png'));
-        if (!empty($pool)) {
-            $user->image = 'assets/images/profilepics/' . basename($pool[array_rand($pool)]);
+        // public_path() does NOT resolve to where this deployment actually serves "assets/..."
+        // URLs from (confirmed: every real user who registered while this used public_path()
+        // ended up with image=null - the scan was silently coming back empty on production).
+        // AvatarLibrary uses a bare relative path instead, the same convention fileUploader()
+        // and every other working upload/read in this codebase already relies on.
+        $avatarPath = \App\Support\AvatarLibrary::randomPath($request->gender);
+        if ($avatarPath) {
+            $user->image = $avatarPath;
         }
 
         $user->profile_complete = Status::YES;
