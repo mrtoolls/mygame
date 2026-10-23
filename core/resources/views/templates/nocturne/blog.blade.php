@@ -90,16 +90,21 @@
 .nocturne-news-grid-heading i{color:var(--news-accent)}
 
 .nocturne-news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px;align-items:start}
-.nocturne-news-card{border:1px solid var(--news-line);border-radius:20px;overflow:hidden;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16);transition:transform .18s,border-color .18s}
-.nocturne-news-card:hover{transform:translateY(-3px);border-color:rgba(0,231,138,.35)}
-.nocturne-news-card__thumb{display:block;aspect-ratio:16/10;background:#0d1225}
-.nocturne-news-card__thumb img{width:100%;height:100%;object-fit:cover}
-.nocturne-news-card__body{padding:18px}
-.nocturne-news-card__body h3{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.35}
-.nocturne-news-card__body h3 a{color:var(--news-text);text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.nocturne-news-card__body p{margin:0 0 12px;color:var(--news-muted);font-size:13px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.nocturne-news-card__more{color:var(--news-accent);font-size:12.5px;font-weight:800;text-decoration:none}
-.nocturne-news-card__more:hover{text-decoration:underline}
+/* Deliberately named nocturne-news-grid-card, not nocturne-news-card: the homepage's "Trendy
+   News" widget (sections/home_news.blade.php) already owns .nocturne-news-card as a fixed-
+   width horizontal scroller (nocturne.css). Both loaded sitewide, so reusing that class name
+   here let the widget's width:240px win over anything set in this block regardless of what
+   was changed here - the actual cause of every "cards are too small" report on this page. */
+.nocturne-news-grid-card{border:1px solid var(--news-line);border-radius:20px;overflow:hidden;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16);transition:transform .18s,border-color .18s}
+.nocturne-news-grid-card:hover{transform:translateY(-3px);border-color:rgba(0,231,138,.35)}
+.nocturne-news-grid-card__thumb{display:block;aspect-ratio:16/10;background:#0d1225}
+.nocturne-news-grid-card__thumb img{width:100%;height:100%;object-fit:cover}
+.nocturne-news-grid-card__body{padding:18px}
+.nocturne-news-grid-card__body h3{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.35}
+.nocturne-news-grid-card__body h3 a{color:var(--news-text);text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nocturne-news-grid-card__body p{margin:0 0 12px;color:var(--news-muted);font-size:13px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nocturne-news-grid-card__more{color:var(--news-accent);font-size:12.5px;font-weight:800;text-decoration:none}
+.nocturne-news-grid-card__more:hover{text-decoration:underline}
 
 .nocturne-news-loadmore{display:flex;justify-content:center;margin-top:28px}
 #news-load-more{padding:13px 28px;border:1px solid var(--news-line);border-radius:14px;background:var(--news-panel);color:var(--news-text);font-size:13.5px;font-weight:800;cursor:pointer}
@@ -125,7 +130,12 @@
     .nocturne-news-featured{min-height:260px;border-radius:18px}
     .nocturne-news-featured__title{margin:140px 16px 18px;font-size:19px}
     .nocturne-news-featured__badge{margin:14px 0 0 14px;font-size:11px;padding:6px 11px}
-    .nocturne-news-grid{grid-template-columns:1fr}
+    .nocturne-news-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px}
+    .nocturne-news-grid-card{border-radius:14px}
+    .nocturne-news-grid-card__body{padding:10px}
+    .nocturne-news-grid-card__body h3{font-size:12.5px;margin-bottom:5px}
+    .nocturne-news-grid-card__body p{display:none}
+    .nocturne-news-grid-card__more{font-size:11px}
     .nocturne-news-grid-heading{font-size:19px}
 }
 </style>
