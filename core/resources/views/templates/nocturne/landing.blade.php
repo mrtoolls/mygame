@@ -24,8 +24,6 @@
         </nav>
     </header>
 
-    <div class="wx-landing__ring" aria-hidden="true" id="wx-ring"></div>
-
     <div class="wx-landing__copy">
         <h1>@lang('Play, Compete and Connect')<br class="wx-landing__hl-break"> @lang('with Gamers Worldwide')</h1>
         <div class="wx-landing__cta">
@@ -106,6 +104,15 @@
 @push('style')
 <style>
 :root{--wxl-bg:#070a18;--wxl-ink:#f2f5ff;--wxl-mute:#8d95bd;--wxl-green:#00ee88;--wxl-green-d:#04301f}
+/* html/body themselves have no height/overflow constraint sitewide (other pages need to scroll
+   normally), so scope a hard lock to just this page via :has(#hero) rather than touching the
+   shared stylesheet. This matters specifically on mobile Safari/Chrome: 100dvh on .wx-landing
+   alone stops ITS OWN content from overflowing, but real mobile browsers can still show a tiny
+   residual "rubber-band" bounce on the BODY itself (a dvh-unit/address-bar-collapse quirk) even
+   when nothing is actually overflowing - locking html/body too, plus overscroll-behavior:none,
+   removes that bounce entirely instead of relying on .wx-landing's own clip alone. */
+html:has(#hero){height:100%;overflow:hidden}
+body:has(#hero){height:100%;overflow:hidden;overscroll-behavior:none}
 /* Hard-capped to exactly one viewport height (not min-height) on every breakpoint, not just
    mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow is
    hidden on both axes - a hard clip, not an auto-scrolling safety net - because an auto
@@ -117,7 +124,7 @@
    Every gap below is now a small fixed value instead of a vh-based clamp, so the rhythm stays
    the same regardless of viewport shape; the footer alone keeps margin-top:auto so it - and only
    it - anchors to the bottom edge and absorbs whatever space is left over. */
-.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:6rem 0 1.5rem;margin:calc(-1 * clamp(0px,0px,0px))}
+.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;overscroll-behavior:none;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:6rem 0 1.5rem;margin:calc(-1 * clamp(0px,0px,0px))}
 .wx-landing::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(0,238,136,.03) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(70,60,200,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 .wx-landing__topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2.5rem;padding:1.2rem 2rem;z-index:20;background:linear-gradient(to bottom,rgba(7,10,24,.85) 0%,rgba(7,10,24,.4) 70%,transparent 100%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -139,19 +146,6 @@
 .wx-landing__account-menu a{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;color:var(--wxl-ink);text-decoration:none;font-size:13.5px;font-weight:700}
 .wx-landing__account-menu a i{color:var(--wxl-green);font-size:16px}
 .wx-landing__account-menu a:hover{background:rgba(0,238,136,.1);color:var(--wxl-green)}
-
-/* Pushed well below the headline (top:26vh, not the mockup's -2vh) - at the original offset
-   the ring's avatars sat right behind/beside "Play, compete..." on most viewports, reading as
-   clutter instead of decoration. Sized off vh alone, not min(86vw,...) - on a short, very wide
-   desktop window the old vw-driven size let this absolutely-positioned circle's bottom edge
-   extend well past the viewport, and since it's a descendant of the overflow-y:auto section,
-   the browser made the whole page scrollable just to reach that empty tail of circle. 64vh at
-   top:26vh always lands its bottom edge at 90vh, safely inside the viewport on any width. */
-.wx-landing__ring{position:absolute;left:50%;top:26vh;width:64vh;max-width:86vw;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
-@keyframes wxlSway{from{transform:translateX(-50%) rotate(-3deg)}to{transform:translateX(-50%) rotate(3deg)}}
-.wx-landing__oa{position:absolute;width:clamp(46px,5.2vw,70px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:5;cursor:pointer}
-.wx-landing__oa:nth-child(1){left:6%;top:14%}
-.wx-landing__oa:nth-child(2){left:100%;top:38%}
 
 /* The circular clip lives on this inner wrapper, not the avatar element itself - a status dot
    positioned on the OUTER element can then sit right on (or just outside) the circle's edge
@@ -281,11 +275,6 @@
     .wx-landing__stat span{font-size:7.6px;white-space:normal;line-height:1.15;max-width:72px}
     .wx-landing__stat-sep{height:20px}
     .wx-landing__map{margin-top:1.2rem;margin-bottom:auto}
-    /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
-       actually shrinks enough), and the thin ring line alone serves no purpose without them -
-       hidden entirely on mobile rather than trying to miniaturize something that only reads
-       well at tablet size and up. */
-    .wx-landing__ring{display:none}
     .wx-landing__cl{--a:24px}
     .wx-landing__cl i .wx-landing__avatar-clip{border-width:1.5px}
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
@@ -305,10 +294,8 @@
     /* Still top-anchored (flex-start, inherited) - just a touch less top padding on a short
        desktop/tablet window, kept no lower than the topbar's own height so nothing overlaps it. */
     .wx-landing{padding-top:5.2rem;padding-bottom:1rem}
-    .wx-landing__ring{top:14vh}
 }
 @media(prefers-reduced-motion:reduce){
-    .wx-landing__ring{animation:none}
     .wx-landing__btn,.wx-landing__btn:hover,.wx-landing__cl i:hover{transition:none;transform:none}
 }
 </style>
@@ -372,18 +359,7 @@
         tagTimer = setTimeout(function () { tag.classList.remove('is-visible'); }, 2200);
     }
     document.addEventListener('click', function (event) {
-        if (!event.target.closest('.wx-landing__oa, .wx-landing__cl i')) tag.classList.remove('is-visible');
-    });
-
-    // ── orbit ring avatars ──
-    var ring = document.getElementById('wx-ring');
-    [0, 1].forEach(function (slot, idx) {
-        var el = document.createElement('div');
-        el.className = 'wx-landing__oa';
-        el.innerHTML = avatarMarkup(idx);
-        var name = usernameFor(idx);
-        el.addEventListener('click', function (e) { e.stopPropagation(); revealUsername(el, name); });
-        ring.appendChild(el);
+        if (!event.target.closest('.wx-landing__cl i')) tag.classList.remove('is-visible');
     });
 
     // ── dotted world map (continent outlines rasterized to a dot grid) ──
