@@ -204,10 +204,11 @@
     .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:46px;padding:0 10px;font-size:12.5px;gap:6px}
     .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
     .wx-landing__map{margin-top:.6rem;margin-bottom:0}
-    .wx-landing__ring{width:120vw;top:17vh;opacity:.55}
-    .wx-landing__oa{width:38px;border-width:3px}
-    .wx-landing__oa:nth-child(1){left:14%;top:26%}
-    .wx-landing__oa:nth-child(2){left:96%;top:48%}
+    /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
+       actually shrinks enough), and the thin ring line alone serves no purpose without them -
+       hidden entirely on mobile rather than trying to miniaturize something that only reads
+       well at tablet size and up. */
+    .wx-landing__ring{display:none}
     .wx-landing__cl{--a:24px}
     .wx-landing__cl i{border-width:1.5px}
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
