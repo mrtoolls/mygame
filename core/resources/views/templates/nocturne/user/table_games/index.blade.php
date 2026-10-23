@@ -195,7 +195,7 @@
         .table-mode-toggle__item.is-selected{border-color:rgba(0,239,135,.55);background:rgba(0,239,135,.1);color:var(--tg-text)}
         .table-mode-toggle__item.is-selected i{color:var(--tg-green)}
         .table-field__sr-select{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-        .table-game-picker{display:flex;flex-wrap:wrap;gap:8px}
+        .table-game-picker{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
         .table-game-picker__item{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:10px 6px;border:1px solid var(--tg-line);border-radius:14px;background:rgba(35,42,71,.4);color:var(--tg-muted);cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease}
         .table-game-picker__item:hover{border-color:rgba(0,239,135,.35)}
         .table-game-picker__item.is-selected{border-color:rgba(0,239,135,.6);background:rgba(0,239,135,.1);color:var(--tg-text)}
