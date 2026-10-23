@@ -107,8 +107,13 @@
 /* Hard-capped to exactly one viewport height (not min-height) on every breakpoint, not just
    mobile - a short/zoomed desktop or tablet window must fit in one screen too. overflow-y stays
    auto purely as a safety net for an unusually short/zoomed viewport; content below is sized so
-   it shouldn't ever need it. */
-.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:4.5rem 0 1.4rem;margin:calc(-1 * clamp(0px,0px,0px));scrollbar-width:thin;scrollbar-color:rgba(0,238,136,.4) transparent}
+   it shouldn't ever need it. Top-anchored (flex-start), not centered - centering a variable-
+   height block inside a fixed-height viewport looks fine on one aspect ratio and produces either
+   a cramped top gap or a huge empty band on another, which is exactly the inconsistent spacing
+   this replaces. Every gap below is now a small fixed value instead of a vh-based clamp, so the
+   rhythm stays the same regardless of viewport shape; the footer alone keeps margin-top:auto so
+   it - and only it - anchors to the bottom edge and absorbs whatever space is left over. */
+.wx-landing{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;overflow-y:auto;text-align:center;background:var(--wxl-bg) radial-gradient(70% 50% at 50% 100%,rgba(0,238,136,.1),transparent 70%),radial-gradient(60% 40% at 50% 0%,rgba(70,60,200,.16),transparent 70%);padding:6rem 0 1.5rem;margin:calc(-1 * clamp(0px,0px,0px));scrollbar-width:thin;scrollbar-color:rgba(0,238,136,.4) transparent}
 /* Slim, on-brand scrollbar instead of the browser's default wide one - this section is
    effectively the whole page, so its own scrollbar (the overflow-y:auto safety net) reads as
    "the page's" scrollbar. */
@@ -143,24 +148,29 @@
    clutter instead of decoration. */
 .wx-landing__ring{position:absolute;left:50%;top:26vh;width:min(86vw,125vh);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
 @keyframes wxlSway{from{transform:translateX(-50%) rotate(-3deg)}to{transform:translateX(-50%) rotate(3deg)}}
-.wx-landing__oa{position:absolute;width:clamp(46px,5.2vw,70px);aspect-ratio:1;border-radius:50%;overflow:hidden;transform:translate(-50%,-50%);border:4px solid var(--wxl-bg);box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 28px rgba(0,238,136,.25);z-index:5;cursor:pointer}
-.wx-landing__oa img{display:block;width:100%;height:100%;object-fit:cover}
+.wx-landing__oa{position:absolute;width:clamp(46px,5.2vw,70px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:5;cursor:pointer}
 .wx-landing__oa:nth-child(1){left:6%;top:14%}
 .wx-landing__oa:nth-child(2){left:100%;top:38%}
 
-/* Small "online" status dot on each avatar (ring + map clusters), alternating green/white per
-   instance and gently blinking rather than sitting static. Inset (not overflowing the edge) -
-   the avatar itself is a circular overflow:hidden clip, so a dot hanging past its border would
-   get cut off. */
-.wx-landing__dot{position:absolute;right:7%;bottom:7%;width:26%;height:26%;min-width:6px;min-height:6px;max-width:11px;max-height:11px;border-radius:50%;border:1.5px solid var(--wxl-bg);z-index:7;animation:wxlDotBlink 1.8s ease-in-out infinite}
+/* The circular clip lives on this inner wrapper, not the avatar element itself - a status dot
+   positioned on the OUTER element can then sit right on (or just outside) the circle's edge
+   without being clipped away, which a percentage inset inside an overflow:hidden circle can't
+   do (a square corner inset still falls outside the inscribed circle and gets cut off). */
+.wx-landing__avatar-clip{display:block;width:100%;height:100%;border-radius:50%;overflow:hidden;border:4px solid var(--wxl-bg);box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 28px rgba(0,238,136,.25)}
+.wx-landing__avatar-clip img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* Small "online" status dot on each avatar (ring + map clusters) - sits on the top-right edge,
+   outside the circular clip, alternating green/white per instance and gently blinking. */
+.wx-landing__dot{position:absolute;top:-2px;right:-2px;width:13px;height:13px;border-radius:50%;border:2px solid var(--wxl-bg);z-index:7;animation:wxlDotBlink 1.8s ease-in-out infinite}
+.wx-landing__cl .wx-landing__dot{width:8px;height:8px;top:-1.5px;right:-1.5px;border-width:1.5px}
 .wx-landing__dot--green{background:var(--wxl-green);box-shadow:0 0 6px rgba(0,238,136,.7)}
 .wx-landing__dot--white{background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
 @keyframes wxlDotBlink{0%,100%{opacity:1}50%{opacity:.3}}
 
-.wx-landing__copy{position:relative;z-index:10;flex:none;padding:0 20px;margin-top:5.5rem}
+.wx-landing__copy{position:relative;z-index:10;flex:none;padding:0 20px;margin-top:.75rem}
 .wx-landing__copy h1{margin:0 auto;max-width:19em;text-wrap:balance;font-size:clamp(22px,min(4.2vw,6.2vh),58px);line-height:1.12;font-weight:700;letter-spacing:-.025em;background:linear-gradient(135deg,#f2f5ff 0%,#c8d0f0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 2px 30px rgba(0,238,136,.08)}
 
-.wx-landing__cta{margin-top:clamp(20px,3.6vh,36px);display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.wx-landing__cta{margin-top:1.4rem;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .wx-landing__btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 28px 0 24px;border:0;border-radius:99px;text-decoration:none;font:700 15px/1 "Montserrat",system-ui,sans-serif;letter-spacing:.01em;cursor:pointer;transition:transform .18s ease,box-shadow .25s ease,background .25s ease;position:relative;overflow:hidden}
 .wx-landing__btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;transition:transform .2s}
 .wx-landing__btn:hover svg{transform:scale(1.08)}
@@ -172,27 +182,31 @@
 .wx-landing__btn--ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-3px) scale(1.02);border-color:rgba(0,238,136,.35);box-shadow:0 0 0 5px rgba(0,238,136,.08),0 14px 36px rgba(0,0,0,.4)}
 
 /* Live counters, same endpoint/format as the About Us "Winxpot Statistics" section (see the
-   script block below) - a glass strip that stays a single inline row on every screen size. */
-.wx-landing__stats{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:22px;margin-top:clamp(16px,2.6vh,28px);padding:14px 28px;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.wx-landing__stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:1}
+   script block below) - plain inline numbers, no card/background, sized to its own content
+   (align-self:center overrides the section's default flex stretch, which was otherwise pulling
+   this to the full section width edge-to-edge). */
+.wx-landing__stats{position:relative;z-index:10;display:flex;align-self:center;align-items:center;justify-content:center;flex-wrap:nowrap;gap:28px;margin-top:1.1rem;max-width:100%}
+.wx-landing__stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
 .wx-landing__stat strong{font-size:clamp(16px,2vw,22px);font-weight:800;letter-spacing:-.01em;line-height:1.15;background:linear-gradient(135deg,#eafff5,var(--wxl-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap}
 .wx-landing__stat span{font-size:10.5px;font-weight:700;letter-spacing:.02em;line-height:1.3;color:var(--wxl-mute);white-space:nowrap}
-.wx-landing__stat-sep{width:1px;align-self:stretch;background:rgba(255,255,255,.14);flex:none}
+.wx-landing__stat-sep{width:1px;height:26px;align-self:center;background:rgba(255,255,255,.16);flex:none}
 
-.wx-landing__map{position:relative;flex:none;left:50%;transform:translateX(-50%);margin-top:clamp(20px,4vh,40px);margin-bottom:-2vh;z-index:2}
+.wx-landing__map{position:relative;flex:none;left:50%;transform:translateX(-50%);margin-top:1.1rem;margin-bottom:-2vh;z-index:2}
 .wx-landing__map canvas{display:block;-webkit-mask-image:radial-gradient(ellipse at 50% 58%,#000 52%,transparent 100%);mask-image:radial-gradient(ellipse at 50% 58%,#000 52%,transparent 100%)}
 .wx-landing__cl{position:absolute;display:flex;transform:translate(-50%,-50%);--a:clamp(24px,2.7vw,42px);z-index:6}
-.wx-landing__cl i{position:relative;display:block;width:var(--a);height:var(--a);border-radius:50%;overflow:hidden;margin-left:calc(var(--a) * -0.3);border:2px solid var(--wxl-bg);box-shadow:0 0 0 1px rgba(255,255,255,.18);transition:transform .2s,box-shadow .2s;cursor:pointer}
-.wx-landing__cl i:hover{transform:scale(1.15);box-shadow:0 0 0 2px var(--wxl-green),0 0 24px rgba(0,238,136,.4);z-index:10}
+.wx-landing__cl i{position:relative;display:block;width:var(--a);height:var(--a);margin-left:calc(var(--a) * -0.3);transition:transform .2s;cursor:pointer}
+.wx-landing__cl i .wx-landing__avatar-clip{border-width:2px;box-shadow:0 0 0 1px rgba(255,255,255,.18);transition:box-shadow .2s}
+.wx-landing__cl i:hover{transform:scale(1.15);z-index:10}
+.wx-landing__cl i:hover .wx-landing__avatar-clip{box-shadow:0 0 0 2px var(--wxl-green),0 0 24px rgba(0,238,136,.4)}
 .wx-landing__cl i:first-child{margin-left:0}
-.wx-landing__cl i img{display:block;width:100%;height:100%;object-fit:cover}
 .wx-landing__tag{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:5px 11px;border-radius:999px;background:#10142a;border:1px solid rgba(0,238,136,.4);color:var(--wxl-green);font-size:11px;font-weight:800;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .15s ease}
 .wx-landing__tag.is-visible{opacity:1}
 
-/* A fixed gap (not margin-top:auto) so leftover vertical space on a tall viewport splits evenly
-   above the whole group and below the footer via the section's own justify-content:center,
-   instead of all of it pooling into one large gap right above the footer. */
-.wx-landing__footer{position:relative;z-index:20;padding:0 1rem;margin-top:clamp(14px,2.4vh,28px)}
+/* The section is top-anchored (flex-start) now, not centered, so margin-top:auto here does
+   exactly one predictable thing: pushes the footer down to the bottom edge and soaks up
+   whatever space is left, while everything above it stays tightly packed near the top with its
+   own small fixed gaps. */
+.wx-landing__footer{position:relative;z-index:20;padding:0 1rem;margin-top:auto}
 .wx-landing__footer-links{display:flex;justify-content:center;gap:1.8rem;flex-wrap:wrap;margin-bottom:10px}
 .wx-landing__footer-links a{display:inline-flex;align-items:center;gap:6px;color:var(--wxl-mute);text-decoration:none;font-size:.85rem;font-weight:600;letter-spacing:.02em;transition:color .2s,text-shadow .2s}
 .wx-landing__footer-links a i{font-size:13px;color:rgba(141,149,189,.7);transition:color .2s}
@@ -229,13 +243,12 @@
 .wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
 
 @media(max-width:640px){
-    /* Height/overflow/justify-content:center are inherited from the base rule above, so the
-       copy/stats/map/footer group is centered as one unit within the single viewport - any
-       slack splits evenly above and below it instead of pooling into one large gap between the
-       buttons and the map like a plain flex-start/space-between layout produced. The topbar
-       stays absolutely pinned to the very top (not part of that group) so the logo and account
-       icon sit fixed at the corners regardless of how that group is centered. */
-    .wx-landing{padding-top:4.1rem;padding-bottom:.6rem}
+    /* Height/overflow/justify-content:flex-start are inherited from the base rule above. The
+       topbar stays absolutely pinned to the very top so the logo and account icon sit fixed at
+       the corners; this padding-top just clears room below it for the rest of the content,
+       which stays tightly packed with its own small fixed gaps while the footer (margin-top:
+       auto, see its own rule) is pushed down to the bottom edge. */
+    .wx-landing{padding-top:4.3rem;padding-bottom:.6rem}
     /* Logo pinned top-left, account icon (Sign In/Up dropdown) pinned top-right - the ordinary
        nav links (Home/Arena/Blogs) move to the footer hamburger sheet instead so the topbar
        doesn't compete with the headline for room right below it. */
@@ -259,33 +272,34 @@
     .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
     /* Stays one inline row even on narrow phones - labels are allowed to wrap to two short
        lines rather than forcing the three columns themselves to stack. */
-    .wx-landing__stats{gap:6px;padding:9px 8px;margin-top:.5rem;border-radius:14px}
+    .wx-landing__stats{gap:16px;margin-top:.55rem}
     .wx-landing__stat strong{font-size:13.5px}
-    .wx-landing__stat span{font-size:7.6px;white-space:normal;line-height:1.15}
-    .wx-landing__map{margin-top:.4rem;margin-bottom:0}
+    .wx-landing__stat span{font-size:7.6px;white-space:normal;line-height:1.15;max-width:72px}
+    .wx-landing__stat-sep{height:20px}
+    .wx-landing__map{margin-top:1.2rem;margin-bottom:0}
     /* The orbit avatars render large and ungainly at phone widths (fixed clamp() floor never
        actually shrinks enough), and the thin ring line alone serves no purpose without them -
        hidden entirely on mobile rather than trying to miniaturize something that only reads
        well at tablet size and up. */
     .wx-landing__ring{display:none}
     .wx-landing__cl{--a:24px}
-    .wx-landing__cl i{border-width:1.5px}
+    .wx-landing__cl i .wx-landing__avatar-clip{border-width:1.5px}
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
-       on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row. */
+       on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row.
+       margin-top stays the base rule's auto (not overridden here) so the footer - and the
+       hamburger/Official/copyright inside it - sits pinned to the bottom edge. */
     .wx-landing__footer-links{display:none}
-    .wx-landing__footer{padding:0 1rem;margin-top:.8rem}
+    .wx-landing__footer{padding:0 1rem}
     .wx-landing__copyright{font-size:.65rem;margin-top:6px}
 }
 @media(min-width:641px) and (max-width:1024px){
     .wx-landing__topbar{gap:1.8rem;padding:1rem 1.5rem}
     .wx-landing__nav{gap:1.5rem}
-    .wx-landing__copy{margin-top:2rem}
-    .wx-landing__map{margin-top:2.2rem}
 }
 @media(max-height:720px) and (min-width:641px){
-    .wx-landing{justify-content:flex-start;padding-top:5rem;padding-bottom:2rem}
-    .wx-landing__copy{margin-top:1.5rem}
-    .wx-landing__map{margin-top:1.2rem}
+    /* Still top-anchored (flex-start, inherited) - just a touch less top padding on a short
+       desktop/tablet window, kept no lower than the topbar's own height so nothing overlaps it. */
+    .wx-landing{padding-top:5.2rem;padding-bottom:1rem}
     .wx-landing__ring{top:14vh}
 }
 @media(prefers-reduced-motion:reduce){
@@ -324,10 +338,12 @@
     function avatarMarkup(i) {
         var u = COMMUNITY[i % COMMUNITY.length];
         var dot = statusDotHtml();
-        if (u && u.avatar) {
-            return '<img src="' + u.avatar + '" alt="" loading="eager" onerror="window.__wxAvatarFallback(this,\'' + avatarLetter(u) + '\')">' + dot;
-        }
-        return letterFallbackHtml(avatarLetter(u)) + dot;
+        var inner = (u && u.avatar)
+            ? '<img src="' + u.avatar + '" alt="" loading="eager" onerror="window.__wxAvatarFallback(this,\'' + avatarLetter(u) + '\')">'
+            : letterFallbackHtml(avatarLetter(u));
+        // The dot is a sibling of the clip span, not inside it, so the circular overflow:hidden
+        // clip on the span can't cut it off.
+        return '<span class="wx-landing__avatar-clip">' + inner + '</span>' + dot;
     }
     function usernameFor(i) {
         var u = COMMUNITY[i % COMMUNITY.length];
