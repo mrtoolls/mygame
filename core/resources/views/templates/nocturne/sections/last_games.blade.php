@@ -1,11 +1,42 @@
 @php
-    $latestGameLogs = collect();
+    $normalFeed = collect();
     if (\Illuminate\Support\Facades\Schema::hasTable('game_logs')) {
-        $latestQuery = \App\Models\GameLog::with(['user:id,username', 'game:id,name'])->latest('id');
-        if (\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'demo_play')) $latestQuery->where('demo_play', 0);
-        if (\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'status')) $latestQuery->where('status', \App\Constants\Status::GAME_FINISHED);
-        $latestGameLogs = $latestQuery->limit(10)->get();
+        $normalQuery = \App\Models\GameLog::with(['user:id,username', 'game:id,name'])->latest('id')->limit(6);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'demo_play')) $normalQuery->where('demo_play', 0);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'status')) $normalQuery->where('status', \App\Constants\Status::GAME_FINISHED);
+        foreach ($normalQuery->get() as $log) {
+            $normalFeed->push((object) [
+                'game_name' => $log->game?->name ?? __('Winxpot game'),
+                'username' => $log->user?->username,
+                'wager' => (float) $log->invest,
+                'result' => (float) $log->win_amo,
+                'at' => $log->created_at,
+            ]);
+        }
     }
+
+    $tableFeed = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('table_game_players') && \Illuminate\Support\Facades\Schema::hasTable('table_games')) {
+        $tableQuery = \App\Models\TableGamePlayer::with(['user:id,username', 'table:id,game_type,status'])
+            ->whereIn('settlement_type', ['payout', 'loss'])
+            ->whereHas('table', fn ($q) => $q->where('status', 'finished'))
+            ->latest('id')->limit(4);
+        foreach ($tableQuery->get() as $player) {
+            $tableFeed->push((object) [
+                'game_name' => \App\Games\TableGames\TableGameRules::GAMES[$player->table?->game_type]['name'] ?? __('Table game'),
+                'username' => $player->user?->username,
+                'wager' => (float) $player->stake,
+                'result' => (float) ($player->settlement_amount ?? 0),
+                'at' => $player->updated_at,
+            ]);
+        }
+    }
+
+    // Reserving fixed slots per source (6 normal + 4 table), rather than pooling everything
+    // and taking the latest 10 overall, guarantees table games show up here whenever any
+    // exist - a plain time-sort would let the usually-far-more-numerous normal games crowd
+    // them out entirely. The reserved set is then sorted by time just for display order.
+    $latestGameLogs = $normalFeed->merge($tableFeed)->sortByDesc('at')->values();
 @endphp
 <section class="nocturne-community-section">
     <div class="nocturne-community-heading"><div><span class="nocturne-community-kicker">@lang('THE LATEST ACTION')</span><h2><i class="ph-fill ph-dice-five"></i>@lang('Last Games')</h2><p>@lang('Recent game activity from real recorded plays.')</p></div><span class="nocturne-community-heading__badge"><i class="ph-fill ph-users-three"></i>{{ number_format(\App\Models\User::count()) }} @lang('players')</span></div>
@@ -13,8 +44,8 @@
         <div class="nocturne-last-games-table" role="table" aria-label="@lang('Last games')">
             <div class="nocturne-last-games-table__head" role="row"><span role="columnheader">@lang('Game')</span><span role="columnheader">@lang('Player')</span><span role="columnheader">@lang('Wager')</span><span role="columnheader">@lang('Result')</span></div>
             @foreach($latestGameLogs as $log)
-                @php $player = $log->user?->username ?: __('Player'); $maskedPlayer = mb_substr($player, 0, 2) . str_repeat('•', max(2, min(6, mb_strlen($player) - 2))); @endphp
-                <div class="nocturne-last-games-table__row" role="row"><span class="nocturne-last-games-table__game" role="cell"><i class="ph-fill ph-dice-five"></i>{{ __($log->game?->name ?? __('Winxpot game')) }}</span><span class="nocturne-last-games-table__player" role="cell">{{ $maskedPlayer }}<small>{{ $log->created_at?->diffForHumans() ?? __('Recently') }}</small></span><strong role="cell">{{ showAmount($log->invest) }}</strong><strong class="{{ (float) $log->win_amo > 0 ? 'is-win' : 'is-loss' }}" role="cell">{{ showAmount($log->win_amo) }}</strong></div>
+                @php $player = $log->username ?: __('Player'); $maskedPlayer = mb_substr($player, 0, 2) . str_repeat('•', max(2, min(6, mb_strlen($player) - 2))); @endphp
+                <div class="nocturne-last-games-table__row" role="row"><span class="nocturne-last-games-table__game" role="cell"><i class="ph-fill ph-dice-five"></i>{{ __($log->game_name) }}</span><span class="nocturne-last-games-table__player" role="cell">{{ $maskedPlayer }}<small>{{ $log->at?->diffForHumans() ?? __('Recently') }}</small></span><strong role="cell">{{ showAmount($log->wager) }}</strong><strong class="{{ $log->result > 0 ? 'is-win' : 'is-loss' }}" role="cell">{{ showAmount($log->result) }}</strong></div>
             @endforeach
         </div>
     @else
