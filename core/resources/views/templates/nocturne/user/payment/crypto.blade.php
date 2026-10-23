@@ -45,7 +45,7 @@
         .crypto-payment-overview,.crypto-payment-card{min-width:0;border:1px solid rgba(133,142,175,.15);border-radius:22px;background:#151a31;box-shadow:0 15px 40px rgba(0,0,0,.16)}
         .crypto-payment-overview{display:flex;flex-direction:column;padding:clamp(20px,2.6vw,32px);background:radial-gradient(ellipse at 15% 0,rgba(0,231,138,.12),transparent 40%),#151a31}
         .crypto-payment-kicker{color:#00e78a;font-size:10px;font-weight:850;letter-spacing:.14em}
-        .crypto-payment-overview h2{margin:10px 0 8px;color:#f5f6ff;font-size:clamp(22px,2.4vw,30px);font-weight:850;letter-spacing:-.04em}
+        .crypto-payment-overview h2{margin:10px 0 8px;color:#f5f6ff;font-size:clamp(18px,2.2vw,22px);font-weight:850;letter-spacing:-.04em}
         .crypto-payment-overview>p{margin:0 0 24px;color:#858eaf;font-size:14px;line-height:1.65}
         .crypto-overview-row{display:flex;justify-content:space-between;gap:12px;padding:15px 0;border-bottom:1px dashed rgba(133,142,175,.2);color:#858eaf;font-size:13px}
         .crypto-overview-row strong{color:#f5f6ff;text-align:right}
@@ -59,7 +59,7 @@
         .crypto-history-link i:last-child{margin-left:auto;color:#00e78a}
         .crypto-payment-card{overflow:hidden}
         .crypto-payment-card__header{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:22px 26px;border-bottom:1px solid rgba(133,142,175,.14)}
-        .crypto-payment-card__header h2{margin:5px 0 0;color:#f5f6ff;font-size:21px;font-weight:850}
+        .crypto-payment-card__header h2{margin:5px 0 0;color:#f5f6ff;font-size:18px;font-weight:850}
         .crypto-payment-card__header h2 small{color:#858eaf;font-size:14px;font-weight:700}
         .crypto-selected-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(0,231,138,.12);color:#00e78a;font-size:11px;font-weight:850}
         .crypto-payment-body{padding:clamp(18px,2.5vw,30px)}

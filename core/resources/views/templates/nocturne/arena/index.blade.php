@@ -371,7 +371,7 @@
 .nocturne-arena-announcement__badge::before{content:'';flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:currentColor;animation:arenaBadgeBlink 1.4s ease-in-out infinite}
 @keyframes arenaBadgeBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
 @media(prefers-reduced-motion:reduce){.nocturne-arena-announcement__badge::before{animation:none}}
-.nocturne-arena-announcement__content h2{margin:0 0 8px;color:#fff;font-size:clamp(24px,3.6vw,38px);font-weight:950;letter-spacing:-.01em;line-height:1.1;text-transform:uppercase}
+.nocturne-arena-announcement__content h2{margin:0 0 8px;color:#fff;font-size:clamp(20px,3vw,28px);font-weight:950;letter-spacing:-.01em;line-height:1.1;text-transform:uppercase}
 .nocturne-arena-announcement__timer{display:flex;gap:9px;margin-bottom:16px}
 .nocturne-arena-timer-unit{display:grid;justify-items:center;gap:3px;min-width:58px;padding:10px 8px;border:1px solid rgba(0,231,138,.3);border-radius:13px;background:rgba(0,231,138,.06);box-shadow:0 0 18px rgba(0,231,138,.08) inset}
 .nocturne-arena-timer-unit strong{color:#fff;font-size:21px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1}

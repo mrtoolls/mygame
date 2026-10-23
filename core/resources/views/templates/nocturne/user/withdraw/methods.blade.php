@@ -154,7 +154,7 @@
 .nocturne-wallet-page .nocturne-page-title{margin-bottom:16px;font-size:26px}
 .nocturne-wallet-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;margin:0 0 22px;padding:24px 28px;border:1px solid var(--wallet-line);border-radius:24px;background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.18)}
 .nocturne-wallet-hero__eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--wallet-accent);font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-.nocturne-wallet-hero__copy h2{margin:8px 0 4px;color:var(--wallet-text);font-size:clamp(20px,2.4vw,28px);font-weight:850;letter-spacing:-.03em}
+.nocturne-wallet-hero__copy h2{margin:8px 0 4px;color:var(--wallet-text);font-size:clamp(18px,2.2vw,22px);font-weight:850;letter-spacing:-.03em}
 .nocturne-wallet-hero__copy p{margin:0;color:var(--wallet-muted);font-size:13.5px}
 .nocturne-wallet-hero__balance{position:relative;min-width:190px;padding:14px 46px 14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(7,11,27,.5)}
 .nocturne-wallet-hero__balance>span{display:block;color:var(--wallet-muted);font-size:11px;font-weight:700}
@@ -236,7 +236,7 @@
 
 .nocturne-wallet-history{margin-top:24px;padding:22px;border:1px solid var(--wallet-line);border-radius:22px;background:linear-gradient(150deg,#151a31,#10152a)}
 .nocturne-wallet-history__heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
-.nocturne-wallet-history__heading h2{margin:0;color:var(--wallet-text);font-size:18px;font-weight:850}
+.nocturne-wallet-history__heading h2{margin:0;color:var(--wallet-text);font-size:16px;font-weight:850}
 .nocturne-wallet-kicker{display:block;margin-bottom:3px;color:var(--wallet-accent);font-size:9px;font-weight:850;letter-spacing:.14em}
 .nocturne-wallet-history__heading>a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;background:var(--wallet-raised);color:var(--wallet-text);font-size:12px;font-weight:750;text-decoration:none}
 .nocturne-wallet-history__list{display:grid;gap:9px}

@@ -131,7 +131,7 @@
             .nocturne-auth { min-height: 100dvh; }
             .nocturne-auth-card { box-shadow: none; }
             .nocturne-auth-visual { min-height: 220px; padding: 22px 20px 26px; }
-            .nocturne-auth-visual__copy h2 { font-size: 19px; }
+            .nocturne-auth-visual__copy h2 { font-size: 17px; }
             .nocturne-auth-visual__copy p { font-size: 13px; margin-bottom: 12px; }
             .nocturne-auth-form { padding: 22px 16px calc(22px + env(safe-area-inset-bottom)); }
             .nocturne-auth-form h1 { font-size: 22px; margin-bottom: 4px; }

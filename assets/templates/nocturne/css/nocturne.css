@@ -40,7 +40,7 @@
 .app-install-modal__dialog { position: relative; width: min(760px, 100%); max-height: min(90vh, 780px); overflow-y: auto; padding: clamp(22px, 4vw, 38px); border: 1px solid #2d3655; border-radius: 26px; background: radial-gradient(ellipse at 88% 4%, rgba(0,239,135,.12), transparent 36%), #151a30; box-shadow: 0 25px 80px rgba(0,0,0,.48); }
 .app-install-modal__close { position: absolute; top: 13px; right: 15px; width: 38px; height: 38px; border: 0; border-radius: 12px; background: #242c49; color: #eaf0ff; font-size: 24px; line-height: 1; }
 .app-install-modal__eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 10px; color: #00ef87; font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.app-install-modal__dialog h2 { margin: 0 42px 7px 0; color: #f4f6ff; font-size: clamp(22px, 4vw, 30px); font-weight: 900; }
+.app-install-modal__dialog h2 { margin: 0 42px 7px 0; color: #f4f6ff; font-size: clamp(18px, 3.6vw, 22px); font-weight: 900; }
 .app-install-modal__intro { margin: 0 0 23px; color: #99a2c2; font-size: 14px; }
 .app-install-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
 .app-install-step { position: relative; padding: 12px; border: 1px solid #2a3352; border-radius: 17px; background: rgba(31,39,66,.68); }
@@ -277,7 +277,8 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-mobile-nav { display: none; }
 
 /* Preserve existing page content and controls while reskinning their shared surfaces. */
-.nocturne-main h1, .nocturne-main h2, .nocturne-main h3, .nocturne-main h4, .nocturne-main h5 { color: var(--nocturne-text); font-weight: 800; letter-spacing: -.025em; }
+.nocturne-main h1, .nocturne-main h2, .nocturne-main h3, .nocturne-main h4 { color: var(--nocturne-text); font-weight: 800; letter-spacing: -.025em; }
+.nocturne-main h5 { color: var(--nocturne-text); font-weight: 700; letter-spacing: -.025em; }
 .nocturne-main p, .nocturne-main .text-muted, .nocturne-main small { color: var(--nocturne-muted); }
 .nocturne-main .card, .nocturne-main .custom--card, .nocturne-main .info-card, .nocturne-main .game-card,
 .nocturne-main .custom--accordion .accordion-item, .nocturne-main .table-responsive, .nocturne-main .profile-thumb {
@@ -461,7 +462,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .win-loss-popup__spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px #00ef87; animation: nocturne-spark 1.8s ease-in-out infinite; }
 .win-loss-popup__spark--one { top: 35px; left: 5px; }.win-loss-popup__spark--two { top: 4px; left: 63px; animation-delay: -.4s; }.win-loss-popup__spark--three { right: 1px; bottom: 45px; animation-delay: -.8s; }.win-loss-popup__spark--four { bottom: 4px; right: 58px; animation-delay: -1.2s; }
 .win-loss-popup.is-loss .win-loss-popup__coin,.win-loss-popup.is-loss .win-loss-popup__spark { opacity: .25; }
-.win-loss-popup__title { margin: 5px 0 5px; color: #f7f8ff; font-size: 27px; font-weight: 950; }
+.win-loss-popup__title { margin: 5px 0 5px; color: #f7f8ff; font-size: 22px; font-weight: 950; }
 .win-loss-popup__amount { margin: 0; color: #00ef87; font-size: clamp(23px, 6vw, 32px); font-weight: 950; font-variant-numeric: tabular-nums; }
 .win-loss-popup.is-loss .win-loss-popup__amount { color: #ff8295; }.win-loss-popup.is-push .win-loss-popup__amount { color: #9db6ff; }
 .win-loss-popup__message { margin: 7px 0 0; color: #9da6c7; font-size: 13px; }
@@ -588,7 +589,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-support-ticket-arrow { color:var(--nocturne-muted); font-size:16px; }
 .nocturne-support-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:250px; padding:26px; border:1px dashed var(--nocturne-line); border-radius:20px; background:rgba(21,26,49,.54); text-align:center; }
 .nocturne-support-empty>span { display:grid; place-items:center; width:54px; height:54px; margin-bottom:13px; border-radius:17px; background:rgba(0,239,135,.1); color:var(--nocturne-green); font-size:25px; }
-.nocturne-support-empty h2 { margin:0 0 5px; color:var(--nocturne-text); font-size:17px; font-weight:850; }
+.nocturne-support-empty h2 { margin:0 0 5px; color:var(--nocturne-text); font-size:16px; font-weight:850; }
 .nocturne-support-empty p { max-width:360px; margin:0 0 17px; color:var(--nocturne-muted); font-size:12px; }
 .nocturne-support-form-card,.nocturne-support-thread { overflow:hidden; border:1px solid var(--nocturne-line); border-radius:20px; background:var(--nocturne-panel); }
 .nocturne-support-form-card { padding:22px; }
@@ -660,7 +661,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-main { padding: 82px 6px 86px; }
     .nocturne-main .py-100 { padding-top: 12px !important; padding-bottom: 30px !important; }
     .nocturne-main h1 { font-size: 25px; }
-    .nocturne-main h2 { font-size: 22px; }
+    .nocturne-main h2 { font-size: 17px; }
     .nocturne-main h3 { font-size: 19px; }
     .nocturne-main .card, .nocturne-main .custom--card { border-radius: 15px; }
     .nocturne-main .card-body { padding: 16px; }
@@ -1004,7 +1005,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 /* ---- Homepage game rows (Trending Now / Featured) — horizontal scroller ---- */
 .nocturne-game-row { margin: 0 0 32px; }
 .nocturne-game-row__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.nocturne-game-row__head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--nocturne-text); font-size: 19px; font-weight: 800; }
+.nocturne-game-row__head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--nocturne-text); font-size: 17px; font-weight: 800; }
 .nocturne-game-row__head h2 i { color: var(--nocturne-green); font-size: 21px; }
 .nocturne-game-row__head a { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 11px; background: var(--nocturne-raised); color: var(--nocturne-text); text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .nocturne-game-row__head a:hover { background: #303958; color: var(--nocturne-green); }
@@ -1120,7 +1121,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 }
 .nocturne-auth-visual__brand img { height: 30px; object-fit: contain; }
 .nocturne-auth-visual__copy { position: relative; z-index: 2; }
-.nocturne-auth-visual__copy h2 { margin: 0 0 8px; color: #fff; font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; line-height: 1.2; }
+.nocturne-auth-visual__copy h2 { margin: 0 0 8px; color: #fff; font-size: clamp(18px, 2.2vw, 22px); font-weight: 800; line-height: 1.2; }
 .nocturne-auth-visual__copy h2 span { color: var(--nocturne-green); }
 .nocturne-auth-visual__copy p { margin: 0 0 18px; color: var(--nocturne-muted); font-size: 14.5px; font-weight: 700; }
 .nocturne-auth-visual__trust { display: inline-flex; align-items: center; gap: 8px; color: var(--nocturne-muted); font-size: 12.5px; }
@@ -1296,14 +1297,14 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 
 .nocturne-section { margin-bottom: 44px; }
 .nocturne-section__head { margin-bottom: 22px; }
-.nocturne-section__head h2 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 22px; font-weight: 800; }
+.nocturne-section__head h2 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 18px; font-weight: 800; }
 .nocturne-section__head p { margin: 0; color: var(--nocturne-muted); font-size: 14px; }
 
 .nocturne-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .nocturne-feature-card { padding: 22px; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
 .nocturne-feature-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; margin-bottom: 14px; border-radius: 12px; background: var(--nocturne-raised); }
 .nocturne-feature-card__icon img { max-width: 22px; max-height: 22px; }
-.nocturne-feature-card h5 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 15px; font-weight: 800; }
+.nocturne-feature-card h5 { margin: 0 0 6px; color: var(--nocturne-text); font-size: 15px; font-weight: 700; }
 .nocturne-feature-card p { margin: 0; color: var(--nocturne-muted); font-size: 13px; line-height: 1.6; }
 
 .nocturne-award-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
@@ -1402,7 +1403,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .nocturne-section-heading > span { display: flex; align-items: center; gap: 10px; color: var(--nocturne-muted); }
 .nocturne-section-heading > span > i { font-size: 23px; }
-.nocturne-section-heading h2 { margin: 0; color: var(--nocturne-text); font-size: 25px; font-weight: 800; }
+.nocturne-section-heading h2 { margin: 0; color: var(--nocturne-text); font-size: 19px; font-weight: 800; }
 .nocturne-section-heading > p { margin: 0; color: var(--nocturne-muted); font-size: 13px; }
 .nocturne-promotion-tabs { display: inline-flex; gap: 4px; margin: 0 0 20px; padding: 5px; border-radius: 14px; background: var(--nocturne-panel); }
 .nocturne-promotion-tabs button { min-height: 42px; padding: 0 19px; border: 0; border-radius: 10px; background: transparent; color: var(--nocturne-muted); font-weight: 750; cursor: pointer; transition: color .18s ease, background .18s ease; }
@@ -1440,7 +1441,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 /* This page's sections share .nocturne-vip-section-head/.nocturne-vip-kicker with VIP, where
    the larger scale fits a full hero page - scoped down here so headings don't compete with
    each other inside these more compact, card-based sections. */
-.nocturne-business-promo-page .nocturne-vip-section-head h2 { font-size: clamp(16px,1.8vw,20px); }
+.nocturne-business-promo-page .nocturne-vip-section-head h2 { font-size: clamp(15px,1.6vw,18px); }
 .nocturne-business-promo-page .nocturne-vip-section-head p { font-size: 12px; }
 .nocturne-business-promo-side article > i { font-size: 22px; }
 .nocturne-business-promo-layout { display: grid; grid-template-columns: minmax(0,1fr) 270px; gap: 20px; align-items: start; }
@@ -1486,7 +1487,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-sponsor-row-icon { display: grid; width: 64px; height: 64px; flex: 0 0 64px; place-items: center; border-radius: 11px; background: rgba(0,231,143,.1); color: var(--nocturne-green); font-size: 26px; }
 @media(max-width: 600px) { .nocturne-sponsor-row-icon { width: 54px; height: 54px; flex-basis: 54px; font-size: 22px; } }
 @media (max-width: 900px) { .nocturne-promotions-hero { grid-template-columns: 1fr 1fr; } .nocturne-promo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nocturne-promo-card { grid-template-columns: 100px minmax(0, 1fr); gap: 14px; padding: 16px; } .nocturne-promo-card__image { width: 100px; height: 100px; } }
-@media (max-width: 600px) { .nocturne-promotions-hero { grid-template-columns: 1fr; min-height: auto; } .nocturne-promotions-hero__copy { padding: 25px 22px 4px; } .nocturne-promotions-hero__copy h1 { font-size: 30px; } .nocturne-promotions-hero__copy p { font-size: 14px; } .nocturne-promotions-hero__cta { margin-top: 17px; } .nocturne-promotions-hero__art { min-height: 155px; } .nocturne-promotions-hero__art > img { mask-image: linear-gradient(180deg, transparent 0%, #000 28%); } .nocturne-promotions-hero__ticket { top: 2%; left: 22%; font-size: 115px; } .nocturne-promotions-hero__gift { top: 7%; left: 60%; font-size: 82px; } .nocturne-section-heading { display: block; } .nocturne-section-heading > p { margin: 7px 0 0 33px; } .nocturne-section-heading h2 { font-size: 22px; } .nocturne-promotion-tabs { display: flex; width: 100%; } .nocturne-promotion-tabs button { flex: 1; } .nocturne-promo-grid { grid-template-columns: 1fr; gap: 12px; } .nocturne-promo-card { grid-template-columns: 92px minmax(0, 1fr); min-height: 140px; padding: 13px; border-radius: 16px; } .nocturne-promo-card__image { width: 92px; height: 100px; border-radius: 13px; } .nocturne-promo-card__body h3 { font-size: 15px; } .nocturne-promo-card__body p { font-size: 12px; line-height: 1.45; } .nocturne-promotion-empty { min-height: 175px; } .nocturne-promotions-news { margin-top: 34px; } }
+@media (max-width: 600px) { .nocturne-promotions-hero { grid-template-columns: 1fr; min-height: auto; } .nocturne-promotions-hero__copy { padding: 25px 22px 4px; } .nocturne-promotions-hero__copy h1 { font-size: 30px; } .nocturne-promotions-hero__copy p { font-size: 14px; } .nocturne-promotions-hero__cta { margin-top: 17px; } .nocturne-promotions-hero__art { min-height: 155px; } .nocturne-promotions-hero__art > img { mask-image: linear-gradient(180deg, transparent 0%, #000 28%); } .nocturne-promotions-hero__ticket { top: 2%; left: 22%; font-size: 115px; } .nocturne-promotions-hero__gift { top: 7%; left: 60%; font-size: 82px; } .nocturne-section-heading { display: block; } .nocturne-section-heading > p { margin: 7px 0 0 33px; } .nocturne-section-heading h2 { font-size: 17px; } .nocturne-promotion-tabs { display: flex; width: 100%; } .nocturne-promotion-tabs button { flex: 1; } .nocturne-promo-grid { grid-template-columns: 1fr; gap: 12px; } .nocturne-promo-card { grid-template-columns: 92px minmax(0, 1fr); min-height: 140px; padding: 13px; border-radius: 16px; } .nocturne-promo-card__image { width: 92px; height: 100px; border-radius: 13px; } .nocturne-promo-card__body h3 { font-size: 15px; } .nocturne-promo-card__body p { font-size: 12px; line-height: 1.45; } .nocturne-promotion-empty { min-height: 175px; } .nocturne-promotions-news { margin-top: 34px; } }
 
 .nocturne-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .nocturne-tier-card { position: relative; padding: 24px; text-align: center; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-md); }
@@ -1563,7 +1564,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-about-section { margin: 34px 0 42px; }
 .nocturne-about-section-title { display:flex; align-items:center; gap:11px; margin:0 0 17px 4px; }
 .nocturne-about-section-title>i,.nocturne-about-section-title>span>i { color:var(--nocturne-muted); font-size:27px; }
-.nocturne-about-section-title h2 { margin:0; color:var(--nocturne-text); font-size:clamp(20px,1.6vw,28px); font-weight:900; letter-spacing:-.035em; }
+.nocturne-about-section-title h2 { margin:0; color:var(--nocturne-text); font-size:clamp(17px,1.5vw,21px); font-weight:900; letter-spacing:-.035em; }
 .nocturne-about-section-title--action { justify-content:space-between; }
 .nocturne-about-section-title--action>span { display:flex; align-items:center; gap:11px; }
 .nocturne-about-view-all { display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border-radius:13px; background:var(--nocturne-raised); color:var(--nocturne-text); font-size:13px; font-weight:800; text-decoration:none; }
@@ -1700,7 +1701,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-about-news-card__copy>span { display:-webkit-box; overflow:hidden; color:var(--nocturne-muted); font-size:13px; font-weight:700; line-height:1.55; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .nocturne-about-news-card__copy>b { display:flex; align-items:center; gap:7px; color:var(--nocturne-green); font-size:13px; font-weight:900; }
 .nocturne-about-support { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:clamp(18px,3vw,45px); min-height:130px; padding:23px 30px; border-radius:24px; background:var(--nocturne-panel); }
-.nocturne-about-support__copy h2 { margin:0 0 5px; color:var(--nocturne-text); font-size:20px; font-weight:900; }
+.nocturne-about-support__copy h2 { margin:0 0 5px; color:var(--nocturne-text); font-size:17px; font-weight:900; }
 .nocturne-about-support__copy p { margin:0; color:var(--nocturne-muted); font-size:14px; font-weight:750; }
 .nocturne-about-support__team { display:flex; align-items:center; gap:15px; padding:12px 16px; border-radius:17px; background:rgba(10,13,30,.18); }
 .nocturne-about-support__avatars { display:flex; padding-left:7px; }
@@ -1848,7 +1849,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-footer-legalnav a { color:#929abc; font-size:10px; font-weight:750; text-decoration:none; }
 .nocturne-footer-legalnav a:hover { color:var(--nocturne-green); }
 .nocturne-policy-content { max-width:1040px; margin:0 auto; padding:clamp(20px,4vw,46px); border:1px solid var(--nocturne-line); border-radius:24px; background:linear-gradient(145deg,rgba(21,26,49,.98),rgba(14,18,36,.98)); color:#aeb6d2; font-size:14px; line-height:1.8; overflow-wrap:anywhere; }
-.nocturne-policy-content h2 { margin:28px 0 9px; color:#f5f6ff; font-size:clamp(17px,2vw,21px); font-weight:900; }
+.nocturne-policy-content h2 { margin:28px 0 9px; color:#f5f6ff; font-size:clamp(16px,1.8vw,19px); font-weight:900; }
 .nocturne-policy-content h2:first-child { margin-top:0; }
 .nocturne-policy-content p { margin:0 0 14px; color:#aeb6d2; }
 .nocturne-policy-content ul { display:grid; gap:8px; margin:0 0 16px; padding-left:22px; }
@@ -1922,13 +1923,13 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-vip-kicker,.nocturne-community-kicker { display:inline-flex; align-items:center; gap:7px; color:var(--nocturne-green); font-size:10px; font-weight:950; letter-spacing:.14em; }
 .nocturne-vip-kicker i { font-size:16px; }
 .nocturne-vip-hero h1 { margin:10px 0 7px; color:var(--nocturne-text); font-size:clamp(30px,4vw,48px); font-weight:950; letter-spacing:-.045em; }
-.nocturne-vip-hero h2 { margin:0; color:#e6e9f5; font-size:clamp(17px,2vw,23px); font-weight:850; }
+.nocturne-vip-hero h2 { margin:0; color:#e6e9f5; font-size:clamp(16px,1.8vw,19px); font-weight:850; }
 .nocturne-vip-hero p { max-width:520px; margin:11px 0 0; color:var(--nocturne-muted); font-size:14px; font-weight:700; line-height:1.65; }
 .nocturne-vip-partner-label { display:inline-flex; margin-top:18px; padding:7px 11px; border:1px solid rgba(0,239,135,.25); border-radius:999px; background:rgba(0,239,135,.08); color:var(--nocturne-green); font-size:9px; font-weight:950; letter-spacing:.12em; }
 .nocturne-vip-progress-panel,.nocturne-vip-tiers,.nocturne-vip-perks,.nocturne-vip-faq { margin-top:28px; }
 .nocturne-vip-progress-panel { padding:clamp(18px,3vw,30px); border:1px solid var(--nocturne-line); border-radius:25px; background:var(--nocturne-panel); }
 .nocturne-vip-progress-panel__head,.nocturne-vip-progress-panel__foot,.nocturne-vip-section-head { display:flex; align-items:center; justify-content:space-between; gap:18px; }
-.nocturne-vip-progress-panel__head h2,.nocturne-vip-section-head h2 { margin:5px 0 0; color:var(--nocturne-text); font-size:clamp(21px,2.4vw,30px); font-weight:950; letter-spacing:-.035em; }
+.nocturne-vip-progress-panel__head h2,.nocturne-vip-section-head h2 { margin:5px 0 0; color:var(--nocturne-text); font-size:clamp(17px,2vw,21px); font-weight:950; letter-spacing:-.035em; }
 .nocturne-vip-section-head p { margin:7px 0 0; color:var(--nocturne-muted); font-size:13px; line-height:1.6; }
 .nocturne-vip-wagered { text-align:right; }
 .nocturne-vip-wagered small,.nocturne-vip-tier-stop small { display:block; color:var(--nocturne-muted); font-size:10px; font-weight:850; letter-spacing:.08em; }
@@ -2007,7 +2008,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-vip-public-levels { margin:24px 0; }
 .nocturne-community-section { margin:27px 0; }
 .nocturne-community-heading { display:flex; align-items:end; justify-content:space-between; gap:15px; margin-bottom:14px; }
-.nocturne-community-heading h2 { display:flex; align-items:center; gap:9px; margin:4px 0 0; color:var(--nocturne-text); font-size:clamp(20px,2.5vw,28px); font-weight:950; letter-spacing:-.035em; }
+.nocturne-community-heading h2 { display:flex; align-items:center; gap:9px; margin:4px 0 0; color:var(--nocturne-text); font-size:clamp(17px,2vw,21px); font-weight:950; letter-spacing:-.035em; }
 .nocturne-community-heading h2>i { color:#7d86b0; font-size:.9em; }
 .nocturne-community-heading p { margin:5px 0 0; color:var(--nocturne-muted); font-size:12px; font-weight:700; }
 .nocturne-community-heading__badge { display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; padding:8px 11px; border:1px solid var(--nocturne-line); border-radius:12px; color:var(--nocturne-green); font-size:9px; font-weight:950; }
@@ -2044,7 +2045,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-live-tables { margin:24px 0 30px; padding:clamp(16px,2.5vw,24px); overflow:hidden; border:1px solid var(--nocturne-line); border-radius:24px; background:radial-gradient(ellipse at 85% 5%,rgba(0,239,135,.08),transparent 40%),linear-gradient(140deg,rgba(24,30,55,.98),rgba(12,16,32,.98)); }
 .nocturne-live-tables__head { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:15px; }
 .nocturne-live-tables__head>div:first-child>span { color:var(--nocturne-green); font-size:9px; font-weight:950; letter-spacing:.14em; }
-.nocturne-live-tables__head h2 { margin:4px 0; color:var(--nocturne-text); font-size:clamp(20px,2.8vw,28px); font-weight:950; letter-spacing:-.035em; }
+.nocturne-live-tables__head h2 { margin:4px 0; color:var(--nocturne-text); font-size:clamp(17px,2vw,21px); font-weight:950; letter-spacing:-.035em; }
 .nocturne-live-tables__head p { margin:0; color:var(--nocturne-muted); font-size:12px; }
 .nocturne-live-tables__controls { display:flex; flex:0 0 auto; align-items:center; gap:7px; }
 .nocturne-live-tables__controls>a { display:inline-flex; align-items:center; gap:6px; margin-right:3px; padding:10px 12px; border-radius:12px; background:var(--nocturne-raised); color:var(--nocturne-text); font-size:10px; font-weight:900; text-decoration:none; white-space:nowrap; }
@@ -2087,12 +2088,12 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-vip-hero__placeholder { align-content:end; justify-items:center; padding:0 15px 20px; }
     .nocturne-vip-hero__placeholder i { font-size:45px; }
     .nocturne-vip-hero h1 { font-size:31px; }
-    .nocturne-vip-hero h2 { font-size:16px; }
+    .nocturne-vip-hero h2 { font-size:15px; }
     .nocturne-vip-hero p { max-width:95%; font-size:12px; }
     .nocturne-vip-progress-panel,.nocturne-vip-tiers,.nocturne-vip-perks,.nocturne-vip-faq { margin-top:20px; }
     .nocturne-vip-progress-panel { padding:17px; border-radius:20px; }
     .nocturne-vip-progress-panel__head { align-items:flex-start; }
-    .nocturne-vip-progress-panel__head h2,.nocturne-vip-section-head h2 { font-size:21px; }
+    .nocturne-vip-progress-panel__head h2,.nocturne-vip-section-head h2 { font-size:17px; }
     .nocturne-vip-wagered strong { font-size:17px; }
     .nocturne-vip-wagered small { font-size:9px; }
     .nocturne-vip-tier-bridge { grid-template-columns:1fr; gap:10px; margin-top:17px; }
@@ -2128,7 +2129,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-vip-public-levels { margin:19px 0; }
     .nocturne-community-section { margin:22px 0; }
     .nocturne-community-heading { align-items:flex-start; }
-    .nocturne-community-heading h2 { font-size:20px; }
+    .nocturne-community-heading h2 { font-size:16px; }
     .nocturne-community-heading p { font-size:10px; }
     .nocturne-community-heading__badge { padding:7px 8px; font-size:8px; }
     .nocturne-big-wins-grid { grid-template-columns:1fr; gap:8px; }
@@ -2139,7 +2140,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-last-games-table__head,.nocturne-last-games-table__row { min-width:520px; grid-template-columns:1.2fr 1fr .8fr .8fr; padding:11px 13px; }
     .nocturne-live-tables { margin:18px 0 23px; padding:14px; border-radius:19px; }
     .nocturne-live-tables__head { align-items:flex-start; }
-    .nocturne-live-tables__head h2 { font-size:20px; }
+    .nocturne-live-tables__head h2 { font-size:16px; }
     .nocturne-live-tables__head p { max-width:270px; font-size:10px; line-height:1.5; }
     .nocturne-live-tables__controls { gap:5px; }
     .nocturne-live-tables__controls>a { display:none; }

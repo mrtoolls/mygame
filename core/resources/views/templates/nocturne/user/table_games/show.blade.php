@@ -444,7 +444,7 @@
 .result-popup.is-win .result-popup__icon{background:radial-gradient(circle,rgba(0,239,135,.22),rgba(0,239,135,.04));color:var(--tm-green,#00ef87);box-shadow:0 0 0 1px rgba(0,239,135,.25),0 0 40px rgba(0,239,135,.25)}
 .result-popup.is-lose .result-popup__icon{background:radial-gradient(circle,rgba(255,112,135,.18),rgba(255,112,135,.03));color:#ff95a6;box-shadow:0 0 0 1px rgba(255,112,135,.22)}
 .result-popup.is-draw .result-popup__icon{background:radial-gradient(circle,rgba(145,156,205,.22),rgba(145,156,205,.04));color:#bdc7e6;box-shadow:0 0 0 1px rgba(145,156,205,.22)}
-.result-popup__title{position:relative;z-index:1;margin:0 0 6px;font-size:23px;font-weight:950}
+.result-popup__title{position:relative;z-index:1;margin:0 0 6px;font-size:20px;font-weight:950}
 .result-popup__subtitle{position:relative;z-index:1;margin:0;color:var(--tm-muted,#929abc);font-size:12.5px;line-height:1.5}
 .result-popup__amount{position:relative;z-index:1;margin:18px 0;padding:14px;border-radius:16px;background:rgba(255,255,255,.04)}
 .result-popup__amount-value{display:block;font-size:27px;font-weight:950}

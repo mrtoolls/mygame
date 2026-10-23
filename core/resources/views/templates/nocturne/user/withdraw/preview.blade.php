@@ -61,7 +61,7 @@
         .nocturne-withdraw-preview{max-width:1200px;margin-inline:auto}
         .withdraw-review-hero{margin:0 0 22px;padding:24px 28px;border:1px solid rgba(133,142,175,.14);border-radius:22px;background:radial-gradient(ellipse at 85% 0,rgba(0,231,138,.18),transparent 38%),linear-gradient(120deg,#171d37,#11162b 70%)}
         .withdraw-review-hero span{color:#00e78a;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-        .withdraw-review-hero h2{margin:9px 0 5px;color:#f5f6ff;font-size:clamp(22px,2.4vw,30px);font-weight:800;letter-spacing:-.04em}
+        .withdraw-review-hero h2{margin:9px 0 5px;color:#f5f6ff;font-size:clamp(18px,2.2vw,22px);font-weight:800;letter-spacing:-.04em}
         .withdraw-review-hero p{margin:0;color:#858eaf;font-size:14px}
         .withdraw-review-card{padding:clamp(16px,3vw,28px);border:1px solid rgba(133,142,175,.14);border-radius:22px;background:#151a31}
         .withdraw-review-card .card-header{padding:0 0 18px;border-color:rgba(133,142,175,.15);background:transparent}
