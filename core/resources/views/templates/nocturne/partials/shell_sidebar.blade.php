@@ -46,6 +46,9 @@
             <a href="{{ auth()->check() ? route('user.vip.index') : route('pages', 'vip-club') }}"><i class="ph-fill ph-crown"></i><span>@lang('VIP-Club')</span></a>
             <a href="{{ route('feedback') }}"><i class="ph-fill ph-chat-circle"></i><span>@lang('Feedback About Us')</span></a>
             <a href="{{ route('blog') }}" class="{{ request()->routeIs('blog*') ? 'is-active' : '' }}"><i class="ph-fill ph-newspaper"></i><span>@lang('News')</span></a>
+            <div class="nocturne-menu-group__official">
+                @include('Template::partials.official_button')
+            </div>
         </section>
         @if (gs('multi_language'))
             <ul class="nocturne-language list-unstyled mb-0">@include('Template::partials.language', ['class' => ''])</ul>

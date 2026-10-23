@@ -1,10 +1,8 @@
 @extends('Template::layouts.app')
 @section('app')
-    <div class="nocturne-shell {{ !empty($hideMenuForGuest) ? 'nocturne-shell--no-sidebar' : '' }}">
+    <div class="nocturne-shell">
         @include('Template::partials.shell_header')
-        @unless(!empty($hideMenuForGuest))
-            @include('Template::partials.shell_sidebar')
-        @endunless
+        @include('Template::partials.shell_sidebar')
         <main class="nocturne-main nocturne-footer-always">
             <div class="nocturne-content">
                 @yield('content')

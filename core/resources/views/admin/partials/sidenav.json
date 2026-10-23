@@ -735,6 +735,22 @@
             },
             {
                 "keyword": [
+                    "Official",
+                    "Social links",
+                    "Social media",
+                    "X",
+                    "Twitter",
+                    "Facebook",
+                    "Instagram",
+                    "Discord",
+                    "TikTok"
+                ],
+                "title": "Official Social Links",
+                "route_name": "admin.social.links.index",
+                "menu_active": "admin.social.links.index"
+            },
+            {
+                "keyword": [
                     "Server",
                     "System",
                     "Server management",

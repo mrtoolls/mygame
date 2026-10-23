@@ -264,14 +264,13 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-menu-group a i { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: rgba(145,156,205,.1); color: var(--nocturne-muted); font-size: 18px; transition: background .16s ease,color .16s ease; }
 .nocturne-menu-group a:hover, .nocturne-menu-group a.is-active { background: #303958; color: #fff; }
 .nocturne-menu-group a:hover i, .nocturne-menu-group a.is-active i { background: rgba(0,239,135,.14); color: var(--nocturne-green); }
+.nocturne-menu-group__official { padding: 8px 10px 2px; }
+.nocturne-menu-group__official .wx-official__btn { width: 100%; justify-content: center; height: 42px; }
 .nocturne-language { padding: 10px; }
 .nocturne-language .language-wrapper { color: var(--nocturne-text); }
 .nocturne-logout { display: flex; align-items: center; gap: 10px; padding: 12px 18px; color: var(--nocturne-muted); text-decoration: none; font-weight: 700; }
 .nocturne-sidebar-backdrop { display: none; }
 .nocturne-main { min-height: 100vh; margin-left: 316px; padding: 112px clamp(20px, 3vw, 50px) 36px; }
-/* About Us, viewed signed out: the sidebar is hidden entirely (frontend.blade.php), so the
-   content area shouldn't keep reserving the fixed sidebar's width as empty space next to it. */
-.nocturne-shell--no-sidebar .nocturne-main { margin-left: 0; }
 .nocturne-content { width: 100%; max-width: 1680px; margin: 0 auto; }
 .nocturne-content > .container, .nocturne-main > .container { width: 100%; max-width: none; padding-right: 0; padding-left: 0; }
 .nocturne-main .py-100 { padding-top: 18px !important; padding-bottom: 55px !important; }

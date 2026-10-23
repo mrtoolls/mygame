@@ -2,12 +2,8 @@
 @section('app')
 <section class="wx-landing" id="hero">
     <header class="wx-landing__topbar">
-        <a class="wx-landing__logo" href="{{ route('landing') }}" aria-label="Winxpot home">
-            <svg viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M10 58C4 46 2 30 6 18C9 9 18 4 26 10C34 16 36 30 38 44C40 30 44 14 54 8C63 3 74 7 78 18C82 29 82 44 80 56C78 64 72 68 66 64C60 60 58 48 58 36C58 48 54 60 46 66C38 72 28 70 22 62C16 54 12 62 10 58Z" fill="#00ee88"/>
-                <path d="M88 58C86 52 86 44 90 38C94 32 102 30 108 36C114 42 114 52 112 60C110 66 106 70 100 68C94 66 90 62 88 58Z" fill="#00ee88"/>
-            </svg>
-            <span class="wx-landing__logo-text">Winxpot</span>
+        <a class="wx-landing__logo" href="{{ route('landing') }}" aria-label="{{ gs('site_name') }} home">
+            <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
         </a>
 
         <nav class="wx-landing__nav" aria-label="Main navigation">
@@ -30,7 +26,7 @@
     <div class="wx-landing__ring" aria-hidden="true" id="wx-ring"></div>
 
     <div class="wx-landing__copy">
-        <h1>@lang('Play, compete and connect with gamers worldwide')</h1>
+        <h1>@lang('Play, compete and connect')<br class="wx-landing__hl-break"> @lang('with gamers worldwide')</h1>
         <div class="wx-landing__cta">
             <a class="wx-landing__btn wx-landing__btn--primary" href="{{ route('user.login') }}">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -63,8 +59,26 @@
             <a href="{{ route('pages', 'licenses-security') }}"><i class="ph-fill ph-shield-check"></i>@lang('Licenses & Security')</a>
             <a href="{{ route('policy.pages', 'aml-policy') }}"><i class="ph-fill ph-eye"></i>@lang('AML Policy')</a>
         </div>
+        <div class="wx-landing__footer-actions">
+            <button type="button" class="wx-landing__hamburger" id="wx-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="@lang('Menu')">
+                <span class="wx-landing__hamburger-bar"></span>
+                <span class="wx-landing__hamburger-bar"></span>
+            </button>
+            @include('Template::partials.official_button')
+        </div>
         <p class="wx-landing__copyright">&copy; {{ date('Y') }} Winxpot. @lang('All rights reserved.')</p>
     </footer>
+
+    <div class="wx-landing__sheet" id="wx-menu-sheet" hidden>
+        <button type="button" class="wx-landing__sheet-backdrop" data-sheet-close="wx-menu-sheet" aria-label="@lang('Close menu')"></button>
+        <div class="wx-landing__sheet-panel" role="dialog" aria-modal="true" aria-label="@lang('Menu')">
+            <button type="button" class="wx-landing__sheet-close" data-sheet-close="wx-menu-sheet" aria-label="@lang('Close')">&times;</button>
+            <a href="{{ route('landing') }}"><i class="ph-fill ph-house"></i><span>@lang('Home')</span></a>
+            <a href="{{ route('arena.index') }}"><i class="ph-fill ph-fire"></i><span>@lang('Arena')</span></a>
+            <a href="{{ route('blog') }}"><i class="ph-fill ph-newspaper-clipping"></i><span>@lang('Blogs')</span></a>
+            <a href="{{ route('user.login') }}"><i class="ph-bold ph-sign-in"></i><span>@lang('Sign In')</span></a>
+        </div>
+    </div>
 </section>
 
 @push('style')
@@ -74,10 +88,9 @@
 .wx-landing::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(0,238,136,.03) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(70,60,200,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 .wx-landing__topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:2.5rem;padding:1.2rem 2rem;z-index:20;background:linear-gradient(to bottom,rgba(7,10,24,.85) 0%,rgba(7,10,24,.4) 70%,transparent 100%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.wx-landing__logo{display:flex;align-items:center;gap:.35rem;text-decoration:none;transition:opacity .2s;flex-shrink:0}
+.wx-landing__logo{display:flex;align-items:center;text-decoration:none;transition:opacity .2s;flex-shrink:0}
 .wx-landing__logo:hover{opacity:.85}
-.wx-landing__logo svg{height:36px;width:auto;display:block}
-.wx-landing__logo-text{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;color:var(--wxl-green);text-shadow:0 0 30px rgba(0,238,136,.3)}
+.wx-landing__logo img{display:block;max-width:168px;max-height:44px;object-fit:contain}
 
 .wx-landing__nav{display:flex;align-items:center;gap:2rem}
 .wx-landing__nav>a{display:inline-flex;align-items:center;gap:7px;color:var(--wxl-ink);text-decoration:none;font-size:1rem;font-weight:600;letter-spacing:.01em;transition:color .2s,text-shadow .2s;position:relative;padding:.3rem 0}
@@ -94,14 +107,17 @@
 .wx-landing__account-menu a i{color:var(--wxl-green);font-size:16px}
 .wx-landing__account-menu a:hover{background:rgba(0,238,136,.1);color:var(--wxl-green)}
 
-.wx-landing__ring{position:absolute;left:50%;top:-2vh;width:min(86vw,125vh);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
+/* Pushed well below the headline (top:26vh, not the mockup's -2vh) - at the original offset
+   the ring's avatars sat right behind/beside "Play, compete..." on most viewports, reading as
+   clutter instead of decoration. */
+.wx-landing__ring{position:absolute;left:50%;top:26vh;width:min(86vw,125vh);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;border:1px solid rgba(255,255,255,.13);animation:wxlSway 16s ease-in-out infinite alternate;z-index:0}
 @keyframes wxlSway{from{transform:translateX(-50%) rotate(-3deg)}to{transform:translateX(-50%) rotate(3deg)}}
 .wx-landing__oa{position:absolute;width:clamp(46px,5.2vw,70px);aspect-ratio:1;border-radius:50%;overflow:hidden;transform:translate(-50%,-50%);border:4px solid var(--wxl-bg);box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 28px rgba(0,238,136,.25);z-index:5;cursor:pointer}
 .wx-landing__oa img{display:block;width:100%;height:100%;object-fit:cover}
-.wx-landing__oa:nth-child(1){left:9%;top:21%}
-.wx-landing__oa:nth-child(2){left:100%;top:50%}
+.wx-landing__oa:nth-child(1){left:6%;top:14%}
+.wx-landing__oa:nth-child(2){left:100%;top:38%}
 
-.wx-landing__copy{position:relative;z-index:10;flex:none;padding:0 20px;margin-top:2.5rem}
+.wx-landing__copy{position:relative;z-index:10;flex:none;padding:0 20px;margin-top:5.5rem}
 .wx-landing__copy h1{margin:0 auto;max-width:19em;text-wrap:balance;font-size:clamp(22px,min(4.2vw,6.2vh),58px);line-height:1.12;font-weight:700;letter-spacing:-.025em;background:linear-gradient(135deg,#f2f5ff 0%,#c8d0f0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 2px 30px rgba(0,238,136,.08)}
 
 .wx-landing__cta{margin-top:clamp(20px,3.6vh,36px);display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
@@ -133,20 +149,54 @@
 .wx-landing__footer-links a:hover i{color:var(--wxl-green)}
 .wx-landing__copyright{margin:10px 0 0;color:rgba(141,149,189,.6);font-size:.72rem;font-weight:600;letter-spacing:.03em}
 
+/* Forces exactly two lines on mobile (a real device's width is too variable for natural
+   wrapping to reliably land on 2 lines on its own) while leaving the desktop headline flowing
+   as one continuous phrase - the <br> is just not rendered there. */
+.wx-landing__hl-break{display:none}
+
+/* Mobile-only: nav moves out of the topbar entirely (just the logo stays up top) and into a
+   hamburger + Official pairing in the footer, opening a bottom sheet instead. Desktop keeps
+   the ordinary top nav, so this row stays hidden there. */
+.wx-landing__footer-actions{display:none;align-items:center;justify-content:center;gap:12px;margin-bottom:12px}
+/* The current modern take on a hamburger: two short, asymmetric bars (not three stacked full-
+   width lines) that resolve into an X when the sheet opens. */
+.wx-landing__hamburger{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:5px;width:46px;height:46px;padding:0 0 0 14px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:rgba(255,255,255,.06);cursor:pointer;transition:border-color .2s,background .2s}
+.wx-landing__hamburger:hover,.wx-landing__hamburger[aria-expanded="true"]{border-color:rgba(0,238,136,.5);background:rgba(0,238,136,.1)}
+.wx-landing__hamburger-bar{display:block;height:2px;border-radius:2px;background:var(--wxl-ink);transition:transform .25s ease,width .25s ease,opacity .2s ease}
+.wx-landing__hamburger-bar:first-child{width:18px}
+.wx-landing__hamburger-bar:last-child{width:12px}
+.wx-landing__hamburger[aria-expanded="true"] .wx-landing__hamburger-bar{width:16px}
+.wx-landing__hamburger[aria-expanded="true"] .wx-landing__hamburger-bar:first-child{transform:translateY(3.5px) rotate(45deg)}
+.wx-landing__hamburger[aria-expanded="true"] .wx-landing__hamburger-bar:last-child{transform:translateY(-3.5px) rotate(-45deg)}
+
+.wx-landing__sheet{position:fixed;inset:0;z-index:1300;display:flex;align-items:flex-end;justify-content:center}
+.wx-landing__sheet-backdrop{position:absolute;inset:0;border:0;background:rgba(5,8,18,.78);backdrop-filter:blur(6px);cursor:pointer}
+.wx-landing__sheet-panel{position:relative;z-index:1;width:100%;max-width:440px;padding:24px 20px;border-radius:26px 26px 0 0;background:linear-gradient(165deg,#171d37,#0e1226);border:1px solid rgba(255,255,255,.1);box-shadow:0 -20px 60px rgba(0,0,0,.5);display:grid;gap:4px}
+.wx-landing__sheet-close{position:absolute;top:12px;right:14px;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:var(--wxl-ink);font-size:18px;cursor:pointer}
+.wx-landing__sheet-panel a{display:flex;align-items:center;gap:12px;padding:14px 12px;border-radius:14px;color:var(--wxl-ink);text-decoration:none;font-size:15px;font-weight:700}
+.wx-landing__sheet-panel a:hover,.wx-landing__sheet-panel a:active{background:rgba(0,238,136,.1);color:var(--wxl-green)}
+.wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
+
 @media(max-width:640px){
-    .wx-landing{padding-top:5.5rem;min-height:100dvh;justify-content:flex-start;padding-bottom:2.5rem}
-    .wx-landing__topbar{flex-direction:column;gap:.5rem;padding:.9rem 1rem .7rem}
-    .wx-landing__logo svg{height:30px}
-    .wx-landing__logo-text{font-size:1.4rem}
-    .wx-landing__nav{gap:1.1rem;flex-wrap:wrap;justify-content:center}
-    .wx-landing__nav>a span{font-size:.85rem}
-    .wx-landing__nav>a{padding:.4rem .15rem}
-    .wx-landing__copy{margin-top:2rem;padding:0 16px}
-    .wx-landing__copy h1{font-size:clamp(26px,8vw,38px);line-height:1.15;max-width:12em}
-    .wx-landing__cta{flex-direction:column;align-items:center;gap:12px;margin-top:1.8rem;width:100%;padding:0 16px}
-    .wx-landing__btn{width:100%;max-width:320px;justify-content:center;height:54px;font-size:16px}
+    .wx-landing{padding-top:4rem;min-height:100dvh;justify-content:flex-start;padding-bottom:2.5rem}
+    /* Logo alone, centered - nav (Home/Arena/Blogs/Sign in) moves to the footer hamburger sheet
+       instead, so the topbar doesn't compete with the headline for room right below it. */
+    .wx-landing__topbar{justify-content:center;padding:.8rem 1rem}
+    .wx-landing__logo{position:relative;padding:4px 10px}
+    .wx-landing__logo::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,238,136,.16),transparent 72%);border-radius:999px;z-index:-1}
+    .wx-landing__logo img{max-width:118px;max-height:32px}
+    .wx-landing__nav{display:none}
+    .wx-landing__footer-actions{display:flex}
+    .wx-landing__copy{margin-top:2.6rem;padding:0 16px}
+    .wx-landing__hl-break{display:block}
+    .wx-landing__copy h1{font-size:clamp(24px,7.4vw,34px);line-height:1.18;max-width:none}
+    /* Side by side, native-app style, not stacked full-width - each button shrinks to fit
+       rather than forcing a tall vertical stack of two giant pills. */
+    .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1.6rem;width:100%;padding:0 16px}
+    .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:50px;padding:0 10px;font-size:13px;gap:6px}
+    .wx-landing__btn svg{width:18px;height:18px;flex-shrink:0}
     .wx-landing__map{margin-top:2rem;margin-bottom:0}
-    .wx-landing__ring{width:120vw;top:2vh;opacity:.55}
+    .wx-landing__ring{width:120vw;top:22vh;opacity:.55}
     .wx-landing__oa{width:44px;border-width:3px}
     .wx-landing__oa:nth-child(1){left:14%;top:26%}
     .wx-landing__oa:nth-child(2){left:96%;top:48%}
@@ -168,7 +218,7 @@
     .wx-landing{justify-content:flex-start;padding-top:5rem;padding-bottom:2rem}
     .wx-landing__copy{margin-top:1.5rem}
     .wx-landing__map{margin-top:1.2rem}
-    .wx-landing__ring{top:-8vh}
+    .wx-landing__ring{top:14vh}
 }
 @media(prefers-reduced-motion:reduce){
     .wx-landing__ring{animation:none}
@@ -334,6 +384,26 @@
             menu.hidden = true;
             toggle.setAttribute('aria-expanded', 'false');
         }
+    });
+
+    // ── mobile footer hamburger menu sheet ──
+    var menuToggle = document.getElementById('wx-menu-toggle'), menuSheet = document.getElementById('wx-menu-sheet');
+    function closeMenuSheet() {
+        if (!menuSheet) return;
+        menuSheet.hidden = true;
+        menuToggle?.setAttribute('aria-expanded', 'false');
+    }
+    menuToggle?.addEventListener('click', function () {
+        if (!menuSheet) return;
+        var open = !menuSheet.hidden;
+        menuSheet.hidden = open;
+        menuToggle.setAttribute('aria-expanded', String(!open));
+    });
+    menuSheet?.querySelectorAll('[data-sheet-close]').forEach(function (btn) {
+        btn.addEventListener('click', closeMenuSheet);
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMenuSheet();
     });
 })();
 </script>

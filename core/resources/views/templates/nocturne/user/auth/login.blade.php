@@ -9,7 +9,7 @@
     <section class="nocturne-auth">
         <div class="nocturne-auth-card">
             <div class="nocturne-auth-visual" @if ($authImage) style="background-image:url('{{ $authImage }}')" @endif>
-                <a href="{{ route('home') }}" class="nocturne-auth-visual__brand">
+                <a href="{{ route('landing') }}" class="nocturne-auth-visual__brand">
                     <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
                 </a>
                 <div class="nocturne-auth-visual__copy">

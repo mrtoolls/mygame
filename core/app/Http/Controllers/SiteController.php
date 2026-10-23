@@ -68,8 +68,7 @@ class SiteController extends Controller {
         }
         $seoContents = $page->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
-        $hideMenuForGuest = $slug === 'about-us' && !auth()->check();
-        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'hideMenuForGuest'), isset($feedbacks) ? compact('feedbacks', 'feedbackStats') : []);
+        return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage'), isset($feedbacks) ? compact('feedbacks', 'feedbackStats') : []);
     }
 
     public function games() {
