@@ -178,37 +178,43 @@
 .wx-landing__sheet-panel a i{color:var(--wxl-green);font-size:19px;width:22px;text-align:center}
 
 @media(max-width:640px){
-    .wx-landing{padding-top:4.8rem;min-height:100dvh;justify-content:flex-start;padding-bottom:2.5rem}
+    /* Fixed to exactly one screen, not min-height - the whole point is nothing scrolls here.
+       overflow-y stays auto (not hidden) purely as a safety net on an unusually short/zoomed
+       viewport; everything below is sized so it shouldn't ever need it. justify-content:
+       space-between replaces the old flex-start + footer margin-top:auto combo - it distributes
+       the gap evenly between the copy/map/footer blocks instead of letting it all pool into one
+       large empty gap wherever the auto-margin happened to land. */
+    .wx-landing{height:100dvh;min-height:0;overflow-y:auto;padding-top:4.2rem;padding-bottom:.9rem;justify-content:space-between}
     /* Logo alone, centered - nav (Home/Arena/Blogs/Sign in) moves to the footer hamburger sheet
        instead, so the topbar doesn't compete with the headline for room right below it. */
-    .wx-landing__topbar{justify-content:center;padding:1.6rem 1rem .8rem}
+    .wx-landing__topbar{justify-content:center;padding:1.4rem 1rem .6rem}
     .wx-landing__logo{position:relative;padding:4px 10px}
     .wx-landing__logo::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,238,136,.16),transparent 72%);border-radius:999px;z-index:-1}
-    .wx-landing__logo img{max-width:118px;max-height:32px}
+    .wx-landing__logo img{max-width:106px;max-height:28px}
     .wx-landing__nav{display:none}
-    .wx-landing__footer-actions{display:flex}
-    .wx-landing__copy{margin-top:2.6rem;padding:0 16px}
+    .wx-landing__footer-actions{display:flex;margin-bottom:8px}
+    .wx-landing__copy{margin-top:1.4rem;padding:0 16px}
     .wx-landing__hl-break{display:block}
     /* Sized so "Play, compete and connect" (the longer of the two forced lines) reliably fits
        on one line down to ~360px-wide phones, rather than wrapping a third time on its own. */
-    .wx-landing__copy h1{font-size:clamp(19px,5.6vw,23px);line-height:1.25;max-width:none}
+    .wx-landing__copy h1{font-size:clamp(18px,5.3vw,22px);line-height:1.22;max-width:none}
     /* Side by side, native-app style, not stacked full-width - each button shrinks to fit
        rather than forcing a tall vertical stack of two giant pills. */
-    .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1.6rem;width:100%;padding:0 16px}
-    .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:50px;padding:0 10px;font-size:13px;gap:6px}
-    .wx-landing__btn svg{width:18px;height:18px;flex-shrink:0}
-    .wx-landing__map{margin-top:2rem;margin-bottom:0}
-    .wx-landing__ring{width:120vw;top:22vh;opacity:.55}
-    .wx-landing__oa{width:44px;border-width:3px}
+    .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1rem;width:100%;padding:0 16px}
+    .wx-landing__btn{flex:1;min-width:0;width:auto;max-width:none;justify-content:center;height:46px;padding:0 10px;font-size:12.5px;gap:6px}
+    .wx-landing__btn svg{width:17px;height:17px;flex-shrink:0}
+    .wx-landing__map{margin-top:.6rem;margin-bottom:0}
+    .wx-landing__ring{width:120vw;top:17vh;opacity:.55}
+    .wx-landing__oa{width:38px;border-width:3px}
     .wx-landing__oa:nth-child(1){left:14%;top:26%}
     .wx-landing__oa:nth-child(2){left:96%;top:48%}
-    .wx-landing__cl{--a:28px}
+    .wx-landing__cl{--a:24px}
     .wx-landing__cl i{border-width:1.5px}
     /* Per request: footer navigation links are desktop/tablet only - just the copyright shows
        on mobile, so the already-vertical hero/CTA/map stack doesn't need yet another row. */
     .wx-landing__footer-links{display:none}
-    .wx-landing__footer{padding:0 1rem 1.4rem;margin-top:1.6rem}
-    .wx-landing__copyright{font-size:.68rem}
+    .wx-landing__footer{padding:0 1rem;margin-top:0}
+    .wx-landing__copyright{font-size:.65rem;margin-top:6px}
 }
 @media(min-width:641px) and (max-width:1024px){
     .wx-landing__topbar{gap:1.8rem;padding:1rem 1.5rem}
@@ -358,8 +364,13 @@
     }
 
     function draw() {
-        var vw = innerWidth, vh = innerHeight,
-            H = Math.max(Math.min(vh * 0.46, vw / 2.9), vh * 0.3), W = H * 2.9,
+        var vw = innerWidth, vh = innerHeight, mobile = vw <= 640,
+            // Mobile needs a noticeably smaller share of the screen than desktop so the whole
+            // page (logo, headline, buttons, map, footer) fits in one view without scrolling.
+            H = mobile
+                ? Math.max(Math.min(vh * 0.2, vw / 2.6), vh * 0.14)
+                : Math.max(Math.min(vh * 0.46, vw / 2.9), vh * 0.3),
+            W = H * 2.9,
             k = Math.min(devicePixelRatio || 1, 2);
         map.style.width = W + 'px'; map.style.height = H + 'px';
         cv.width = W * k; cv.height = H * k;
