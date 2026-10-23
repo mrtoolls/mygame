@@ -1025,6 +1025,58 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-game-scroller .nocturne-game-scroller__item { flex-basis: 136px !important; width: 136px !important; max-width: 136px !important; }
 }
 
+/* ---- Latest Big Wins - auto-scrolling ticker (homepage, between Trending/Featured) ---- */
+.nocturne-ticker-wins { margin: 0 0 32px; }
+.nocturne-ticker-wins__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.nocturne-ticker-wins__head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--nocturne-text); font-size: 17px; font-weight: 800; }
+.nocturne-ticker-wins__head h2 i { color: var(--nocturne-green); font-size: 21px; }
+.nocturne-ticker-wins__live { display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border: 1px solid rgba(255,78,99,.3); border-radius: 999px; background: rgba(255,78,99,.1); color: #ff7d8d; font-size: 11px; font-weight: 900; letter-spacing: .06em; }
+.nocturne-ticker-wins__live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; animation: nocturneTickerPulse 1.4s ease-in-out infinite; }
+@keyframes nocturneTickerPulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.nocturne-ticker-wins__viewport {
+    position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.nocturne-ticker-wins__track {
+    display: flex; gap: 14px; width: max-content;
+    animation: nocturneTickerScroll calc(var(--ticker-count, 12) * 2.6s) linear infinite;
+}
+.nocturne-ticker-wins__viewport:hover .nocturne-ticker-wins__track { animation-play-state: paused; }
+@keyframes nocturneTickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+    .nocturne-ticker-wins__track { animation: none; }
+    .nocturne-ticker-wins__viewport { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+}
+.nocturne-win-card {
+    position: relative; flex: 0 0 172px; width: 172px; padding: 12px; border-radius: 18px; border: 1px solid var(--nocturne-line);
+    overflow: hidden; transition: transform .18s ease, border-color .18s ease;
+}
+.nocturne-win-card:hover { transform: translateY(-3px); }
+.nocturne-win-card--t1 { background: linear-gradient(155deg, #0e3b2b 0%, #101a2d 70%); }
+.nocturne-win-card--t1:hover { border-color: rgba(0,239,135,.45); }
+.nocturne-win-card--t2 { background: linear-gradient(155deg, #0e3148 0%, #101a2d 70%); }
+.nocturne-win-card--t2:hover { border-color: rgba(96,180,255,.45); }
+.nocturne-win-card--t3 { background: linear-gradient(155deg, #2a1a49 0%, #15182d 70%); }
+.nocturne-win-card--t3:hover { border-color: rgba(176,129,255,.45); }
+.nocturne-win-card--t4 { background: linear-gradient(155deg, #402c0e 0%, #1a1a2a 70%); }
+.nocturne-win-card--t4:hover { border-color: rgba(255,185,80,.45); }
+.nocturne-win-card--t5 { background: linear-gradient(155deg, #3d1130 0%, #18152d 70%); }
+.nocturne-win-card--t5:hover { border-color: rgba(255,110,160,.45); }
+.nocturne-win-card__tag { position: absolute; top: 10px; left: 10px; z-index: 1; padding: 3px 9px; border-radius: 999px; background: rgba(5,8,18,.55); backdrop-filter: blur(4px); color: #e6e9f8; font-size: 8.5px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+.nocturne-win-card__art { display: grid; place-items: center; height: 92px; margin-bottom: 10px; border-radius: 13px; background: rgba(5,8,18,.28); overflow: hidden; }
+.nocturne-win-card__art img { width: 100%; height: 100%; object-fit: cover; }
+.nocturne-win-card__art i { color: rgba(255,255,255,.5); font-size: 32px; }
+.nocturne-win-card__body { display: grid; gap: 4px; }
+.nocturne-win-card__game { overflow: hidden; color: var(--nocturne-text); font-size: 12.5px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.nocturne-win-card__player { color: var(--nocturne-muted); font-size: 10.5px; font-weight: 700; }
+.nocturne-win-card__amount { display: inline-flex; align-items: center; gap: 5px; margin-top: 2px; color: var(--nocturne-green); font-size: 14px; font-weight: 950; }
+.nocturne-win-card__amount i { font-size: 12px; }
+@media (max-width: 575.98px) {
+    .nocturne-win-card { flex-basis: 140px; width: 140px; padding: 10px; }
+    .nocturne-win-card__art { height: 76px; }
+    .nocturne-win-card__amount { font-size: 12.5px; }
+}
+
 /* ---- Homepage News / Reviews rows - reuse .nocturne-game-row/.nocturne-game-scroller ---- */
 .nocturne-news-card { flex: 0 0 240px; width: 240px; scroll-snap-align: start; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
 .nocturne-news-card:hover { border-color: rgba(0,239,135,.3); transform: translateY(-3px); }

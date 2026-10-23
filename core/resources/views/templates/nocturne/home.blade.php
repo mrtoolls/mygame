@@ -31,6 +31,7 @@
     @endif
 
     @include('Template::sections.trending_games')
+    @include('Template::sections.latest_big_wins')
     @include('Template::sections.featured_games')
     @include('Template::sections.live_table_games')
     @include('Template::sections.home_reviews')

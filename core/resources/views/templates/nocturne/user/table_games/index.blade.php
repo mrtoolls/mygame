@@ -35,6 +35,8 @@
             </div>
         </div>
 
+        @include('Template::sections.table_games_recent_wins')
+
         @if ($invites->isNotEmpty())
             <section class="table-card table-invitations"><div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-envelope-open-text"></i></span><div><h2>@lang('Your Table Invitations')</h2><p>@lang('A player invited you to join a live table.')</p></div></div><div class="table-list">
                 @foreach ($invites as $invite)
