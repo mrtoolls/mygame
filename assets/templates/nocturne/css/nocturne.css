@@ -121,7 +121,15 @@
    per-page overflow-x:hidden fixes kept working there but not on iPhone. Locking it down at
    the true root (html/body) is the backstop that actually matches how iOS decides whether a
    page can be dragged sideways at all - it does not affect any element's own overflow-x:auto
-   (the carousels/scrollers keep scrolling horizontally exactly as before). */
+   (the carousels/scrollers keep scrolling horizontally exactly as before).
+   NOTE: body previously also had max-width:100vw alongside this. That combination is a known
+   Safari/WebKit trap: once anything on the page overflows by even a sub-pixel (a grid, a
+   horizontal rail), Safari can size CSS Grid tracks against the pre-clip content width
+   instead of the real viewport before clipping the result - producing a card/column that
+   renders too narrow with blank space beside it. That's what broke the News grid and the
+   Live Games rail on iPhone specifically (not Android) right after this landed. overflow-x:
+   hidden alone already provides the anti-rubber-band backstop; max-width:100vw was the one
+   property actually triggering the bug, so it's removed rather than kept "for safety". */
 html { background: var(--nocturne-bg); scroll-behavior: smooth; overflow-x: hidden; }
 body {
     margin: 0;
@@ -131,7 +139,6 @@ body {
     font-size: 15px;
     line-height: 1.55;
     overflow-x: hidden;
-    max-width: 100vw;
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
