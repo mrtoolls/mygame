@@ -8,7 +8,7 @@
                 <p>@lang('Choose a game and take your seat. Moves and table balances are confirmed by the game server.')</p>
             </div>
             <div class="table-lobby__hero-stats">
-                <span class="table-lobby__live-badge"><i></i>{{ count($tables) }} @lang('live now')</span>
+                <a href="#live-games-section" class="table-lobby__live-badge"><i></i>{{ count($tables) }} @lang('Live Now')</a>
                 <button type="button" class="table-lobby__fame-trigger" id="hall-of-fame-open"><i class="las la-trophy"></i>@lang('Hall of Fame')</button>
             </div>
         </header>
@@ -87,7 +87,7 @@
                 <p class="table-form-message" id="table-form-message" aria-live="polite"></p>
             </form>
 
-            <section class="table-card table-card--live">
+            <section class="table-card table-card--live" id="live-games-section">
                 <div class="table-card__heading"><span class="table-card__icon table-card__icon--live"><i class="las la-satellite-dish"></i></span><div><h2>@lang('Live Games')</h2><p>@lang('Tables currently waiting for players or in progress.')</p></div><span class="table-live-count">{{ count($tables) }} @lang('live')</span>
                     <div class="table-list-nav">
                         <button type="button" class="table-list-nav__btn" id="live-table-list-prev" aria-label="@lang('Scroll up')"><i class="las la-angle-up"></i></button>
@@ -142,7 +142,9 @@
         .table-lobby__hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
         .table-lobby__hero-text{min-width:0}
         .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
-        .table-lobby__live-badge{display:inline-flex;flex:0 0 auto;align-items:center;gap:8px;padding:10px 16px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:12px;font-weight:950;white-space:nowrap}
+        .table-lobby__live-badge{display:inline-flex;flex:0 0 auto;align-items:center;gap:8px;padding:10px 16px;border:1px solid rgba(0,239,135,.3);border-radius:999px;background:rgba(0,239,135,.1);color:var(--tg-green);font-size:12px;font-weight:950;white-space:nowrap;text-decoration:none;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .1s ease}
+        .table-lobby__live-badge:hover{border-color:rgba(0,239,135,.55);background:rgba(0,239,135,.16)}
+        .table-lobby__live-badge:active{transform:scale(.96)}
         .table-lobby__live-badge i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:table-status-pulse 1.4s ease-in-out infinite}
         /* Named grid areas rather than a plain 2-up grid: the form spans both rows on the left,
            Live Games and Recent Wins stack independently in the right column on desktop, and
@@ -153,7 +155,9 @@
            can't grow unbounded regardless of how many wins or live tables exist. */
         .table-lobby__layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);grid-template-rows:auto auto;grid-template-areas:"form live" "form wins";gap:16px;align-items:start}
         #create-table-form{grid-area:form}
-        .table-card--live{grid-area:live}
+        .table-card--live{grid-area:live;scroll-margin-top:104px}
+        @media(max-width:1199.98px){.table-card--live{scroll-margin-top:92px}}
+        @media(max-width:575.98px){.table-card--live{scroll-margin-top:84px}}
         .table-card--wins{grid-area:wins}
         .table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
         .recent-wins__head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--tg-text);font-size:13px;font-weight:900}.recent-wins__head i{color:#ffb547}.recent-wins__head small{margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(122,151,255,.12);color:#a7bbff;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
