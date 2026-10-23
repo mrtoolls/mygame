@@ -189,7 +189,9 @@
     .wx-landing__footer-actions{display:flex}
     .wx-landing__copy{margin-top:2.6rem;padding:0 16px}
     .wx-landing__hl-break{display:block}
-    .wx-landing__copy h1{font-size:clamp(24px,7.4vw,34px);line-height:1.18;max-width:none}
+    /* Sized so "Play, compete and connect" (the longer of the two forced lines) reliably fits
+       on one line down to ~360px-wide phones, rather than wrapping a third time on its own. */
+    .wx-landing__copy h1{font-size:clamp(19px,5.6vw,23px);line-height:1.25;max-width:none}
     /* Side by side, native-app style, not stacked full-width - each button shrinks to fit
        rather than forcing a tall vertical stack of two giant pills. */
     .wx-landing__cta{flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:10px;margin-top:1.6rem;width:100%;padding:0 16px}
@@ -236,11 +238,23 @@
 
     // Every user the controller sends has a real image (query filters on it) - this initial-
     // letter fallback only matters in the near-impossible case of zero qualifying users at all.
+    function avatarLetter(u) {
+        return ((u && u.username ? u.username : 'W').charAt(0) || 'W').toUpperCase();
+    }
+    function letterFallbackHtml(letter) {
+        return '<span style="display:grid;place-items:center;width:100%;height:100%;background:#1b2340;color:#00ee88;font-weight:800;font-size:60%">' + letter + '</span>';
+    }
+    // If an avatar URL 404s or otherwise fails to load (stale path, deleted file), swap that one
+    // tile to the same initial-letter badge instead of leaving a broken-image icon on screen.
+    // A named global (not inline-HTML-string injection into onerror) avoids any quote-escaping
+    // fragility between this attribute and the fallback markup's own attributes.
+    window.__wxAvatarFallback = function (img, letter) { img.outerHTML = letterFallbackHtml(letter); };
     function avatarMarkup(i) {
         var u = COMMUNITY[i % COMMUNITY.length];
-        if (u && u.avatar) return '<img src="' + u.avatar + '" alt="" loading="lazy">';
-        var letter = ((u && u.username ? u.username : 'W').charAt(0) || 'W').toUpperCase();
-        return '<span style="display:grid;place-items:center;width:100%;height:100%;background:#1b2340;color:#00ee88;font-weight:800;font-size:60%">' + letter + '</span>';
+        if (u && u.avatar) {
+            return '<img src="' + u.avatar + '" alt="" loading="eager" onerror="window.__wxAvatarFallback(this,\'' + avatarLetter(u) + '\')">';
+        }
+        return letterFallbackHtml(avatarLetter(u));
     }
     function usernameFor(i) {
         var u = COMMUNITY[i % COMMUNITY.length];

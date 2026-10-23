@@ -1,18 +1,21 @@
 @php
+    // The button itself always renders now, even before any platform is configured (per
+    // request) - the popup just shows a friendly "coming soon" line in place of the grid
+    // instead of nothing existing until every URL is filled in.
     $officialLinks = \Illuminate\Support\Facades\Schema::hasTable('social_links')
         ? \App\Models\SocialLink::active()->get()
         : collect();
 @endphp
-@if($officialLinks->isNotEmpty())
-    <div class="wx-official">
-        <button type="button" class="wx-official__btn" data-official-toggle aria-haspopup="true" aria-expanded="false">
-            <i class="ph-fill ph-seal-check"></i><span>@lang('Official')</span>
-        </button>
-        <div class="wx-official__sheet" data-official-sheet hidden>
-            <button type="button" class="wx-official__backdrop" data-official-close aria-label="@lang('Close')"></button>
-            <div class="wx-official__panel" role="dialog" aria-modal="true" aria-label="@lang('Official pages')">
-                <button type="button" class="wx-official__close" data-official-close aria-label="@lang('Close')">&times;</button>
-                <h3><i class="ph-fill ph-seal-check"></i>@lang('Official Winxpot Pages')</h3>
+<div class="wx-official">
+    <button type="button" class="wx-official__btn" data-official-toggle aria-haspopup="true" aria-expanded="false">
+        <i class="ph-fill ph-seal-check"></i><span>@lang('Official')</span>
+    </button>
+    <div class="wx-official__sheet" data-official-sheet hidden>
+        <button type="button" class="wx-official__backdrop" data-official-close aria-label="@lang('Close')"></button>
+        <div class="wx-official__panel" role="dialog" aria-modal="true" aria-label="@lang('Official pages')">
+            <button type="button" class="wx-official__close" data-official-close aria-label="@lang('Close')">&times;</button>
+            <h3><i class="ph-fill ph-seal-check"></i>@lang('Official Winxpot Pages')</h3>
+            @if($officialLinks->isNotEmpty())
                 <div class="wx-official__grid">
                     @foreach($officialLinks as $link)
                         <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer" class="wx-official__item wx-official__item--{{ $link->platform }}">
@@ -27,11 +30,14 @@
                         </a>
                     @endforeach
                 </div>
-            </div>
+            @else
+                <p class="wx-official__empty">@lang('Our official pages will be listed here shortly.')</p>
+            @endif
         </div>
     </div>
+</div>
 
-    @once
+@once
         @push('style')
             <style>
             .wx-official__btn{display:inline-flex;align-items:center;gap:7px;height:46px;padding:0 18px;border:0;border-radius:999px;background:#fff;color:#0b0d1e;font:800 13px/1 "Montserrat",system-ui,sans-serif;letter-spacing:.01em;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
@@ -55,6 +61,7 @@
             .wx-official__item--instagram .wx-official__icon{color:#e1306c}
             .wx-official__item--discord .wx-official__icon{color:#5865f2}
             .wx-official__item--tiktok .wx-official__icon{color:#fff}
+            .wx-official__empty{margin:0;padding:22px 10px;color:#929abc;font-size:13px;text-align:center}
             </style>
         @endpush
         @push('script')
@@ -94,5 +101,4 @@
             })();
             </script>
         @endpush
-    @endonce
-@endif
+@endonce

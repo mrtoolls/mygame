@@ -34,7 +34,7 @@ return new class extends Migration
         $now = now();
         foreach (self::PLATFORMS as $row) {
             \Illuminate\Support\Facades\DB::table('social_links')->insert($row + [
-                'is_active' => false,
+                'is_active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
