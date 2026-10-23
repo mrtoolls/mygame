@@ -3,7 +3,6 @@
 use App\Models\Game;
 use App\Models\GameLog;
 use App\Models\TableGame;
-use App\Models\User;
 use App\Support\Concerns\SeedsDemoGameHistory;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;
@@ -15,22 +14,26 @@ return new class extends Migration
     /**
      * 2026_10_23_000002_reseed_demo_game_histories reported "Database update finished" (no
      * exception) but inserted nothing on winxpot.com - a second silent failure, different from
-     * the one it was written to fix. Since Laravel only ever runs a given migration file once
-     * and that one is now permanently recorded as "ran" regardless of what it actually did,
-     * no amount of re-clicking Database Update will make it try again, bug fixed or not. This
-     * migration is a fresh file (so it's guaranteed to actually execute) that does the same
-     * seed but throws a specific, descriptive exception instead of silently returning whenever
-     * a precondition isn't met - so if it still can't seed, "Database Update" will show
-     * exactly why instead of reporting false success.
+     * the one it was written to fix. The actual cause: the site owner had manually edited every
+     * demo account's email (and, separately, 2026_10_21_000016_rename_demo_usernames already
+     * changed their usernames) to look like real addresses, so the @demo.winxpot.test filter
+     * matched zero users. SeedsDemoGameHistory::demoUsers() now also finds them by their shared
+     * Demo@12345 password hash, which nothing had reason to touch.
+     *
+     * This migration threw instead of returning silently, so Laravel never recorded it as run
+     * (that only happens after up() completes without throwing) - fixing this file in place and
+     * re-running Database Update retries it, no new migration file needed. It still throws a
+     * specific, descriptive exception for any precondition that isn't met, rather than silently
+     * returning, so a future failure shows up as real output instead of a false "success".
      */
     public function up(): void
     {
         if (!Schema::hasTable('users')) throw new RuntimeException('Cannot seed: users table does not exist.');
         if (!Schema::hasTable('game_logs')) throw new RuntimeException('Cannot seed: game_logs table does not exist.');
 
-        $demoUsers = User::where('email', 'like', '%@demo.winxpot.test')->get();
+        $demoUsers = $this->demoUsers();
         if ($demoUsers->isEmpty()) {
-            throw new RuntimeException('Cannot seed: no users found with an email ending in @demo.winxpot.test. Has 2026_10_20_000012_seed_demo_users_and_feedback run?');
+            throw new RuntimeException('Cannot seed: no users found either by @demo.winxpot.test email or by the shared Demo@12345 password. Has 2026_10_20_000012_seed_demo_users_and_feedback run?');
         }
 
         if ($this->demoNormalHistoryAlreadySeeded()) {

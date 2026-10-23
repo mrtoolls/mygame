@@ -10,6 +10,8 @@ use App\Models\GameLog;
 use App\Models\TableGame;
 use App\Models\TableGamePlayer;
 use App\Models\TableGameSetting;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -24,6 +26,27 @@ use Illuminate\Support\Str;
  */
 trait SeedsDemoGameHistory
 {
+    /**
+     * The @demo.winxpot.test email filter (2026_10_20_000012_seed_demo_users_and_feedback)
+     * stopped working on winxpot.com once the site owner manually edited every demo account's
+     * email and username to look realistic (2026_10_21_000016_rename_demo_usernames only
+     * touched usernames; the email change was a separate manual edit). What didn't change is
+     * their password - all 50 were created with the exact same Hash::make('Demo@12345') call,
+     * and nothing since has had reason to touch it. Hash::check() (not a direct string/hash
+     * comparison - bcrypt salts differently per hash) finds them by that shared password
+     * regardless of what their email/username now look like, in addition to the original
+     * email-pattern match for any install where it still applies.
+     */
+    protected function demoUsers()
+    {
+        $byEmail = User::where('email', 'like', '%@demo.winxpot.test')->pluck('id');
+        $byPassword = User::whereNotIn('id', $byEmail)->get()
+            ->filter(fn (User $user) => $user->password && Hash::check('Demo@12345', $user->password))
+            ->pluck('id');
+
+        return User::whereIn('id', $byEmail->merge($byPassword)->unique())->get();
+    }
+
     /** A game_logs row this trait created always has this in user_select - never a real value. */
     protected function demoGameLogMarker(): string
     {

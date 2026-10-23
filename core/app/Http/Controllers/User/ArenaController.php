@@ -83,12 +83,37 @@ class ArenaController extends Controller
         $catalog           = collect($tableGameService->catalog())->keyBy('key');
         $liveTables        = collect($tableGameService->liveTables(auth()->user()))->take(5);
 
-        $recentSiteWins = GameLog::with('user:id,username', 'game:id,name')
+        $normalSiteWins = GameLog::with('user:id,username', 'game:id,name')
             ->where('win_amo', '>', 0)
             ->when(\Illuminate\Support\Facades\Schema::hasColumn('game_logs', 'demo_play'), fn ($q) => $q->where('demo_play', 0))
             ->latest()
-            ->limit(6)
-            ->get();
+            ->limit(4)
+            ->get()
+            ->map(fn ($log) => (object) [
+                'amount' => (float) $log->win_amo,
+                'username' => $log->user?->username,
+                'game_name' => $log->game?->name ?? 'a game',
+                'at' => $log->created_at,
+            ]);
+
+        $tableSiteWins = collect();
+        if (\Illuminate\Support\Facades\Schema::hasTable('table_game_players') && \Illuminate\Support\Facades\Schema::hasTable('table_games')) {
+            $tableSiteWins = \App\Models\TableGamePlayer::with(['user:id,username', 'table:id,game_type,status'])
+                ->where('settlement_type', 'payout')->where('settlement_amount', '>', 0)
+                ->whereHas('table', fn ($q) => $q->where('status', 'finished'))
+                ->latest('id')->limit(2)->get()
+                ->map(fn ($player) => (object) [
+                    'amount' => (float) $player->settlement_amount,
+                    'username' => $player->user?->username,
+                    'game_name' => \App\Games\TableGames\TableGameRules::GAMES[$player->table?->game_type]['name'] ?? 'a table game',
+                    'at' => $player->updated_at,
+                ]);
+        }
+
+        // Same fixed-slot reasoning as the other merged win feeds on the site: reserve room for
+        // each source so table-game wins (almost always far outnumbered by normal-game ones)
+        // aren't crowded out of a plain "latest 6 overall" sort.
+        $recentSiteWins = $normalSiteWins->merge($tableSiteWins)->sortByDesc('at')->values();
 
         $trendingGames = Game::active()->where('trending', Status::YES)->limit(5)->get();
         $trendingNews  = NewsPost::published()->orderByDesc('views')->limit(3)->get();

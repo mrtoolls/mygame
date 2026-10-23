@@ -183,8 +183,8 @@
                         <div class="nocturne-arena-widget-row">
                             <span class="nocturne-arena-widget-row__icon nocturne-arena-widget-row__icon--win"><i class="ph-fill ph-coin"></i></span>
                             <div>
-                                <strong>{{ showAmount($log->win_amo) }}</strong>
-                                <small>{{ $log->user->username ?? 'Someone' }} &middot; {{ __($log->game->name ?? 'a game') }}</small>
+                                <strong>{{ showAmount($log->amount) }}</strong>
+                                <small>{{ $log->username ?? 'Someone' }} &middot; {{ __($log->game_name) }}</small>
                             </div>
                         </div>
                     @empty

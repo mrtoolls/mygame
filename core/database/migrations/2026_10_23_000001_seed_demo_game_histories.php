@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\User;
 use App\Support\Concerns\SeedsDemoGameHistory;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;
@@ -31,7 +30,7 @@ return new class extends Migration
     {
         if (!Schema::hasTable('users') || !Schema::hasTable('game_logs')) return;
 
-        $demoUsers = User::where('email', 'like', '%@demo.winxpot.test')->get();
+        $demoUsers = $this->demoUsers();
         if ($demoUsers->isEmpty()) return;
 
         if (!$this->demoNormalHistoryAlreadySeeded()) $this->seedNormalGameHistory($demoUsers);
