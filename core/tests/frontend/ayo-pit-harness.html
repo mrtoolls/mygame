@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ayo pit sizing test harness</title>
+<link rel="stylesheet" href="../../../assets/templates/nocturne/css/ayo-board.css">
+<script src="../../../assets/templates/nocturne/js/ayo-board.js"></script>
+<style>body{margin:0;padding:24px;background:#0b0d1e}</style>
+</head>
+<body>
+<div class="board-pits" id="board"></div>
+<script>
+  // Exposes a function the test script calls directly - renders ONE pit at a given seed
+  // count into the board grid (replacing any previous pit), same DOM shape show.blade.php
+  // produces via window.AyoBoard.buildPitElement.
+  window.renderOnePit = function (count) {
+    var board = document.getElementById('board');
+    board.innerHTML = '';
+    var pit = window.AyoBoard.buildPitElement(document, 0, count);
+    board.appendChild(pit);
+    return pit;
+  };
+</script>
+</body>
+</html>

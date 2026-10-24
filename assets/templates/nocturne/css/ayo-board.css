@@ -1,0 +1,94 @@
+/* Ayo (Oware) board - loaded by both the live table page (show.blade.php) and the Playwright
+   bounding-box regression test (tests/frontend/ayo-pit-size.spec.js), so there is exactly one
+   copy of this CSS to keep in sync with the tested behavior. */
+
+.ayo-board { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.ayo-board__arrows { display: flex; align-items: center; justify-content: center; gap: 6px; color: #d9b989; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.ayo-board__arrows i { font-size: 12px; }
+
+/* ── Stores ── */
+.ayo-stores-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; max-width: 560px; }
+.ayo-store { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 8px 14px; border: 1px solid rgba(255, 228, 182, .18); border-radius: 16px; background: linear-gradient(145deg, #2a1c0d, #1a1108); }
+.ayo-store__icon { display: grid; flex: 0 0 auto; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: rgba(255, 228, 182, .1); color: #ffcc70; font-size: 16px; }
+.ayo-store__body { display: grid; min-width: 0; gap: 1px; }
+.ayo-store__name { max-width: 110px; overflow: hidden; color: #cdb791; font-size: 10px; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
+.ayo-store__count { color: #ffe7bb; font-size: 17px; font-weight: 950; line-height: 1.1; }
+.ayo-store__progress { color: #a98a56; font-size: 9px; font-weight: 800; }
+.ayo-store.is-mine { border-color: rgba(0, 239, 135, .3); }
+.ayo-store.is-mine .ayo-store__icon { background: rgba(0, 239, 135, .14); color: #00ef87; }
+.ayo-store.is-glow { animation: ayoStoreGlow .7s ease; }
+@keyframes ayoStoreGlow { 0%, 100% { box-shadow: none; } 40% { box-shadow: 0 0 0 3px rgba(255, 204, 112, .35), 0 0 22px rgba(255, 204, 112, .3); } }
+
+/* ── Pits: fixed size via CSS Grid, independent of seed count ── */
+.board-pits { display: grid; grid-template-columns: repeat(6, minmax(44px, 1fr)); gap: 8px; width: 100%; max-width: 560px; padding: 16px; border-radius: 32px; background: linear-gradient(130deg, #563817, #a16b31); box-sizing: border-box; }
+.board-pit {
+    position: relative; display: block; width: 100%; aspect-ratio: 1; min-width: 0; padding: 0;
+    border: 2px solid rgba(255, 228, 182, .26); border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #58381d, #27190f);
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .5);
+    box-sizing: border-box; overflow: hidden; contain: layout paint; cursor: default;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+.board-pit:disabled { opacity: .72; }
+.board-pit__field { position: absolute; inset: 0; }
+.board-pit__seed {
+    position: absolute; width: calc(15% * var(--seed-scale, 1)); aspect-ratio: 1;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #f3d9a0, #a9793a 65%, #5c3a14 100%);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .5);
+}
+.board-pit__count {
+    position: absolute; right: 3px; bottom: 2px; z-index: 2; padding: 1px 5px;
+    border-radius: 999px; background: rgba(0, 0, 0, .55); color: #ffe7bb;
+    font-size: 10px; font-weight: 950; line-height: 1.5;
+}
+.board-pit.is-legal { border-color: rgba(0, 239, 135, .55); box-shadow: inset 0 3px 8px rgba(0, 0, 0, .5), 0 0 0 2px rgba(0, 239, 135, .25); cursor: pointer; }
+.board-pit.is-legal:hover { transform: scale(1.05); }
+.board-pit.is-last-start { box-shadow: inset 0 3px 8px rgba(0, 0, 0, .5), 0 0 0 2px rgba(255, 204, 112, .65); }
+.board-pit.is-last-end { box-shadow: inset 0 3px 8px rgba(0, 0, 0, .5), 0 0 0 2px rgba(0, 180, 255, .65); }
+.board-pit.is-current { box-shadow: inset 0 3px 8px rgba(0, 0, 0, .5), 0 0 0 2px rgba(255, 255, 255, .55); }
+.board-pit.is-sowing-pulse { animation: ayoPitPulse .45s ease; }
+@keyframes ayoPitPulse { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.board-pit.is-capture-blocked { animation: ayoBlockedShake .4s ease; }
+@keyframes ayoBlockedShake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+/* ── Sowing hand bubble ── */
+.ayo-hand {
+    position: fixed; z-index: 40; display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px; background: #11162c; border: 1px solid rgba(0, 239, 135, .4);
+    color: #f5f6ff; font-size: 12px; font-weight: 900; box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+    transform: translate(-50%, -50%) scale(.9); opacity: 0; pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease, left .18s ease, top .18s ease;
+}
+.ayo-hand.is-visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.ayo-hand i { color: #00ef87; font-size: 14px; }
+
+/* ── A seed in flight (sow hop, capture flight, end-of-round sweep) ── */
+.ayo-flying-seed {
+    position: fixed; z-index: 45; width: 10px; height: 10px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #f3d9a0, #a9793a 65%, #5c3a14 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .5); pointer-events: none;
+    transition: left var(--ayo-hop-ms, 220ms) ease, top var(--ayo-hop-ms, 220ms) ease, opacity .15s ease;
+}
+
+/* ── Speed control ── */
+.ayo-speed { display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .04); border: 1px solid var(--tm-line, rgba(145, 156, 205, .16)); }
+.ayo-speed button { padding: 5px 11px; border: 0; border-radius: 999px; background: transparent; color: var(--tm-muted, #929abc); font-size: 10px; font-weight: 900; cursor: pointer; }
+.ayo-speed button.is-active { background: var(--tm-green, #00ef87); color: #062b1d; }
+
+/* ── Status line ── */
+.ayo-status { margin: 2px 0 0; color: var(--tm-muted, #929abc); font-size: 11px; font-weight: 700; text-align: center; }
+
+@media (max-width: 575px) {
+    .board-pits { gap: 5px; padding: 10px; border-radius: 22px; }
+    .ayo-stores-row { max-width: 100%; }
+    .ayo-store { padding: 6px 10px; }
+    .ayo-store__icon { width: 28px; height: 28px; font-size: 13px; }
+    .ayo-store__count { font-size: 14px; }
+    .ayo-board__arrows { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .board-pit, .board-pit.is-sowing-pulse, .board-pit.is-capture-blocked, .ayo-store.is-glow { animation: none !important; transition: box-shadow .01s linear !important; }
+    .ayo-hand, .ayo-flying-seed { transition: opacity .01s linear !important; }
+}

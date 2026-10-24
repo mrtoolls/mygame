@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ayo runtime smoke harness</title>
+<link rel="stylesheet" href="../../../assets/templates/nocturne/css/ayo-board.css">
+<script src="../../../assets/templates/nocturne/js/ayo-board.js"></script>
+</head>
+<body>
+<main class="table-match" id="table-match"
+  data-id="t1" data-friendly="0"
+  data-snapshot="about:blank" data-chat="about:blank" data-chat-send="about:blank"
+  data-reaction-template="about:blank" data-report-template="about:blank"
+  data-block-template="about:blank" data-player-search="about:blank"
+  data-move="about:blank" data-start="about:blank" data-leave="about:blank"
+  data-csrf="x" data-user="1" data-type="oware" data-turn-seconds="60" data-spectator="0"
+  data-applaud="about:blank" data-gift-send-template="about:blank"
+  data-rematch-request="about:blank" data-rematch-decline-template="about:blank"
+  data-invite-accept-template="about:blank" data-table-show-template="about:blank">
+  <span id="match-status"></span>
+  <span id="watching-count" hidden><b>0</b></span>
+  <div id="match-players"></div>
+  <div id="match-notice"></div>
+  <div id="table-board"></div>
+  <div id="turn-clock"></div>
+  <div id="match-error"></div>
+  <button id="match-start" hidden></button>
+  <button id="match-leave" hidden><span id="match-leave-label"></span></button>
+  <form id="match-invite" hidden>
+    <input id="invite-username" name="username">
+    <button type="submit"></button>
+    <div id="invite-suggestions" hidden></div>
+    <small id="invite-message"></small>
+  </form>
+  <button id="match-rematch" hidden></button>
+  <button id="match-chat-open"></button>
+  <span id="chat-unread-badge" hidden>0</span>
+  <button id="match-applaud"></button>
+  <button id="match-react"></button>
+  <button id="match-gift-open"></button>
+  <button id="how-to-play-open"></button>
+  <div id="sound-control"><button id="sound-toggle"></button><input id="sound-volume"></div>
+  <div id="chat-panel" hidden></div>
+  <div id="chat-panel-backdrop"></div>
+  <button id="chat-panel-close"></button>
+  <div id="chat-messages"></div>
+  <div id="chat-empty" hidden></div>
+  <div id="chat-error" hidden></div>
+  <form id="chat-form"></form>
+  <input id="chat-input">
+  <button id="chat-jump" hidden><span id="chat-jump-count"></span></button>
+  <div id="chat-toast-stack"></div>
+  <div id="chat-reply" hidden><span id="chat-reply-name"></span><span id="chat-reply-preview"></span></div>
+  <button id="chat-voice"></button>
+  <button id="chat-record" hidden></button>
+  <div id="chat-record-meter"></div>
+  <div id="chat-record-time"></div>
+  <input id="chat-file" type="file">
+  <div id="attach-menu" hidden></div>
+  <div id="emoji-picker" hidden></div>
+  <div id="emoji-tabs"></div>
+  <div id="emoji-grid"></div>
+  <input id="emoji-search">
+  <div id="gift-drawer" hidden></div>
+  <button id="gift-drawer-back"></button>
+  <div id="gift-drawer-backdrop"></div>
+  <button id="gift-drawer-close"></button>
+  <div id="gift-drawer-error" hidden></div>
+  <div id="gift-drawer-pick"></div>
+  <img id="gift-drawer-preview-img">
+  <div id="gift-drawer-preview-name"></div>
+  <input id="gift-drawer-quantity">
+  <div id="gift-drawer-recipients"></div>
+  <div id="gift-drawer-send" hidden></div>
+  <button id="gift-drawer-send-btn"></button>
+  <div id="gift-fx-overlay"></div>
+  <div id="how-to-play" hidden></div>
+  <div id="match-actions-home" hidden></div>
+  <div id="rematch-banner" hidden></div>
+  <div id="result-popup" hidden></div>
+  <div id="result-popup-amount"></div>
+  <div id="result-popup-amount-label"></div>
+  <div id="result-popup-amount-value"></div>
+  <canvas id="result-popup-fx"></canvas>
+  <div id="result-popup-subtitle"></div>
+  <div id="result-popup-title"></div>
+  <div id="waiting-room" hidden></div>
+  <div id="waiting-room-actions"></div>
+  <div id="waiting-room-backdrop"></div>
+  <button id="waiting-room-close"></button>
+  <button id="waiting-room-reopen" hidden></button>
+  <div id="waiting-room-seats"></div>
+  <h2 id="waiting-room-title"></h2>
+</main>
+</body>
+</html>

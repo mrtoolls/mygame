@@ -1,6 +1,8 @@
 # Ayo Olopon — Audit & Target Rules Spec
 
-Status: **Step 1 — audit complete, awaiting confirmation on OPEN items before any game code is written.**
+Status: **Shipped.** Engine, event log, frontend, and tests are implemented per the confirmed
+defaults below. See [§5 Final Report](#5-final-report) and [§6 Manual Test Checklist](#6-manual-test-checklist)
+at the bottom.
 
 All file paths are relative to `core/`.
 
@@ -95,3 +97,201 @@ These produce different game lengths and different "the game ends" moments. I re
 2. Confirm whether to keep the internal game key `oware` (cosmetic-only "Ayo" labeling where the user sees it) or actually rename it throughout the codebase.
 
 Once you confirm, I'll proceed to the engine, event log, frontend, and tests exactly as scoped in your deliverables list.
+
+**Confirmed**: "Go with the best recommendation" — every default above was adopted as-is, including
+chain capture off, the proactive must-feed rewrite, the 40-half-move repetition rule, keeping the
+shared skip-turn timeout behavior (no bespoke Ayo auto-play), and keeping the internal key `oware`.
+
+---
+
+## 5. Final Report
+
+### What changed
+
+**Engine** (`app/Games/TableGames/TableGameRules.php`)
+- `oware()` is now a thin dispatcher: `rules_version >= 2` → `owareV2()` (new), otherwise →
+  `owareLegacy()` (the original method, body unchanged, byte-for-byte).
+- `owareV2()` implements: real relay/"yielding" sowing (`owareRunSow()`, shared by the real move
+  and by the must-feed dry-run probe `owareWouldFeedOpponent()` so "does this move feed the
+  opponent" is answered by actually simulating the sow, not an approximation), single-pit capture
+  (no chain), the grand-slam guard (capture allowed, takes nothing), a proactive must-feed check
+  at the start of every turn (rejects a move that ignores a feeding alternative; ends the round
+  outright with no move played when no pit can feed at all), and a 40-half-move no-capture-streak
+  repetition ending — replacing the old flat `moves >= 200` cap.
+- Every end-of-round sweep (score win, repetition, no-seeds-left) now zeroes the swept pits after
+  crediting their seeds to the scores. This was a genuine bug caught during stress-testing: without
+  it, a finished game's pits still showed their last values while the score already counted them,
+  so `pits + scores` no longer summed to the true 48-seed total. v1/legacy is unaffected (it always
+  had this same gap, and is left untouched per the hard rule against changing in-progress games).
+- `start()`'s oware branch adds `no_capture_streak: 0` to state for `rules_version >= 2` only; v1
+  tables keep the original four-key state shape.
+- `rules_version` is set to `2` for new `oware` tables only (`TableGameService.php:83`), the same
+  place/pattern Ludo and Whot already use. Existing tables keep whatever version they were created
+  with — rules never change mid-game.
+
+**Event log** (`TableGameService.php`)
+- `move()`'s `TableGameMove.public_data` now also stores `events` from the rules engine's result.
+- `snapshot()` gained an `oware` branch for `last_move`, returning `{version, events, message}` for
+  the most recent move — `version` lets the client tell a genuinely new move apart from a stale/
+  duplicate poll, reconnect, or spectator join (it only animates when the version is strictly newer
+  than the last one it already rendered).
+
+**Frontend**
+- `assets/templates/nocturne/js/ayo-board.js` (new): pure, dependency-free pit-rendering helpers
+  — deterministic phyllotaxis seed-position packing (seeded by pit id + seed index, never
+  `Math.random()`), a visual cap of 18 drawn seeds with the count badge always showing the real
+  number, and the DOM builder for one pit. Loaded by both the live page and the Playwright test,
+  so there is exactly one implementation to keep correct.
+- `assets/templates/nocturne/css/ayo-board.css` (new): the fixed-size pit grid (`aspect-ratio:1`,
+  `minmax(44px,1fr)` columns, `overflow:hidden`, `contain:layout paint` — seed count can never
+  resize a pit or the board), stores, the sowing "hand" bubble, the flying-seed overlay, legal-pit/
+  last-move/current-pit highlight states, the speed control, and a `prefers-reduced-motion` block
+  that disables the keyframe animations (pulse/shake/glow) while keeping the instant box-shadow
+  highlights.
+- `show.blade.php`: replaced the old flex-wrap seed layout (the actual cause of pits resizing as
+  seeds were added - the bug you originally flagged) with a dispatch to a new `owareRender()` plus
+  a full animation sequencer (`owarePlayEvents()`) that replays `lift`/`sow`/`relay`/`capture`/
+  `capture_blocked`/`end` events: seeds hop pit-to-pit via a `fixed`-positioned overlay element
+  (Web Animations API, a slight arc, 60-240ms per hop scaled to keep any move under ~4-5s total),
+  relay pauses 160-340ms with the hand bubble staying visible as a "continue" cue, captures fly
+  staggered 60-90ms apart into the capturing player's store with a glow, and the board always
+  snaps to the authoritative server state once the replay finishes (or immediately, with no
+  animation, on first load/reconnect/spectator join/an unchanged poll). Input is locked for the
+  whole sequence via a new `owareAnimating` flag wired into the same `pendingGameState` queueing
+  mechanism already used for the Ludo die roll.
+- Legal-pit highlighting: a pit is only marked `.is-legal` (and clickable) when it's the player's
+  own, non-empty, and it's their turn — the two client-detectable illegal-tap reasons ("Choose one
+  of your own pits.", "Empty pit.") are caught locally with no round trip; the must-feed rule is
+  never duplicated client-side, so that rejection reason comes back from the server's own message
+  through the existing error-toast path, same as the rest of this codebase's convention.
+- Speed control (Normal/Fast/Skip) persists to `localStorage`; Skip and `prefers-reduced-motion`
+  both resolve to the same "instant, no flight animation" path.
+
+**Turn timer vs. animation** — confirmed the established pattern (Ludo's die roll) rather than
+building new pause logic: the server resets `turn_deadline_at` the moment a move is accepted,
+*before* the client even starts animating, and the countdown is driven purely by that deadline
+with no client-side pause anywhere in this codebase. Ayo follows the same pattern - the clock is
+never paused during a replay.
+
+**Tests**
+- `tests/Unit/TableGameRulesTest.php`: 12 new PHPUnit test methods (relay firing, single-pit-only
+  capture, grand slam, must-feed reject, must-feed auto-end + pit-zeroing, score-win sweep +
+  zeroing, repetition sweep + zeroing, v1 isolation/no-relay, and a 25-random-game conservation
+  simulation). **Caveat**: this environment can't run the project's actual PHPUnit (`composer.json`
+  requires PHP `^8.3` + `ext-gmp`; this box has PHP 8.2 without `gmp`, and `composer install --dev`
+  fails outright on the platform check). I verified every test method for real by extracting the
+  committed test file and running its `test_*` methods through a from-scratch, file-local
+  `PHPUnit\Framework\TestCase` stand-in (just the handful of assert methods actually used) — all
+  12 new tests plus the pre-existing `oware` test pass; 3 unrelated pre-existing failures (Ludo
+  dice RNG, Ludo bonus chain, Draughts mandatory capture) are in code this work never touched and
+  were confirmed pre-existing, not caused by this change (one is a flaky non-deterministic-dice
+  test that was never using the file's own deterministic-dice test subclass). This stand-in is not
+  a substitute for running the real suite in CI once the environment can support it.
+- `tests/frontend/ayo-pit-size.spec.cjs` (Playwright, real Chromium): the explicitly-required
+  "must-pass" bounding-box test — renders a pit at 0/1/4/12/24/48 seeds and asserts the pit and
+  board bounding boxes are pixel-identical every time, plus the visual-cap/count-badge behavior,
+  a 320px-viewport tap-target-size check (≥44px), and a determinism check (same seed count renders
+  identical seed positions twice in a row). All passing against the real shipped CSS/JS.
+- `tests/frontend/ayo-runtime.spec.cjs` (Playwright): a true end-to-end runtime smoke test — loads
+  the *exact* `<script>` text from `show.blade.php` (not a reimplementation) into a real browser
+  against a DOM harness replicating every element id that script touches, then drives it with
+  synthetic snapshots shaped exactly like `TableGameService::snapshot()`'s real payload, including
+  a relay+capture `last_move.events` log matching what the engine actually produces for that board.
+  Confirms: a fresh/first load renders statically with no animation; an animated move settles on
+  the exact authoritative final board and credits the capturing player's store; no console errors
+  fire during the whole sequence; and re-delivering the same version afterward does not replay the
+  animation again (the reconnect/spectator/duplicate-poll requirement). `playwright` was added as a
+  project devDependency and Chromium was installed locally to make these runnable going forward.
+- `tests/frontend/ayo-pit-harness.html` / `ayo-runtime-harness.html`: the minimal static pages the
+  two Playwright specs load.
+
+### Key differences from the old (legacy/v1) behavior
+See §3 above for the full list; in one line: v1 was a single-pass Oware sow with always-on chain
+capture and an immediate end-on-any-empty-row rule. v2 is relay-sowing Ayo Olopon with single-pit
+capture, a proactive must-feed obligation, and a repetition-based ending - exactly the rule set in
+§2, gated so no table started before this shipped ever changes underfoot.
+
+### Assumptions / judgment calls made along the way
+- Legal-pit highlighting intentionally does **not** pre-compute the must-feed rule client-side
+  (would mean duplicating rules logic in JS); an occasional server rejection with a clear message
+  is treated as expected, acceptable behavior per the spec's own "illegal taps give a reason"
+  wording, not a bug to engineer around.
+- The end-of-round "sweep" animation glows both stores and snaps the board to empty rather than
+  flying every individual leftover seed from every pit — a deliberate simplification versus the
+  per-capture flight treatment, to avoid spawning dozens of flight animations for a single
+  game-ending move while still being visually clear that a sweep happened.
+- Direction arrows are a static label ("Seeds sow counter-clockwise"), not an animated indicator -
+  the spec's own A/B/C/D sections don't demand motion here, and the sowing animation itself already
+  demonstrates the direction far more clearly than a static arrow ever could.
+- Stores are rendered opponent-above / mine-below on every screen size (not opponent/mine
+  side-by-side flanking the board on desktop as literally described). Simpler and consistently
+  correct across breakpoints; flagged here as a conscious scope trim if you'd like the desktop-only
+  side-by-side layout built out separately.
+
+---
+
+## 6. Manual Test Checklist
+
+Run through this on two real accounts (one per seat), on both a phone and a desktop browser,
+against a freshly created table (so it gets `rules_version = 2`).
+
+**Setup & basic play**
+- [ ] Create an Ayo table, both players join, the board starts at 4 seeds in every pit, 0-0 on
+      the stores.
+- [ ] On your turn, only your own non-empty pits are highlighted/tappable; tapping an empty pit
+      or one of the opponent's shows an immediate "Empty pit."/"Choose one of your own pits."
+      message with no network delay.
+- [ ] Make a move. Seeds visibly hop one at a time from pit to pit; the pit count updates as each
+      one lands. The opposing player's screen shows the identical animation at the same time (via
+      polling).
+
+**Relay**
+- [ ] Find/force a move where the sow lands on a non-empty pit that isn't a capture (the very
+      first move of the game almost always qualifies, since every pit starts non-empty) - confirm
+      the "hand" bubble reappears and a brief pause happens before sowing continues from that pit.
+
+**Capture**
+- [ ] Capture an opponent pit (lands making it 2 or 3 seeds) - confirm the seeds fly to your store
+      with a staggered/glowing animation and your store count updates correctly.
+- [ ] Confirm a pit at 4+ seeds on the opponent's side does **not** capture (relays through
+      instead).
+- [ ] Confirm a capture does not also sweep an earlier qualifying pit next to it (chain capture is
+      off) - that pit's seeds stay on the board.
+
+**Grand slam**
+- [ ] Set up (or find in play) a capture that would take the opponent's last seeds - confirm the
+      move is allowed but nothing is captured, and the pit stays as-is.
+
+**Must-feed**
+- [ ] Get the opponent's row down to zero while you still have a feeding move available - confirm
+      a non-feeding move is rejected with a clear message.
+- [ ] Reach a position where no move can feed an empty opponent row - confirm the round ends
+      immediately with your remaining seeds credited to your score.
+
+**Winning / draw / repetition**
+- [ ] Reach 25 captured seeds - confirm the round ends immediately, declares you the winner, and
+      every pit visually empties (no leftover seeds shown anywhere once it's over).
+- [ ] Engineer a 24-24 final split (or trust the unit test) - confirm it's recorded as a draw and
+      both stakes are refunded.
+- [ ] (Optional, slow) Let a game stall with no captures for ~40 half-moves - confirm it ends via
+      repetition with the higher on-board total winning.
+
+**Reconnect / spectate**
+- [ ] Reload the page mid-game - confirm the board just shows the current state with no replay of
+      prior moves.
+- [ ] Open the table as a third/spectator account (or wait for a spectator) - confirm they see the
+      live board update without any animation replay of moves made before they joined.
+
+**Speed / accessibility**
+- [ ] Switch between Normal / Fast / Skip - confirm later moves visibly respect the chosen speed,
+      and the choice persists across a reload.
+- [ ] Enable "reduce motion" at the OS level and reload - confirm moves apply instantly with just
+      a brief highlight, no flying seeds.
+- [ ] On a ~320-375px phone width, confirm every pit is comfortably tappable (no missed taps), the
+      board never scrolls horizontally, and the Stand up / Start buttons are fully visible, not
+      clipped.
+
+**Old games unaffected**
+- [ ] Any Ayo table created *before* this change (rules_version 1, if one exists) continues to
+      behave exactly as before - no relay, chain capture still fires, old must-feed/end timing.
+- [ ] A quick sanity pass on Ludo and Draughts - unaffected, since neither game's code was touched.
