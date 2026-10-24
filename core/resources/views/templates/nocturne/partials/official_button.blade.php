@@ -54,13 +54,10 @@
             .wx-official__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
             .wx-official__item{display:flex;align-items:center;gap:10px;padding:13px 14px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.04);color:#f2f5ff;text-decoration:none;font-size:13px;font-weight:700;transition:border-color .15s ease,background .15s ease,transform .15s ease}
             .wx-official__item:hover{transform:translateY(-2px);border-color:rgba(0,238,136,.4);background:rgba(0,238,136,.08)}
-            .wx-official__icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:rgba(255,255,255,.08);font-size:17px}
+            /* Every platform icon is flat white, not each brand's own color - a single shared
+               rule instead of a per-platform override per icon. */
+            .wx-official__icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:17px}
             .wx-official__icon svg{width:16px;height:16px;fill:currentColor}
-            .wx-official__item--x .wx-official__icon{color:#fff}
-            .wx-official__item--facebook .wx-official__icon{color:#1877f2}
-            .wx-official__item--instagram .wx-official__icon{color:#e1306c}
-            .wx-official__item--discord .wx-official__icon{color:#5865f2}
-            .wx-official__item--tiktok .wx-official__icon{color:#fff}
             .wx-official__empty{margin:0;padding:22px 10px;color:#929abc;font-size:13px;text-align:center}
             </style>
         @endpush
