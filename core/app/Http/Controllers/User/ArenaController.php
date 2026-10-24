@@ -145,6 +145,12 @@ class ArenaController extends Controller
             $followingIds = ArenaFollow::where('follower_id', auth()->id())->pluck('followed_id');
             $suggestedFollows = User::where('id', '!=', auth()->id())
                 ->whereNotIn('id', $followingIds)
+                // A user who registered but never finished onboarding (the "Complete Your
+                // Profile" step, which is what actually sets username) has username=null -
+                // route('arena.profile', $username) throws if handed null, so they can't be
+                // suggested until they have a profile to link to anyway.
+                ->whereNotNull('username')
+                ->where('username', '!=', '')
                 ->active()
                 ->latest()
                 ->limit(5)

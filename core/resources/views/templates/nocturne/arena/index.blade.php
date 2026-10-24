@@ -138,10 +138,10 @@
                 <div class="nocturne-arena-rail__head"><strong>@lang('Arena menu')</strong><button type="button" class="nocturne-arena-rail__close" id="arena-rail-close" aria-label="@lang('Close')"><i class="ph-bold ph-x"></i></button></div>
                 @auth
                     <div class="nocturne-arena-widget nocturne-arena-widget--profile">
-                        <a href="{{ route('arena.profile', auth()->user()->username) }}" class="nocturne-arena-widget__me">
-                            <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
+                        <a href="{{ route('arena.profile', auth()->user()->username ?? '') }}" class="nocturne-arena-widget__me">
+                            <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username ?? '?', 0, 1)) }}@endif</span>
                             <div>
-                                <strong>{{ auth()->user()->username }}</strong>
+                                <strong>{{ auth()->user()->username ?? __('Complete your profile') }}</strong>
                                 @if($currentTier)<small><i class="ph-fill ph-crown-simple"></i>{{ __($currentTier->name) }}</small>@endif
                             </div>
                         </a>
@@ -230,8 +230,8 @@
                             <h3><i class="ph-fill ph-users-three"></i>@lang('Suggested for you')</h3>
                             @foreach($suggestedFollows as $suggested)
                                 <div class="nocturne-arena-widget-row nocturne-arena-widget-row--suggest">
-                                    <a href="{{ route('arena.profile', $suggested->username) }}" class="nocturne-arena-post__avatar">@if($suggested->avatarUrl())<img src="{{ $suggested->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($suggested->username, 0, 1)) }}@endif</a>
-                                    <a href="{{ route('arena.profile', $suggested->username) }}"><strong>{{ $suggested->username }}</strong></a>
+                                    <a href="{{ route('arena.profile', $suggested->username ?? '') }}" class="nocturne-arena-post__avatar">@if($suggested->avatarUrl())<img src="{{ $suggested->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr($suggested->username ?? '?', 0, 1)) }}@endif</a>
+                                    <a href="{{ route('arena.profile', $suggested->username ?? '') }}"><strong>{{ $suggested->username }}</strong></a>
                                     <button type="button" class="nocturne-arena-mini-follow" data-user-id="{{ $suggested->id }}" data-following="0"><span class="label-follow">@lang('Follow')</span><span class="label-following">@lang('Following')</span></button>
                                 </div>
                             @endforeach
