@@ -32,6 +32,12 @@ Route::prefix('support-chat')->name('support-chat.')->controller('SupportChatCon
     Route::post('{uuid}/messages', 'send')->name('send')->middleware('throttle:20,1');
 });
 
+Route::prefix('coin-trade/{tradeId}/chat')->name('coin-trade.chat.')->controller('CoinTradeChatController')->middleware('throttle:60,1')->group(function () {
+    Route::get('/', 'messages')->name('messages');
+    Route::post('/', 'send')->name('send');
+    Route::get('{messageId}/attachment', 'attachment')->name('attachment');
+});
+
 Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgentController')->group(function () {
     Route::get('login', 'loginForm')->name('login');
     Route::post('login', 'login')->middleware('throttle:6,1')->name('login.submit');
@@ -68,6 +74,23 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::post('{id}/approve', 'arenaApprove')->name('approve')->whereNumber('id');
             Route::post('{id}/reject', 'arenaReject')->name('reject')->whereNumber('id');
         });
+    });
+});
+
+Route::prefix('support-agent/coin')->name('support-agent.coin.')->middleware('support.agent')->group(function () {
+    Route::controller('CoinAgentMarketplaceController')->group(function () {
+        Route::get('/', 'index')->name('marketplace');
+        Route::post('selling/toggle', 'toggleSelling')->name('selling.toggle');
+        Route::post('listings/{listingId}/claim', 'claimListing')->name('listings.claim')->whereNumber('listingId');
+        Route::get('trade/{tradeId}', 'show')->name('trade')->whereNumber('tradeId');
+        Route::post('trade/{tradeId}/claim-payment', 'claimPayment')->name('trade.claim-payment')->whereNumber('tradeId');
+        Route::post('trade/{tradeId}/confirm-received', 'confirmReceived')->name('trade.confirm-received')->whereNumber('tradeId');
+        Route::post('trade/{tradeId}/report-not-received', 'reportNotReceived')->name('trade.report-not-received')->whereNumber('tradeId');
+    });
+    Route::controller('CoinSupervisorController')->prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('{tradeId}/resolve', 'resolve')->name('resolve')->whereNumber('tradeId');
+        Route::post('{tradeId}/penalize', 'penalize')->name('penalize')->whereNumber('tradeId');
     });
 });
 

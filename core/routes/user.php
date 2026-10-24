@@ -142,6 +142,18 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('validate/username', 'validateUsername')->name('.validate.username');
             });
 
+            Route::controller('CoinMarketplaceController')->prefix('coin')->name('coin.')->group(function () {
+                Route::get('/', 'index')->name('marketplace');
+                Route::post('listings', 'listingStore')->name('listings.store');
+                Route::post('listings/{id}/cancel', 'listingCancel')->name('listings.cancel')->whereNumber('id');
+                Route::post('buy', 'buyFromAgent')->name('buy');
+                Route::get('trade/{tradeId}', 'show')->name('trade')->whereNumber('tradeId');
+                Route::post('trade/{tradeId}/claim-payment', 'claimPayment')->name('trade.claim-payment')->whereNumber('tradeId');
+                Route::post('trade/{tradeId}/confirm-received', 'confirmReceived')->name('trade.confirm-received')->whereNumber('tradeId');
+                Route::post('trade/{tradeId}/report-not-received', 'reportNotReceived')->name('trade.report-not-received')->whereNumber('tradeId');
+                Route::post('trade/{tradeId}/reopen-listing', 'reopenListing')->name('trade.reopen-listing')->whereNumber('tradeId');
+            });
+
             // Withdraw
             Route::controller('WithdrawController')->prefix('withdraw')->name('withdraw')->group(function () {
                 Route::middleware('kyc')->group(function () {

@@ -81,6 +81,12 @@ Route::middleware('admin')->group(function () {
         Route::post('{id}/reject', 'reject')->name('reject');
     });
 
+    Route::controller('CoinDisputeController')->prefix('coin/disputes')->name('coin.disputes.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('{tradeId}/resolve', 'resolve')->name('resolve')->whereNumber('tradeId');
+        Route::post('{tradeId}/penalize', 'penalize')->name('penalize')->whereNumber('tradeId');
+    });
+
     Route::controller('AdminController')->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('chart/deposit-withdraw', 'depositAndWithdrawReport')->name('chart.deposit.withdraw');
