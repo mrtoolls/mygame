@@ -142,7 +142,16 @@ body {
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
-a:hover { color: var(--nocturne-green); }
+/* :where() zeroes this selector's own specificity, so it only ever acts as a low-priority
+   DEFAULT (plain text links turn green on hover) and can never outrank any button/CTA class's
+   own color, no matter how simple that class's selector is. Before this, "a:hover" carried
+   real specificity (0,1,1) - higher than a single class like .cookies-card__allow {color:...}
+   (0,1,0) - so on hover it silently overrode the text color of any <a>-tag button that didn't
+   separately restate its own hover color, turning the label the same green as a green
+   background = invisible text. That had been patched class-by-class in a few places (search
+   "generic anchor hover color" below) instead of fixed here, so any button not on that list -
+   confirmed for .cookies-card__allow - was still broken. */
+:where(a:hover) { color: var(--nocturne-green); }
 /* Removes the gray tap-flash on touch and the ~300ms double-tap-to-zoom delay on interactive
    elements - both read as "slow website" rather than "responsive app" on a real device. */
 a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit"], input[type="button"] {
@@ -404,7 +413,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     display: inline-flex; align-items: center; padding: 9px 18px; border-radius: 11px; background: var(--nocturne-green);
     color: #073c2a; text-decoration: none; font-size: 12.5px; font-weight: 800; white-space: nowrap; cursor: pointer;
 }
-.cookies-card__allow:hover { filter: brightness(1.05); }
+.cookies-card__allow:hover { filter: brightness(1.05); color: #073c2a; }
 @media (max-width: 575.98px) {
     .cookies-card { left: 12px; right: 12px; bottom: 12px; max-width: none; }
     .cookies-card__content { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
