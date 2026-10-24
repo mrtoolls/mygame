@@ -1218,9 +1218,12 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 }
 .nocturne-field__control:focus-within { border-color: var(--nocturne-green); box-shadow: 0 0 0 3px rgba(0,239,135,.12); }
 .nocturne-field__control > i:first-child, .nocturne-field__control > .nocturne-icon:first-child { color: var(--nocturne-muted); font-size: 19px; }
-.nocturne-field__control input { flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--nocturne-text); font-size: 14px; outline: 0; }
+.nocturne-field__control input, .nocturne-field__control select { flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--nocturne-text); font-size: 14px; outline: 0; }
 .nocturne-field__control input::placeholder { color: #6b7399; }
 .nocturne-field__control input[readonly] { color: var(--nocturne-muted); }
+.nocturne-field__control select { cursor: pointer; }
+.nocturne-field__control select:disabled { color: var(--nocturne-muted); cursor: not-allowed; }
+.nocturne-field__control select option { background: #0d1023; color: var(--nocturne-text); }
 .nocturne-field__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--nocturne-muted); font-size: 19px; cursor: pointer; }
 .nocturne-field__toggle:hover { color: var(--nocturne-green); }
 .nocturne-field-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
@@ -1288,12 +1291,26 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 @media (max-width: 575.98px) {
     .nocturne-auth { padding: 0; }
     .nocturne-auth-card { border-radius: 0; min-height: 100vh; }
+    /* A cropped hero photo never reads well at an arbitrary phone width - instead of shrinking
+       the same desktop slab, this collapses into a compact branded header strip (logo + one
+       tight line of copy on the existing brand gradient, no photo), which is how this kind of
+       split layout is supposed to adapt on a phone - a short native-app-style top bar, not a
+       scaled-down desktop hero. */
+    .nocturne-auth-visual {
+        min-height: 0; flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px;
+        padding: 18px 20px; background-image: none !important;
+        background: radial-gradient(ellipse at 20% 0%, rgba(0,239,135,.22), transparent 65%), #0d1128;
+    }
+    .nocturne-auth-visual::before { content: none; }
+    .nocturne-auth-visual__brand { position: static; flex: 0 0 auto; }
+    .nocturne-auth-visual__brand img { height: 26px; }
+    .nocturne-auth-visual__copy { flex: 1; min-width: 0; }
+    .nocturne-auth-visual__copy h2 { font-size: 14.5px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nocturne-auth-visual__copy p, .nocturne-auth-visual__trust, .nocturne-auth-visual__copyright { display: none; }
     .nocturne-field-grid { grid-template-columns: 1fr; gap: 0; }
     .nocturne-auth-form { padding: 28px 18px; }
 }
 @media (max-width: 380px) {
-    .nocturne-auth-visual { min-height: 220px; padding: 20px 18px 22px; }
-    .nocturne-auth-visual__copy p { font-size: 13px; margin-bottom: 12px; }
     .nocturne-auth-form { padding: 22px 14px; }
     .nocturne-auth-form h1 { font-size: 22px; margin-bottom: 18px; }
     .nocturne-field__control { min-height: 48px; padding: 0 12px; gap: 8px; }

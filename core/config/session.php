@@ -32,9 +32,10 @@ return [
     |
      */
 
-    // A social gaming platform shouldn't log a player out mid-session just for stepping away
-    // for a while - default to 30 days of idle time rather than Laravel's stock 2 hours.
-    'lifetime'        => env('SESSION_LIFETIME', 43200),
+    // Users must never be auto-logged-out - only an explicit logout should end a session.
+    // 10 years is "effectively never" in idle-timeout terms while still being a finite integer
+    // Laravel's session GC can reason about (an infinite/zero lifetime isn't supported cleanly).
+    'lifetime'        => env('SESSION_LIFETIME', 5256000),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

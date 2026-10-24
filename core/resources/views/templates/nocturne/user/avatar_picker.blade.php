@@ -59,5 +59,18 @@
         .avatar-picker__item.is-selected { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0,239,135,.18); }
         .avatar-picker__empty { display: grid; justify-items: center; gap: 8px; padding: 40px 20px; color: var(--nocturne-muted, #929abc); text-align: center; }
         .avatar-picker__empty i { font-size: 28px; color: var(--nocturne-green, #00ef87); }
+
+        /* Native-app feel on phones: a tighter grid that doesn't fight the page's own scroll
+           (the old max-height:70vh created a scroll-within-a-scroll trap), bigger comfortable
+           touch targets, and a current-avatar header that doesn't crowd a narrow screen. */
+        @media (max-width: 575.98px) {
+            .avatar-picker__current { gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
+            .avatar-picker__current-preview { width: 60px; height: 60px; font-size: 21px; }
+            .avatar-picker__current strong { font-size: 14px; }
+            .avatar-picker__current p { font-size: 11.5px; }
+            .avatar-picker__grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 12px; max-height: none; overflow-y: visible; padding-right: 0; }
+            .avatar-picker__item { border-width: 2px; }
+            .avatar-picker__item:active { transform: scale(.94); }
+        }
     </style>
 @endpush

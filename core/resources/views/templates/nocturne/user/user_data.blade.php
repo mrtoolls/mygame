@@ -5,6 +5,11 @@
         $authImage = @$register->data_values->image
             ? getImage('assets/images/frontend/register/' . $register->data_values->image, '1920x1080')
             : asset('assets/images/frontend/nockturne_assets/landing_girl.jpg');
+        // Sample thumbnails for the gender-picker cards - just previews, the real assignment on
+        // submit is a random pick from the same pool (see AvatarLibrary::randomPath() in
+        // UserController), these two are only here so the cards aren't blank/stale.
+        $maleAvatarSample = \App\Support\AvatarLibrary::filenames('male')[0] ?? null;
+        $femaleAvatarSample = \App\Support\AvatarLibrary::filenames('female')[0] ?? null;
     @endphp
     <section class="nocturne-auth">
         <div class="nocturne-auth-card nocturne-auth-card--wide">
@@ -31,12 +36,12 @@
                         <div class="nocturne-gender-picker">
                             <label class="nocturne-gender-card">
                                 <input type="radio" name="gender" value="male" required @checked(old('gender') === 'male')>
-                                <span class="nocturne-gender-card__preview"><img src="{{ asset('assets/images/profilepics/male1.png') }}" alt="@lang('Male avatar')" loading="lazy"></span>
+                                <span class="nocturne-gender-card__preview"><img src="{{ $maleAvatarSample ? asset('assets/avatars/male/' . $maleAvatarSample) : asset('assets/images/profilepics/male1.png') }}" alt="@lang('Male avatar')" loading="lazy"></span>
                                 <span class="nocturne-gender-card__label">@lang('Male')</span>
                             </label>
                             <label class="nocturne-gender-card">
                                 <input type="radio" name="gender" value="female" required @checked(old('gender') === 'female')>
-                                <span class="nocturne-gender-card__preview"><img src="{{ asset('assets/images/profilepics/female1.png') }}" alt="@lang('Female avatar')" loading="lazy"></span>
+                                <span class="nocturne-gender-card__preview"><img src="{{ $femaleAvatarSample ? asset('assets/avatars/female/' . $femaleAvatarSample) : asset('assets/images/profilepics/female1.png') }}" alt="@lang('Female avatar')" loading="lazy"></span>
                                 <span class="nocturne-gender-card__label">@lang('Female')</span>
                             </label>
                         </div>
