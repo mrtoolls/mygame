@@ -8,6 +8,7 @@ use App\Models\BalanceTransfer;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class BalanceTransferController extends Controller
@@ -71,51 +72,70 @@ class BalanceTransferController extends Controller
 
         $fixedCharge   = gs('balance_transfer_fixed_charge');
         $percentCharge = gs('balance_transfer_percent_charge');
-        $charge        = $fixedCharge + ($percentCharge * $request->amount) / 100;
+        $charge        = bcadd((string) $fixedCharge, bcdiv(bcmul((string) $percentCharge, (string) $request->amount, 8), '100', 8), 8);
+        $finalAmount   = bcadd((string) $request->amount, $charge, 8);
 
-        $finalAmount = $request->amount + $charge;
+        // See the identical fix in User\BalanceTransferController::store() for why this needs
+        // locked, fixed-order rows inside one transaction (closes a real double-spend race).
+        $result = DB::transaction(function () use ($sender, $receiver, $request, $finalAmount, $charge) {
+            $ids = [$sender->id, $receiver->id];
+            sort($ids);
+            $locked = User::whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+            $lockedSender   = $locked[$sender->id];
+            $lockedReceiver = $locked[$receiver->id];
 
-        if ($sender->balance < $finalAmount) {
-            $notify[] = 'Insufficient balance to complete the transaction';
+            if (bccomp((string) $lockedSender->balance, $finalAmount, 8) < 0) {
+                return ['error' => 'Insufficient balance to complete the transaction'];
+            }
+
+            $balanceTransfer               = new BalanceTransfer();
+            $balanceTransfer->sender_id    = $lockedSender->id;
+            $balanceTransfer->receiver_id  = $lockedReceiver->id;
+            $balanceTransfer->amount       = $request->amount;
+            $balanceTransfer->charge       = $charge;
+            $balanceTransfer->final_amount = $finalAmount;
+            $balanceTransfer->trx          = getTrx();
+            $balanceTransfer->save();
+
+            $lockedSender->balance = bcsub((string) $lockedSender->balance, $finalAmount, 8);
+            $lockedSender->save();
+
+            $transaction               = new Transaction();
+            $transaction->user_id      = $lockedSender->id;
+            $transaction->amount       = $finalAmount;
+            $transaction->charge       = $charge;
+            $transaction->post_balance = $lockedSender->balance;
+            $transaction->trx_type     = '-';
+            $transaction->trx          = $balanceTransfer->trx;
+            $transaction->details      = "Balance Transfer " . showAmount($request->amount) . " to $lockedReceiver->username.";
+            $transaction->remark       = "balance_transfer";
+            $transaction->save();
+
+            $lockedReceiver->balance = bcadd((string) $lockedReceiver->balance, (string) $request->amount, 8);
+            $lockedReceiver->save();
+
+            $transaction               = new Transaction();
+            $transaction->user_id      = $lockedReceiver->id;
+            $transaction->amount       = $request->amount;
+            $transaction->charge       = 0;
+            $transaction->post_balance = $lockedReceiver->balance;
+            $transaction->trx_type     = '+';
+            $transaction->trx          = $balanceTransfer->trx;
+            $transaction->details      = "Balance Transfer received " . showAmount($request->amount) . " from $lockedSender->username.";
+            $transaction->remark       = "receive_transfer";
+            $transaction->save();
+
+            return ['transfer' => $balanceTransfer, 'receiver' => $lockedReceiver, 'sender' => $lockedSender];
+        });
+
+        if (isset($result['error'])) {
+            $notify[] = $result['error'];
             return responseError('insufficient_balance', $notify);
         }
 
-        $balanceTransfer               = new BalanceTransfer();
-        $balanceTransfer->sender_id    = $sender->id;
-        $balanceTransfer->receiver_id  = $receiver->id;
-        $balanceTransfer->amount       = $request->amount;
-        $balanceTransfer->charge       = $charge;
-        $balanceTransfer->final_amount = $finalAmount;
-        $balanceTransfer->trx          = getTrx();
-        $balanceTransfer->save();
-
-        $sender->balance -= $finalAmount;
-        $sender->save();
-
-        $transaction               = new Transaction();
-        $transaction->user_id      = $sender->id;
-        $transaction->amount       = $finalAmount;
-        $transaction->charge       = $charge;
-        $transaction->post_balance = $sender->balance;
-        $transaction->trx_type     = '-';
-        $transaction->trx          = $balanceTransfer->trx;
-        $transaction->details      = "Balance Transfer " . showAmount($request->amount) . " to $receiver->username.";
-        $transaction->remark       = "balance_transfer";
-        $transaction->save();
-
-        $receiver->balance += $request->amount;
-        $receiver->save();
-
-        $transaction               = new Transaction();
-        $transaction->user_id      = $receiver->id;
-        $transaction->amount       = $request->amount;
-        $transaction->charge       = 0;
-        $transaction->post_balance = $receiver->balance;
-        $transaction->trx_type     = '+';
-        $transaction->trx          = $balanceTransfer->trx;
-        $transaction->details      = "Balance Transfer received " . showAmount($request->amount) . " from $sender->username.";
-        $transaction->remark       = "receive_transfer";
-        $transaction->save();
+        $balanceTransfer = $result['transfer'];
+        $receiver        = $result['receiver'];
+        $sender          = $result['sender'];
 
         notify($receiver, 'BALANCE_TRANSFER', [
             'sender'       => $sender->username,
