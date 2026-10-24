@@ -554,10 +554,13 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
        guests never get that bar (it's account-specific), so reserving the space for it would
        just leave a dead empty gap at the bottom of every page for them. */
     .nocturne-main.nocturne-no-mobile-nav { padding-bottom: 24px; }
-    /* Floating pill bar, not an edge-to-edge strip: inactive tabs collapse to just their icon,
-       and whichever one is active expands into a filled pill with its icon plus label - the
-       current item is the only one that needs reading, everything else is a quiet icon-only
-       target until tapped. */
+    /* Floating pill bar, not an edge-to-edge strip. Every tab is the same fixed size at all
+       times - icon only, no text label, no size/padding change for the active one - matching
+       how a real native-app tab bar behaves (Instagram/X/TikTok etc: uniform tabs, the active
+       one just gets a highlighted icon/background, nothing resizes). This used to let the
+       active tab grow via flex-grow + reveal its label, animated on every class change - one
+       tab visibly ballooning next to four uniform icons read as broken/unprofessional rather
+       than intentional. */
     .nocturne-mobile-nav {
         position: fixed; z-index: 1040; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
         transform: translateX(-50%) translateZ(0);
@@ -570,19 +573,18 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
            a classic mobile scroll-jank cause. */
     }
     .nocturne-mobile-nav a, .nocturne-mobile-nav button {
-        display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 7px;
-        min-height: 44px; min-width: 0; padding: 0 6px; border: 0; border-radius: 999px;
+        display: flex; flex: 1 1 0; align-items: center; justify-content: center;
+        min-height: 44px; min-width: 0; padding: 0; border: 0; border-radius: 999px;
         background: transparent; color: var(--nocturne-muted); text-decoration: none;
         font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden;
-        transition: background .2s ease, color .2s ease, flex-grow .25s ease, padding .25s ease;
+        transition: background .2s ease, color .2s ease;
     }
     .nocturne-mobile-nav i { flex: 0 0 auto; font-size: 19px; }
     .nocturne-mobile-nav span { display: none; }
     .nocturne-mobile-nav a:hover, .nocturne-mobile-nav button:hover { color: var(--nocturne-green); }
     .nocturne-mobile-nav a.is-active, .nocturne-mobile-nav button.is-active {
-        flex-grow: 2.2; padding: 0 16px; background: var(--nocturne-raised); color: var(--nocturne-text);
+        background: var(--nocturne-raised); color: var(--nocturne-green);
     }
-    .nocturne-mobile-nav a.is-active span, .nocturne-mobile-nav button.is-active span { display: inline; }
 }
 
 /* The live lobby contains cards with nested grids and long currency strings.
