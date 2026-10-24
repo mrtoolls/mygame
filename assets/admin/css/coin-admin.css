@@ -1,0 +1,86 @@
+/* Coin Economy admin pages - premium treatment matching the existing light admin theme's own
+   accent palette (primary #4634ff, success #28c76f, warning #ff9f43, danger #eb2222) and card
+   radius/shadow conventions (border-radius: 5px base, 0.75rem soft shadow) - this file only adds
+   new component classes on top of that, it never overrides the base theme. */
+
+.coin-admin-hero {
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: 22px; padding: clamp(24px, 3vw, 34px);
+    border-radius: 18px; color: #fff;
+    background: linear-gradient(125deg, #2d1fd6 0%, #4634ff 45%, #6a5cff 75%, #8f7bff 100%);
+    box-shadow: 0 1.25rem 2.5rem rgba(70, 52, 255, .22);
+}
+.coin-admin-hero::before {
+    content: ""; position: absolute; top: -40%; right: -8%; width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .18), transparent 70%); pointer-events: none;
+}
+.coin-admin-hero::after {
+    content: ""; position: absolute; bottom: -50%; left: 10%; width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(40, 199, 111, .25), transparent 70%); pointer-events: none;
+}
+.coin-admin-hero__eyebrow { display: inline-flex; align-items: center; gap: 7px; color: rgba(255, 255, 255, .78); font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.coin-admin-hero__title { position: relative; z-index: 1; margin: 6px 0 2px; font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -.02em; }
+.coin-admin-hero__sub { position: relative; z-index: 1; margin: 0; color: rgba(255, 255, 255, .82); font-size: 13.5px; max-width: 480px; }
+.coin-admin-hero__status { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 13px; background: rgba(255, 255, 255, .14); backdrop-filter: blur(6px); }
+.coin-admin-hero__status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff6b6b; box-shadow: 0 0 0 4px rgba(255, 107, 107, .22); }
+.coin-admin-hero__status.is-on .coin-admin-hero__status-dot { background: #28c76f; box-shadow: 0 0 0 4px rgba(40, 199, 111, .28); animation: coin-admin-pulse 2s ease-in-out infinite; }
+@keyframes coin-admin-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(40, 199, 111, .28); } 50% { box-shadow: 0 0 0 8px rgba(40, 199, 111, .12); } }
+.coin-admin-hero__status strong { font-size: 14px; font-weight: 800; }
+.coin-admin-hero__status span { display: block; color: rgba(255, 255, 255, .72); font-size: 10.5px; }
+
+.coin-admin-stat {
+    display: flex; align-items: center; gap: 14px; height: 100%; padding: 18px 20px; border-radius: 16px;
+    background: #fff; border: 1px solid rgba(70, 52, 255, .08);
+    box-shadow: 0 0.6rem 1.4rem rgba(18, 38, 63, .05); transition: transform .18s ease, box-shadow .18s ease;
+}
+.coin-admin-stat:hover { transform: translateY(-2px); box-shadow: 0 1rem 1.8rem rgba(18, 38, 63, .09); }
+.coin-admin-stat__icon { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 14px; font-size: 21px; }
+.coin-admin-stat__icon--primary { background: rgba(70, 52, 255, .1); color: #4634ff; }
+.coin-admin-stat__icon--success { background: rgba(40, 199, 111, .1); color: #28c76f; }
+.coin-admin-stat__icon--warning { background: rgba(255, 159, 67, .1); color: #ff9f43; }
+.coin-admin-stat__icon--danger { background: rgba(234, 34, 34, .1); color: #eb2222; }
+.coin-admin-stat__body { min-width: 0; }
+.coin-admin-stat__value { display: block; color: #1a1d2e; font-size: 21px; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; }
+.coin-admin-stat__label { display: block; margin-top: 2px; color: #8a90a6; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+
+.coin-admin-panel { padding: 22px; border-radius: 18px; background: #fff; border: 1px solid rgba(18, 38, 63, .06); box-shadow: 0 0.75rem 1.5rem rgba(18, 38, 63, .04); }
+.coin-admin-panel__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+.coin-admin-panel__head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: #1a1d2e; font-size: 16px; font-weight: 800; }
+.coin-admin-panel__head h2 i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: rgba(70, 52, 255, .1); color: #4634ff; font-size: 16px; }
+.coin-admin-panel__head p { margin: 2px 0 0 44px; color: #8a90a6; font-size: 12.5px; }
+
+.coin-admin-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border-radius: 13px; background: #f7f8fc; border: 1px solid rgba(18, 38, 63, .05); }
+.coin-admin-toggle-row + .coin-admin-toggle-row { margin-top: 10px; }
+.coin-admin-toggle-row__copy strong { display: block; color: #1a1d2e; font-size: 13px; font-weight: 800; }
+.coin-admin-toggle-row__copy span { display: block; margin-top: 2px; color: #8a90a6; font-size: 11.5px; max-width: 420px; }
+.coin-admin-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.coin-admin-status-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.coin-admin-status-pill--on { background: rgba(40, 199, 111, .1); color: #28c76f; }
+.coin-admin-status-pill--off { background: rgba(138, 144, 166, .12); color: #8a90a6; }
+.coin-admin-status-pill--warn { background: rgba(255, 159, 67, .12); color: #ff9f43; }
+
+.coin-admin-currency-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.coin-admin-currency-card { padding: 16px; border-radius: 15px; background: #f7f8fc; border: 1px solid rgba(18, 38, 63, .05); }
+.coin-admin-currency-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.coin-admin-currency-card__code { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #1a1d2e; }
+.coin-admin-currency-card__code span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(70, 52, 255, .1); color: #4634ff; font-size: 12px; font-weight: 900; }
+.coin-admin-currency-card__prices { display: flex; gap: 14px; margin-bottom: 12px; }
+.coin-admin-currency-card__prices div { flex: 1; }
+.coin-admin-currency-card__prices small { display: block; color: #8a90a6; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.coin-admin-currency-card__prices strong { display: block; margin-top: 2px; font-size: 15px; font-weight: 800; color: #1a1d2e; }
+.coin-admin-currency-card__prices strong.is-sell { color: #28c76f; }
+.coin-admin-currency-card .form-group { margin-bottom: 8px; }
+.coin-admin-currency-card label { color: #8a90a6; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+
+.coin-admin-quicklinks { display: flex; flex-wrap: wrap; gap: 10px; }
+.coin-admin-quicklink { display: flex; align-items: center; gap: 12px; padding: 14px 16px; flex: 1 1 200px; border-radius: 14px; background: #f7f8fc; border: 1px solid rgba(18, 38, 63, .05); color: #1a1d2e; text-decoration: none; transition: border-color .16s ease, transform .16s ease; }
+.coin-admin-quicklink:hover { border-color: #4634ff; transform: translateY(-2px); color: #1a1d2e; }
+.coin-admin-quicklink i { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; background: rgba(70, 52, 255, .1); color: #4634ff; font-size: 17px; }
+.coin-admin-quicklink strong { display: block; font-size: 13px; font-weight: 800; }
+.coin-admin-quicklink span { display: block; margin-top: 1px; color: #8a90a6; font-size: 10.5px; }
+
+@media (max-width: 575.98px) {
+    .coin-admin-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
+    .coin-admin-toggle-row { flex-direction: column; align-items: flex-start; }
+    .coin-admin-quicklink { flex: 1 1 100%; }
+}

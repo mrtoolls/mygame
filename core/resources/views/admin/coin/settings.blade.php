@@ -1,6 +1,8 @@
 @extends('admin.layouts.app')
 
 @section('panel')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/coin-admin.css') }}?v={{ @filemtime('assets/admin/css/coin-admin.css') }}">
+
     <div class="row g-4">
         @if($general->allow_single_approver)
             <div class="col-12">
@@ -11,100 +13,175 @@
             </div>
         @endif
 
+        <div class="col-12">
+            <div class="coin-admin-hero">
+                <div>
+                    <span class="coin-admin-hero__eyebrow"><i class="las la-coins"></i> Coin Economy</span>
+                    <h1 class="coin-admin-hero__title">Command Center</h1>
+                    <p class="coin-admin-hero__sub">Pricing, mode, and the live health of your coin ledger — all in one place.</p>
+                </div>
+                <div class="coin-admin-hero__status {{ $general->coin_mode ? 'is-on' : '' }}">
+                    <span class="coin-admin-hero__status-dot"></span>
+                    <div><strong>{{ $general->coin_mode ? 'LIVE' : 'OFFLINE' }}</strong><span>Coin mode is {{ $general->coin_mode ? 'on' : 'off' }}</span></div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="javascript:void(0)" icon="las la-coins" title="Coin Mode" value="{{ $general->coin_mode ? 'ON' : 'OFF' }}" bg="{{ $general->coin_mode ? 'success' : 19 }}" outline="true" />
+            <div class="coin-admin-stat">
+                <span class="coin-admin-stat__icon coin-admin-stat__icon--{{ $general->coin_mode ? 'success' : 'primary' }}"><i class="las la-power-off"></i></span>
+                <div class="coin-admin-stat__body"><span class="coin-admin-stat__value">{{ $general->coin_mode ? 'ON' : 'OFF' }}</span><span class="coin-admin-stat__label">Coin Mode</span></div>
+            </div>
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="javascript:void(0)" icon="las la-scale-balanced" title="Reconciliation" value="{{ $reconciliation['ok'] ? 'OK' : 'MISMATCH' }}" bg="{{ $reconciliation['ok'] ? 'success' : 'danger' }}" outline="true" />
+            <div class="coin-admin-stat">
+                <span class="coin-admin-stat__icon coin-admin-stat__icon--{{ $reconciliation['ok'] ? 'success' : 'danger' }}"><i class="las la-scale-balanced"></i></span>
+                <div class="coin-admin-stat__body"><span class="coin-admin-stat__value">{{ $reconciliation['ok'] ? 'OK' : 'MISMATCH' }}</span><span class="coin-admin-stat__label">Reconciliation</span></div>
+            </div>
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="javascript:void(0)" icon="las la-chart-pie" title="Circulating Supply" value="{{ number_format($reconciliation['circulating'], 0) }}" bg="primary" outline="true" />
+            <div class="coin-admin-stat">
+                <span class="coin-admin-stat__icon coin-admin-stat__icon--primary"><i class="las la-chart-pie"></i></span>
+                <div class="coin-admin-stat__body"><span class="coin-admin-stat__value">{{ number_format($reconciliation['circulating'], 0) }}</span><span class="coin-admin-stat__label">Circulating Supply</span></div>
+            </div>
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="javascript:void(0)" icon="las la-vault" title="Platform Ledger" value="{{ number_format($reconciliation['platform_balance'], 0) }}" bg="19" outline="true" />
+            <div class="coin-admin-stat">
+                <span class="coin-admin-stat__icon coin-admin-stat__icon--warning"><i class="las la-vault"></i></span>
+                <div class="coin-admin-stat__body"><span class="coin-admin-stat__value">{{ number_format($reconciliation['platform_balance'], 0) }}</span><span class="coin-admin-stat__label">Platform Ledger</span></div>
+            </div>
         </div>
 
         <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0"><i class="las la-sliders-h me-2"></i>Coin Economy Controls</h5></div>
-                <div class="card-body d-flex flex-wrap align-items-center gap-3">
-                    @if(!$general->coin_mode)
-                        <form method="post" action="{{ route('admin.coin.mode.toggle') }}" class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="coin-admin-panel">
+                <div class="coin-admin-panel__head">
+                    <h2><i class="las la-sliders-h"></i> Economy Controls</h2>
+                </div>
+
+                <div class="coin-admin-toggle-row">
+                    <div class="coin-admin-toggle-row__copy">
+                        <strong>Coin Mode</strong>
+                        <span>Gateway purchases, games, bonuses and VIP all switch to coins. Requires a passing reconciliation check.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="coin-admin-status-pill coin-admin-status-pill--{{ $general->coin_mode ? 'on' : 'off' }}">{{ $general->coin_mode ? 'On' : 'Off' }}</span>
+                        @if(!$general->coin_mode)
+                            <form method="post" action="{{ route('admin.coin.mode.toggle') }}" class="d-flex align-items-center gap-2 flex-wrap mb-0">
+                                @csrf
+                                <input type="hidden" name="enable" value="1">
+                                <label class="form-check-label small d-flex align-items-center gap-1 mb-0"><input type="checkbox" name="confirm" value="1" class="form-check-input"> I understand this turns on real coin trading</label>
+                                <button type="submit" class="btn btn--primary btn-sm"><i class="las la-power-off"></i> Turn On</button>
+                            </form>
+                        @else
+                            <form method="post" action="{{ route('admin.coin.mode.toggle') }}" class="confirmationBtn mb-0" data-question="Turn coin mode off? Everything goes back to real-currency wallets.">
+                                @csrf
+                                <input type="hidden" name="enable" value="0">
+                                <button type="submit" class="btn btn-outline--danger btn-sm"><i class="las la-power-off"></i> Turn Off</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="coin-admin-toggle-row">
+                    <div class="coin-admin-toggle-row__copy">
+                        <strong>Single-Approver Mode</strong>
+                        <span>Testing only — lets one admin approve their own float grants and large penalties.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="coin-admin-status-pill coin-admin-status-pill--{{ $general->allow_single_approver ? 'warn' : 'off' }}">{{ $general->allow_single_approver ? 'On' : 'Off' }}</span>
+                        <form method="post" action="{{ route('admin.coin.single-approver.toggle') }}" class="mb-0">
                             @csrf
-                            <input type="hidden" name="enable" value="1">
-                            <label class="form-check-label small d-flex align-items-center gap-1"><input type="checkbox" name="confirm" value="1" class="form-check-input"> I understand this turns on real coin trading</label>
-                            <button type="submit" class="btn btn--primary btn-sm"><i class="las la-power-off"></i> Turn Coin Mode ON</button>
+                            <input type="hidden" name="enable" value="{{ $general->allow_single_approver ? 0 : 1 }}">
+                            <button type="submit" class="btn btn-outline--secondary btn-sm">{{ $general->allow_single_approver ? 'Disable' : 'Enable' }}</button>
                         </form>
-                    @else
-                        <form method="post" action="{{ route('admin.coin.mode.toggle') }}" class="confirmationBtn" data-question="Turn coin mode off? Everything goes back to real-currency wallets.">
+                    </div>
+                </div>
+
+                <div class="coin-admin-toggle-row">
+                    <div class="coin-admin-toggle-row__copy">
+                        <strong>Marketplace Test Kit</strong>
+                        <span>Spin up test agents, supervisors and sample trades to try every flow by hand.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="coin-admin-status-pill coin-admin-status-pill--{{ $general->coin_marketplace_test_kit_enabled ? 'warn' : 'off' }}">{{ $general->coin_marketplace_test_kit_enabled ? 'On' : 'Off' }}</span>
+                        <form method="post" action="{{ route('admin.coin.test-kit.toggle') }}" class="mb-0">
                             @csrf
-                            <input type="hidden" name="enable" value="0">
-                            <button type="submit" class="btn btn-outline--danger btn-sm"><i class="las la-power-off"></i> Turn Coin Mode OFF</button>
+                            <input type="hidden" name="enable" value="{{ $general->coin_marketplace_test_kit_enabled ? 0 : 1 }}">
+                            <button type="submit" class="btn btn-outline--secondary btn-sm">{{ $general->coin_marketplace_test_kit_enabled ? 'Disable' : 'Enable' }}</button>
                         </form>
-                    @endif
-                    <span class="vr d-none d-md-inline"></span>
-                    <form method="post" action="{{ route('admin.coin.single-approver.toggle') }}">
-                        @csrf
-                        <input type="hidden" name="enable" value="{{ $general->allow_single_approver ? 0 : 1 }}">
-                        <button type="submit" class="btn btn-outline--secondary btn-sm"><i class="las la-user-check"></i> {{ $general->allow_single_approver ? 'Disable' : 'Enable' }} Single-Approver</button>
-                    </form>
-                    <form method="post" action="{{ route('admin.coin.recompute') }}">
+                    </div>
+                </div>
+
+                <div class="text-end mt-3">
+                    <form method="post" action="{{ route('admin.coin.recompute') }}" class="d-inline mb-0">
                         @csrf
                         <button type="submit" class="btn btn-outline--primary btn-sm"><i class="las la-sync"></i> Recompute All Rates</button>
                     </form>
-                    <form method="post" action="{{ route('admin.coin.test-kit.toggle') }}">
-                        @csrf
-                        <input type="hidden" name="enable" value="{{ $general->coin_marketplace_test_kit_enabled ? 0 : 1 }}">
-                        <button type="submit" class="btn btn-outline--secondary btn-sm"><i class="las la-flask"></i> {{ $general->coin_marketplace_test_kit_enabled ? 'Disable' : 'Enable' }} Test Kit</button>
-                    </form>
                 </div>
             </div>
         </div>
 
         <div class="col-12">
-            <div class="card">
-                <div class="card-body d-flex flex-wrap gap-2">
-                    <a href="{{ route('admin.coin.float.index') }}" class="btn btn-sm btn-outline--primary"><i class="las la-hand-holding-usd"></i> Agent Float Grants</a>
-                    <a href="{{ route('admin.coin.disputes.index') }}" class="btn btn-sm btn-outline--primary"><i class="las la-gavel"></i> Trade Disputes</a>
-                    <a href="{{ route('admin.coin.cutover.index') }}" class="btn btn-sm btn-outline--primary"><i class="las la-exchange-alt"></i> Cutover Tool</a>
+            <div class="coin-admin-panel">
+                <div class="coin-admin-panel__head"><h2><i class="las la-compass"></i> Quick Links</h2></div>
+                <div class="coin-admin-quicklinks">
+                    <a href="{{ route('admin.coin.float.index') }}" class="coin-admin-quicklink"><i class="las la-hand-holding-usd"></i><span><strong>Float Grants</strong><span>Agent coin top-ups</span></span></a>
+                    <a href="{{ route('admin.coin.disputes.index') }}" class="coin-admin-quicklink"><i class="las la-gavel"></i><span><strong>Trade Disputes</strong><span>Resolve &amp; penalize</span></span></a>
+                    <a href="{{ route('admin.coin.cutover.index') }}" class="coin-admin-quicklink"><i class="las la-exchange-alt"></i><span><strong>Cutover Tool</strong><span>Convert real balances</span></span></a>
                     @if($general->coin_marketplace_test_kit_enabled)
-                        <a href="{{ route('admin.coin.test-kit.index') }}" class="btn btn-sm btn-outline--primary"><i class="las la-flask"></i> Marketplace Test Kit</a>
+                        <a href="{{ route('admin.coin.test-kit.index') }}" class="coin-admin-quicklink"><i class="las la-flask"></i><span><strong>Test Kit</strong><span>Sandbox accounts</span></span></a>
                     @endif
                 </div>
             </div>
         </div>
 
         <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0"><i class="las la-money-bill-wave me-2"></i>Coin Pricing per Currency</h5></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table--light mb-0">
-                            <thead><tr><th>Currency</th><th>Buy Margin %</th><th>Sell Margin %</th><th>Buy Price / Coin</th><th>Sell Price / Coin</th><th>Status</th><th></th></tr></thead>
-                            <tbody>
-                                @forelse($currencies as $currency)
-                                    @php($rate = $rates->get($currency->id))
-                                    <tr>
-                                        <td><span class="fw-bold">{{ $currency->code }}</span></td>
-                                        <td><input form="coin-margin-{{ $currency->id }}" type="number" step="0.01" name="buy_margin_percent" value="{{ $rate->buy_margin_percent ?? 3 }}" class="form-control form-control-sm" style="width:90px"></td>
-                                        <td><input form="coin-margin-{{ $currency->id }}" type="number" step="0.01" name="sell_margin_percent" value="{{ $rate->sell_margin_percent ?? 3 }}" class="form-control form-control-sm" style="width:90px"></td>
-                                        <td>{{ $rate->buy_price ?? '—' }}</td>
-                                        <td>{{ $rate->sell_price ?? '—' }}</td>
-                                        <td>@if($rate?->flagged_for_review)<span class="badge badge--warning">Flagged</span>@else<span class="badge badge--success">OK</span>@endif</td>
-                                        <td>
-                                            <form id="coin-margin-{{ $currency->id }}" method="post" action="{{ route('admin.coin.margins.save', $currency->id) }}">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn--primary"><i class="las la-save"></i> Save</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="7" class="text-center text-muted py-4">No enabled currencies found.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="coin-admin-panel">
+                <div class="coin-admin-panel__head">
+                    <h2><i class="las la-money-bill-wave"></i> Coin Pricing per Currency</h2>
+                    <p>1 coin = {{ gs('coin_peg_usd') ?: '0.01' }} USD, converted through each currency's live exchange rate plus your margin.</p>
                 </div>
+                @if($currencies->isEmpty())
+                    <div class="text-center text-muted py-5"><i class="las la-globe fs-1 d-block mb-2"></i>No enabled currencies found.</div>
+                @else
+                    <div class="coin-admin-currency-grid">
+                        @foreach($currencies as $currency)
+                            @php($rate = $rates->get($currency->id))
+                            <div class="coin-admin-currency-card">
+                                <div class="coin-admin-currency-card__head">
+                                    <span class="coin-admin-currency-card__code"><span>{{ substr($currency->code, 0, 2) }}</span> {{ $currency->code }}</span>
+                                    @if($rate?->flagged_for_review)
+                                        <span class="coin-admin-status-pill coin-admin-status-pill--warn"><i class="las la-exclamation-triangle"></i> Flagged</span>
+                                    @else
+                                        <span class="coin-admin-status-pill coin-admin-status-pill--on">OK</span>
+                                    @endif
+                                </div>
+                                <div class="coin-admin-currency-card__prices">
+                                    <div><small>Buy / Coin</small><strong>{{ $rate->buy_price ?? '—' }}</strong></div>
+                                    <div><small>Sell / Coin</small><strong class="is-sell">{{ $rate->sell_price ?? '—' }}</strong></div>
+                                </div>
+                                <form id="coin-margin-{{ $currency->id }}" method="post" action="{{ route('admin.coin.margins.save', $currency->id) }}">
+                                    @csrf
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="form-group mb-2">
+                                                <label>Buy Margin %</label>
+                                                <input type="number" step="0.01" name="buy_margin_percent" value="{{ $rate->buy_margin_percent ?? 3 }}" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group mb-2">
+                                                <label>Sell Margin %</label>
+                                                <input type="number" step="0.01" name="sell_margin_percent" value="{{ $rate->sell_margin_percent ?? 3 }}" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn--primary btn-sm w-100"><i class="las la-save"></i> Save &amp; Recompute</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
     </div>
