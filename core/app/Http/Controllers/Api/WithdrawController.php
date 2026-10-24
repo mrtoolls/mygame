@@ -16,8 +16,16 @@ use Illuminate\Support\Facades\DB;
 
 class WithdrawController extends Controller
 {
+    /** Same rule as the web controller: no platform withdrawals in coin mode - cash out via the agent marketplace instead. History stays readable, nothing else does. */
+    private function blockedInCoinMode()
+    {
+        if (!gs('coin_mode')) return null;
+        return responseError('coin_mode_withdrawals_disabled', ['Withdrawals are not available in coin mode. Cash out by selling your coins in the Coin Marketplace.']);
+    }
+
     public function withdrawMethod()
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $query = WithdrawMethod::active()->where(function ($query) {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
@@ -34,6 +42,7 @@ class WithdrawController extends Controller
 
     public function withdrawStore(Request $request)
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $validator = Validator::make($request->all(), [
             'method_code' => 'required',
             'amount'      => 'required|numeric',
@@ -112,6 +121,7 @@ class WithdrawController extends Controller
 
     public function withdrawSubmit(Request $request)
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $validator = Validator::make($request->all(), [
             'trx' => 'required',
         ]);

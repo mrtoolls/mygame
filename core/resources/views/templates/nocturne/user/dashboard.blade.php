@@ -21,11 +21,15 @@
                 </div>
             </div>
             <div class="nocturne-balance-card__amount">@lang('Your Balance')
-                <strong>{{ showAmount($widget['total_balance']) }}</strong>
+                <strong>{!! showUserBalance($user, approx: true, showHeld: true) !!}</strong>
             </div>
             <div class="nocturne-balance-card__actions">
-                <a href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-wallet"></i>@lang('Deposit')</a>
-                <a href="{{ route('user.withdraw') }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
+                <a href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-wallet"></i>{{ gs('coin_mode') ? __('Buy Coins') : __('Deposit') }}</a>
+                @if(gs('coin_mode'))
+                    <a href="{{ route('user.coin.marketplace') }}"><i class="ph-fill ph-coins"></i>@lang('Marketplace')</a>
+                @else
+                    <a href="{{ route('user.withdraw') }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
+                @endif
             </div>
         </div>
         <a class="nocturne-kyc-card" href="{{ route('user.kyc.form') }}">

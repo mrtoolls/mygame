@@ -43,8 +43,12 @@
                 <h6>@lang('Profile')</h6>
                 <ul>
                     @auth
-                        <li><a href="{{ route('user.deposit.index') }}">@lang('Deposit')</a></li>
-                        <li><a href="{{ route('user.withdraw') }}">@lang('Withdraw')</a></li>
+                        <li><a href="{{ route('user.deposit.index') }}">{{ gs('coin_mode') ? __('Buy Coins') : __('Deposit') }}</a></li>
+                        @if(gs('coin_mode'))
+                            <li><a href="{{ route('user.coin.marketplace') }}">@lang('Coin Marketplace')</a></li>
+                        @else
+                            <li><a href="{{ route('user.withdraw') }}">@lang('Withdraw')</a></li>
+                        @endif
                         <li><a href="{{ route('user.referrals') }}">@lang('Bonuses')</a></li>
                         <li><a href="{{ route('user.profile.setting') }}">@lang('Settings')</a></li>
                     @else

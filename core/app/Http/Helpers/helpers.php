@@ -199,6 +199,58 @@ function removeElement($array, $value) {
     return array_diff($array, (is_array($value) ? $value : array($value)));
 }
 
+/**
+ * Coin-mode aware balance display - the single place every "show the current user's balance"
+ * call site should go through now. When coin_mode is off, this is byte-for-byte the old
+ * showAmount($user->balance) call (same string, same formatting). When coin_mode is on, it
+ * renders the <x-coin-amount> component against the user's real coin wallet instead - never a
+ * stale/cached number, since CoinLedger is the only thing that ever writes to that wallet.
+ */
+function showUserBalance($user = null, bool $approx = false, bool $showHeld = false): string {
+    $user = $user ?: auth()->user();
+    if (!$user) return showAmount(0);
+    if (!gs('coin_mode')) return showAmount($user->balance);
+
+    $wallet = app(\App\Services\CoinLedger::class)->wallet('user', $user->id);
+    return view('components.coin-amount', [
+        'available' => $wallet->available_balance,
+        'held' => $wallet->held_balance,
+        'approx' => $approx,
+        'showHeld' => $showHeld,
+        'currency' => $user->currency,
+    ])->render();
+}
+
+/** Plain-text coin amount (no icon/markup) for places HTML can't go - notifications, emails, API strings. */
+function coinAmountText($amount): string {
+    return number_format((float) $amount, 0) . ' ' . __('Coins');
+}
+
+/**
+ * For a USD-denominated display amount (gift prices, competition prizes/entry thresholds, VIP
+ * perk amounts not already repurposed as raw coins - see formatVipThreshold() for the one that
+ * IS) that has no real coin-ledger logic behind it. Converts through the same coin_peg_usd peg
+ * CoinPricing uses, so the number shown always matches what that amount would actually cost/pay
+ * in coins. Off: unchanged formatUsdInWalletCurrency() behavior.
+ */
+function formatCoinOrUsd($usdAmount): string {
+    if (!gs('coin_mode')) return formatUsdInWalletCurrency($usdAmount);
+    $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+    return coinAmountText(bcdiv((string) $usdAmount, $peg, 0));
+}
+
+/**
+ * VIP wagering thresholds (vip_tiers.min_wagered) are the one field User::totalWagered()/
+ * vipTier() already repurposes as a literal coin amount once coin_mode is on (no USD
+ * conversion at all, by design - see User.php) - this display helper must show the exact same
+ * number the backend actually compares against, not a peg-converted one, or the UI and the
+ * real threshold would disagree.
+ */
+function formatVipThreshold($amount): string {
+    if (!gs('coin_mode')) return showAmount($amount);
+    return coinAmountText($amount);
+}
+
 function cryptoQR($wallet) {
     return "https://api.qrserver.com/v1/create-qr-code/?data=$wallet&size=300x300&ecc=m";
 }

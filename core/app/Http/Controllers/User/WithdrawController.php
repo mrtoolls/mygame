@@ -15,9 +15,23 @@ use Illuminate\Support\Facades\DB;
 
 class WithdrawController extends Controller
 {
+    /**
+     * Platform withdrawals don't exist in coin mode - cashing out happens by selling coins to a
+     * verified agent on the marketplace. Blocked here, server-side, on every mutating action
+     * (not just hidden from navigation), so a direct request to an old bookmarked URL or a
+     * stale form can't create or edit a withdrawal. withdrawLog() (history) is deliberately NOT
+     * gated - existing withdrawals stay visible, read-only.
+     */
+    private function blockedInCoinMode()
+    {
+        if (!gs('coin_mode')) return null;
+        $notify[] = ['error', 'Withdrawals are not available in coin mode. Cash out by selling your coins in the Coin Marketplace.'];
+        return to_route('user.coin.marketplace')->withNotify($notify);
+    }
 
     public function withdrawMoney()
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $user = auth()->user();
         $query = WithdrawMethod::with(['form', 'supportAgent:id,name,is_active,is_payment_agent'])
             ->where(function ($query) {
@@ -34,6 +48,7 @@ class WithdrawController extends Controller
 
     public function withdrawStore(Request $request)
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $request->validate([
             'method_code' => 'required',
             'amount' => 'required|numeric'
@@ -103,6 +118,7 @@ class WithdrawController extends Controller
 
     public function withdrawPreview()
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $withdraw = Withdrawal::with('method', 'user')->where('trx', session()->get('wtrx'))->where('status', Status::PAYMENT_INITIATE)->orderBy('id', 'desc')->firstOrFail();
         $pageTitle = 'Withdraw Preview';
         return view('Template::user.withdraw.preview', compact('pageTitle', 'withdraw'));
@@ -110,6 +126,7 @@ class WithdrawController extends Controller
 
     public function withdrawSubmit(Request $request)
     {
+        if ($blocked = $this->blockedInCoinMode()) return $blocked;
         $withdraw = Withdrawal::with('method', 'user')->where('trx', session()->get('wtrx'))->where('status', Status::PAYMENT_INITIATE)->orderBy('id', 'desc')->firstOrFail();
 
         $method = $withdraw->method;

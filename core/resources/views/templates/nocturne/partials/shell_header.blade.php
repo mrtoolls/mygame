@@ -22,7 +22,7 @@
     </nav>
     <div class="nocturne-actions">
         @auth
-            <div class="nocturne-balance"><span>@lang('Your Balance')</span><strong>{{ showAmount(auth()->user()->balance) }}</strong></div>
+            <div class="nocturne-balance"><span>@lang('Your Balance')</span><strong>{!! showUserBalance() !!}</strong></div>
             <div class="nocturne-user-menu">
                 <button class="nocturne-avatar" type="button" aria-haspopup="true" aria-expanded="false" aria-label="@lang('Account menu')">
                     @if (auth()->user()->avatarUrl())
@@ -42,7 +42,7 @@
                         </span>
                         <div>
                             <strong>{{ auth()->user()->username }}</strong>
-                            <span>{{ showAmount(auth()->user()->balance) }}</span>
+                            <span>{!! showUserBalance() !!}</span>
                         </div>
                     </div>
                     <a class="nocturne-user-dropdown__deposit" href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-plus-circle"></i>@lang('Deposit')</a>

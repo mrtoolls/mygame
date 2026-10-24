@@ -30,7 +30,11 @@
                 <a href="{{ route('user.competitions.index') }}" class="{{ request()->routeIs('user.competitions.*') ? 'is-active' : '' }}"><i class="ph-fill ph-trophy"></i><span>@lang('Competitions')</span></a>
                 <a href="javascript:void(0)" data-open-support><i class="ph-fill ph-headset"></i><span>@lang('Live Support')</span></a>
                 <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i><span>@lang('Deposit')</span></a>
-                <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i><span>@lang('Withdraw')</span></a>
+                @if(gs('coin_mode'))
+                    <a href="{{ route('user.coin.marketplace') }}" class="{{ request()->routeIs('user.coin.*') ? 'is-active' : '' }}"><i class="ph-fill ph-coins"></i><span>@lang('Marketplace')</span></a>
+                @else
+                    <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw*') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i><span>@lang('Withdraw')</span></a>
+                @endif
                 <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
             @else
                 <a href="{{ route('user.login') }}"><i class="ph-fill ph-user"></i><span>@lang('Sign in')</span></a>

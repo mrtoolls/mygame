@@ -2261,3 +2261,15 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-live-tables__rail { grid-auto-columns:minmax(220px,88%); }
     .nocturne-community-heading__badge { display:none; }
 }
+
+/* ---- Coin chip: sitewide "current balance" display component (<x-coin-amount>). Used in the
+   header, mobile nav, dashboard, VIP, gift shop, and anywhere else a user's own coin balance is
+   shown - deliberately global (not scoped to the marketplace pages) since it appears everywhere. ---- */
+.coin-chip { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-weight: 800; }
+.coin-chip__icon { color: var(--nocturne-green); font-size: 1.1em; }
+.coin-chip__value { color: var(--nocturne-text); font-size: 1em; letter-spacing: -.01em; }
+.coin-chip__label { color: var(--nocturne-muted); font-size: .82em; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.coin-chip__held { padding: 2px 8px; border-radius: 99px; background: rgba(255, 191, 92, .14); color: #ffbf5c; font-size: .72em; font-weight: 800; }
+.coin-chip__approx { color: var(--nocturne-muted); font-size: .78em; font-weight: 600; }
+.coin-chip--lg .coin-chip__value { font-size: 1.35em; }
+.coin-chip--lg .coin-chip__icon { font-size: 1.3em; }
