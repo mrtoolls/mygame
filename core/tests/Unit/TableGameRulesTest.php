@@ -184,6 +184,132 @@ class TableGameRulesTest extends TestCase
         self::assertSame(1, $result['state']['turn']);
     }
 
+    // ── Ayo Olopon (oware rules_version 2) ──────────────────────────────────────────────
+
+    public function test_ayo_v2_start_adds_a_no_capture_streak_counter_v1_does_not_have(): void
+    {
+        $v1 = $this->rules->start('oware', 2, 1);
+        $v2 = $this->rules->start('oware', 2, 2);
+        self::assertArrayNotHasKey('no_capture_streak', $v1);
+        self::assertSame(0, $v2['no_capture_streak']);
+        self::assertSame(48, array_sum($v1['pits']));
+        self::assertSame(48, array_sum($v2['pits']));
+    }
+
+    public function test_ayo_v2_relay_sows_again_from_a_pit_that_already_had_seeds(): void
+    {
+        // Pit 0 (2 seeds) sows into pit 1 (0->1) then pit 2 (3->4). Landing on the mover's own
+        // pit 2, now holding 4, isn't a capture (own side) and isn't empty - so it must relay:
+        // pick that pit back up and keep sowing.
+        $state = ['pits' => [2, 0, 3, 0, 0, 0, 4, 4, 4, 4, 4, 4], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 0], [], 2);
+        $relayEvents = array_filter($result['events'], fn ($e) => $e['type'] === 'relay');
+        self::assertNotCount(0, $relayEvents);
+        self::assertSame(29, array_sum($result['state']['pits']) + array_sum($result['state']['scores']));
+    }
+
+    public function test_ayo_v2_capture_takes_only_the_landing_pit_not_a_chain(): void
+    {
+        // Pit 4 (3 seeds) sows into pit 5, pit 6 (2->3, NOT the final landing), then pit 7
+        // (1->2, the final landing - a capture). Pit 6 would also qualify under an old-style
+        // chain-capture rule; v2 must leave it alone and take only pit 7.
+        $state = ['pits' => [0, 0, 0, 0, 3, 0, 2, 1, 4, 4, 4, 4], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 4], [], 2);
+        self::assertSame(2, $result['state']['scores'][0]);
+        self::assertSame(3, $result['state']['pits'][6]);
+        self::assertSame(0, $result['state']['pits'][7]);
+        self::assertCount(1, array_filter($result['events'], fn ($e) => $e['type'] === 'capture'));
+    }
+
+    public function test_ayo_v2_grand_slam_capture_is_allowed_but_takes_nothing(): void
+    {
+        // Pit 5 (1 seed) lands in pit 6, the opponent's only non-empty pit, making it 2 - a
+        // capture that would leave the opponent's whole row at zero is blocked.
+        $state = ['pits' => [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 5], [], 2);
+        self::assertSame(0, $result['state']['scores'][0]);
+        self::assertSame(2, $result['state']['pits'][6]);
+        self::assertCount(1, array_filter($result['events'], fn ($e) => $e['type'] === 'capture_blocked'));
+        self::assertSame(1, $result['state']['no_capture_streak']);
+    }
+
+    public function test_ayo_v2_must_feed_rejects_a_move_that_ignores_a_feeding_alternative(): void
+    {
+        $state = ['pits' => [1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $this->expectException(InvalidArgumentException::class);
+        $this->rules->move('oware', $state, 0, ['pit' => 0], [], 2);
+    }
+
+    public function test_ayo_v2_must_feed_ends_the_round_when_no_move_can_feed_the_opponent(): void
+    {
+        $state = ['pits' => [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 0], [], 2);
+        self::assertSame(0, $result['winner']);
+        self::assertFalse($result['draw']);
+        self::assertSame(1, $result['state']['scores'][0]);
+        self::assertSame(0, $result['state']['pits'][0], 'the swept row must be zeroed, not left showing seeds already credited to the score');
+        self::assertCount(1, array_filter($result['events'], fn ($e) => $e['type'] === 'end' && $e['reason'] === 'no_seeds_left'));
+    }
+
+    public function test_ayo_v2_reaching_25_ends_the_game_and_sweeps_every_pit_to_zero(): void
+    {
+        $state = ['pits' => [0, 0, 0, 0, 0, 1, 2, 4, 4, 4, 4, 4], 'scores' => [24, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 5], [], 2);
+        self::assertSame(0, $result['winner']);
+        self::assertGreaterThanOrEqual(25, $result['state']['scores'][0]);
+        self::assertSame(0, array_sum($result['state']['pits']), 'every pit must be swept to zero once its seeds are credited to a score');
+        self::assertSame(array_sum($state['pits']) + array_sum($state['scores']), array_sum($result['state']['scores']));
+    }
+
+    public function test_ayo_v2_a_40_move_no_capture_streak_ends_the_round_by_repetition(): void
+    {
+        $state = ['pits' => [0, 0, 0, 0, 0, 1, 0, 4, 4, 4, 4, 4], 'scores' => [10, 12], 'turn' => 0, 'moves' => 39, 'no_capture_streak' => 39];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 5], [], 2);
+        self::assertTrue($result['winner'] !== null || $result['draw']);
+        self::assertSame(0, array_sum($result['state']['pits']));
+        self::assertCount(1, array_filter($result['events'], fn ($e) => $e['type'] === 'end' && $e['reason'] === 'repetition'));
+    }
+
+    public function test_ayo_v1_tables_keep_the_original_single_pass_rules_with_no_relay(): void
+    {
+        // Same board as the relay test above, but at rules_version 1 - a pre-existing table must
+        // never gain the new relay behavior mid-game. Pit 0 (2 seeds) sows into pit 1 and pit 2
+        // only, and stops there even though pit 2 (now 4) would relay under v2.
+        $state = ['pits' => [2, 0, 3, 0, 0, 0, 4, 4, 4, 4, 4, 4], 'scores' => [0, 0], 'turn' => 0, 'moves' => 0];
+        $result = $this->rules->move('oware', $state, 0, ['pit' => 0], [], 1);
+        self::assertSame(1, $result['state']['pits'][1]);
+        self::assertSame(4, $result['state']['pits'][2]);
+        self::assertArrayNotHasKey('events', $result);
+    }
+
+    public function test_ayo_v2_random_games_always_conserve_all_48_seeds(): void
+    {
+        for ($game = 0; $game < 25; $game++) {
+            $state = $this->rules->start('oware', 2, 2);
+            for ($move = 0; $move < 300; $move++) {
+                $seat = $state['turn'];
+                $ownStart = $seat === 0 ? 0 : 6;
+                $legal = [];
+                for ($p = $ownStart; $p < $ownStart + 6; $p++) if ($state['pits'][$p] > 0) $legal[] = $p;
+                if (!$legal) break;
+                shuffle($legal);
+                $result = null;
+                foreach ($legal as $tryPit) {
+                    try {
+                        $result = $this->rules->move('oware', $state, $seat, ['pit' => $tryPit], [], 2);
+                        break;
+                    } catch (InvalidArgumentException) {
+                        continue;
+                    }
+                }
+                self::assertNotNull($result, 'a seated player must always have at least one legal pit to choose');
+                $state = $result['state'];
+                self::assertSame(48, array_sum($state['pits']) + array_sum($state['scores']), "game $game move $move broke seed conservation");
+                if ($result['winner'] !== null || $result['draw']) break;
+            }
+        }
+    }
+
     public function test_dominoes_deals_a_double_six_set_and_accepts_only_matching_ends(): void
     {
         $state = $this->rules->start('dominoes', 2);

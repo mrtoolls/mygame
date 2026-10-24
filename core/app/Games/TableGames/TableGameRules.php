@@ -89,7 +89,9 @@ class TableGameRules
             'texas_holdem' => $this->holdemStartingState($playerCount),
             'spades', 'hearts' => $this->trickStartingState($game, $playerCount),
             'snakes_and_ladders' => ['positions' => array_fill(0, $playerCount, 0), 'turn' => 0, 'moves' => 0, 'roll' => null, 'snakes' => [16 => 6, 47 => 26, 49 => 11, 56 => 53, 62 => 19, 64 => 60, 87 => 24, 93 => 73, 95 => 75, 98 => 78], 'ladders' => [1 => 38, 4 => 14, 9 => 31, 21 => 42, 28 => 84, 36 => 44, 51 => 67, 71 => 91, 80 => 100]],
-            'oware' => ['pits' => array_fill(0, 12, 4), 'scores' => [0, 0], 'turn' => 0, 'moves' => 0],
+            'oware' => $rulesVersion >= 2
+                ? ['pits' => array_fill(0, 12, 4), 'scores' => [0, 0], 'turn' => 0, 'moves' => 0, 'no_capture_streak' => 0]
+                : ['pits' => array_fill(0, 12, 4), 'scores' => [0, 0], 'turn' => 0, 'moves' => 0],
             'dominoes' => $this->dominoesStartingState($playerCount),
             'crazy_eights' => $this->crazyEightsStartingState($playerCount),
             default => throw new InvalidArgumentException('This game ruleset is not available yet.'),
@@ -116,7 +118,7 @@ class TableGameRules
             'texas_holdem' => $this->holdem($state, $seat, $action, $activeSeats),
             'spades', 'hearts' => $this->trickMove($game, $state, $seat, $action),
             'snakes_and_ladders' => $this->snakesAndLadders($state, $seat),
-            'oware' => $this->oware($state, $seat, $action),
+            'oware' => $this->oware($state, $seat, $action, $rulesVersion),
             'dominoes' => $this->dominoes($state, $seat, $action, $activeSeats),
             'crazy_eights' => $this->crazyEights($state, $seat, $action, $activeSeats),
             default => throw new InvalidArgumentException('This game ruleset is not available yet.'),
@@ -1178,7 +1180,15 @@ class TableGameRules
         return ['state' => $state, 'winner' => null, 'draw' => false];
     }
 
-    private function oware(array $state, int $seat, array $action): array
+    private function oware(array $state, int $seat, array $action, int $rulesVersion = 1): array
+    {
+        return $rulesVersion >= 2 ? $this->owareV2($state, $seat, $action) : $this->owareLegacy($state, $seat, $action);
+    }
+
+    // rules_version 1 - preserved exactly as it always was, unchanged byte-for-byte, so tables
+    // created before the Ayo Olopon rewrite shipped keep playing out under the rules they
+    // started with (hard rule: in-progress games must never change rules mid-game).
+    private function owareLegacy(array $state, int $seat, array $action): array
     {
         $pit = filter_var($action['pit'] ?? null, FILTER_VALIDATE_INT);
         $start = $seat === 0 ? 0 : 6;
@@ -1239,5 +1249,176 @@ class TableGameRules
         }
         $state['turn'] = 1 - $seat;
         return ['state' => $state, 'winner' => null, 'draw' => false];
+    }
+
+    // Lifts every seed from $startPit and sows it one-by-one counter-clockwise around the
+    // 12-pit ring, skipping whichever pit is currently emptied-into-hand (the classic Ayo rule
+    // for laps of 12+ seeds - you can never drop into the hole you just picked up from). Whenever
+    // the hand empties on a pit that already held a seed (i.e. is now >= 2) AND that landing
+    // isn't a capture (see owareV2()), the contents of that pit are picked up too and sowing
+    // continues - this "relay"/"yielding" lap is the defining Ayo Olopon mechanic the legacy
+    // single-pass Oware logic above never had. Returns the resulting pits, an ordered event log
+    // for the frontend to replay, and the final landing pit. Pure function - no state mutation,
+    // no capture/scoring applied here, so it can also be used as a side-effect-free "would this
+    // move ever reach the opponent's row" probe for the must-feed check.
+    // $oppStart identifies which half of the ring is the mover's opponent, because whether a
+    // count-of-2-or-3 landing stops the sow (a capture candidate) or keeps relaying depends on
+    // whose side it's on - the exact same count on the mover's OWN side is never a capture and
+    // must keep relaying through.
+    private function owareRunSow(array $pits, int $startPit, int $oppStart): array
+    {
+        $events = [];
+        $liftPit = $startPit;
+        $seeds = $pits[$liftPit];
+        $pits[$liftPit] = 0;
+        $events[] = ['type' => 'lift', 'pit' => $liftPit, 'count' => $seeds];
+        $position = $liftPit;
+        $lastPit = $liftPit;
+        // Relay sowing always terminates with real Ayo seed counts (48 total), but this guards
+        // against turning any arithmetic edge case into a hung request - owareRunSow() runs
+        // inside a locked DB transaction, so an infinite loop here would be far worse than a
+        // thrown error.
+        $guard = 0;
+
+        while (true) {
+            if (++$guard > 500) throw new \RuntimeException('Ayo sow did not terminate - this is a bug, not a legal game state.');
+            while ($seeds > 0) {
+                $position = ($position + 1) % 12;
+                if ($position === $liftPit) continue;
+                $pits[$position]++;
+                $seeds--;
+                $events[] = ['type' => 'sow', 'pit' => $position, 'remaining' => $seeds];
+                $lastPit = $position;
+            }
+            $count = $pits[$lastPit];
+            $isOpponentPit = $lastPit >= $oppStart && $lastPit < $oppStart + 6;
+            // A capture candidate (opponent pit now holding 2 or 3) always stops the sow here -
+            // capture takes priority over relay and is resolved by the caller.
+            if ($isOpponentPit && in_array($count, [2, 3], true)) break;
+            if ($count >= 2) {
+                // Landed in a pit that already had seeds and isn't a capture candidate (the
+                // mover's own side, or an opponent pit now holding 4+) - pick it up (including
+                // the seed that just landed) and keep sowing from the next pit.
+                $liftPit = $lastPit;
+                $seeds = $pits[$liftPit];
+                $pits[$liftPit] = 0;
+                $events[] = ['type' => 'relay', 'pit' => $liftPit, 'count' => $seeds];
+                $position = $liftPit;
+                continue;
+            }
+            break; // landed in a pit that was empty before this seed (now holds exactly 1)
+        }
+
+        return ['pits' => $pits, 'events' => $events, 'last_pit' => $lastPit];
+    }
+
+    // Dry-run probe for the must-feed rule: does sowing from $startPit ever drop at least one
+    // seed into the opponent's row? Reuses the real sow+relay simulation (not a simplified
+    // approximation) so a move that only reaches the opponent's side via a multi-lap relay is
+    // correctly recognised as a feeding move.
+    private function owareWouldFeedOpponent(array $pits, int $startPit, int $oppStart): bool
+    {
+        $before = array_sum(array_slice($pits, $oppStart, 6));
+        $after = array_sum(array_slice($this->owareRunSow($pits, $startPit, $oppStart)['pits'], $oppStart, 6));
+        return $after > $before;
+    }
+
+    // rules_version 2 - the real Ayo Olopon ruleset: relay/"yielding" sowing, single-pit capture
+    // (no chain capture into earlier pits), a grand-slam guard, a proactive must-feed-the-
+    // opponent obligation that can end the round outright when feeding becomes impossible, and a
+    // no-capture-streak repetition ending instead of a flat move-count cap.
+    private function owareV2(array $state, int $seat, array $action): array
+    {
+        $ownStart = $seat === 0 ? 0 : 6;
+        $oppStart = $seat === 0 ? 6 : 0;
+        $pits = $state['pits'];
+
+        $pit = filter_var($action['pit'] ?? null, FILTER_VALIDATE_INT);
+        if ($pit === false || $pit < $ownStart || $pit >= $ownStart + 6 || $pits[$pit] < 1) {
+            throw new InvalidArgumentException('Choose a non-empty pit on your side.');
+        }
+
+        // Must-feed: if the opponent's row is already empty at the start of this turn, this
+        // player is obligated to choose a pit that reaches it, if any such pit exists. If none
+        // does, the round ends right here - no move is played, since no legal move could change
+        // the outcome anyway.
+        if (array_sum(array_slice($pits, $oppStart, 6)) === 0) {
+            $canFeed = false;
+            for ($source = $ownStart; $source < $ownStart + 6; $source++) {
+                if ($pits[$source] < 1) continue;
+                if ($this->owareWouldFeedOpponent($pits, $source, $oppStart)) { $canFeed = true; break; }
+            }
+            if (!$canFeed) {
+                $swept = array_sum(array_slice($pits, $ownStart, 6));
+                $state['scores'][$seat] += $swept;
+                // Zero the swept row too, not just credit the score - otherwise those seeds would
+                // show as both "on the board" and "already captured" at once, breaking the
+                // invariant that pits + scores always sum to the full 48-seed total.
+                for ($i = $ownStart; $i < $ownStart + 6; $i++) $pits[$i] = 0;
+                $state['pits'] = $pits;
+                $events = [['type' => 'end', 'reason' => 'no_seeds_left', 'sweep' => ['seat' => $seat, 'count' => $swept]]];
+                $winner = $state['scores'][0] === $state['scores'][1] ? null : ($state['scores'][0] > $state['scores'][1] ? 0 : 1);
+                return ['state' => $state, 'winner' => $winner, 'draw' => $winner === null, 'events' => $events, 'message' => 'The opponent could not be fed - round over.'];
+            }
+            if (!$this->owareWouldFeedOpponent($pits, $pit, $oppStart)) {
+                throw new InvalidArgumentException('Choose a move that feeds the opponent when possible.');
+            }
+        }
+
+        $sow = $this->owareRunSow($pits, $pit, $oppStart);
+        $pits = $sow['pits'];
+        $events = $sow['events'];
+        $lastPit = $sow['last_pit'];
+
+        $captured = 0;
+        $isOpponentPit = $lastPit >= $oppStart && $lastPit < $oppStart + 6;
+        if ($isOpponentPit && in_array($pits[$lastPit], [2, 3], true)) {
+            $captured = $pits[$lastPit];
+            $opponentRemaining = array_sum(array_slice($pits, $oppStart, 6));
+            if ($opponentRemaining - $captured <= 0) {
+                // Grand slam: a capture that would strip the opponent's row bare is allowed to
+                // happen (the move itself still stands) but captures nothing.
+                $captured = 0;
+                $events[] = ['type' => 'capture_blocked', 'pit' => $lastPit, 'reason' => 'grand_slam'];
+            } else {
+                $pits[$lastPit] = 0;
+                $events[] = ['type' => 'capture', 'pit' => $lastPit, 'count' => $captured, 'to_seat' => $seat];
+            }
+        }
+        $state['scores'][$seat] += $captured;
+        $state['pits'] = $pits;
+        $state['moves']++;
+        $state['no_capture_streak'] = $captured > 0 ? 0 : ((int) ($state['no_capture_streak'] ?? 0)) + 1;
+        $message = $captured > 0 ? "Captured {$captured} seeds!" : null;
+
+        if ($state['scores'][0] >= 25 || $state['scores'][1] >= 25) {
+            $sweep0 = array_sum(array_slice($pits, 0, 6));
+            $sweep1 = array_sum(array_slice($pits, 6, 6));
+            $state['scores'][0] += $sweep0;
+            $state['scores'][1] += $sweep1;
+            $winner = $state['scores'][0] > $state['scores'][1] ? 0 : 1;
+            // Zero every pit once its seeds are swept into the scores, so the final board and
+            // the final scores stay internally consistent (pits + scores == 48, never double-
+            // counted).
+            $state['pits'] = array_fill(0, 12, 0);
+            $events[] = ['type' => 'end', 'reason' => 'score', 'sweep' => ['seat0' => $sweep0, 'seat1' => $sweep1]];
+            return ['state' => $state, 'winner' => $winner, 'draw' => false, 'events' => $events, 'message' => $message];
+        }
+
+        // 40 half-moves (20 each) with no capture by either side: a stalling cycle, not real
+        // progress. Each side banks what's still on their own row and the higher total wins.
+        if ($state['no_capture_streak'] >= 40) {
+            $sweep0 = array_sum(array_slice($pits, 0, 6));
+            $sweep1 = array_sum(array_slice($pits, 6, 6));
+            $state['scores'][0] += $sweep0;
+            $state['scores'][1] += $sweep1;
+            $winner = $state['scores'][0] === $state['scores'][1] ? null : ($state['scores'][0] > $state['scores'][1] ? 0 : 1);
+            $state['pits'] = array_fill(0, 12, 0);
+            $events[] = ['type' => 'end', 'reason' => 'repetition', 'sweep' => ['seat0' => $sweep0, 'seat1' => $sweep1]];
+            return ['state' => $state, 'winner' => $winner, 'draw' => $winner === null, 'events' => $events, 'message' => $message];
+        }
+
+        $state['turn'] = 1 - $seat;
+        return ['state' => $state, 'winner' => null, 'draw' => false, 'events' => $events, 'message' => $message];
     }
 }

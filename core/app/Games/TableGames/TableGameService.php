@@ -80,7 +80,7 @@ class TableGameService
                 'join_deadline_at' => now()->addHours(24),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
             ];
-            if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = in_array($gameType, ['ludo', 'whot'], true) ? 2 : 1;
+            if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = in_array($gameType, ['ludo', 'whot', 'oware'], true) ? 2 : 1;
             if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
             $table = TableGame::create($tableData);
             $this->debit($lockedUser, $table, 'creator_stake');
@@ -383,7 +383,7 @@ class TableGameService
                 'user_id' => $user->id,
                 'version' => $table->version,
                 'action' => (($action['roll'] ?? false) === true) ? 'dice_roll' : 'move',
-                'public_data' => ['move' => $action, 'roll' => data_get($table->state, 'roll') ?? data_get($table->state, 'last_roll'), 'message' => $result['message'] ?? null],
+                'public_data' => ['move' => $action, 'roll' => data_get($table->state, 'roll') ?? data_get($table->state, 'last_roll'), 'message' => $result['message'] ?? null, 'events' => $result['events'] ?? null],
                 'idempotency_key' => $idempotencyKey,
             ]);
             if ($result['winner'] !== null || $result['draw']) {
@@ -569,6 +569,15 @@ class TableGameService
             $moveRow = TableGameMove::where('table_game_id', $table->id)
                 ->whereIn('action', ['move', 'dice_roll'])->latest('id')->first();
             if ($moveRow && !empty($moveRow->public_data['message'])) $lastMove = ['message' => $moveRow->public_data['message']];
+        } elseif ($table->game_type === 'oware') {
+            // 'version' is the table version this move produced - the client only replays the
+            // sow/relay/capture animation when it's strictly newer than the last version it
+            // already rendered, so a reconnect/reload or a spectator's first load just shows the
+            // current board straight away instead of replaying the whole move history.
+            $moveRow = TableGameMove::where('table_game_id', $table->id)->where('action', 'move')->latest('id')->first();
+            if ($moveRow && !empty($moveRow->public_data['events'])) {
+                $lastMove = ['version' => (int) $moveRow->version, 'events' => $moveRow->public_data['events'], 'message' => $moveRow->public_data['message'] ?? null];
+            }
         }
         $recentRolls = null;
         if ($table->game_type === 'ludo') {
