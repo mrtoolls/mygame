@@ -22,9 +22,20 @@
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/slick.css') }}">
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/odometer.css') }}">
     <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/iconmoon.css') }}">
-    <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/main.css') }}">
-    <link href="{{ asset(activeTemplate(true) . 'css/custom.css') }}" rel="stylesheet">
-    <link href="{{ asset(activeTemplate(true) . 'css/nocturne.css') }}?v={{ @filemtime(public_path(activeTemplate(true) . 'css/nocturne.css')) }}" rel="stylesheet">
+    {{-- public_path() resolves to core/public/... on this deployment, which isn't where
+         "assets/..." URLs are actually served from (confirmed: core/public/ isn't even a real,
+         tracked directory here) - the same path-resolution bug already found and fixed several
+         times elsewhere in this app this session (file uploads, AvatarLibrary). filemtime()
+         against that wrong path silently returns false, which an unguarded {{ }} echo renders
+         as an empty string - so nocturne.css's ?v= cache-buster has actually been a no-op the
+         entire time, never changing between deploys, meaning CSS edits could sit invisible in a
+         returning visitor's cache indefinitely regardless of how many times they were shipped.
+         Bare relative path (same convention as every other working file read in this app)
+         resolves correctly and gives a real, changing timestamp - applied here to main.css and
+         custom.css too, which previously had no cache-busting query string at all. --}}
+    <link rel="stylesheet" href="{{ asset(activeTemplate(true) . 'css/main.css') }}?v={{ @filemtime(activeTemplate(true) . 'css/main.css') }}">
+    <link href="{{ asset(activeTemplate(true) . 'css/custom.css') }}?v={{ @filemtime(activeTemplate(true) . 'css/custom.css') }}" rel="stylesheet">
+    <link href="{{ asset(activeTemplate(true) . 'css/nocturne.css') }}?v={{ @filemtime(activeTemplate(true) . 'css/nocturne.css') }}" rel="stylesheet">
 
     @stack('style-lib')
     <link rel="manifest" href="{{ route('pwa.configuration') }}">
