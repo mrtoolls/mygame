@@ -393,7 +393,7 @@
 .nocturne-arena-announcement__foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .nocturne-arena-announcement__reward{display:inline-flex;align-items:center;gap:6px;color:var(--arena-accent);font-size:13px;font-weight:800;white-space:nowrap}
 .nocturne-arena-announcement__btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:900;text-decoration:none;white-space:nowrap;transition:transform .15s ease,box-shadow .15s ease}
-.nocturne-arena-announcement__btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,231,138,.3)}
+.nocturne-arena-announcement__btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,231,138,.3);background:#049b5f;color:#fff}
 .nocturne-arena-announcement__btn i{font-size:15px}
 /* Mobile keeps the exact same side-by-side arrangement as desktop (text left, art bleeding in
    on the right, timer row, footer row) - everything just scales down to fit, it never
