@@ -172,7 +172,7 @@
                                     @endif
                                 </span>
                                 <strong>{{ $gift->name }}</strong>
-                                <span>${{ showAmount($gift->buy_price, currencyFormat: false) }}</span>
+                                <span>@if (gs('coin_mode')) {{ formatCoinOrUsd($gift->buy_price) }} @else ${{ showAmount($gift->buy_price, currencyFormat: false) }} @endif</span>
                             </button>
                         @endforeach
                     </div>

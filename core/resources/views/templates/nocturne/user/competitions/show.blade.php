@@ -74,7 +74,7 @@
                     <div class="nocturne-comp-card-box">
                         <h3><i class="ph-fill ph-trophy"></i>@lang('Prizes')</h3>
                         @foreach ($prizes as $prize)
-                            <div class="nocturne-comp-prize-row"><span>{{ $prize->rank <= 3 ? $medals[$prize->rank - 1] : '#' . $prize->rank }}</span><b>${{ number_format($prize->amount_usd, 2) }}</b></div>
+                            <div class="nocturne-comp-prize-row"><span>{{ $prize->rank <= 3 ? $medals[$prize->rank - 1] : '#' . $prize->rank }}</span><b>@if (gs('coin_mode')) {{ formatCoinOrUsd($prize->amount_usd) }} @else ${{ number_format($prize->amount_usd, 2) }} @endif</b></div>
                         @endforeach
                     </div>
                 @endif
@@ -84,7 +84,7 @@
                         <h3><i class="ph-fill ph-user-circle"></i>@lang('Your Result')</h3>
                         <div class="nocturne-comp-prize-row"><span>@lang('Rank')</span><b>#{{ $myResult->rank }}</b></div>
                         @if ($myResult->prize_amount_usd)
-                            <div class="nocturne-comp-prize-row"><span>@lang('Prize')</span><b>${{ number_format($myResult->prize_amount_usd, 2) }}</b></div>
+                            <div class="nocturne-comp-prize-row"><span>@lang('Prize')</span><b>@if (gs('coin_mode')) {{ formatCoinOrUsd($myResult->prize_amount_usd) }} @else ${{ number_format($myResult->prize_amount_usd, 2) }} @endif</b></div>
                             <div class="nocturne-comp-prize-row"><span>@lang('Status')</span><b>{{ $myResult->isPaid() ? __('Paid') : __('Pending payout') }}</b></div>
                         @endif
                     </div>

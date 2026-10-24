@@ -32,7 +32,7 @@
                                         <input type="number" name="quantity" min="1" max="{{ $item->quantity }}" value="1">
                                         <button type="submit">@lang('Cash out')</button>
                                     </form>
-                                    <small>${{ showAmount($item->gift->cashout_value, currencyFormat: false) }} @lang('each')</small>
+                                    <small>@if (gs('coin_mode')) {{ formatCoinOrUsd($item->gift->cashout_value) }} @else ${{ showAmount($item->gift->cashout_value, currencyFormat: false) }} @endif @lang('each')</small>
                                 </div>
                             @endforeach
                         </div>
@@ -58,7 +58,7 @@
                                     @endif
                                 </span>
                                 <strong>{{ $gift->name }}</strong>
-                                <span>${{ showAmount($gift->buy_price, currencyFormat: false) }}</span>
+                                <span>@if (gs('coin_mode')) {{ formatCoinOrUsd($gift->buy_price) }} @else ${{ showAmount($gift->buy_price, currencyFormat: false) }} @endif</span>
                                 <form method="post" action="{{ route('user.gifts.buy', $gift->id) }}" class="gift-card__form" data-gift-buy-form data-gift-id="{{ $gift->id }}">
                                     @csrf
                                     <input type="number" name="quantity" min="1" max="999" value="1">

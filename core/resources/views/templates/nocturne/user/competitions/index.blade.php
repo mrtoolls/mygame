@@ -20,7 +20,7 @@
             <div class="nocturne-comp-hero__stats">
                 <div class="nocturne-comp-hero__stat"><strong>{{ $live->count() }}</strong><span>@lang('Live now')</span></div>
                 <div class="nocturne-comp-hero__stat"><strong>{{ $upcoming->count() }}</strong><span>@lang('Upcoming')</span></div>
-                <div class="nocturne-comp-hero__stat nocturne-comp-hero__stat--accent"><strong>${{ number_format($allPool, 0) }}</strong><span>@lang('Prize pool')</span></div>
+                <div class="nocturne-comp-hero__stat nocturne-comp-hero__stat--accent"><strong>@if (gs('coin_mode')) {{ formatCoinOrUsd($allPool) }} @else ${{ number_format($allPool, 0) }} @endif</strong><span>@lang('Prize pool')</span></div>
             </div>
         </section>
 
@@ -46,7 +46,7 @@
                                     <h3>{{ __($competition->title) }}</h3>
                                     <div class="nocturne-comp-card__foot">
                                         @if ($prizePool > 0)
-                                            <div class="nocturne-comp-card__pool">${{ number_format($prizePool, 0) }}<small>@lang('prize pool')</small></div>
+                                            <div class="nocturne-comp-card__pool">@if (gs('coin_mode')) {{ formatCoinOrUsd($prizePool) }} @else ${{ number_format($prizePool, 0) }} @endif<small>@lang('prize pool')</small></div>
                                         @endif
                                         <div class="nocturne-comp-card__window">
                                             @if ($key === 'upcoming')
