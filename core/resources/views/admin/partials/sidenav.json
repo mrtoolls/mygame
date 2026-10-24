@@ -203,6 +203,49 @@
             }
         ]
     },
+    "coin_economy": {
+        "keyword": [
+            "Coin",
+            "Coins",
+            "Coin Economy",
+            "Coin Mode",
+            "Coin Marketplace",
+            "Agent Float",
+            "Cutover",
+            "Trade Disputes",
+            "Test Kit"
+        ],
+        "title": "Coin Economy",
+        "icon": "las la-coins",
+        "menu_active": "admin.coin*",
+        "submenu": [
+            {
+                "title": "Coin Settings",
+                "route_name": "admin.coin.settings",
+                "menu_active": "admin.coin.settings"
+            },
+            {
+                "title": "Agent Float Grants",
+                "route_name": "admin.coin.float.index",
+                "menu_active": "admin.coin.float.index"
+            },
+            {
+                "title": "Trade Disputes",
+                "route_name": "admin.coin.disputes.index",
+                "menu_active": "admin.coin.disputes.index"
+            },
+            {
+                "title": "Cutover Tool",
+                "route_name": "admin.coin.cutover.index",
+                "menu_active": "admin.coin.cutover.index"
+            },
+            {
+                "title": "Marketplace Test Kit",
+                "route_name": "admin.coin.test-kit.index",
+                "menu_active": "admin.coin.test-kit.index"
+            }
+        ]
+    },
     "manage_users": {
         "title": "Manage Users",
         "icon": "las la-users",

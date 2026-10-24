@@ -12,6 +12,9 @@
             <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i>@lang('Profile')</a>
             <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i>@lang('Deposit')</a>
             <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw') || request()->routeIs('user.withdraw.preview') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
+            @if(gs('coin_mode'))
+                <a href="{{ route('user.coin.marketplace') }}" class="{{ request()->routeIs('user.coin.*') ? 'is-active' : '' }}"><i class="ph-fill ph-coins"></i>@lang('Coin Marketplace')</a>
+            @endif
             <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i>@lang('Bonuses')</a>
             <a href="{{ route('user.gifts.index') }}" class="{{ request()->routeIs('user.gifts.*') ? 'is-active' : '' }}"><i class="ph-fill ph-package"></i>@lang('My Gifts')</a>
             <a href="{{ route('user.vip.index') }}" class="{{ request()->routeIs('user.vip.*') ? 'is-active' : '' }}"><i class="ph-fill ph-crown"></i>@lang('VIP Club')</a>

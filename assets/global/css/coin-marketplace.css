@@ -1,0 +1,159 @@
+/* Coin Marketplace — user-facing (nocturne theme). Shares the nocturne design tokens
+   (--nocturne-green/--nocturne-panel/--nocturne-raised/--nocturne-line/--nocturne-muted/
+   --nocturne-text, --nocturne-radius-lg/md) defined in nocturne.css, which always loads first -
+   this file only adds new component classes, it never redefines the shared tokens. */
+
+.coin-page { display: grid; gap: 18px; min-width: 0; }
+
+/* ---- Hero: wallet balance ---- */
+.coin-hero {
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: 18px; padding: clamp(20px, 3.4vw, 30px);
+    border-radius: var(--nocturne-radius-lg); border: 1px solid var(--nocturne-line);
+    background: radial-gradient(ellipse at 100% 0%, rgba(0, 239, 135, .22), transparent 55%),
+        linear-gradient(135deg, #1c2342, #161c37 55%, #0f2a36);
+}
+.coin-hero__copy { position: relative; z-index: 1; min-width: 0; }
+.coin-hero__eyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--nocturne-green); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.coin-hero__amount { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 2px; color: #fff; font-size: clamp(30px, 5vw, 42px); font-weight: 900; letter-spacing: -.03em; line-height: 1; }
+.coin-hero__amount small { color: var(--nocturne-muted); font-size: 14px; font-weight: 800; }
+.coin-hero__held { color: var(--nocturne-muted); font-size: 13px; }
+.coin-hero__held b { color: #e8c979; font-weight: 800; }
+.coin-hero__icon { position: relative; z-index: 1; display: grid; place-items: center; flex: 0 0 64px; width: 64px; height: 64px; border-radius: 20px; background: rgba(0, 239, 135, .14); color: var(--nocturne-green); font-size: 30px; box-shadow: 0 0 0 1px rgba(0, 239, 135, .18) inset; }
+
+/* ---- Section cards ---- */
+.coin-section { padding: clamp(16px, 2.6vw, 22px); background: var(--nocturne-panel); border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); min-width: 0; }
+.coin-section__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.coin-section__head h2 { margin: 0; color: var(--nocturne-text); font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.coin-section__head p { margin: 2px 0 0; color: var(--nocturne-muted); font-size: 12.5px; }
+.coin-section__icon { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 11px; background: rgba(0, 239, 135, .12); color: var(--nocturne-green); font-size: 17px; }
+
+/* ---- Forms ---- */
+.coin-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.coin-field { display: flex; flex-direction: column; gap: 6px; min-width: 140px; flex: 1 1 160px; }
+.coin-field label { color: var(--nocturne-muted); font-size: 11.5px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+.coin-field input, .coin-field select {
+    height: 48px; padding: 0 14px; border: 1px solid var(--nocturne-line); border-radius: 13px;
+    background: #0d1122; color: var(--nocturne-text); font-size: 14.5px; font-weight: 700; outline: 0;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+.coin-field input:focus, .coin-field select:focus { border-color: rgba(0, 239, 135, .55); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
+.coin-field--grow { flex: 2 1 220px; }
+
+/* ---- Buttons ---- */
+.coin-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 0 20px; border: 0; border-radius: 13px; cursor: pointer;
+    font-size: 13.5px; font-weight: 900; letter-spacing: .01em; white-space: nowrap;
+    transition: transform .15s ease, filter .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.coin-btn:active { transform: scale(.97); }
+.coin-btn--primary { background: linear-gradient(135deg, #00ef87, #049b5f); color: #06281c; box-shadow: 0 10px 26px rgba(0, 239, 135, .22); }
+.coin-btn--primary:hover { filter: brightness(1.05); color: #fff; }
+.coin-btn--outline { border: 1px solid var(--nocturne-line); background: var(--nocturne-raised); color: var(--nocturne-text); }
+.coin-btn--outline:hover { border-color: rgba(0, 239, 135, .4); color: var(--nocturne-green); }
+.coin-btn--danger { border: 1px solid rgba(255, 112, 135, .3); background: rgba(255, 112, 135, .1); color: #ff9bad; }
+.coin-btn--danger:hover { background: rgba(255, 112, 135, .18); color: #ffc0cc; }
+.coin-btn--block { width: 100%; }
+.coin-btn--sm { min-height: 38px; padding: 0 14px; font-size: 12px; border-radius: 10px; }
+.coin-btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* ---- Status badges ---- */
+.coin-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; font-size: 11px; font-weight: 900; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.coin-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.coin-badge--on_sale, .coin-badge--pending { background: rgba(255, 191, 92, .14); color: #ffbf5c; }
+.coin-badge--paid_claimed { background: rgba(84, 160, 255, .14); color: #6cb2ff; }
+.coin-badge--completed { background: rgba(0, 239, 135, .14); color: var(--nocturne-green); }
+.coin-badge--disputed { background: rgba(255, 112, 135, .14); color: #ff8fa3; }
+.coin-badge--cancelled, .coin-badge--expired { background: rgba(145, 156, 205, .14); color: var(--nocturne-muted); }
+
+/* ---- List rows (replaces literal <table> - reads as native-app list cells, stacks cleanly on mobile) ---- */
+.coin-list { display: flex; flex-direction: column; gap: 8px; }
+.coin-list__row {
+    display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid var(--nocturne-line);
+    border-radius: 15px; background: var(--nocturne-raised); text-decoration: none; color: var(--nocturne-text);
+    transition: border-color .16s ease, transform .15s ease;
+}
+a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: translateY(-1px); }
+.coin-list__avatar { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; background: #2a3252; color: var(--nocturne-green); font-size: 15px; font-weight: 900; }
+.coin-list__body { min-width: 0; flex: 1; }
+.coin-list__title { display: block; overflow: hidden; font-size: 14px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.coin-list__subtitle { display: block; margin-top: 2px; overflow: hidden; color: var(--nocturne-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.coin-list__trailing { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 0 auto; text-align: right; }
+.coin-list__amount { font-size: 15px; font-weight: 900; }
+.coin-list__amount small { margin-left: 3px; color: var(--nocturne-muted); font-size: 11px; font-weight: 700; }
+.coin-list__action { flex: 0 0 auto; }
+.coin-empty { display: grid; place-items: center; gap: 8px; padding: 34px 18px; text-align: center; color: var(--nocturne-muted); }
+.coin-empty i { font-size: 30px; color: var(--nocturne-green); opacity: .8; }
+.coin-empty p { margin: 0; font-size: 13px; max-width: 320px; }
+
+/* ---- Agent picker grid ---- */
+.coin-agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.coin-agent-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 14px; border: 1px solid var(--nocturne-line); border-radius: 17px; background: var(--nocturne-raised); text-align: center; }
+.coin-agent-card__avatar { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #00ef87, #049b5f); color: #06281c; font-size: 20px; font-weight: 900; }
+.coin-agent-card strong { font-size: 13.5px; font-weight: 800; }
+.coin-agent-card .coin-badge { margin-top: 2px; }
+
+/* ---- Trade detail ---- */
+.coin-trade-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 18px clamp(16px, 2.6vw, 22px); border-radius: var(--nocturne-radius-lg); border: 1px solid var(--nocturne-line); background: var(--nocturne-panel); }
+.coin-trade-head__amount { font-size: clamp(24px, 4vw, 30px); font-weight: 900; letter-spacing: -.02em; }
+.coin-trade-head__meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; color: var(--nocturne-muted); font-size: 12.5px; }
+.coin-trade-head__deadline { display: flex; align-items: center; gap: 6px; color: #ffbf5c; font-weight: 800; font-size: 12.5px; }
+.coin-trade-head__deadline i { font-size: 15px; }
+
+.coin-warning-strip { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid rgba(255, 191, 92, .22); border-radius: 13px; background: rgba(255, 191, 92, .08); color: #ffd48a; font-size: 12.5px; line-height: 1.5; }
+.coin-warning-strip i { flex: 0 0 auto; font-size: 18px; color: #ffbf5c; }
+
+.coin-trade-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.coin-upload { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; min-width: 0; }
+.coin-upload input[type="file"] {
+    flex: 1; min-width: 0; height: 48px; padding: 12px; border: 1px dashed var(--nocturne-line); border-radius: 13px;
+    background: #0d1122; color: var(--nocturne-muted); font-size: 12px;
+}
+
+/* ---- Chat ---- */
+.coin-chat { display: flex; flex-direction: column; border: 1px solid var(--nocturne-line); border-radius: var(--nocturne-radius-lg); background: var(--nocturne-panel); overflow: hidden; }
+.coin-chat__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--nocturne-line); }
+.coin-chat__head i { color: var(--nocturne-green); font-size: 17px; }
+.coin-chat__head strong { font-size: 13.5px; font-weight: 800; }
+.coin-chat__messages { display: flex; flex-direction: column; gap: 10px; height: min(52vh, 420px); overflow-y: auto; padding: 16px; }
+.coin-msg { display: flex; flex-direction: column; align-self: flex-start; max-width: min(78%, 480px); }
+.coin-msg.is-mine { align-self: flex-end; align-items: flex-end; }
+.coin-msg__meta { margin: 0 4px 4px; color: var(--nocturne-muted); font-size: 10.5px; font-weight: 700; }
+.coin-msg__bubble { padding: 10px 13px; border: 1px solid var(--nocturne-line); border-radius: 15px 15px 15px 5px; background: var(--nocturne-raised); color: #e9ecfb; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.coin-msg.is-mine .coin-msg__bubble { border-radius: 15px 15px 5px 15px; border-color: rgba(0, 239, 135, .22); background: rgba(0, 239, 135, .13); color: #eafff6; }
+.coin-msg__attachment { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--nocturne-green); font-size: 12px; font-weight: 800; text-decoration: none; }
+.coin-chat__empty { margin: auto; color: var(--nocturne-muted); font-size: 12.5px; text-align: center; }
+.coin-chat__composer { display: flex; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--nocturne-line); background: rgba(9, 12, 25, .35); }
+.coin-chat__composer input[type="text"] { flex: 1; min-width: 0; height: 46px; padding: 0 14px; border: 1px solid var(--nocturne-line); border-radius: 13px; background: #0d1122; color: var(--nocturne-text); font-size: 13.5px; outline: 0; }
+.coin-chat__composer input[type="text"]:focus { border-color: rgba(0, 239, 135, .5); }
+.coin-chat__composer button { flex: 0 0 46px; width: 46px; height: 46px; border: 0; border-radius: 13px; background: var(--nocturne-green); color: #06281c; font-size: 17px; display: grid; place-items: center; }
+
+/* ---- Mobile: compact, native-app feel ---- */
+@media (max-width: 575.98px) {
+    .coin-hero { flex-direction: row-reverse; justify-content: flex-start; padding: 18px; border-radius: 18px; }
+    .coin-hero__icon { width: 52px; height: 52px; border-radius: 16px; font-size: 24px; }
+    .coin-hero__amount { font-size: 27px; }
+    .coin-section { padding: 15px; border-radius: 16px; }
+    .coin-form { flex-direction: column; align-items: stretch; }
+    .coin-field { flex: 1 1 auto; min-width: 0; }
+    .coin-btn--block-mobile { width: 100%; }
+    .coin-agent-grid { grid-template-columns: repeat(2, 1fr); }
+    .coin-trade-head { flex-direction: column; align-items: flex-start; border-radius: 16px; }
+    .coin-trade-actions { flex-direction: column; }
+    .coin-trade-actions .coin-btn { width: 100%; }
+    .coin-upload { flex-direction: column; align-items: stretch; }
+    .coin-chat__messages { height: 46vh; }
+    .coin-msg { max-width: 88%; }
+    /* Sticky bottom action bar for the trade page's primary action, matching the game page's
+       sticky-bottom pattern and keeping the two-handed thumb zone on mobile. */
+    .coin-trade-sticky-actions {
+        position: sticky; z-index: 20; bottom: calc(10px + env(safe-area-inset-bottom));
+        display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 10px;
+        border: 1px solid var(--nocturne-line); border-radius: 16px;
+        background: rgba(17, 20, 41, .92); backdrop-filter: blur(10px);
+    }
+}
+@media (min-width: 576px) {
+    .coin-trade-sticky-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+}
