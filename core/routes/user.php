@@ -125,10 +125,12 @@ Route::middleware('auth')->name('user.')->group(function () {
             //Profile setting
             Route::controller('ProfileController')->group(function () {
                 Route::get('profile-setting', 'profile')->name('profile.setting');
-                Route::post('profile-setting', 'submitProfile');
+                Route::post('profile-setting', 'submitProfile')->middleware('throttle:15,1');
                 Route::post('profile-setting/currency', 'updateCurrency')->name('profile.currency')->middleware('throttle:10,1');
                 Route::get('profile-setting/avatar', 'avatarPicker')->name('profile.avatar');
                 Route::post('profile-setting/avatar', 'avatarSelect')->name('profile.avatar.select')->middleware('throttle:20,1');
+                Route::post('profile-setting/email/confirm', 'confirmEmailChange')->name('profile.email.confirm')->middleware('throttle:10,1');
+                Route::post('profile-setting/email/cancel', 'cancelEmailChange')->name('profile.email.cancel')->middleware('throttle:10,1');
                 Route::get('change-password', 'changePassword')->name('change.password');
                 Route::post('change-password', 'submitPassword');
             });
@@ -159,7 +161,7 @@ Route::middleware('auth')->name('user.')->group(function () {
 
             Route::controller('TableGameController')->prefix('tables')->name('tables.')->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::post('/', 'create')->name('create');
+                Route::post('/', 'create')->middleware('throttle:10,1')->name('create');
                 Route::get('leaderboard', 'leaderboard')->middleware('throttle:60,1')->name('leaderboard');
                 Route::get('{id}', 'show')->whereUuid('id')->name('show');
                 Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');
@@ -171,15 +173,15 @@ Route::middleware('auth')->name('user.')->group(function () {
                   Route::post('{id}/chat/{message}/report', 'reportMessage')->whereUuid('id')->whereNumber('message')->middleware('throttle:20,1')->name('chat.report');
                   Route::post('{id}/players/{user}/block', 'blockUser')->whereUuid('id')->whereNumber('user')->middleware('throttle:20,1')->name('players.block');
                   Route::post('players/{user}/unblock', 'unblockUser')->whereNumber('user')->middleware('throttle:20,1')->name('players.unblock');
-                Route::post('{id}/join', 'join')->whereUuid('id')->name('join');
+                Route::post('{id}/join', 'join')->whereUuid('id')->middleware('throttle:20,1')->name('join');
                 Route::get('{id}/players/search', 'searchPlayers')->whereUuid('id')->middleware('throttle:60,1')->name('players.search');
-                Route::post('{id}/invites', 'invite')->whereUuid('id')->name('invite');
-                Route::post('invites/{invite}/accept', 'acceptInvite')->whereNumber('invite')->name('invite.accept');
-                Route::post('{id}/start', 'start')->whereUuid('id')->name('start');
+                Route::post('{id}/invites', 'invite')->whereUuid('id')->middleware('throttle:20,1')->name('invite');
+                Route::post('invites/{invite}/accept', 'acceptInvite')->whereNumber('invite')->middleware('throttle:20,1')->name('invite.accept');
+                Route::post('{id}/start', 'start')->whereUuid('id')->middleware('throttle:20,1')->name('start');
                 Route::post('{id}/rematch', 'requestRematch')->whereUuid('id')->middleware('throttle:10,1')->name('rematch.request');
                 Route::post('rematch/{rematch}/decline', 'declineRematch')->whereNumber('rematch')->middleware('throttle:20,1')->name('rematch.decline');
-                Route::post('{id}/move', 'move')->whereUuid('id')->name('move');
-                Route::post('{id}/leave', 'leave')->whereUuid('id')->name('leave');
+                Route::post('{id}/move', 'move')->whereUuid('id')->middleware('throttle:120,1')->name('move');
+                Route::post('{id}/leave', 'leave')->whereUuid('id')->middleware('throttle:20,1')->name('leave');
                 Route::post('{id}/gifts/{gift}/send', 'sendGift')->whereUuid('id')->whereNumber('gift')->middleware('throttle:20,1')->name('gifts.send');
             });
 

@@ -13,9 +13,11 @@ Route::get('/firebase-messaging-sw-config.js', function () {
     ]);
 })->name('firebase.messaging.worker.config');
 
+// Manual cache-bust tool for an admin with no server/SSH access - gated behind an active admin
+// session (not public) so it can't be hit by anyone to force expensive cache rebuilds on demand.
 Route::get('/clear', function () {
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
-});
+})->middleware('admin');
 
 Route::get('cron', 'CronController@cron')->name('cron');
 

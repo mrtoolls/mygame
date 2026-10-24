@@ -6,12 +6,16 @@ Route::namespace('Auth')->group(function () {
     Route::middleware('admin.guest')->group(function () {
         Route::controller('LoginController')->group(function () {
             Route::get('/', 'showLoginForm')->name('login');
-            Route::post('/', 'login')->name('login');
+            // Per-account/IP lockout already comes from AuthenticatesUsers (ThrottlesLogins) in
+            // the controller itself - this route-level limit is defense in depth against an
+            // attacker rotating through many different admin usernames from one IP, which a
+            // per-account lock alone wouldn't catch.
+            Route::post('/', 'login')->middleware('throttle:10,1')->name('login');
             Route::get('logout', 'logout')->middleware('admin')->withoutMiddleware('admin.guest')->name('logout');
         });
 
         // Admin Password Reset
-        Route::controller('ForgotPasswordController')->prefix('password')->name('password.')->group(function () {
+        Route::controller('ForgotPasswordController')->prefix('password')->name('password.')->middleware('throttle:10,1')->group(function () {
             Route::get('reset', 'showLinkRequestForm')->name('reset');
             Route::post('reset', 'sendResetCodeEmail');
             Route::get('code-verify', 'codeVerify')->name('code.verify');
