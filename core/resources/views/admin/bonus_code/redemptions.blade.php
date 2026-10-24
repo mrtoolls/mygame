@@ -20,7 +20,7 @@
                                     <tr>
                                         <td>{{ $redemption->user?->username ?? '-' }}</td>
                                         <td class="fw-bold">{{ $redemption->bonusCode?->code ?? '-' }}</td>
-                                        <td class="text--success">{{ showAmount($redemption->amount) }}</td>
+                                        <td class="text--success">{{ gs('coin_mode') ? coinAmountText($redemption->amount) : showAmount($redemption->amount) }}</td>
                                         <td>{{ $redemption->trx }}</td>
                                         <td>{{ showDateTime($redemption->created_at) }}</td>
                                     </tr>

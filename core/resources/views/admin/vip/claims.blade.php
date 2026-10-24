@@ -21,8 +21,8 @@
                                     <tr>
                                         <td>{{ $claim->user?->username ?? '-' }}</td>
                                         <td>{{ $claim->tier?->name ?? '-' }}</td>
-                                        <td class="fw-bold text--success">{{ showAmount($claim->amount) }}</td>
-                                        <td>{{ showAmount($claim->total_wagered_snapshot) }}</td>
+                                        <td class="fw-bold text--success">{{ gs('coin_mode') ? coinAmountText($claim->amount) : showAmount($claim->amount) }}</td>
+                                        <td>{{ formatVipThreshold($claim->total_wagered_snapshot) }}</td>
                                         <td>{{ $claim->trx }}</td>
                                         <td>{{ showDateTime($claim->created_at) }}</td>
                                     </tr>

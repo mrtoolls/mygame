@@ -61,7 +61,7 @@
                                                 @endif
                                             </div>
                                         </td>
-                                        <td>{{ __(showAmount($log->invest)) }} </td>
+                                        <td>{{ gs('coin_mode') ? coinAmountText($log->invest) : __(showAmount($log->invest)) }} </td>
                                         <td>
 
 

@@ -61,16 +61,26 @@
                                             </span>
                                         </td>
                                         <td>
-                                            {{ showAmount($deposit->amount) }} + <span class="text--danger" title="@lang('charge')">{{ showAmount($deposit->charge) }} </span>
-                                            <br>
-                                            <strong title="@lang('Amount with charge')">
-                                                {{ showAmount($deposit->amount + $deposit->charge) }}
-                                            </strong>
+                                            @if ($deposit->coin_mode_purchase)
+                                                <strong class="text--success">{{ coinAmountText($deposit->coin_amount) }}</strong>
+                                                <br>
+                                                <span class="small text-muted" title="@lang('Amount paid')">{{ showAmount($deposit->amount) }} + <span class="text--danger" title="@lang('charge')">{{ showAmount($deposit->charge) }}</span></span>
+                                            @else
+                                                {{ showAmount($deposit->amount) }} + <span class="text--danger" title="@lang('charge')">{{ showAmount($deposit->charge) }} </span>
+                                                <br>
+                                                <strong title="@lang('Amount with charge')">
+                                                    {{ showAmount($deposit->amount + $deposit->charge) }}
+                                                </strong>
+                                            @endif
                                         </td>
                                         <td>
-                                            {{ showAmount(1) }} = {{ showAmount($deposit->rate, currencyFormat: false) }} {{ __($deposit->method_currency) }}
-                                            <br>
-                                            <strong>{{ showAmount($deposit->final_amount, currencyFormat: false) }} {{ __($deposit->method_currency) }}</strong>
+                                            @if ($deposit->coin_mode_purchase)
+                                                <span title="@lang('Locked coin buy price for this purchase')">{{ coinAmountText(1) }} = {{ showAmount($deposit->coin_buy_price_snapshot, currencyFormat: false) }} {{ __($deposit->method_currency) }}</span>
+                                            @else
+                                                {{ showAmount(1) }} = {{ showAmount($deposit->rate, currencyFormat: false) }} {{ __($deposit->method_currency) }}
+                                                <br>
+                                                <strong>{{ showAmount($deposit->final_amount, currencyFormat: false) }} {{ __($deposit->method_currency) }}</strong>
+                                            @endif
                                         </td>
                                         <td>
                                             @php echo $deposit->statusBadge @endphp
