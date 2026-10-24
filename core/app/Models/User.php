@@ -134,18 +134,32 @@ class User extends Authenticatable
     /**
      * Lifetime real-money wagering (demo play excluded) - the single figure
      * VIP tier thresholds and rakeback are both computed from.
+     *
+     * This is a straight, unconverted sum of game_logs.invest, compared directly against
+     * vip_tiers.min_wagered - which is documented/seeded as a USD amount. In legacy
+     * (coin_mode off) multi-currency play, invest is recorded in whatever currency the wager
+     * was placed in, so this sum mixes currencies and is compared to a USD threshold as if it
+     * were already USD - a real, pre-existing bug, left exactly as-is here for regression
+     * safety (not something this coin-mode work is scoped to fix). Once coin_mode is on, invest
+     * amounts are coin amounts (a single unit, no currency ambiguity) and, per the project
+     * decision, min_wagered is interpreted as a coin threshold too ("from cutover, lifetime
+     * wagering counts in coins, thresholds are in coins") - so the same raw, unconverted sum is
+     * the *correct* comparison in that case. Either way there is no conversion step here; the
+     * two modes differ only in what unit invest/min_wagered are both understood to be in.
      */
     public function totalWagered()
     {
         return (float) $this->gameLogs()->where('demo_play', 0)->sum('invest');
     }
 
+    /** See totalWagered() for how this comparison behaves (identically) in both coin_mode states. */
     public function vipTier()
     {
         $wagered = $this->totalWagered();
         return VipTier::active()->where('min_wagered', '<=', $wagered)->orderByDesc('min_wagered')->first();
     }
 
+    /** See totalWagered() for how this comparison behaves (identically) in both coin_mode states. */
     public function nextVipTier()
     {
         $wagered = $this->totalWagered();

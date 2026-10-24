@@ -35,6 +35,16 @@ class AdminController extends Controller {
         $widget['total_loss_amount']   = GameLog::loss()->sum('invest');
         $widget['total_profit']        = $widget['total_invest_amount'] - $widget['total_win_amount'];
 
+        // Once coin_mode is on, every game_logs row going forward is coin-denominated (one
+        // unit, no currency mixing), so the same sums above are already correct in coins - this
+        // just tells the view to label them as such and adds the coin-specific totals that have
+        // no real-currency equivalent.
+        $widget['coin_mode'] = (bool) gs('coin_mode');
+        if ($widget['coin_mode']) {
+            $widget['coin_reconciliation']   = app(\App\Services\CoinLedger::class)->reconcile();
+            $widget['total_coins_purchased'] = Deposit::successful()->where('coin_mode_purchase', true)->sum('coin_amount');
+        }
+
         // user Browsing, Country, Operating Log
         $userLoginData = UserLogin::where('created_at', '>=', Carbon::now()->subDays(30))->get(['browser', 'os', 'country']);
 

@@ -3,6 +3,20 @@
 @section('panel')
     <div class="row gy-4">
 
+        @if($widget['coin_mode'] ?? false)
+            <div class="col-12">
+                <div class="alert alert--{{ $widget['coin_reconciliation']['ok'] ? 'success' : 'danger' }} d-flex flex-wrap gap-3 justify-content-between align-items-center mb-0">
+                    <div>
+                        <strong>Coin mode is ON.</strong> Game totals below are in coins.
+                        Circulating: {{ $widget['coin_reconciliation']['circulating'] }} coins
+                        &middot; Coins purchased via gateway: {{ $widget['total_coins_purchased'] }}
+                        &middot; Reconciliation: {{ $widget['coin_reconciliation']['ok'] ? 'OK' : 'MISMATCH' }}
+                    </div>
+                    <a href="{{ route('admin.coin.settings') }}" class="btn btn-sm btn--primary">Coin settings</a>
+                </div>
+            </div>
+        @endif
+
         <div class="col-xxl-3 col-sm-6">
 
             <x-widget

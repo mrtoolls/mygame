@@ -41,7 +41,7 @@ class BalanceTransferController extends Controller
 
     public function transferBalance(Request $request)
     {
-        if (!gs('balance_transfer')) {
+        if (!gs('balance_transfer') || gs('coin_mode')) {
             $notify[] = 'Balance transfer is disabled';
             return responseError('disabled', $notify);
         }

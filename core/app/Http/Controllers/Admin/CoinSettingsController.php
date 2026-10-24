@@ -50,6 +50,16 @@ class CoinSettingsController extends Controller
         return back()->withNotify([['success', 'Coin mode is now on.']]);
     }
 
+    public function toggleTestKit(Request $request)
+    {
+        $request->validate(['enable' => 'required|boolean']);
+        $general = gs();
+        $general->coin_marketplace_test_kit_enabled = $request->boolean('enable');
+        $general->save();
+
+        return back()->withNotify([['success', $request->boolean('enable') ? 'Marketplace test kit enabled.' : 'Marketplace test kit disabled.']]);
+    }
+
     public function toggleSingleApprover(Request $request)
     {
         $request->validate(['enable' => 'required|boolean']);

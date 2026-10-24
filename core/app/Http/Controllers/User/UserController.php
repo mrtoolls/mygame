@@ -20,6 +20,7 @@ use App\Models\Referral;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\CoinLedger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -211,26 +212,50 @@ class UserController extends Controller {
         $user->save();
 
         if (gs('rb')) {
-            $user->balance += gs('register_bonus');
-            $user->save();
+            // Coin mode: register bonus becomes a flat coin amount minted through CoinLedger
+            // instead of credited to real-currency balance - decision 9 (register/gameplay/
+            // bonus-code bonuses become flat coin amounts set by admin).
+            if (gs('coin_mode')) {
+                $idempotencyKey = 'register_bonus:' . $user->id;
+                app(CoinLedger::class)->mint(
+                    'user',
+                    $user->id,
+                    (string) gs('register_bonus'),
+                    'Register Bonus',
+                    $idempotencyKey,
+                    'User',
+                    $user->id,
+                    'system'
+                );
 
-            $transaction               = new Transaction();
-            $transaction->user_id      = $user->id;
-            $transaction->amount       = gs('register_bonus');
-            $transaction->charge       = 0;
-            $transaction->trx_type     = '+';
-            $transaction->details      = 'You have got register bonus';
-            $transaction->remark       = 'register_bonus';
-            $transaction->trx          = getTrx();
-            $transaction->post_balance = $user->balance;
-            $transaction->save();
+                notify($user, 'REGISTER_BONUS', [
+                    'username'     => $user->username,
+                    'amount'       => showAmount(gs('register_bonus')),
+                    'trx'          => $idempotencyKey,
+                    'post_balance' => showAmount(app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance),
+                ]);
+            } else {
+                $user->balance += gs('register_bonus');
+                $user->save();
 
-            notify($user, 'REGISTER_BONUS', [
-                'username'     => $user->username,
-                'amount'       => showAmount(gs('register_bonus')),
-                'trx'          => $transaction->trx,
-                'post_balance' => showAmount($user->balance),
-            ]);
+                $transaction               = new Transaction();
+                $transaction->user_id      = $user->id;
+                $transaction->amount       = gs('register_bonus');
+                $transaction->charge       = 0;
+                $transaction->trx_type     = '+';
+                $transaction->details      = 'You have got register bonus';
+                $transaction->remark       = 'register_bonus';
+                $transaction->trx          = getTrx();
+                $transaction->post_balance = $user->balance;
+                $transaction->save();
+
+                notify($user, 'REGISTER_BONUS', [
+                    'username'     => $user->username,
+                    'amount'       => showAmount(gs('register_bonus')),
+                    'trx'          => $transaction->trx,
+                    'post_balance' => showAmount($user->balance),
+                ]);
+            }
         }
 
         return to_route('user.home');
@@ -355,9 +380,12 @@ class UserController extends Controller {
                 return back()->withNotify($notify);
             }
             $trx  = getTrx();
+            $coinMode = gs('coin_mode');
 
-            $user->balance += $code->amount;
-            $user->save();
+            if (!$coinMode) {
+                $user->balance += $code->amount;
+                $user->save();
+            }
 
             $code->used_count += 1;
             $code->save();
@@ -370,17 +398,33 @@ class UserController extends Controller {
             $redemption->trx           = $trx;
             $redemption->save();
 
-            $transaction               = new Transaction();
-            $transaction->user_id      = $user->id;
-            $transaction->amount       = $code->amount;
-            $transaction->charge       = 0;
-            $transaction->trx_type     = '+';
-            $transaction->details      = 'Bonus code activated - ' . $code->code;
-            $transaction->remark       = 'bonus_code';
-            $transaction->trx          = $trx;
-            $transaction->post_balance = $user->balance;
-            if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
-            $transaction->save();
+            // Coin mode: bonus-code redemptions mint a flat coin amount through CoinLedger
+            // instead of crediting real-currency balance (decision 9).
+            if ($coinMode) {
+                app(CoinLedger::class)->mint(
+                    'user',
+                    $user->id,
+                    (string) $code->amount,
+                    'Bonus code activated - ' . $code->code,
+                    'bonus_code:' . $redemption->id,
+                    'BonusCodeRedemption',
+                    $redemption->id,
+                    'user',
+                    $user->id
+                );
+            } else {
+                $transaction               = new Transaction();
+                $transaction->user_id      = $user->id;
+                $transaction->amount       = $code->amount;
+                $transaction->charge       = 0;
+                $transaction->trx_type     = '+';
+                $transaction->details      = 'Bonus code activated - ' . $code->code;
+                $transaction->remark       = 'bonus_code';
+                $transaction->trx          = $trx;
+                $transaction->post_balance = $user->balance;
+                if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
+                $transaction->save();
+            }
 
             DB::commit();
         } catch (\Throwable $e) {

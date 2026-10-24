@@ -12,6 +12,7 @@ use App\Models\Currency;
 use App\Services\CompetitionService;
 use Illuminate\Http\Request;
 use App\Services\CompetitionLaunchSeeder;
+use App\Services\CoinLedger;
 use Illuminate\Support\Str;
 
 class CompetitionController extends Controller
@@ -124,6 +125,51 @@ class CompetitionController extends Controller
         $result = CompetitionResult::findOrFail($resultId);
         if ($result->isPaid()) {
             $notify[] = ['error', 'This prize has already been marked as paid'];
+            return back()->withNotify($notify);
+        }
+
+        $general = gs();
+
+        // Coin mode automates the payout entirely: mint the prize straight to the winner's coin
+        // wallet instead of making an admin pick a currency/rate for a manual, outside-the-system
+        // transfer. The idempotency key is derived from this result's own primary key, which is
+        // permanent and unique per competition/user pairing (competition_results has a unique
+        // index on [competition_id, user_id]) - so an admin double-clicking "pay", or a retried
+        // request, can never mint the prize twice. isPaid() above already short-circuits a second
+        // click once paid_at is set, but the idempotency key is the real backstop if that save
+        // never completed (e.g. the request died between minting and saving paid_at).
+        if ($general->coin_mode) {
+            if (!$result->prize_amount_usd || bccomp((string) $result->prize_amount_usd, '0', 8) <= 0) {
+                $notify[] = ['error', 'This result has no prize amount to pay out'];
+                return back()->withNotify($notify);
+            }
+
+            $peg = (string) ($general->coin_peg_usd ?: '0.01');
+            $coinAmount = bcdiv((string) $result->prize_amount_usd, $peg, 8);
+            $idempotencyKey = 'competition_payout:' . $result->id;
+
+            app(CoinLedger::class)->mint(
+                'user',
+                $result->user_id,
+                $coinAmount,
+                'Competition prize payout - ' . $result->competition->title,
+                $idempotencyKey,
+                'CompetitionResult',
+                $result->id,
+                'admin',
+                auth('admin')->id()
+            );
+
+            $result->payout_currency_id = null;
+            $result->payout_rate_to_usd = null;
+            $result->payout_amount = $coinAmount;
+            $result->source_ref = $idempotencyKey;
+            $result->paid_at = now();
+            $result->save();
+
+            $this->logAudit($result->competition, 'prize_paid', ['user_id' => $result->user_id, 'rank' => $result->rank, 'amount_usd' => $result->prize_amount_usd, 'coin_amount' => $coinAmount]);
+
+            $notify[] = ['success', 'Prize paid out automatically in coins.'];
             return back()->withNotify($notify);
         }
 

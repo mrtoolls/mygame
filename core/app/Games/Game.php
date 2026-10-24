@@ -8,6 +8,7 @@ use App\Models\GameLog;
 use App\Models\GameplayBonusLog;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\CoinLedger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -194,19 +195,18 @@ abstract class Game {
             $amount = $winBon;
 
             $investBack = 0;
+            $coinMode = !$this->demoPlay && gs('coin_mode');
 
             if ($this->game->invest_back == Status::YES) {
                 $investBack = $gameLog->invest;
 
                 if ($this->demoPlay) {
                     $this->user->demo_balance += $gameLog->invest;
-                } else {
+                    $this->user->save();
+                } elseif (!$coinMode) {
                     $this->user->balance += $gameLog->invest;
-                }
+                    $this->user->save();
 
-                $this->user->save();
-
-                if (!$this->demoPlay) {
                     $transaction               = new Transaction();
                     $transaction->user_id      = $this->user->id;
                     $transaction->amount       = $investBack;
@@ -218,22 +218,56 @@ abstract class Game {
                     $transaction->post_balance = $this->user->balance;
                     if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $this->user->currency_id;
                     $transaction->save();
+                } elseif (bccomp((string) $investBack, '0', 8) > 0) {
+                    // Coin mode: the invest-back payout is the house (platform wallet) paying
+                    // the player back, the same direction of coin movement as a win bonus or a
+                    // promotional grant - mint(), not a plain credit(), so the platform wallet
+                    // moves in lockstep and CoinLedger::reconcile() keeps balancing. A plain
+                    // credit() here would create coins in the player's wallet out of nothing,
+                    // without the matching platform-side debit mint() provides.
+                    app(CoinLedger::class)->mint(
+                        'user',
+                        $this->user->id,
+                        (string) $investBack,
+                        'Invest Back For ' . $this->game->name,
+                        'game_invest_back:' . $gameLog->id,
+                        'GameLog',
+                        $gameLog->id,
+                        'user',
+                        $this->user->id
+                    );
                 }
 
             }
 
             if ($this->demoPlay) {
                 $this->user->demo_balance += $amount;
-            } else {
+                $this->user->save();
+            } elseif (!$coinMode) {
                 $this->user->balance += $amount;
+                $this->user->save();
+            } elseif (bccomp((string) $amount, '0', 8) > 0) {
+                // Coin mode: the win bonus is the house paying the player from the platform
+                // wallet, so it mints (platform debit + player credit) rather than a plain
+                // credit() - see the invest-back comment above for why that distinction matters
+                // for CoinLedger::reconcile().
+                app(CoinLedger::class)->mint(
+                    'user',
+                    $this->user->id,
+                    (string) $amount,
+                    'Win bonus of ' . $this->game->name,
+                    'game_win:' . $gameLog->id,
+                    'GameLog',
+                    $gameLog->id,
+                    'user',
+                    $this->user->id
+                );
             }
-
-            $this->user->save();
 
             $gameLog->win_amo = $amount;
             $gameLog->save();
 
-            if (!$this->demoPlay) {
+            if (!$this->demoPlay && !$coinMode) {
                 $transaction               = new Transaction();
                 $transaction->user_id      = $this->user->id;
                 $transaction->amount       = $winBon;
@@ -302,7 +336,16 @@ abstract class Game {
     }
 
     private function fallback() {
-        $balance = $this->demoPlay ? @$this->user->demo_balance : @$this->user->balance;
+        // Coin mode never credits/debits $user->balance for real play any more (see invest()
+        // below), so the sufficiency pre-check here has to read the coin wallet instead - the
+        // legacy balance column would otherwise sit untouched at whatever it was before coin
+        // mode was switched on and block every real play. The authoritative check is still
+        // CoinLedger::debit()'s own re-check under lock inside invest(); this is only the
+        // same early, friendlier rejection the legacy path already gave before even trying.
+        $coinMode = !$this->demoPlay && gs('coin_mode');
+        $balance = $this->demoPlay
+            ? @$this->user->demo_balance
+            : ($coinMode ? app(CoinLedger::class)->wallet('user', $this->user->id)->available_balance : @$this->user->balance);
         if ($this->request->invest > $balance) {
             return ['error' => 'Oops! You have no sufficient balance'];
         }
@@ -321,15 +364,15 @@ abstract class Game {
 
     private function invest($gameResult) {
         $user = $this->user;
+        $coinMode = !$this->demoPlay && gs('coin_mode');
 
         if ($this->demoPlay) {
             $user->demo_balance -= $this->request->invest;
-        } else {
+            $user->save();
+        } elseif (!$coinMode) {
             $user->balance -= $this->request->invest;
-        }
-        $user->save();
+            $user->save();
 
-        if (!$this->demoPlay) {
             $transaction               = new Transaction();
             $transaction->user_id      = $user->id;
             $transaction->amount       = $this->request->invest;
@@ -342,6 +385,9 @@ abstract class Game {
             if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $user->currency_id;
             $transaction->save();
         }
+        // Coin mode's stake debit happens below, after the GameLog row is created - its
+        // idempotency key is derived from that row's id, so it can't be issued before the row
+        // exists.
 
         $gameLog          = new GameLog();
         $gameLog->user_id = $user->id ?? 0;
@@ -367,6 +413,28 @@ abstract class Game {
         $gameLog->mines          = @$this->request->mines ?? 0;
         $gameLog->mine_available = @$this->request->mines ?? 0;
         $gameLog->save();
+
+        if ($coinMode) {
+            // The GameLog row now exists, so its id can anchor a unique, replay-safe
+            // idempotency key - a retried/duplicated invest() call for the same GameLog can
+            // never double-debit the stake. The stake moves to the house (platform wallet), the
+            // same direction as a deposit purchase or a float grant moving the other way -
+            // burn() (player debit + platform credit), not a plain debit(), so the platform
+            // wallet moves in lockstep and CoinLedger::reconcile() keeps balancing. A plain
+            // debit() here would remove coins from circulation without a matching platform
+            // credit, which reconcile() would then flag as a mismatch.
+            app(CoinLedger::class)->burn(
+                'user',
+                $user->id,
+                (string) $this->request->invest,
+                'Invest to ' . $this->game->name,
+                'game_invest:' . $gameLog->id,
+                'GameLog',
+                $gameLog->id,
+                'user',
+                $user->id
+            );
+        }
 
         return ['game_log' => $gameLog];
     }
@@ -399,33 +467,65 @@ abstract class Game {
         $playCount         = $user->gameLogs()->where('game_id', $gameId)->where('demo_play', Status::NO)->count();
 
         if ($playCount >= $requiredPlayCount) {
-            $user->balance = bcadd((string) $user->balance, (string) $bonusAmount, 8);
-            $user->save();
+            // Coin mode: the gameplay bonus becomes a flat coin amount minted through
+            // CoinLedger instead of credited to real-currency balance (decision 9). The
+            // alreadyRewarded check above, plus the user-row lock taken before this point,
+            // already guarantee this fires at most once per user+game - the idempotency key
+            // below is defense in depth on top of that, same spirit as the lock itself.
+            if (gs('coin_mode')) {
+                $idempotencyKey = 'gameplay_bonus:' . $userId . ':' . $gameId;
+                app(CoinLedger::class)->mint(
+                    'user',
+                    $user->id,
+                    (string) $bonusAmount,
+                    'Gameplay Bonus',
+                    $idempotencyKey,
+                    'Game',
+                    $gameId,
+                    'system'
+                );
 
-            $transaction               = new Transaction();
-            $transaction->user_id      = $user->id;
-            $transaction->amount       = $bonusAmount;
-            $transaction->charge       = 0;
-            $transaction->trx_type     = '+';
-            $transaction->details      = 'Gameplay Bonus';
-            $transaction->remark       = 'gameplay_bonus';
-            $transaction->trx          = getTrx();
-            $transaction->post_balance = $user->balance;
-            if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $user->currency_id;
-            $transaction->save();
+                $bonusLog          = new GameplayBonusLog();
+                $bonusLog->user_id = $userId;
+                $bonusLog->game_id = $gameId;
+                $bonusLog->amount  = $bonusAmount;
+                if ($this->hasCurrencyColumn('gameplay_bonus_logs')) $bonusLog->currency_id = $user->currency_id;
+                $bonusLog->save();
 
-            $bonusLog          = new GameplayBonusLog();
-            $bonusLog->user_id = $userId;
-            $bonusLog->game_id = $gameId;
-            $bonusLog->amount  = $bonusAmount;
-            if ($this->hasCurrencyColumn('gameplay_bonus_logs')) $bonusLog->currency_id = $user->currency_id;
-            $bonusLog->save();
+                notify($user, 'GAMEPLAY_BONUS', [
+                    'amount'       => showAmount($bonusAmount, currencyFormat: false),
+                    'trx'          => $idempotencyKey,
+                    'post_balance' => showAmount(app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance, currencyFormat: false),
+                ]);
+            } else {
+                $user->balance = bcadd((string) $user->balance, (string) $bonusAmount, 8);
+                $user->save();
 
-            notify($user, 'GAMEPLAY_BONUS', [
-                'amount'       => showAmount($transaction->amount, currencyFormat: false),
-                'trx'          => $transaction->trx,
-                'post_balance' => showAmount($user->balance, currencyFormat: false),
-            ]);
+                $transaction               = new Transaction();
+                $transaction->user_id      = $user->id;
+                $transaction->amount       = $bonusAmount;
+                $transaction->charge       = 0;
+                $transaction->trx_type     = '+';
+                $transaction->details      = 'Gameplay Bonus';
+                $transaction->remark       = 'gameplay_bonus';
+                $transaction->trx          = getTrx();
+                $transaction->post_balance = $user->balance;
+                if ($this->hasCurrencyColumn('transactions')) $transaction->currency_id = $user->currency_id;
+                $transaction->save();
+
+                $bonusLog          = new GameplayBonusLog();
+                $bonusLog->user_id = $userId;
+                $bonusLog->game_id = $gameId;
+                $bonusLog->amount  = $bonusAmount;
+                if ($this->hasCurrencyColumn('gameplay_bonus_logs')) $bonusLog->currency_id = $user->currency_id;
+                $bonusLog->save();
+
+                notify($user, 'GAMEPLAY_BONUS', [
+                    'amount'       => showAmount($transaction->amount, currencyFormat: false),
+                    'trx'          => $transaction->trx,
+                    'post_balance' => showAmount($user->balance, currencyFormat: false),
+                ]);
+            }
         }
     }
 

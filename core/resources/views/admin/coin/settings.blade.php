@@ -44,7 +44,25 @@
                             @csrf
                             <button type="submit" class="btn btn-outline--primary btn-sm">Recompute all rates</button>
                         </form>
+                        <form method="post" action="{{ route('admin.coin.test-kit.toggle') }}">
+                            @csrf
+                            <input type="hidden" name="enable" value="{{ $general->coin_marketplace_test_kit_enabled ? 0 : 1 }}">
+                            <button type="submit" class="btn btn-outline--secondary btn-sm">{{ $general->coin_marketplace_test_kit_enabled ? 'Disable' : 'Enable' }} test kit</button>
+                        </form>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a href="{{ route('admin.coin.float.index') }}" class="btn btn-sm btn-outline--primary">Agent float grants</a>
+                    <a href="{{ route('admin.coin.disputes.index') }}" class="btn btn-sm btn-outline--primary">Trade disputes</a>
+                    <a href="{{ route('admin.coin.cutover.index') }}" class="btn btn-sm btn-outline--primary">Cutover tool</a>
+                    @if($general->coin_marketplace_test_kit_enabled)
+                        <a href="{{ route('admin.coin.test-kit.index') }}" class="btn btn-sm btn-outline--primary">Marketplace test kit</a>
+                    @endif
                 </div>
             </div>
         </div>

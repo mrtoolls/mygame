@@ -24,7 +24,7 @@ class BalanceTransferController extends Controller {
             'amount'   => 'required|numeric|gt:0',
         ]);
 
-        if (!gs('balance_transfer')) {
+        if (!gs('balance_transfer') || gs('coin_mode')) {
             $notify[] = ['error', 'Balance transfer is not available!'];
             return back()->withNotify($notify);
         }

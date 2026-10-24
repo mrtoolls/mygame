@@ -70,6 +70,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/', 'index')->name('settings');
         Route::post('mode', 'toggleCoinMode')->name('mode.toggle');
         Route::post('single-approver', 'toggleSingleApprover')->name('single-approver.toggle');
+        Route::post('test-kit', 'toggleTestKit')->name('test-kit.toggle');
         Route::post('margins/{currencyId}', 'saveMargins')->name('margins.save');
         Route::post('recompute', 'recomputeAll')->name('recompute');
     });
@@ -85,6 +86,23 @@ Route::middleware('admin')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('{tradeId}/resolve', 'resolve')->name('resolve')->whereNumber('tradeId');
         Route::post('{tradeId}/penalize', 'penalize')->name('penalize')->whereNumber('tradeId');
+    });
+
+    Route::controller('CoinCutoverController')->prefix('coin/cutover')->name('coin.cutover.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('preview', 'preview')->name('preview');
+        Route::post('execute', 'execute')->name('execute');
+    });
+
+    Route::controller('CoinTestKitController')->prefix('coin/test-kit')->name('coin.test-kit.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('create-agent', 'createTestAgent')->name('create-agent');
+        Route::post('create-user', 'createTestUser')->name('create-user');
+        Route::post('grant-float', 'grantTestFloat')->name('grant-float');
+        Route::post('grant-coins', 'grantTestCoins')->name('grant-coins');
+        Route::post('demo-rates', 'setDemoRates')->name('demo-rates');
+        Route::post('sample-listing', 'createSampleListing')->name('sample-listing');
+        Route::post('simulate-timeout', 'simulateTimeout')->name('simulate-timeout');
     });
 
     Route::controller('AdminController')->group(function () {
