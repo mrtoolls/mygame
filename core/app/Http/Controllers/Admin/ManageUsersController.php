@@ -15,6 +15,7 @@ use App\Models\Withdrawal;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class ManageUsersController extends Controller {
@@ -237,45 +238,61 @@ class ManageUsersController extends Controller {
             'remark' => 'required|string|max:255',
         ]);
 
-        $user   = User::findOrFail($id);
         $amount = $request->amount;
         $trx    = getTrx();
+        $act    = $request->act;
+        $remark = $request->remark;
 
-        $transaction = new Transaction();
+        // Locked and re-checked under the lock (not the unlocked $user fetched above the
+        // validation, which an overlapping admin edit could already have moved on from) so two
+        // manual adjustments for the same user can never race, and a "subtract more than the
+        // live balance" attempt is rejected against the actual current balance, not a stale one.
+        $result = DB::transaction(function () use ($id, $amount, $act, $remark, $trx) {
+            $user = User::whereKey($id)->lockForUpdate()->firstOrFail();
 
-        if ($request->act == 'add') {
-            $user->balance += $amount;
+            $transaction = new Transaction();
 
-            $transaction->trx_type = '+';
-            $transaction->remark   = 'balance_add';
+            if ($act == 'add') {
+                $user->balance = bcadd((string) $user->balance, (string) $amount, 8);
 
-            $notifyTemplate = 'BAL_ADD';
+                $transaction->trx_type = '+';
+                $transaction->remark   = 'balance_add';
 
-            $notify[] = ['success', 'Balance added successfully'];
-        } else {
-            if ($amount > $user->balance) {
-                $notify[] = ['error', $user->username . ' doesn\'t have sufficient balance.'];
-                return back()->withNotify($notify);
+                $notifyTemplate = 'BAL_ADD';
+            } else {
+                if (bccomp((string) $amount, (string) $user->balance, 8) > 0) {
+                    return ['error' => $user->username . ' doesn\'t have sufficient balance.'];
+                }
+
+                $user->balance = bcsub((string) $user->balance, (string) $amount, 8);
+
+                $transaction->trx_type = '-';
+                $transaction->remark   = 'balance_subtract';
+
+                $notifyTemplate = 'BAL_SUB';
             }
 
-            $user->balance -= $amount;
+            $user->save();
 
-            $transaction->trx_type = '-';
-            $transaction->remark   = 'balance_subtract';
+            $transaction->user_id      = $user->id;
+            $transaction->amount       = $amount;
+            $transaction->post_balance = $user->balance;
+            $transaction->charge       = 0;
+            $transaction->trx          = $trx;
+            $transaction->details      = $remark;
+            $transaction->save();
 
-            $notifyTemplate = 'BAL_SUB';
-            $notify[]       = ['success', 'Balance subtracted successfully'];
+            return ['user' => $user, 'template' => $notifyTemplate];
+        });
+
+        if (isset($result['error'])) {
+            $notify[] = ['error', $result['error']];
+            return back()->withNotify($notify);
         }
 
-        $user->save();
-
-        $transaction->user_id      = $user->id;
-        $transaction->amount       = $amount;
-        $transaction->post_balance = $user->balance;
-        $transaction->charge       = 0;
-        $transaction->trx          = $trx;
-        $transaction->details      = $request->remark;
-        $transaction->save();
+        $user           = $result['user'];
+        $notifyTemplate = $result['template'];
+        $notify[]       = ['success', $act == 'add' ? 'Balance added successfully' : 'Balance subtracted successfully'];
 
         notify($user, $notifyTemplate, [
             'trx'          => $trx,
