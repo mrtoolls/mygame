@@ -10,6 +10,7 @@ use App\Models\GameLog;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CronController extends Controller
@@ -90,23 +91,37 @@ class CronController extends Controller
                 continue;
             }
 
-            $user = $game->user;
-            $user->balance += $game->invest;
-            $user->save();
+            // Locked and re-checked under the lock so an overlapping cron run (or a second
+            // /cron hit arriving before the first finishes) can never refund the same stuck
+            // game twice - the earlier unlocked read-modify-write let exactly that happen.
+            DB::transaction(function () use ($game) {
+                $lockedGame = GameLog::whereKey($game->id)->lockForUpdate()->first();
+                if (!$lockedGame || (int) $lockedGame->status !== Status::DISABLE) {
+                    return;
+                }
 
-            $transaction               = new Transaction();
-            $transaction->user_id      = $user->id;
-            $transaction->amount       = $game->invest;
-            $transaction->charge       = 0;
-            $transaction->trx_type     = '+';
-            $transaction->details      = 'In-complete game invest return';
-            $transaction->remark       = 'invest_return';
-            $transaction->trx          = getTrx();
-            $transaction->post_balance = $user->balance;
-            $transaction->save();
+                $user = User::whereKey($lockedGame->user_id)->lockForUpdate()->first();
+                if (!$user) {
+                    return;
+                }
 
-            $game->status = 2;
-            $game->save();
+                $user->balance = bcadd((string) $user->balance, (string) $lockedGame->invest, 8);
+                $user->save();
+
+                $transaction               = new Transaction();
+                $transaction->user_id      = $user->id;
+                $transaction->amount       = $lockedGame->invest;
+                $transaction->charge       = 0;
+                $transaction->trx_type     = '+';
+                $transaction->details      = 'In-complete game invest return';
+                $transaction->remark       = 'invest_return';
+                $transaction->trx          = getTrx();
+                $transaction->post_balance = $user->balance;
+                $transaction->save();
+
+                $lockedGame->status = 2;
+                $lockedGame->save();
+            });
         }
     }
 }
