@@ -140,7 +140,12 @@
             .nocturne-auth-visual__copy p { font-size: 13px; margin-bottom: 12px; }
             .nocturne-auth-form { padding: 22px 16px calc(22px + env(safe-area-inset-bottom)); }
             .nocturne-auth-form h1 { font-size: 22px; margin-bottom: 4px; }
-            .nocturne-onboard-sub { font-size: 12.5px; margin-bottom: 20px; }
+            /* The base rule's margin:-10px pulls this up to sit snug under the desktop h1's
+               much bigger 26px bottom margin - against this breakpoint's own shrunk-down 4px
+               heading margin, that same -10px instead dragged the subtitle up INTO the
+               heading's text, overlapping it. Redeclare the full margin (no negative top) here
+               instead of just font-size/margin-bottom. */
+            .nocturne-onboard-sub { margin: 4px 0 20px; font-size: 12.5px; }
             .nocturne-gender-picker { gap: 8px; }
             .nocturne-gender-card { padding: 14px 8px; border-radius: 16px; }
             .nocturne-gender-card__preview { width: 54px; height: 54px; }
