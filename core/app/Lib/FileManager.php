@@ -81,12 +81,16 @@ class FileManager
 	public function __construct($file = null){
 		$this->file = $file;
 		if ($file) {
-			$imageExtensions = ['jpg','jpeg','png','JPG','JPEG','PNG'];
-			if (in_array($file->getClientOriginalExtension(), $imageExtensions)) {
-				$this->isImage = true;
-			}else{
-				$this->isImage = false;
-			}
+			// Decide "is this an image" from the file's actual CONTENT (Symfony's MIME-sniffed
+			// guess, the same signal Laravel's own 'mimes:' validation rule uses), never from
+			// the client-supplied filename/extension - a filename proves nothing; an attacker can
+			// name a PHP payload "shell.png" (or an image-header polyglot "shell.php") and the
+			// old extension-list check here would get it backwards either way, letting arbitrary
+			// code land in a public, web-served directory. getFileName() below applies the same
+			// content-sniffed rule to the saved filename itself, so this check and the saved
+			// extension can never disagree.
+			$imageExtensions = ['jpg','jpeg','png','webp','gif'];
+			$this->isImage = in_array(strtolower((string) $file->guessExtension()), $imageExtensions, true);
 		}
 	}
 
@@ -237,7 +241,19 @@ class FileManager
     * @return string
     */
 	protected function getFileName(){
-		return uniqid() . time() . '.' . $this->file->getClientOriginalExtension();
+		// The saved extension always comes from content-sniffed detection (guessExtension(),
+		// backed by the real uploaded bytes), never from the client-supplied filename - see the
+		// constructor above for why. Anything that looks like it could ever be executed by the
+		// webserver (php variants, cgi/shell scripts, htaccess, html/svg which can carry inline
+		// script) - or that simply could not be identified at all - is forced to a harmless,
+		// inert extension instead, so nothing uploaded through this class can ever be written
+		// into a public, web-served directory with an extension that could run it.
+		$dangerousExtensions = ['php','php3','php4','php5','php7','php8','phtml','phar','pht','phps','exe','dll','sh','bash','cgi','pl','py','rb','asp','aspx','jsp','jspx','htaccess','htpasswd','htm','html','svg','js','mjs'];
+		$extension = strtolower((string) $this->file->guessExtension());
+		if (!$extension || in_array($extension, $dangerousExtensions, true)) {
+			$extension = 'dat';
+		}
+		return uniqid() . time() . '.' . $extension;
 	}
 
     /**
