@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notify\Notify;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 function systemDetails() {
@@ -536,33 +537,41 @@ function levelCommission($id, $amount, $commissionType = '') {
             break;
         }
 
-        $com                  = ($amount * $commission->percent) / 100;
-        $referWallet          = User::where('id', $refer->id)->first();
-        $newBal               = getAmount($referWallet->balance + $com);
-        $referWallet->balance = $newBal;
-        $referWallet->save();
-        $trx = getTrx();
+        $com = bcdiv(bcmul((string) $amount, (string) $commission->percent, 8), '100', 8);
 
-        $transaction               = new Transaction();
-        $transaction->user_id      = $refer->id;
-        $transaction->amount       = getAmount($com);
-        $transaction->charge       = 0;
-        $transaction->trx_type     = '+';
-        $transaction->remark       = 'commission';
-        $transaction->details      = $i . ' level Referral Commission';
-        $transaction->trx          = $trx;
-        $transaction->post_balance = $newBal;
-        $transaction->save();
+        // Locked and re-read under the lock (not the already-stale $refer row from above) so
+        // two commission-triggering events for the same referrer landing at the same time can
+        // never both read the same starting balance and silently drop one credit.
+        [$newBal, $trx] = DB::transaction(function () use ($refer, $id, $i, $com, $commissionType) {
+            $referWallet = User::whereKey($refer->id)->lockForUpdate()->first();
+            $newBal      = getAmount(bcadd((string) $referWallet->balance, $com, 8));
+            $referWallet->balance = $newBal;
+            $referWallet->save();
+            $trx = getTrx();
 
-        $commission           = new CommissionLog();
-        $commission->user_id  = $refer->id;
-        $commission->who      = $id;
-        $commission->level    = $i . ' level Referral Commission';
-        $commission->amount   = getAmount($com);
-        $commission->main_amo = $newBal;
-        $commission->title    = $commissionType;
-        $commission->trx      = $trx;
-        $commission->save();
+            $transaction               = new Transaction();
+            $transaction->user_id      = $refer->id;
+            $transaction->amount       = getAmount($com);
+            $transaction->charge       = 0;
+            $transaction->trx_type     = '+';
+            $transaction->remark       = 'commission';
+            $transaction->details      = $i . ' level Referral Commission';
+            $transaction->trx          = $trx;
+            $transaction->post_balance = $newBal;
+            $transaction->save();
+
+            $commission           = new CommissionLog();
+            $commission->user_id  = $refer->id;
+            $commission->who      = $id;
+            $commission->level    = $i . ' level Referral Commission';
+            $commission->amount   = getAmount($com);
+            $commission->main_amo = $newBal;
+            $commission->title    = $commissionType;
+            $commission->trx      = $trx;
+            $commission->save();
+
+            return [$newBal, $trx];
+        });
 
         notify($refer, 'REFERRAL_COMMISSION', [
             'amount'       => getAmount($com),
