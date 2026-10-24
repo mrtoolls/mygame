@@ -569,6 +569,12 @@ class TableGameService
             $moveRow = TableGameMove::where('table_game_id', $table->id)
                 ->whereIn('action', ['move', 'dice_roll'])->latest('id')->first();
             if ($moveRow && !empty($moveRow->public_data['message'])) $lastMove = ['message' => $moveRow->public_data['message']];
+        } elseif (in_array($table->game_type, ['whot', 'rummy', 'crazy_eights'], true)) {
+            // Surfaces market-reshuffle and stock-exhaustion notices (set by TableGameRules'
+            // marketMessage()/whotEndOnLowestHand()) to every client watching the table, not
+            // just the player who drew - the whole table should see "Market refilled...".
+            $moveRow = TableGameMove::where('table_game_id', $table->id)->where('action', 'move')->latest('id')->first();
+            if ($moveRow && !empty($moveRow->public_data['message'])) $lastMove = ['message' => $moveRow->public_data['message']];
         } elseif ($table->game_type === 'oware') {
             // 'version' is the table version this move produced - the client only replays the
             // sow/relay/capture animation when it's strictly newer than the last version it

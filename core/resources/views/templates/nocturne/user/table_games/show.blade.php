@@ -607,6 +607,8 @@
 .whot-market:disabled{cursor:default;opacity:.65}
 .whot-market__count{color:var(--tm-text);font-size:15px;font-weight:950}
 .whot-market__label{margin-top:-4px;color:var(--tm-muted);font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.whot-market__note{display:block;max-width:150px;margin-top:4px;color:#b9c3db;font-size:10.5px;font-weight:700;text-align:center;line-height:1.3}
+.board-card-pile__note{display:block;margin:-6px 0 10px;color:#b9c3db;font-size:10.5px;font-weight:700;text-align:center}
 .whot-pile{position:relative;width:52px;height:74px}
 .whot-pile__behind{position:absolute;inset:0;animation:none!important;pointer-events:none}
 .whot-pile__behind--1{transform:translate(4px,-4px) rotate(-4deg);opacity:.75}
@@ -700,7 +702,12 @@ function showResultPopup(data){
     const icon=document.querySelector('#result-popup-icon i');icon.className=outcome==='win'?'las la-trophy':outcome==='lose'?'las la-flag':'las la-handshake';
     const opponentNames=data.players.filter(p=>p.seat!==mySeat).map(p=>p.name).filter(Boolean).join(' & ')||'your opponent';
     document.querySelector('#result-popup-title').textContent=outcome==='win'?'Congratulations!':outcome==='lose'?'You Lost':'Game Drawn';
-    document.querySelector('#result-popup-subtitle').textContent=outcome==='win'?`You beat ${opponentNames}.`:outcome==='lose'?`${opponentNames} won this round.`:'Stakes were refunded to every player.';
+    const subtitleEl=document.querySelector('#result-popup-subtitle');
+    subtitleEl.textContent=outcome==='win'?`You beat ${opponentNames}.`:outcome==='lose'?`${opponentNames} won this round.`:'Stakes were refunded to every player.';
+    // For stock-based card games, the round can end because the market and played pile both ran
+    // out rather than someone winning outright - make that reason explicit instead of leaving
+    // the popup looking like a normal win/lose/draw with no explanation.
+    if(['whot','rummy','crazy_eights'].includes(type)&&data.last_move?.message)subtitleEl.textContent+=' '+data.last_move.message;
     const amountBox=document.querySelector('#result-popup-amount');
     if(data.settlement&&(outcome==='win'||outcome==='lose')){
         amountBox.hidden=false;
@@ -790,6 +797,11 @@ if(type==='whot'&&previous?.state?.hand_counts&&data.state?.hand_counts){
         whotAnnounce(`Check! ${winner?.id===userId?'You win':(winner?.name||'A player')+' wins'}!`, true);
     }
 }
+// The server attaches a message (market reshuffled / round ending for lack of cards) to the
+// move that triggered it - announce it once, right when that move lands, not on every
+// subsequent poll that still carries the same last_move. Deliberately not gated on the
+// hand_counts check above, which is unrelated and sometimes absent (e.g. a spectator's first load).
+if(type==='whot'&&previous&&data.version>previous.version&&data.last_move?.message)whotAnnounce(data.last_move.message, false);
 latest=data;
 if(previous&&typeof previous.version==='number'&&data.version>previous.version&&data.status==='active')window.TableSound?.play?.('move');
 if((!previous||previous.current_user_id!==userId)&&data.current_user_id===userId&&data.status==='active')window.TableSound?.play?.('turn');
@@ -1074,7 +1086,13 @@ function renderBoard(data) {
         // While a Pick Two/Three is pending, only a matching-rank card can defend it - nothing
         // else is legal, not even a normal shape/number match or a Whot card.
         const playable=card=>pending?card.number===pending.rank:(card.number===20||card.number===top.number||card.shape===state.active_shape);
-        const canDraw=active&&!hand.some(playable)&&(state.stock_count||0)>0;
+        // A nonzero stock_count isn't the only way a draw can succeed - the server reshuffles the
+        // played pile (every card except its visible top) back into the market whenever the
+        // stock runs dry, so a draw is still possible as long as there's something left to
+        // reshuffle from. Blocking the click on stock_count alone (as this used to) stalled the
+        // game: the player's draw never even reached the server, which would have handled it.
+        const marketHasCards=(state.stock_count||0)>0||discard.length>1;
+        const canDraw=active&&!hand.some(playable)&&marketHasCards;
         const whotTable=document.createElement('div');whotTable.className='whot-table';
 
         const center=document.createElement('div');center.className='whot-center';
@@ -1085,8 +1103,16 @@ function renderBoard(data) {
         const marketCount=document.createElement('span');marketCount.className='whot-market__count';marketCount.textContent=String(state.stock_count||0);
         const marketLabel=document.createElement('span');marketLabel.className='whot-market__label';marketLabel.textContent='Market';
         market.append(marketCount,marketLabel);
-        market.onclick=()=>{if(!active)return;if(hand.some(playable)){showError(pending?`You have a ${pending.rank} - play it to pass the penalty along, or draw ${pending.amount}.`:'Play a matching card before drawing.');return;}if(!state.stock_count){showError('The market is empty right now.');return;}send({type:'draw'});};
+        // Never block the click on the client's own stock_count check - only the server knows
+        // whether a reshuffle can still save the draw, and if truly nothing is left anywhere, the
+        // server itself ends the round (lowest card total wins) rather than erroring, which is
+        // exactly what should happen here too, not a silently swallowed click.
+        market.onclick=()=>{if(!active)return;if(hand.some(playable)){showError(pending?`You have a ${pending.rank} - play it to pass the penalty along, or draw ${pending.amount}.`:'Play a matching card before drawing.');return;}send({type:'draw'});};
         center.append(market);
+        // Surfaces the reshuffle/round-ending message the server attaches to the last move
+        // (see TableGameRules::marketMessage()) - same persistent-note pattern used for Ludo's
+        // last_move.message, just placed under the market since that's what it's about here.
+        if(data.last_move?.message){const marketNote=document.createElement('small');marketNote.className='whot-market__note';marketNote.textContent=data.last_move.message;center.append(marketNote);}
 
         const pileWrap=document.createElement('div');pileWrap.className='whot-pile';
         behind.forEach((card,index)=>{const b=document.createElement('div');b.className='board-card whot-pile__behind whot-pile__behind--'+(index+1);b.append(cardFace(card.number===20?'20':String(card.number),WHOT_SHAPE_GLYPH[card.shape]||''));pileWrap.append(b);});
@@ -1135,7 +1161,7 @@ function renderBoard(data) {
 
         if(!active){const counts=document.createElement('p');counts.className='board-scorebar';counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
     } else if (type === 'rummy') {
-        const seat=latest.players.find(p=>p.id===userId)?.seat||0;const cards=state.hands?.[seat]||[];const suitNames={S:'♠',H:'♥',D:'♦',C:'♣'};const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`Discard pile: ${state.discard?.at(-1)?.rank||'—'} ${suitNames[state.discard?.at(-1)?.suit]||''} · Stock ${state.stock_count||0}`;board.append(pile);const hand=document.createElement('div');hand.className='board-card-hand';cards.forEach((card,index)=>{const button=document.createElement('button');button.type='button';button.className='board-card';button.dataset.suit=card.suit;button.append(cardFace(card.rank,suitNames[card.suit]||''));button.disabled=!active||state.phase!=='discard';button.onclick=()=>send({type:'discard',card:index});hand.append(button);});board.append(hand);if(active&&state.phase==='draw'){const stock=document.createElement('button');stock.type='button';stock.className='table-match__start';stock.textContent='Draw from stock';stock.onclick=()=>send({type:'draw_stock'});const discard=document.createElement('button');discard.type='button';discard.className='table-match__leave';discard.textContent='Take discard';discard.disabled=(state.discard||[]).length<2;discard.onclick=()=>send({type:'draw_discard'});board.append(stock,discard);}if(!active){const counts=document.createElement('p');counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
+        const seat=latest.players.find(p=>p.id===userId)?.seat||0;const cards=state.hands?.[seat]||[];const suitNames={S:'♠',H:'♥',D:'♦',C:'♣'};const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`Discard pile: ${state.discard?.at(-1)?.rank||'—'} ${suitNames[state.discard?.at(-1)?.suit]||''} · Stock ${state.stock_count||0}`;board.append(pile);if(data.last_move?.message){const note=document.createElement('small');note.className='board-card-pile__note';note.textContent=data.last_move.message;board.append(note);}const hand=document.createElement('div');hand.className='board-card-hand';cards.forEach((card,index)=>{const button=document.createElement('button');button.type='button';button.className='board-card';button.dataset.suit=card.suit;button.append(cardFace(card.rank,suitNames[card.suit]||''));button.disabled=!active||state.phase!=='discard';button.onclick=()=>send({type:'discard',card:index});hand.append(button);});board.append(hand);if(active&&state.phase==='draw'){const stock=document.createElement('button');stock.type='button';stock.className='table-match__start';stock.textContent='Draw from stock';stock.onclick=()=>send({type:'draw_stock'});const discard=document.createElement('button');discard.type='button';discard.className='table-match__leave';discard.textContent='Take discard';discard.disabled=(state.discard||[]).length<2;discard.onclick=()=>send({type:'draw_discard'});board.append(stock,discard);}if(!active){const counts=document.createElement('p');counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} cards`).join(' · ');board.append(counts);}
     } else if (type === 'blackjack') {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;const suitNames={S:'♠',H:'♥',D:'♦',C:'♣'};const title=document.createElement('p');title.className='board-scorebar';title.textContent='Your hand';board.append(title);const handBox=document.createElement('div');handBox.className='board-card-hand';(state.hands?.[seat]||[]).forEach(card=>{const node=document.createElement('span');node.className='board-card';node.dataset.suit=card.suit;node.append(cardFace(card.rank,suitNames[card.suit]||''));handBox.append(node);});board.append(handBox);const totals=document.createElement('div');totals.className='board-scorebar';(latest.players||[]).forEach(player=>{const label=document.createElement('span');const total=state.hand_totals?.[player.seat];label.textContent=`${player.name||'Player '+(player.seat+1)} · ${state.stood?.[player.seat]?'stood':player.status==='out'?'out':'playing'} · ${total??'—'}`;totals.append(label);});board.append(totals);if(active&&!state.stood?.[seat]){const hit=document.createElement('button');hit.type='button';hit.className='table-match__start';hit.textContent='Hit';hit.onclick=()=>send({type:'hit'});const stand=document.createElement('button');stand.type='button';stand.className='table-match__leave';stand.textContent='Stand';stand.onclick=()=>send({type:'stand'});board.append(hit,stand);}
     } else if (type === 'sea_battle') {
@@ -1150,7 +1176,7 @@ function renderBoard(data) {
         for(let column=0;column<7;column++){const button=document.createElement('button');button.type='button';button.className='board-cell board-cell--connect';button.textContent='';button.disabled=!active||state.board?.[0]?.[column]!==null;button.onclick=()=>send({column});grid.append(button);}
         state.board?.forEach(row=>row.forEach(value=>{const cell=document.createElement('div');cell.className=`board-cell board-cell--connect${value===null?'':' is-seat-'+(value+1)}`;cell.textContent=value===null?'':'';grid.append(cell);}));board.append(grid);
     } else if (type === 'crazy_eights') {
-        const seat=latest.players.find(player=>player.id===userId)?.seat||0;const top=state.top||{};const suitNames={S:'Spades',H:'Hearts',D:'Diamonds',C:'Clubs'};const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`Top card: ${top.rank||'?'} of ${suitNames[state.current_suit]||'?'}`;board.append(pile);
+        const seat=latest.players.find(player=>player.id===userId)?.seat||0;const top=state.top||{};const suitNames={S:'Spades',H:'Hearts',D:'Diamonds',C:'Clubs'};const pile=document.createElement('div');pile.className='board-card-pile';pile.textContent=`Top card: ${top.rank||'?'} of ${suitNames[state.current_suit]||'?'}`;board.append(pile);if(data.last_move?.message){const note=document.createElement('small');note.className='board-card-pile__note';note.textContent=data.last_move.message;board.append(note);}
         const hand=state.hands?.[seat]||[];const canPlay=hand.some(card=>card.rank==='8'||card.rank===top.rank||card.suit===state.current_suit);
         const suitSymbols={S:'♠',H:'♥',D:'♦',C:'♣'};if(active){const suit=document.createElement('select');suit.className='board-card-suit';[['S','Spades'],['H','Hearts'],['D','Diamonds'],['C','Clubs']].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;suit.append(option);});board.append(suit);const cards=document.createElement('div');cards.className='board-card-hand';hand.forEach((card,index)=>{const button=document.createElement('button');button.type='button';button.className='board-card';button.dataset.suit=card.suit;button.append(cardFace(card.rank,suitSymbols[card.suit]||card.suit));button.disabled=!(card.rank==='8'||card.rank===top.rank||card.suit===state.current_suit);button.onclick=()=>send({type:'play',card:index,...(card.rank==='8'?{suit:suit.value}:{})});cards.append(button);});board.append(cards);
             if(!canPlay&&(state.stock_count||(state.discard||[]).length>1)){const draw=document.createElement('button');draw.type='button';draw.className='table-match__start';draw.textContent='Draw a card';draw.onclick=()=>send({type:'draw'});board.append(draw);}else if(!canPlay&&!state.stock_count&&(state.discard||[]).length<=1){const pass=document.createElement('button');pass.type='button';pass.className='table-match__leave';pass.textContent='Pass';pass.onclick=()=>send({type:'pass'});board.append(pass);}

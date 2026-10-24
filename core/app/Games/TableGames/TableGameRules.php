@@ -388,10 +388,13 @@ class TableGameRules
      *  the same secure RNG as the initial deal, when the stock has run dry. No-op if the stock
      *  still has cards, or if there is nothing worth reshuffling (fewer than 2 cards in the
      *  discard pile - that one card has to stay as the active top card). Mirrors the pattern
-     *  already used by rummy() and crazyEights(). */
-    private function reshuffleStockFromDiscard(array &$state): void
+     *  already used by rummy() and crazyEights(). Returns true exactly when it actually
+     *  reshuffled, so a caller can surface "Market refilled from played cards" to the client -
+     *  the top card and (for Whot) the active shape live outside the discard/stock arrays this
+     *  touches, so neither is ever at risk of being disturbed by a reshuffle. */
+    private function reshuffleStockFromDiscard(array &$state): bool
     {
-        if ($state['stock'] || count($state['discard']) <= 1) return;
+        if ($state['stock'] || count($state['discard']) <= 1) return false;
         $top = array_pop($state['discard']);
         $state['stock'] = array_values($state['discard']);
         for ($i = count($state['stock']) - 1; $i > 0; $i--) {
@@ -399,6 +402,7 @@ class TableGameRules
             [$state['stock'][$i], $state['stock'][$swap]] = [$state['stock'][$swap], $state['stock'][$i]];
         }
         $state['discard'] = [$top];
+        return true;
     }
 
     /** v2 only: when the stock is exhausted and the discard pile has nothing left to reshuffle
@@ -407,14 +411,21 @@ class TableGameRules
      *  lowest total wins through the normal settlement; an exact tie among the lowest hands
      *  falls back to the existing draw/refund path (every stake returned, no payout) - the same
      *  mechanism every other draw in this file already uses, not a new one. */
-    private function whotEndOnLowestHand(array $state): array
+    private function whotEndOnLowestHand(array $state, ?string $message = null): array
     {
         $totals = array_map(fn (array $hand) => array_sum(array_map(fn ($card) => (int) $card['number'], $hand)), $state['hands']);
         $lowest = min($totals);
         $winners = array_keys($totals, $lowest, true);
         return count($winners) === 1
-            ? ['state' => $state, 'winner' => (int) $winners[0], 'draw' => false]
-            : ['state' => $state, 'winner' => null, 'draw' => true];
+            ? ['state' => $state, 'winner' => (int) $winners[0], 'draw' => false, 'message' => $message]
+            : ['state' => $state, 'winner' => null, 'draw' => true, 'message' => $message];
+    }
+
+    /** 'Market refilled from played cards.' exactly when at least one of the reshuffles that
+     *  happened during this move actually fired - never claimed speculatively. */
+    private function marketMessage(bool $reshuffled): ?string
+    {
+        return $reshuffled ? 'Market refilled from played cards.' : null;
     }
 
     private function whot(array $state, int $seat, array $action, int $rulesVersion = 1): array
@@ -429,31 +440,38 @@ class TableGameRules
         $pending = $rulesVersion >= 2 ? ($state['pending_penalty'] ?? null) : null;
         $canDefend = false;
         if ($pending) foreach ($hand as $card) if ($card['number'] === $pending['rank']) { $canDefend = true; break; }
+        $reshuffled = false;
 
         if (($action['type'] ?? '') === 'draw') {
             if ($pending) {
                 if ($canDefend) throw new InvalidArgumentException("You have a {$pending['rank']} - play it to pass the penalty along, or draw {$pending['amount']}.");
-                $this->reshuffleStockFromDiscard($state);
-                if (!$state['stock']) return $this->whotEndOnLowestHand($state); // Nothing left anywhere, not even for part of the penalty.
+                $reshuffled = $this->reshuffleStockFromDiscard($state) || $reshuffled;
+                if (!$state['stock']) return $this->whotEndOnLowestHand($state, 'The market and played pile are both empty - the round ends on the lowest card total.'); // Nothing left anywhere, not even for part of the penalty.
+                // Per the house rule: if the stock (plus whatever a reshuffle adds) still can't
+                // cover the full penalty, the player draws whatever exists and the penalty ends
+                // there - the `break` below keeps however many cards were actually drawn rather
+                // than erroring out or blocking the turn.
                 for ($i = 0; $i < $pending['amount']; $i++) {
-                    $this->reshuffleStockFromDiscard($state);
+                    $reshuffled = $this->reshuffleStockFromDiscard($state) || $reshuffled;
                     if (!$state['stock']) break; // The penalty itself exhausted what remained.
                     $hand[] = array_pop($state['stock']);
                 }
                 $state['hands'][$seat] = $hand;
                 $state['pending_penalty'] = null;
                 $state['turn'] = ($seat + 1) % count($state['hands']); $state['moves']++;
-                return ['state' => $state, 'winner' => null, 'draw' => false];
+                return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled)];
             }
             foreach ($hand as $card) if ($card['number'] === 20 || $card['number'] === $top['number'] || $card['shape'] === $state['active_shape']) throw new InvalidArgumentException('Play a matching card before drawing.');
-            $this->reshuffleStockFromDiscard($state);
+            $reshuffled = $this->reshuffleStockFromDiscard($state) || $reshuffled;
             // Fewer than 2 cards left anywhere outside hands, so there is nothing left to
             // reshuffle either - end the round instead of erroring out. v2 settles by lowest
             // card total; v1 keeps its original plain draw/refund.
-            if (!$state['stock']) return $rulesVersion >= 2 ? $this->whotEndOnLowestHand($state) : ['state' => $state, 'winner' => null, 'draw' => true];
+            if (!$state['stock']) return $rulesVersion >= 2
+                ? $this->whotEndOnLowestHand($state, 'The market and played pile are both empty - the round ends on the lowest card total.')
+                : ['state' => $state, 'winner' => null, 'draw' => true, 'message' => 'The market and played pile are both empty - the round ends in a draw.'];
             $hand[] = array_pop($state['stock']); $state['hands'][$seat] = $hand;
             $state['turn'] = ($seat + 1) % count($state['hands']); $state['moves']++;
-            return ['state' => $state, 'winner' => null, 'draw' => false];
+            return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled)];
         }
         if (($action['type'] ?? '') !== 'play') throw new InvalidArgumentException('Play a matching Whot card or draw when blocked.');
         $index = filter_var($action['card'] ?? null, FILTER_VALIDATE_INT);
@@ -481,7 +499,7 @@ class TableGameRules
                 $state['pending_penalty'] = ['rank' => $card['number'], 'amount' => $penalty];
             } else {
                 for ($i = 0; $i < $penalty; $i++) {
-                    $this->reshuffleStockFromDiscard($state);
+                    $reshuffled = $this->reshuffleStockFromDiscard($state) || $reshuffled;
                     if (!$state['stock']) break; // Truly nothing left anywhere to deal out.
                     $state['hands'][$next][] = array_pop($state['stock']);
                 }
@@ -490,16 +508,21 @@ class TableGameRules
         } elseif ($card['number'] === 8) {
             $next = ($next + 1) % $count; // Suspension: skip the next player.
         } elseif ($card['number'] === 14) {
-            for ($player = 0; $player < $count; $player++) {
-                if ($player === $seat) continue;
-                $this->reshuffleStockFromDiscard($state);
+            // General Market, in turn order starting from the player right after the one who
+            // played it (wrapping around) - not raw seat-index order. This matters once the
+            // stock can run dry mid-deal: whoever is earliest in rotation gets priority, the
+            // same fairness a real turn-by-turn deal would have, rather than always shorting
+            // whichever seats happen to have the highest index.
+            for ($offset = 1; $offset < $count; $offset++) {
+                $player = ($seat + $offset) % $count;
+                $reshuffled = $this->reshuffleStockFromDiscard($state) || $reshuffled;
                 if (!$state['stock']) break;
                 $state['hands'][$player][] = array_pop($state['stock']);
             }
             $next = $seat; // General Market: other players draw; this player continues.
         }
         $state['turn'] = $next;
-        return ['state' => $state, 'winner' => null, 'draw' => false];
+        return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled)];
     }
 
     private function rummy(array $state, int $seat, array $action): array
@@ -510,12 +533,12 @@ class TableGameRules
                 if (count($state['discard']) < 2) throw new InvalidArgumentException('There is no discard card to pick up.');
                 $card = array_pop($state['discard']);
             } elseif ($type === 'draw_stock') {
-                $this->reshuffleStockFromDiscard($state);
-                if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => true];
+                $reshuffled = $this->reshuffleStockFromDiscard($state);
+                if (!$state['stock']) return ['state' => $state, 'winner' => null, 'draw' => true, 'message' => 'The stock and discard pile are both empty - the round ends in a draw.'];
                 $card = array_pop($state['stock']);
             } else throw new InvalidArgumentException('Draw from the stock or take the top discard.');
             $state['hands'][$seat][] = $card; $state['phase'] = 'discard'; $state['moves']++;
-            return ['state' => $state, 'winner' => null, 'draw' => false];
+            return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled ?? false)];
         }
 
         if (($action['type'] ?? '') !== 'discard') throw new InvalidArgumentException('Discard one card to finish your turn.');
@@ -671,7 +694,7 @@ class TableGameRules
 
         if (($action['type'] ?? '') === 'draw') {
             if (array_filter($hand, $canPlay)) throw new InvalidArgumentException('You have a playable card.');
-            $this->reshuffleStockFromDiscard($state);
+            $reshuffled = $this->reshuffleStockFromDiscard($state);
             // Nothing anywhere left to draw - the existing 'pass' action (below) already handles
             // ending the round once every seat is blocked, so just let this draw be a no-op turn
             // pass rather than erroring; the client is expected to call 'pass' next.
@@ -680,12 +703,12 @@ class TableGameRules
             $hand[] = $card;
             $state['hands'][$seat] = $hand;
             $state['moves']++;
-            if ($canPlay($card)) { $state['passes'] = 0; return ['state' => $state, 'winner' => null, 'draw' => false]; }
+            if ($canPlay($card)) { $state['passes'] = 0; return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled)]; }
             $state['passes']++;
             $activeSeats = $activeSeats ?: array_keys($state['hands']);
             if ($state['passes'] >= count($activeSeats)) return ['state' => $state, 'winner' => null, 'draw' => true];
             $state['turn'] = ($seat + 1) % count($state['hands']);
-            return ['state' => $state, 'winner' => null, 'draw' => false];
+            return ['state' => $state, 'winner' => null, 'draw' => false, 'message' => $this->marketMessage($reshuffled)];
         }
 
         if (($action['type'] ?? '') === 'pass') {
