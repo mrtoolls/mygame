@@ -12,7 +12,7 @@
     data-email="{{ auth()->user()->email ?? '' }}"
     data-bot-name="{{ $botName }}"
     data-bot-photo="{{ $botPhoto }}">
-    <button class="winx-support-launcher" type="button" aria-label="Open Winxpot support" aria-expanded="false">
+    <button class="winx-support-launcher" type="button" aria-label="Open Winxpot support" aria-expanded="false" @if(!($showLauncher ?? true)) style="display:none" @endif>
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 23v-2a14 14 0 0 1 28 0v3"/><path d="M10 22H8a4 4 0 0 0-4 4v7a4 4 0 0 0 4 4h5V22h-3Zm28 0h2a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4h-5V22h3Zm0 15c-1 4-5 6-11 6"/></svg>
         <span class="winx-support-unread" hidden>0</span>
     </button>
@@ -45,8 +45,8 @@
         <footer class="winx-support-footer">Powered by Winxpot Care <span>•</span> Secure support</footer>
     </section>
 </div>
-<link rel="stylesheet" href="{{ asset('assets/global/css/support-chat.css') }}?v={{ @filemtime(public_path('assets/global/css/support-chat.css')) }}">
-<script src="{{ asset('assets/global/js/support-chat.js') }}?v={{ @filemtime(public_path('assets/global/js/support-chat.js')) }}" defer></script>
+<link rel="stylesheet" href="{{ asset('assets/global/css/support-chat.css') }}?v={{ @filemtime('assets/global/css/support-chat.css') }}">
+<script src="{{ asset('assets/global/js/support-chat.js') }}?v={{ @filemtime('assets/global/js/support-chat.js') }}" defer></script>
 <script>
 document.addEventListener('click', function (event) {
     var trigger = event.target.closest('[data-open-support]');

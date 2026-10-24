@@ -762,18 +762,22 @@
         </script>
     @endauth
     @php
-        // Live Support only shows on this explicit allowlist of informational/policy pages
-        // (everywhere else - dashboard, games, tables, arena, profile, deposit/withdraw, etc. -
-        // it's hidden by default now, the opposite of the old landing-page-only exclusion).
+        // The FLOATING launcher button only shows on this explicit allowlist of informational/
+        // policy pages (everywhere else it stays hidden - the opposite of the old landing-page-
+        // only exclusion). The widget itself (chat panel + its JS) is still included on every
+        // page regardless - the sidebar's own "Live Support" menu item (shell_sidebar.blade.php,
+        // data-open-support) works from anywhere by programmatically clicking the launcher, so
+        // if the launcher's markup isn't even on the page outside the allowlist, that sidebar
+        // link silently does nothing. Hiding just the launcher (CSS) rather than skipping the
+        // whole include keeps that sidebar entry working everywhere while still keeping the
+        // floating button off every page it wasn't asked to appear on.
         $liveSupportPageSlugs = ['about-us', 'sponsorships', 'licenses-security'];
-        $showLiveSupport = request()->routeIs('policy.pages')   // Privacy Policy, Terms of Service, Licenses & Security, AML Policy
-            || request()->routeIs('feedback')                   // Feedback about us
-            || request()->routeIs('ticket.*')                   // Contact (routes here via a redirect)
+        $showLiveSupportLauncher = request()->routeIs('policy.pages')   // Privacy Policy, Terms of Service, Licenses & Security, AML Policy
+            || request()->routeIs('feedback')                           // Feedback about us
+            || request()->routeIs('ticket.*')                           // Contact (routes here via a redirect)
             || (request()->routeIs('pages') && in_array(request()->route('slug'), $liveSupportPageSlugs, true)); // About Us, Sponsorships
     @endphp
-    @if ($showLiveSupport)
-        @include('partials.support_chat_widget')
-    @endif
+    @include('partials.support_chat_widget', ['showLauncher' => $showLiveSupportLauncher])
 </body>
 
 </html>
