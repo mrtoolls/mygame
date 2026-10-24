@@ -66,6 +66,21 @@ Route::middleware('admin')->group(function () {
         Route::post('user/{user}/currency', 'changeUserCurrency')->name('user.currency');
     });
 
+    Route::controller('CoinSettingsController')->prefix('coin')->name('coin.')->group(function () {
+        Route::get('/', 'index')->name('settings');
+        Route::post('mode', 'toggleCoinMode')->name('mode.toggle');
+        Route::post('single-approver', 'toggleSingleApprover')->name('single-approver.toggle');
+        Route::post('margins/{currencyId}', 'saveMargins')->name('margins.save');
+        Route::post('recompute', 'recomputeAll')->name('recompute');
+    });
+
+    Route::controller('AgentCoinFloatController')->prefix('coin/float')->name('coin.float.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::post('{id}/approve', 'approve')->name('approve');
+        Route::post('{id}/reject', 'reject')->name('reject');
+    });
+
     Route::controller('AdminController')->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('chart/deposit-withdraw', 'depositAndWithdrawReport')->name('chart.deposit.withdraw');

@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Currency;
+use App\Models\CoinRate;
+use App\Models\CoinRateLog;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+
+/**
+ * Coins are pegged to USD (1 coin = general_settings.coin_peg_usd, default $0.01). The price a
+ * user actually sees per currency is that peg converted through the existing
+ * Currency::rate_to_usd pivot (the same one Table Games, Gifts and Competitions already use),
+ * with an admin-set margin layered on each side: buy_price is what a user pays per coin (above
+ * the peg), sell_price is what an agent pays a user per coin when buying coins off them (below
+ * the peg) - the spread between the two is the platform's margin, matching the project brief.
+ *
+ * Two guards, both deliberately conservative: a stale FX rate blocks recompute entirely (same
+ * convention GiftService already uses), and a large swing in the computed price vs. the
+ * currently-live price is flagged for review rather than silently applied, unless an admin is
+ * the one triggering the change (an admin editing margins/currency themselves is a deliberate
+ * action, not an unattended nightly FX refresh - the guard exists for the latter).
+ */
+class CoinPricing
+{
+    public function recompute(Currency $currency, ?int $adminId = null): CoinRate
+    {
+        return DB::transaction(function () use ($currency, $adminId) {
+            $general = gs();
+            $staleHours = (int) ($general->coin_rate_stale_hours ?? 48);
+            if (!$currency->rate_to_usd || !$currency->last_updated_at || $currency->last_updated_at->lt(now()->subHours($staleHours))) {
+                throw new InvalidArgumentException("Currency {$currency->code} has no current exchange rate - cannot price coins against it.");
+            }
+
+            $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id], [
+                'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 3,
+                'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 3,
+            ]);
+            $rate = CoinRate::whereKey($rate->id)->lockForUpdate()->first();
+
+            $peg = (string) ($general->coin_peg_usd ?? '0.01');
+            $decimals = min(8, max(0, (int) $currency->decimals));
+            $precision = max(12, $decimals + 4);
+
+            $basePrice = bcdiv($peg, (string) $currency->rate_to_usd, $precision);
+            $buyPrice = $this->roundTo(bcmul($basePrice, bcadd('1', bcdiv((string) $rate->buy_margin_percent, '100', $precision), $precision), $precision), $decimals);
+            $sellPrice = $this->roundTo(bcmul($basePrice, bcsub('1', bcdiv((string) $rate->sell_margin_percent, '100', $precision), $precision), $precision), $decimals);
+
+            $changePercent = null;
+            $isLargeSwing = false;
+            if ($rate->buy_price !== null && bccomp((string) $rate->buy_price, '0', 8) > 0) {
+                $delta = bcsub($buyPrice, (string) $rate->buy_price, $precision);
+                $changePercent = bcmul(bcdiv($delta, (string) $rate->buy_price, $precision), '100', 4);
+                $guardPercent = (int) ($general->coin_rate_change_guard_percent ?? 15);
+                $isLargeSwing = bccomp($this->abs($changePercent), (string) $guardPercent, 4) > 0;
+            }
+
+            $oldBuyPrice = $rate->buy_price;
+            $oldSellPrice = $rate->sell_price;
+
+            // An admin-triggered recompute (changing margins, or explicitly re-pricing a
+            // currency) always applies. An automatic/unattended recompute that swings past the
+            // guard is logged and flagged, but the live price is left untouched until an admin
+            // looks at it.
+            if ($adminId !== null || !$isLargeSwing) {
+                $rate->buy_price = $buyPrice;
+                $rate->sell_price = $sellPrice;
+                $rate->flagged_for_review = false;
+                $rate->last_computed_at = now();
+                $rate->updated_by_admin_id = $adminId;
+                $rate->save();
+            } else {
+                $rate->flagged_for_review = true;
+                $rate->save();
+            }
+
+            CoinRateLog::create([
+                'currency_id' => $currency->id,
+                'old_buy_price' => $oldBuyPrice,
+                'new_buy_price' => $buyPrice,
+                'old_sell_price' => $oldSellPrice,
+                'new_sell_price' => $sellPrice,
+                'change_percent' => $changePercent,
+                'changed_by_admin_id' => $adminId,
+                'created_at' => now(),
+            ]);
+
+            return $rate->fresh();
+        });
+    }
+
+    public function recomputeAll(): array
+    {
+        $results = [];
+        foreach (Currency::where('enabled', true)->get() as $currency) {
+            try {
+                $results[$currency->code] = ['ok' => true, 'rate' => $this->recompute($currency)];
+            } catch (InvalidArgumentException $exception) {
+                $results[$currency->code] = ['ok' => false, 'error' => $exception->getMessage()];
+            }
+        }
+        return $results;
+    }
+
+    /** The current, live buy price per coin in this currency - throws if none has been computed yet. */
+    public function buyPrice(Currency $currency): string
+    {
+        $rate = CoinRate::where('currency_id', $currency->id)->first();
+        if (!$rate?->buy_price) throw new InvalidArgumentException("No coin buy price is set for {$currency->code} yet.");
+        return (string) $rate->buy_price;
+    }
+
+    private function roundTo(string $value, int $decimals): string
+    {
+        $half = '0.' . str_repeat('0', $decimals) . '5';
+        return bcadd(bcadd($value, $half, $decimals + 1), '0', $decimals);
+    }
+
+    private function abs(string $value): string
+    {
+        return str_starts_with($value, '-') ? substr($value, 1) : $value;
+    }
+}

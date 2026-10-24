@@ -167,7 +167,18 @@ class PaymentController extends Controller {
     }
 
     public static function userDataUpdate($deposit, $isManual = null, $confirmedVia = null, $adminFeedback = null) {
-        $result = DB::transaction(function () use ($deposit, $isManual, $confirmedVia, $adminFeedback) {
+        $general = gs();
+
+        // Coin mode mints coins at a locked rate instead of crediting real-currency balance - and
+        // never mints off a human agent's manual confirmation, only an automatic gateway or an
+        // admin's own manual approval. An agent confirming "I received the payment" is attesting
+        // to a real-world event the platform cannot verify itself; letting that attestation alone
+        // mint coins would make every payment agent an unsupervised money printer.
+        if ($general->coin_mode && $confirmedVia === 'agent') {
+            throw new \RuntimeException('Agent-confirmed deposits cannot mint coins while coin mode is on. Use an automatic gateway, or have an admin review and approve this deposit directly.');
+        }
+
+        $result = DB::transaction(function () use ($deposit, $isManual, $confirmedVia, $adminFeedback, $general) {
             $lockedDeposit = Deposit::whereKey($deposit->id)->lockForUpdate()->first();
             if (!$lockedDeposit || !in_array((int) $lockedDeposit->status, [Status::PAYMENT_INITIATE, Status::PAYMENT_PENDING], true)) {
                 return null;
@@ -178,31 +189,67 @@ class PaymentController extends Controller {
                 throw new \RuntimeException('Deposit currency no longer matches the user wallet currency.');
             }
             $methodName = $lockedDeposit->methodName();
-            $user->balance += $lockedDeposit->amount;
-            $user->save();
 
             if ($confirmedVia && Schema::hasColumn('deposits', 'confirmed_via')) {
                 $lockedDeposit->confirmed_via = $confirmedVia;
             }
-
             if ($adminFeedback) {
                 $lockedDeposit->admin_feedback = $adminFeedback;
             }
-
             $lockedDeposit->status = Status::PAYMENT_SUCCESS;
-            $lockedDeposit->save();
 
-            $transaction = new Transaction();
-            $transaction->user_id = $user->id;
-            $transaction->amount = $lockedDeposit->amount;
-            $transaction->post_balance = $user->balance;
-            $transaction->charge = $lockedDeposit->charge;
-            $transaction->trx_type = '+';
-            $transaction->details = 'Deposit Via ' . $methodName;
-            $transaction->trx = $lockedDeposit->trx;
-            $transaction->remark = 'deposit';
-            if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
-            $transaction->save();
+            if ($general->coin_mode) {
+                $currency = $user->currency_id ? \App\Models\Currency::find($user->currency_id) : null;
+                if (!$currency) throw new \RuntimeException('A wallet currency is required to price a coin purchase.');
+
+                $pricing = app(\App\Services\CoinPricing::class);
+                $buyPrice = $pricing->buyPrice($currency);
+                $coinAmount = bcdiv((string) $lockedDeposit->amount, $buyPrice, 0);
+                if (bccomp($coinAmount, '0', 8) <= 0) {
+                    throw new \RuntimeException('This deposit amount is too small to purchase a whole coin at the current rate.');
+                }
+
+                $lockedDeposit->coin_amount = $coinAmount;
+                $lockedDeposit->coin_buy_price_snapshot = $buyPrice;
+                $lockedDeposit->coin_rate_id = \App\Models\CoinRate::where('currency_id', $currency->id)->value('id');
+                $lockedDeposit->coin_mode_purchase = true;
+                $lockedDeposit->save();
+
+                app(\App\Services\CoinLedger::class)->mint(
+                    'user',
+                    $user->id,
+                    $coinAmount,
+                    'Coin purchase via ' . $methodName,
+                    'deposit_mint:' . $lockedDeposit->id,
+                    'Deposit',
+                    $lockedDeposit->id,
+                    $isManual ? 'admin' : 'system'
+                );
+
+                if ($general->dc) {
+                    app(\App\Services\CoinReferral::class)->creditOnCoinPurchase($user->id, $coinAmount, 'Deposit Commission', 'deposit_mint:' . $lockedDeposit->id);
+                }
+            } else {
+                $user->balance += $lockedDeposit->amount;
+                $user->save();
+                $lockedDeposit->save();
+
+                $transaction = new Transaction();
+                $transaction->user_id = $user->id;
+                $transaction->amount = $lockedDeposit->amount;
+                $transaction->post_balance = $user->balance;
+                $transaction->charge = $lockedDeposit->charge;
+                $transaction->trx_type = '+';
+                $transaction->details = 'Deposit Via ' . $methodName;
+                $transaction->trx = $lockedDeposit->trx;
+                $transaction->remark = 'deposit';
+                if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $user->currency_id;
+                $transaction->save();
+
+                if ($general->dc) {
+                    levelCommission($user->id, $lockedDeposit->amount, 'Deposit Commission');
+                }
+            }
 
             if (!$isManual) {
                 $adminNotification = new AdminNotification();
@@ -212,12 +259,7 @@ class PaymentController extends Controller {
                 $adminNotification->save();
             }
 
-            $general = gs();
-            if ($general->dc) {
-                levelCommission($user->id, $lockedDeposit->amount, 'Deposit Commission');
-            }
-
-            return ['user' => $user, 'deposit' => $lockedDeposit, 'method_name' => $methodName];
+            return ['user' => $user->fresh(), 'deposit' => $lockedDeposit, 'method_name' => $methodName];
         });
 
         if (!$result) {
