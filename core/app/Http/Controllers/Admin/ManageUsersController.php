@@ -100,6 +100,43 @@ class ManageUsersController extends Controller {
         return view('admin.users.detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalTransaction', 'countries', 'walletCountries'));
     }
 
+    // Hands off to the existing, fully-validated Support Agent create/edit form instead of
+    // building a second, parallel "make this user an agent" flow - this just creates (or finds
+    // an already-linked) stub support_agents row from the user's name/email/username with a
+    // random, never-shown temporary password and is_active/is_payment_agent both OFF, then sends
+    // the admin straight to SupportAgentController::edit() to actually configure and activate
+    // it. Live/payment-agent accounts are a completely separate guard/table from regular users
+    // (see config/auth.php) by design - this never grants the user's own web-guard session any
+    // extra access, it only ever lets an already-authenticated admin provision a new, disabled-
+    // until-configured agent account.
+    public function promoteToAgent($id) {
+        if (!Schema::hasTable('support_agents')) {
+            return back()->withNotify([['error', 'The Support Agents feature is not set up on this installation yet.']]);
+        }
+
+        $user = User::findOrFail($id);
+        $agent = \App\Models\SupportAgent::where('email', $user->email)->first();
+
+        if (!$agent) {
+            $username = $user->username;
+            $suffix = 1;
+            while (\App\Models\SupportAgent::where('username', $username)->exists()) {
+                $username = $user->username . $suffix++;
+            }
+            $agent = \App\Models\SupportAgent::create([
+                'name'              => trim($user->firstname . ' ' . $user->lastname) ?: $user->username,
+                'email'             => $user->email,
+                'username'          => $username,
+                'password'          => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
+                'is_active'         => false,
+                'is_payment_agent'  => false,
+            ]);
+        }
+
+        $notify[] = ['success', 'Agent account ready - set a password and choose Live/Payment agent access below, then activate it.'];
+        return to_route('admin.support.agents.edit', $agent->id)->withNotify($notify);
+    }
+
     public function kycDetails($id) {
         $pageTitle = 'KYC Details';
         $user      = User::findOrFail($id);

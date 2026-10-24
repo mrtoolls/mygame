@@ -87,6 +87,15 @@
                 @endif
 
                 <div class="flex-fill">
+                    <form action="{{ route('admin.users.promote.agent', $user->id) }}" method="post" onsubmit="return confirm('Create (or open) a Live/Payment agent account for this user? It stays inactive until you finish setting it up and turn it on.');">
+                        @csrf
+                        <button type="submit" class="btn btn--dark btn--shadow w-100 btn-lg">
+                            <i class="las la-headset"></i>@lang('Make Agent')
+                        </button>
+                    </form>
+                </div>
+
+                <div class="flex-fill">
                     @if ($user->status == Status::USER_ACTIVE)
                         <button type="button" class="btn btn--warning btn--shadow w-100 btn-lg userStatus" data-bs-toggle="modal" data-bs-target="#userStatusModal">
                             <i class="las la-ban"></i>@lang('Ban User')
