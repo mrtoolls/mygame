@@ -307,7 +307,10 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-main .btn--base, .nocturne-main .btn--gradient, .nocturne-main .btn--gradient-success, .nocturne-main .btn--primary, .nocturne-main .btn--success {
     border: 0; border-radius: 13px; background: var(--nocturne-green); color: #073c2a; font-weight: 800; font-size: 15px; box-shadow: none;
 }
-.nocturne-main .btn--base:hover, .nocturne-main .btn--gradient:hover, .nocturne-main .btn--gradient-success:hover, .nocturne-main .btn--primary:hover, .nocturne-main .btn--success:hover { background: #31ff9e; color: #073c2a; }
+/* Hover darkens the green (not brightens) so white text - the readable choice on a green
+   surface - actually has real contrast against it. #31ff9e (brighter than the resting green)
+   paired with white text would be nearly as hard to read as the original invisible-text bug. */
+.nocturne-main .btn--base:hover, .nocturne-main .btn--gradient:hover, .nocturne-main .btn--gradient-success:hover, .nocturne-main .btn--primary:hover, .nocturne-main .btn--success:hover { background: #049b5f; color: #fff; }
 /* Base theme paints an inset gradient fill via ::after on top of .btn--gradient's own
    background (negative z-index inside the button's own stacking context still paints
    above the box's background) - kills the stray old-theme gradient on every bet/cashout
@@ -413,7 +416,7 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     display: inline-flex; align-items: center; padding: 9px 18px; border-radius: 11px; background: var(--nocturne-green);
     color: #073c2a; text-decoration: none; font-size: 12.5px; font-weight: 800; white-space: nowrap; cursor: pointer;
 }
-.cookies-card__allow:hover { filter: brightness(1.05); color: #073c2a; }
+.cookies-card__allow:hover { filter: brightness(.85); color: #fff; }
 @media (max-width: 575.98px) {
     .cookies-card { left: 12px; right: 12px; bottom: 12px; max-width: none; }
     .cookies-card__content { white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
@@ -1008,12 +1011,14 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-play-btn i { font-size: 15px; }
 }
 
-/* Keep labels legible when the generic anchor hover color meets a green action surface. */
+/* Keep labels legible when the generic anchor hover color meets a green action surface - white
+   on the darkened hover green (see .btn--base:hover etc. above), not the resting state's dark
+   #073c2a (which was only ever legible against the bright resting green, not hover's). */
 .nocturne-shell :is(.nocturne-main .btn--base, .nocturne-main .btn--gradient, .nocturne-main .btn--gradient-success, .nocturne-main .btn--primary, .nocturne-main .btn--success,
     .newsletter__btn, .nocturne-about-support__button, .nocturne-vip-claim, .nocturne-live-table__button,
     .win-loss-popup__again):is(:hover, :focus, :focus-visible) {
-    color: #073c2a !important;
-    -webkit-text-fill-color: #073c2a !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
 }
 
 /* ---- Promo banner row (reuses admin-managed Promotions content) ---- */

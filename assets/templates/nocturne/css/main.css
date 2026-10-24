@@ -293,7 +293,15 @@ a {
   color: #0667f6;
 }
 
-a:hover {
+/* :where() zeroes this rule's specificity (see the matching comment on nocturne.css's own
+   a:hover, which is the real, later-loaded, on-brand default this theme actually wants) - the
+   two used to silently fight each other on specificity, and after nocturne.css's rule was
+   correctly weakened to stop it from overriding button classes, this blue leaked through as
+   the accidental winner on hover text everywhere, including buttons. Zeroing both means plain
+   cascade order decides between the two generic defaults (nocturne.css loads later and wins,
+   restoring green), while any real button class's own color - having actual specificity -
+   still correctly beats either of these no matter which one would otherwise have won. */
+:where(a:hover) {
   color: #2f83ff;
 }
 

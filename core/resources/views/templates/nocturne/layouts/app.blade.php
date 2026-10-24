@@ -750,9 +750,19 @@
             })();
         </script>
     @endauth
-    @unless(request()->routeIs('landing'))
+    @php
+        // Live Support only shows on this explicit allowlist of informational/policy pages
+        // (everywhere else - dashboard, games, tables, arena, profile, deposit/withdraw, etc. -
+        // it's hidden by default now, the opposite of the old landing-page-only exclusion).
+        $liveSupportPageSlugs = ['about-us', 'sponsorships', 'licenses-security'];
+        $showLiveSupport = request()->routeIs('policy.pages')   // Privacy Policy, Terms of Service, Licenses & Security, AML Policy
+            || request()->routeIs('feedback')                   // Feedback about us
+            || request()->routeIs('ticket.*')                   // Contact (routes here via a redirect)
+            || (request()->routeIs('pages') && in_array(request()->route('slug'), $liveSupportPageSlugs, true)); // About Us, Sponsorships
+    @endphp
+    @if ($showLiveSupport)
         @include('partials.support_chat_widget')
-    @endunless
+    @endif
 </body>
 
 </html>
