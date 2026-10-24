@@ -104,21 +104,15 @@ class SupportBotController extends Controller
         return $data;
     }
 
+    // Previously hand-rolled (see git history for the old public_path() path-resolution fix
+    // this method used to need) and still trusted the client-supplied filename extension for
+    // what got written to disk - the same pattern confirmed as an RCE elsewhere in this app
+    // (FileManager.php) before it was fixed. Routed through fileUploader()/FileManager like
+    // every other upload here, which gives the correct relative-path convention AND content-
+    // sniffed extension detection instead of trusting the client, for free.
     private function savePhoto(Request $request): string
     {
-        // Plain relative path, not public_path() - every other upload in this codebase
-        // (fileUploader()/FileManager) writes with a bare relative path like this one, which is
-        // what actually lands inside the "assets" directory that asset() URLs resolve against
-        // on this deployment. public_path() resolves to core/public/..., a location nothing
-        // else here writes to or serves "assets/..." URLs from - that mismatch was why an
-        // uploaded chatbot photo never actually showed up where its <img src> pointed.
-        $directory = 'assets/images/chatbot';
-        File::ensureDirectoryExists($directory);
-        $photo = $request->file('chatbot_photo');
-        $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-        $photo->move($directory, $filename);
-
-        return $filename;
+        return fileUploader($request->file('chatbot_photo'), 'assets/images/chatbot', '480x480');
     }
 
     private function deletePhoto(?string $filename): void

@@ -9,7 +9,6 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -162,21 +161,23 @@ class SupportAgentController extends Controller
         return back()->withNotify([['success', 'Support agent removed.']]);
     }
 
+    // Was hand-rolling its own upload (public_path('assets/images/support-agents'), which on
+    // this deployment resolves to a location "assets/..." URLs aren't actually served from -
+    // the photo saved successfully but every agent card showed a broken image - and trusted the
+    // client-supplied filename extension for what got written to disk, the same pattern that
+    // was a confirmed RCE elsewhere in this app (FileManager.php) before it was fixed. Routed
+    // through the same fileUploader()/FileManager helper every other upload in this app already
+    // uses, which fixes both: the real bare-relative-path convention, and content-sniffed
+    // extension detection instead of trusting the client.
     private function savePhoto(Request $request): string
     {
-        $directory = public_path('assets/images/support-agents');
-        File::ensureDirectoryExists($directory);
-        $photo = $request->file('photo');
-        $filename = Str::uuid() . '.' . $photo->getClientOriginalExtension();
-        $photo->move($directory, $filename);
-
-        return $filename;
+        return fileUploader($request->file('photo'), 'assets/images/support-agents', '480x480');
     }
 
     private function deletePhoto(?string $filename): void
     {
         if ($filename) {
-            $path = public_path('assets/images/support-agents/' . basename($filename));
+            $path = 'assets/images/support-agents/' . basename($filename);
             if (File::exists($path)) {
                 File::delete($path);
             }
