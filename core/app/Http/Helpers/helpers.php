@@ -251,6 +251,36 @@ function formatVipThreshold($amount): string {
     return coinAmountText($amount);
 }
 
+/**
+ * For a REAL-CURRENCY amount on an already-recorded historical row (a settlement, a game log, a
+ * transaction) that must never be rewritten - converts it to whole coins for display using
+ * whichever exchange rate actually applied when that row was made, never today's rate, which
+ * would silently change a number that already happened. Resolution order: the rate captured on
+ * the row itself ($rateToUsd - wallet_rate_to_usd/table_rate_to_usd/payout_rate_to_usd/etc, the
+ * most correct source since it's exactly what the row's own amount was computed with), else the
+ * named currency's current rate_to_usd (no per-row rate history is queried here - acceptable for
+ * list-style display, and far better than treating the raw number as if it were already USD),
+ * else assume the amount is already USD (rate 1) as a last resort when no currency is known at
+ * all. Floors to whole coins, same as every other coin conversion in this codebase. Rates are
+ * memoized per currency for the lifetime of the request, so a list of many rows (leaderboards,
+ * recent-wins tickers) only ever queries each distinct currency once.
+ */
+function formatHistoricalAmountAsCoins($amount, $currencyId = null, $rateToUsd = null): string {
+    if (!gs('coin_mode')) return showAmount($amount);
+    static $rateCache = [];
+    $rate = $rateToUsd;
+    if ((!$rate || bccomp((string) $rate, '0', 12) <= 0) && $currencyId) {
+        if (!array_key_exists($currencyId, $rateCache)) {
+            $rateCache[$currencyId] = \App\Models\Currency::query()->whereKey($currencyId)->value('rate_to_usd');
+        }
+        $rate = $rateCache[$currencyId];
+    }
+    if (!$rate || bccomp((string) $rate, '0', 12) <= 0) $rate = '1';
+    $usd = bcmul((string) $amount, (string) $rate, 12);
+    $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+    return coinAmountText(bcdiv($usd, $peg, 0));
+}
+
 function cryptoQR($wallet) {
     return "https://api.qrserver.com/v1/create-qr-code/?data=$wallet&size=300x300&ecc=m";
 }

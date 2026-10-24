@@ -15,6 +15,8 @@
                 'tag' => __('Originals'),
                 'username' => $log->user?->username,
                 'amount' => (float) $log->win_amo,
+                'currency_id' => $log->currency_id ?? null,
+                'rate_to_usd' => null,
                 'at' => $log->created_at,
             ]);
         }
@@ -37,6 +39,8 @@
                 'tag' => __('Live Table'),
                 'username' => $player->user?->username,
                 'amount' => (float) $player->settlement_amount,
+                'currency_id' => $player->currency_id,
+                'rate_to_usd' => $player->wallet_rate_to_usd,
                 'at' => $player->updated_at,
             ]);
         }
@@ -74,7 +78,7 @@
                             <div class="nocturne-win-card__body">
                                 <strong class="nocturne-win-card__game">{{ __($win->game_name) }}</strong>
                                 <span class="nocturne-win-card__player">{{ $maskedPlayer }}</span>
-                                <span class="nocturne-win-card__amount"><i class="ph-fill ph-trophy"></i>{{ showAmount($win->amount) }}</span>
+                                <span class="nocturne-win-card__amount"><i class="ph-fill ph-trophy"></i>{{ formatHistoricalAmountAsCoins($win->amount, $win->currency_id, $win->rate_to_usd) }}</span>
                             </div>
                         </article>
                     @endforeach

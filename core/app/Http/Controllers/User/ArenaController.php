@@ -91,6 +91,8 @@ class ArenaController extends Controller
             ->get()
             ->map(fn ($log) => (object) [
                 'amount' => (float) $log->win_amo,
+                'currency_id' => $log->currency_id ?? null,
+                'rate_to_usd' => null,
                 'username' => $log->user?->username,
                 'game_name' => $log->game?->name ?? 'a game',
                 'at' => $log->created_at,
@@ -104,6 +106,8 @@ class ArenaController extends Controller
                 ->latest('id')->limit(2)->get()
                 ->map(fn ($player) => (object) [
                     'amount' => (float) $player->settlement_amount,
+                    'currency_id' => $player->currency_id,
+                    'rate_to_usd' => $player->wallet_rate_to_usd,
                     'username' => $player->user?->username,
                     'game_name' => \App\Games\TableGames\TableGameRules::GAMES[$player->table?->game_type]['name'] ?? 'a table game',
                     'at' => $player->updated_at,

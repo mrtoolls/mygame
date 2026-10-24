@@ -23,8 +23,8 @@
                                         <td>{{ $gift->sort_order }}</td>
                                         <td><img src="{{ $gift->imageUrl() }}" alt="{{ $gift->name }}" width="40" height="40" style="object-fit:contain"></td>
                                         <td class="fw-bold">{{ __($gift->name) }}</td>
-                                        <td>${{ showAmount($gift->buy_price, currencyFormat: false) }}</td>
-                                        <td>${{ showAmount($gift->cashout_value, currencyFormat: false) }}</td>
+                                        <td>@if(gs('coin_mode')) {{ formatCoinOrUsd($gift->buy_price) }} @else ${{ showAmount($gift->buy_price, currencyFormat: false) }} @endif</td>
+                                        <td>@if(gs('coin_mode')) {{ formatCoinOrUsd($gift->cashout_value) }} @else ${{ showAmount($gift->cashout_value, currencyFormat: false) }} @endif</td>
                                         <td>@php echo $gift->statusBadge @endphp</td>
                                         <td>
                                             <div class="button--group">

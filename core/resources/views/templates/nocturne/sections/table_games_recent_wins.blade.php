@@ -15,6 +15,8 @@
                 'icon' => \App\Games\TableGames\TableGameRules::GAME_ICONS[$type] ?? 'la-dice',
                 'username' => $player->user?->username,
                 'amount' => (float) $player->settlement_amount,
+                'currency_id' => $player->currency_id,
+                'rate_to_usd' => $player->wallet_rate_to_usd,
                 'at' => $player->updated_at,
             ]);
         }
@@ -43,7 +45,7 @@
                                 <strong>{{ __($win->game_name) }}</strong>
                                 <small>{{ $maskedPlayer }} · {{ $win->at?->diffForHumans() ?? __('Recently') }}</small>
                             </div>
-                            <span class="recent-wins__amount">{{ showAmount($win->amount) }}</span>
+                            <span class="recent-wins__amount">{{ formatHistoricalAmountAsCoins($win->amount, $win->currency_id, $win->rate_to_usd) }}</span>
                         </div>
                     @endforeach
                 @endfor

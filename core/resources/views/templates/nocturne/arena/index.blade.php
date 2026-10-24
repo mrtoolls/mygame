@@ -187,7 +187,7 @@
                                         <div class="nocturne-arena-widget-row" aria-hidden="{{ $pass === 1 ? 'true' : 'false' }}">
                                             <span class="nocturne-arena-widget-row__icon nocturne-arena-widget-row__icon--win"><i class="ph-fill ph-coin"></i></span>
                                             <div>
-                                                <strong>{{ showAmount($log->amount) }}</strong>
+                                                <strong>{{ formatHistoricalAmountAsCoins($log->amount, $log->currency_id, $log->rate_to_usd) }}</strong>
                                                 <small>{{ $log->username ?? 'Someone' }} &middot; {{ __($log->game_name) }}</small>
                                             </div>
                                         </div>

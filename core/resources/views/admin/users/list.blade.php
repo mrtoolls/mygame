@@ -44,7 +44,11 @@
                                         <td>
                                             <span class="fw-bold">
 
-                                                {{ showAmount($user->balance) }}
+                                                @if(gs('coin_mode'))
+                                                    {{ coinAmountText(app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance) }}
+                                                @else
+                                                    {{ showAmount($user->balance) }}
+                                                @endif
                                             </span>
                                         </td>
 

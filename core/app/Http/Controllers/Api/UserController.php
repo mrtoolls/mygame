@@ -33,7 +33,7 @@ class UserController extends Controller
         $gamesFeatured = Game::where('featured', Status::ENABLE)->active()->get();
 
         $user                    = Auth::user();
-        $widget['total_balance'] = $user->balance;
+        $widget['total_balance'] = gs('coin_mode') ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance : $user->balance;
         $widget['name']          = $user->fullname;
 
         $elements  = Frontend::where('tempname', activeTemplateName())->where('data_keys', 'slider.element')->orderBy('id', 'desc')->get();
@@ -212,7 +212,7 @@ class UserController extends Controller
 
         $transactions            = $transactions->orderBy('id', 'desc')->paginate(getPaginate());
         $user                    = Auth::user();
-        $widget['total_balance'] = $user->balance;
+        $widget['total_balance'] = gs('coin_mode') ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance : $user->balance;
         $widget['total_invest']  = GameLog::where('user_id', $user->id)->sum('invest');
         $widget['total_win']     = GameLog::win()->where('user_id', $user->id)->sum('invest');
 

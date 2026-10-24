@@ -11,7 +11,7 @@
                               link="{{ route('admin.report.transaction', $user->id) }}"
                               title="Balance"
                               icon="las la-money-bill-wave-alt"
-                              value="{{ showAmount($user->balance) }}"
+                              value="{{ gs('coin_mode') ? coinAmountText(app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance) : showAmount($user->balance) }}"
                               bg="indigo"
                               type="2" />
                 </div>

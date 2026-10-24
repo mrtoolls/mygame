@@ -492,10 +492,13 @@ abstract class Game {
                 if ($this->hasCurrencyColumn('gameplay_bonus_logs')) $bonusLog->currency_id = $user->currency_id;
                 $bonusLog->save();
 
+                // Coins are always whole numbers - showAmount()'s 2-decimal default would show
+                // "500.00" for a coin bonus even with currencyFormat disabled, so these use a
+                // plain whole-number format instead, same as every other coin-amount shortcode.
                 notify($user, 'GAMEPLAY_BONUS', [
-                    'amount'       => showAmount($bonusAmount, currencyFormat: false),
+                    'amount'       => number_format((float) $bonusAmount, 0, '.', ''),
                     'trx'          => $idempotencyKey,
-                    'post_balance' => showAmount(app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance, currencyFormat: false),
+                    'post_balance' => number_format((float) app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance, 0, '.', ''),
                 ]);
             } else {
                 $user->balance = bcadd((string) $user->balance, (string) $bonusAmount, 8);

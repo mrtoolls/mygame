@@ -10,6 +10,8 @@
                 'game_name' => $log->game?->name ?? __('Winxpot game'),
                 'username' => $log->user?->username,
                 'amount' => (float) $log->win_amo,
+                'currency_id' => $log->currency_id ?? null,
+                'rate_to_usd' => null,
                 'at' => $log->created_at,
             ]);
         }
@@ -26,6 +28,8 @@
                 'game_name' => \App\Games\TableGames\TableGameRules::GAMES[$player->table?->game_type]['name'] ?? __('Table game'),
                 'username' => $player->user?->username,
                 'amount' => (float) $player->settlement_amount,
+                'currency_id' => $player->currency_id,
+                'rate_to_usd' => $player->wallet_rate_to_usd,
                 'at' => $player->updated_at,
             ]);
         }
@@ -42,7 +46,7 @@
         <div class="nocturne-big-wins-grid">
             @foreach($bigWinLogs as $log)
                 @php $winner = $log->username ?: __('Player'); $maskedWinner = mb_substr($winner, 0, 2) . str_repeat('•', max(2, min(6, mb_strlen($winner) - 2))); @endphp
-                <article class="nocturne-big-win-card"><span class="nocturne-big-win-card__icon"><i class="ph-fill ph-currency-circle-dollar"></i></span><div><small>{{ __($log->game_name) }} · {{ $maskedWinner }}</small><strong>{{ showAmount($log->amount) }}</strong><span>{{ $log->at?->diffForHumans() ?? __('Recently') }}</span></div><i class="ph-fill ph-confetti nocturne-big-win-card__spark"></i></article>
+                <article class="nocturne-big-win-card"><span class="nocturne-big-win-card__icon"><i class="ph-fill ph-currency-circle-dollar"></i></span><div><small>{{ __($log->game_name) }} · {{ $maskedWinner }}</small><strong>{{ formatHistoricalAmountAsCoins($log->amount, $log->currency_id, $log->rate_to_usd) }}</strong><span>{{ $log->at?->diffForHumans() ?? __('Recently') }}</span></div><i class="ph-fill ph-confetti nocturne-big-win-card__spark"></i></article>
             @endforeach
         </div>
     @else

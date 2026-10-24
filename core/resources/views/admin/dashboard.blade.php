@@ -209,16 +209,16 @@
 
     <div class="row gy-4 mt-2">
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.game.log') }}" title="Total Played" icon="las la-list" value="{{ showAmount($widget['total_played']) }}" bg="primary" outline="true" />
+            <x-widget style="6" link="{{ route('admin.game.log') }}" title="Total Played" icon="las la-list" value="{{ gs('coin_mode') ? coinAmountText($widget['total_played']) : showAmount($widget['total_played']) }}" bg="primary" outline="true" />
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.game.log') }}?win_status=1" title="Total Win" icon="las la-money-bill-wave-alt" value="{{ showAmount($widget['total_win_amount']) }}" bg="success" outline="true" />
+            <x-widget style="6" link="{{ route('admin.game.log') }}?win_status=1" title="Total Win" icon="las la-money-bill-wave-alt" value="{{ gs('coin_mode') ? coinAmountText($widget['total_win_amount']) : showAmount($widget['total_win_amount']) }}" bg="success" outline="true" />
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.game.log') }}?win_status=2" title="Total Loss" icon="las la-money-bill" value="{{ showAmount($widget['total_loss_amount']) }}" bg="14" outline="true" />
+            <x-widget style="6" link="{{ route('admin.game.log') }}?win_status=2" title="Total Loss" icon="las la-money-bill" value="{{ gs('coin_mode') ? coinAmountText($widget['total_loss_amount']) : showAmount($widget['total_loss_amount']) }}" bg="14" outline="true" />
         </div>
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="javascript:void(0)" title="Total Profit" icon="las la-percentage" value="{{ showAmount($widget['total_profit']) }}" bg="19" outline="true" />
+            <x-widget style="6" link="javascript:void(0)" title="Total Profit" icon="las la-percentage" value="{{ gs('coin_mode') ? coinAmountText($widget['total_profit']) : showAmount($widget['total_profit']) }}" bg="19" outline="true" />
         </div>
     </div>
 

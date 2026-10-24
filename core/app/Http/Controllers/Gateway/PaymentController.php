@@ -306,7 +306,10 @@ class PaymentController extends Controller {
             'charge'          => showAmount($approvedDeposit->charge, currencyFormat: false),
             'rate'            => showAmount($approvedDeposit->rate, currencyFormat: false),
             'trx'             => $approvedDeposit->trx,
-            'post_balance'    => showAmount($user->balance),
+            // $user->balance is frozen once coin_mode is on - the deposit may have just minted
+            // coins into the CoinLedger wallet instead, which is what "your balance is now X"
+            // actually needs to reflect.
+            'post_balance'    => $general->coin_mode ? coinAmountText(app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance) : showAmount($user->balance),
             'admin_feedback'  => $adminFeedback ?? '',
         ]);
     }

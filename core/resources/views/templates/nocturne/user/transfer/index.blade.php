@@ -4,13 +4,21 @@
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Balance Transfer')</h1>
+    @if(gs('coin_mode'))
+        <div class="alert alert--warning d-flex align-items-center gap-2">
+            <i class="ph-fill ph-warning-circle fs-4"></i>
+            <span>@lang('Balance transfer is a real-currency feature and is turned off while coin mode is on. Use the Coin Marketplace to trade coins with another player.')</span>
+        </div>
+    @endif
     <section class="transection-section">
         <div class="d-flex justify-content-between flex-wrap gap-3 my-3">
-            <button type="button" class="btn btn--gradient triggerConfirmModal">
-                <span class="flex-align gap-2">
-                    @lang('New Transfer') <span class="icon"><i class="fas fa-arrow-right-long"></i></span>
-                </span>
-            </button>
+            @unless(gs('coin_mode'))
+                <button type="button" class="btn btn--gradient triggerConfirmModal">
+                    <span class="flex-align gap-2">
+                        @lang('New Transfer') <span class="icon"><i class="fas fa-arrow-right-long"></i></span>
+                    </span>
+                </button>
+            @endunless
             <form class="search-form">
                 <div class="form-group mb-0 flex-fill">
                     <div class="input-group">

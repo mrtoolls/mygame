@@ -21,7 +21,7 @@
                                     @endif
                                 </span>
                                 <strong>{{ $gift->name }}</strong>
-                                <span class="text-muted">${{ showAmount($gift->buy_price, currencyFormat: false) }}</span>
+                                <span class="text-muted">@if(gs('coin_mode')) {{ formatCoinOrUsd($gift->buy_price) }} @else ${{ showAmount($gift->buy_price, currencyFormat: false) }} @endif</span>
                                 <div class="gift-preview-card__actions">
                                     <button type="button" class="btn btn-sm btn-outline--success" data-preview-pop data-gift-id="{{ $gift->id }}">@lang('Play pop')</button>
                                     <button type="button" class="btn btn-sm btn-outline--primary" data-preview-send data-gift-name="{{ $gift->name }}" data-gift-slug="{{ $gift->slug }}" data-gift-price="{{ $gift->buy_price }}" data-gift-image="{{ $gift->imageUrl() }}">@lang('Play send overlay')</button>

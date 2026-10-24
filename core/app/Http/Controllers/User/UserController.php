@@ -309,11 +309,13 @@ class UserController extends Controller {
                     'system'
                 );
 
+                // Coins are whole numbers - avoid showAmount()'s 2-decimal default here, same
+                // reasoning as the gameplay bonus notification.
                 notify($user, 'REGISTER_BONUS', [
                     'username'     => $user->username,
-                    'amount'       => showAmount(gs('register_bonus')),
+                    'amount'       => number_format((float) gs('register_bonus'), 0, '.', ''),
                     'trx'          => $idempotencyKey,
-                    'post_balance' => showAmount(app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance),
+                    'post_balance' => number_format((float) app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance, 0, '.', ''),
                 ]);
             } else {
                 $user->balance += gs('register_bonus');

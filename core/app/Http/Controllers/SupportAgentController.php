@@ -232,7 +232,24 @@ class SupportAgentController extends Controller
         $agent = Auth::guard('support_agent')->user();
         $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
 
-        PaymentController::userDataUpdate($deposit, true, 'agent');
+        try {
+            PaymentController::userDataUpdate($deposit, true, 'agent');
+        } catch (\RuntimeException $exception) {
+            // Coin mode deliberately refuses to mint off an agent's own unverified "I received
+            // this" attestation (see PaymentController::userDataUpdate()) - that is real-money-
+            // backed minting authority an agent must never hold alone. The deposit itself is left
+            // exactly as it was (the throw happens before any state changes), so it's still sitting
+            // in the admin's normal pending-deposits queue, not stuck or lost - just redirect the
+            // agent back with a clear explanation instead of a raw server error, and flag an admin
+            // so someone actually goes and finishes it.
+            $adminNotification = new \App\Models\AdminNotification();
+            $adminNotification->user_id = $deposit->user_id;
+            $adminNotification->title = 'Agent ' . $agent->name . ' confirmed receipt for ' . ($deposit->user->username ?? 'a user') . ', but coin mode requires an admin to approve this deposit directly before it mints.';
+            $adminNotification->click_url = urlPath('admin.deposit.details', $deposit->id);
+            $adminNotification->save();
+
+            return redirect()->route('support-agent.payments.queue')->with('error', 'Receipt noted, but coin mode requires an admin to review and approve this deposit directly before coins can be minted - an admin has been notified.');
+        }
 
         $deposit->refresh();
         if ((int) $deposit->status === Status::PAYMENT_SUCCESS && !AgentTransactionSpeedLog::where('deposit_id', $deposit->id)->exists()) {

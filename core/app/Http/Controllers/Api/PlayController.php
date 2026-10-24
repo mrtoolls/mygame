@@ -20,7 +20,13 @@ class PlayController extends Controller {
             $notify[] = 'Invalid request';
             return responseError('not_found', $notify);
         }
-        $balance = ($isDemo === 'demo') ? @$user->demo_balance : @$user->balance;
+        // $user->balance is frozen/zeroed once coin_mode is on (see showUserBalance()'s doc
+        // comment) - the real, live number lives in the CoinLedger wallet instead. demo_balance
+        // is deliberately untouched by coin mode either way - it is its own separate "Demo
+        // Coins" concept, never minted as real coins and never mixed with the real wallet.
+        $balance = ($isDemo === 'demo')
+            ? @$user->demo_balance
+            : (gs('coin_mode') ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance : @$user->balance);
 
         $pokerImg           = null;
         $imagePath          = null;
@@ -75,7 +81,9 @@ class PlayController extends Controller {
         $notify[] = $game->name . ' game data';
         return responseSuccess('game_data', $notify, [
             'game'               => $game,
-            'balance'            => showAmount($balance, currencyFormat: false),
+            // Coins are always whole numbers with no currency formatting - the game client parses
+            // this as a plain number either way, so coin mode just skips decimal places.
+            'balance'            => ($isDemo !== 'demo' && gs('coin_mode')) ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false),
             'imagePath'          => $imagePath,
             'winChance'          => $winChance,
             'winPercent'         => $winPercent,
