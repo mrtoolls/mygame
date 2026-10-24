@@ -3,7 +3,7 @@
     <div class="nocturne-shell">
         @include('Template::partials.shell_header')
         @include('Template::partials.shell_sidebar')
-        <main class="nocturne-main {{ request()->routeIs('user.play.game') ? 'nocturne-game-page' : '' }} {{ request()->routeIs('user.tables.index', 'user.tables.show') ? 'nocturne-live-games-page' : '' }} {{ request()->routeIs('ticket.*') ? 'nocturne-footer-always' : '' }}">
+        <main class="nocturne-main {{ request()->routeIs('user.play.game') ? 'nocturne-game-page' : '' }} {{ request()->routeIs('user.tables.index', 'user.tables.show') ? 'nocturne-live-games-page' : '' }} {{ request()->routeIs('ticket.*') ? 'nocturne-footer-always' : '' }} {{ auth()->guest() ? 'nocturne-no-mobile-nav' : '' }}">
             <div class="nocturne-content">
                 <section class="py-100">
                     <div class="container">

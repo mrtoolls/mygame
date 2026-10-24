@@ -58,18 +58,21 @@
         @endauth
     </div>
 </aside>
+{{-- Guests never see this bar at all (on any page it would otherwise render on) - it's built
+     around account-specific actions (Live tables, Bonuses, Profile), so a logged-out visitor
+     gets no persistent nav chrome here and is pointed at Sign in/Join Us through the page's own
+     content instead. .nocturne-main reserves bottom padding to clear this fixed bar on mobile;
+     see the matching nocturne-no-mobile-nav class on <main> in master.blade.php/
+     frontend.blade.php, which drops that reservation for guests so it doesn't leave a dead gap. --}}
+@auth
 <nav class="nocturne-mobile-nav" aria-label="@lang('Quick navigation')">
     <button class="nocturne-mobile-menu" type="button"><i class="ph-fill ph-squares-four"></i><span>@lang('Menu')</span></button>
     <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-fill ph-dice-five"></i><span>@lang('Games')</span></a>
     <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-broadcast nocturne-live-pulse"></i><span>@lang('Live')</span></a>
-    @auth
-        <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
-        <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
-    @else
-        <a href="{{ route('user.register') }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
-        <a href="{{ route('user.login') }}"><i class="ph-fill ph-user"></i><span>@lang('Login')</span></a>
-    @endauth
+    <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
+    <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
 </nav>
+@endauth
 @push('script')
 <script>
     (() => {

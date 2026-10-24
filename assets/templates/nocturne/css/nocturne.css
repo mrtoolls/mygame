@@ -541,6 +541,10 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-shell.menu-open .nocturne-sidebar { transform: translateX(0); }
     .nocturne-shell.menu-open .nocturne-sidebar-backdrop { display: block; opacity: 1; visibility: visible; }
     .nocturne-main { margin-left: 0; padding: 94px 20px 90px; }
+    /* The 90px bottom padding above exists to clear the fixed .nocturne-mobile-nav pill bar -
+       guests never get that bar (it's account-specific), so reserving the space for it would
+       just leave a dead empty gap at the bottom of every page for them. */
+    .nocturne-main.nocturne-no-mobile-nav { padding-bottom: 24px; }
     /* Floating pill bar, not an edge-to-edge strip: inactive tabs collapse to just their icon,
        and whichever one is active expands into a filled pill with its icon plus label - the
        current item is the only one that needs reading, everything else is a quiet icon-only
