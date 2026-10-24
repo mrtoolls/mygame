@@ -4,6 +4,9 @@
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content">
     <h1 class="nocturne-page-title">@lang('Transactions')</h1>
+    @if($coinMode ?? false)
+        <p class="text-muted mb-3">@lang('Showing your coin wallet activity. Transactions made before coin mode was enabled are kept below for reference.')</p>
+    @endif
     <div class="transection-section">
         <div class="show-filter text-end mb-3">
             <button class="btn btn--base showFilterBtn btn--sm" type="button"><i class="las la-filter"></i>
@@ -25,16 +28,18 @@
                                 <option value="-" @selected(request()->trx_type == '-')>@lang('Minus')</option>
                             </select>
                         </div>
-                        <div class="flex-grow-1">
-                            <label class="form--label">@lang('Remark')</label>
-                            <select class="form--control select2" name="remark" data-minimum-results-for-search="-1">
-                                <option value="">@lang('Any')</option>
-                                @foreach ($remarks as $remark)
-                                    <option value="{{ $remark->remark }}" @selected(request()->remark == $remark->remark)>
-                                        {{ __(keyToTitle($remark->remark)) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @unless($coinMode ?? false)
+                            <div class="flex-grow-1">
+                                <label class="form--label">@lang('Remark')</label>
+                                <select class="form--control select2" name="remark" data-minimum-results-for-search="-1">
+                                    <option value="">@lang('Any')</option>
+                                    @foreach ($remarks as $remark)
+                                        <option value="{{ $remark->remark }}" @selected(request()->remark == $remark->remark)>
+                                            {{ __(keyToTitle($remark->remark)) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endunless
                         <div class="flex-grow-1 align-self-end">
                             <button class="btn btn--base w-100"><i class="las la-filter"></i> @lang('Filter')</button>
                         </div>
@@ -67,13 +72,21 @@
                                 <td class="budget">
                                     <span
                                         class="fw-bold @if ($trx->trx_type == '+') text--success @else text--danger @endif">
-                                        {{ $trx->trx_type }} {{ showAmount($trx->amount) }}
+                                        @if($coinMode ?? false)
+                                            {{ $trx->trx_type }} {{ $trx->amount_text }}
+                                        @else
+                                            {{ $trx->trx_type }} {{ showAmount($trx->amount) }}
+                                        @endif
                                     </span>
                                 </td>
                                 <td class="budget">
-                                    {{ showAmount($trx->post_balance) }}
+                                    @if($coinMode ?? false)
+                                        {{ $trx->balance_text }}
+                                    @else
+                                        {{ showAmount($trx->post_balance) }}
+                                    @endif
                                 </td>
-                                <td>{{ __($trx->details) }}</td>
+                                <td>{{ ($coinMode ?? false) ? $trx->details : __($trx->details) }}</td>
                             </tr>
                         @empty
                             <tr>

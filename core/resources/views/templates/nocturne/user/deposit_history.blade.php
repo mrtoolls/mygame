@@ -6,7 +6,7 @@
     <div class="nocturne-txn-head">
         <div>
             <span class="nocturne-wallet-kicker">@lang('YOUR ACTIVITY')</span>
-            <h1 class="nocturne-page-title">@lang('Deposit History')</h1>
+            <h1 class="nocturne-page-title">{{ gs('coin_mode') ? __('Buy Coins History') : __('Deposit History') }}</h1>
         </div>
         <form class="nocturne-txn-search" method="get">
             <i class="ph-bold ph-magnifying-glass"></i>
@@ -47,7 +47,10 @@
                         <small>{{ $deposit->trx }}</small>
                     </div>
                     <div class="nocturne-txn-card__amount">
-                        <strong>{{ showAmount($deposit->amount) }}</strong>
+                        <strong>{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showAmount($deposit->amount) }}</strong>
+                        @if($deposit->coin_mode_purchase)
+                            <small class="nocturne-txn-coin-rate">@lang('Rate'): {{ showAmount($deposit->coin_buy_price_snapshot, currencyFormat: false) }}/{{ __('coin') }}</small>
+                        @endif
                         <span class="nocturne-txn-chip nocturne-txn-chip--{{ $meta['cls'] }}"><i class="ph-fill {{ $meta['icon'] }}"></i> {{ __($meta['label']) }}</span>
                     </div>
                 </div>
@@ -117,6 +120,7 @@
 .nocturne-txn-card__id small{color:var(--wallet-muted);font-size:11.5px}
 .nocturne-txn-card__amount{display:grid;justify-items:end;gap:6px;flex:0 0 auto}
 .nocturne-txn-card__amount>strong{color:var(--wallet-text);font-size:16px;font-weight:850}
+.nocturne-txn-coin-rate{color:var(--wallet-muted);font-size:10.5px}
 
 .nocturne-txn-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap}
 .nocturne-txn-chip--pending{background:rgba(255,181,71,.14);color:#ffb547}

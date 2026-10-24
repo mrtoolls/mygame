@@ -38,8 +38,32 @@ class PaymentController extends Controller {
             ->values();
         $deposits = auth()->user()->deposits()->where('status', '!=', Status::PAYMENT_INITIATE)
             ->with('gateway')->latest('id')->paginate(5, ['*'], 'deposit_page');
-        $pageTitle = 'Deposit Methods';
-        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle'));
+
+        // Display-only: show the user, before they pay, exactly how many coins they'd receive and
+        // at what locked rate - the same app(CoinPricing::class)->buyPrice($currency) call
+        // PaymentController::userDataUpdate() makes when it actually mints, so this preview can
+        // never disagree with what gets minted. buyPrice() throws when no coin price has been
+        // computed yet for the user's currency - caught here so a missing price shows a clear
+        // message instead of a 500 page; userDataUpdate() itself is untouched and still throws if
+        // reached without a price (which this message is meant to prevent the user from doing).
+        $coinMode = (bool) gs('coin_mode');
+        $coinBuyPrice = null;
+        $coinPricingError = null;
+        if ($coinMode) {
+            $currency = auth()->user()->currency;
+            if (!$currency) {
+                $coinPricingError = "A wallet currency is required to price coin purchases.";
+            } else {
+                try {
+                    $coinBuyPrice = app(\App\Services\CoinPricing::class)->buyPrice($currency);
+                } catch (\InvalidArgumentException $exception) {
+                    $coinPricingError = "Coin pricing isn't set up for your currency yet. Please contact support or try again later.";
+                }
+            }
+        }
+
+        $pageTitle = $coinMode ? 'Buy Coins' : 'Deposit Methods';
+        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle', 'coinMode', 'coinBuyPrice', 'coinPricingError'));
     }
 
     public function depositInsert(Request $request) {

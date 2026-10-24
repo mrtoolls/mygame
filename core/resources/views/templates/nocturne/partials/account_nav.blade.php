@@ -10,7 +10,7 @@
         </div>
         <nav class="nocturne-account-links">
             <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i>@lang('Profile')</a>
-            <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i>@lang('Deposit')</a>
+            <a href="{{ route('user.deposit.index') }}" class="{{ request()->routeIs('user.deposit.*') && !request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-wallet"></i>{{ gs('coin_mode') ? __('Buy Coins') : __('Deposit') }}</a>
             @if(gs('coin_mode'))
                 <a href="{{ route('user.coin.marketplace') }}" class="{{ request()->routeIs('user.coin.*') ? 'is-active' : '' }}"><i class="ph-fill ph-coins"></i>@lang('Coin Marketplace')</a>
                 {{-- Withdrawals are disabled in coin mode, but any pre-existing withdrawal stays visible, read-only, in its own history page. --}}

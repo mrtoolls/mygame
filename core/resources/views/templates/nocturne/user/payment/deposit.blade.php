@@ -3,19 +3,41 @@
     <div class="nocturne-account">
         @include('Template::partials.account_nav')
         <div class="nocturne-account-content nocturne-wallet-page">
-    <h1 class="nocturne-page-title">@lang('Deposit')</h1>
+    <h1 class="nocturne-page-title">{{ ($coinMode ?? false) ? __('Buy Coins') : __('Deposit') }}</h1>
     <section class="nocturne-wallet-hero">
         <div class="nocturne-wallet-hero__copy">
             <span class="nocturne-wallet-hero__eyebrow"><i class="ph-fill ph-shield-check"></i> @lang('Secure payments')</span>
-            <h2>@lang('Power up your wallet')</h2>
-            <p>@lang('Pick a method, review the details and send your deposit in a few taps.')</p>
+            <h2>{{ ($coinMode ?? false) ? __('Buy coins for your wallet') : __('Power up your wallet') }}</h2>
+            <p>{{ ($coinMode ?? false) ? __('Pick a method, review the details and buy coins in a few taps.') : __('Pick a method, review the details and send your deposit in a few taps.') }}</p>
         </div>
-        <div class="nocturne-wallet-hero__balance">
-            <span>@lang('Available balance')</span>
-            <strong>{{ gs('cur_sym') }}{{ showAmount(auth()->user()->balance, currencyFormat: false) }} <small>{{ __(gs('cur_text')) }}</small></strong>
-            <i class="ph-fill ph-wallet"></i>
-        </div>
+        @if($coinMode ?? false)
+            <div class="nocturne-wallet-hero__balance">
+                <span>@lang('Available balance')</span>
+                <strong>{!! showUserBalance(auth()->user()) !!}</strong>
+                <i class="ph-fill ph-wallet"></i>
+            </div>
+        @else
+            <div class="nocturne-wallet-hero__balance">
+                <span>@lang('Available balance')</span>
+                <strong>{{ gs('cur_sym') }}{{ showAmount(auth()->user()->balance, currencyFormat: false) }} <small>{{ __(gs('cur_text')) }}</small></strong>
+                <i class="ph-fill ph-wallet"></i>
+            </div>
+        @endif
     </section>
+
+    @if($coinMode ?? false)
+        @if($coinPricingError)
+            <div class="nocturne-wallet-coin-notice nocturne-wallet-coin-notice--error">
+                <i class="ph-fill ph-warning-circle"></i>
+                <span>{{ __($coinPricingError) }}</span>
+            </div>
+        @else
+            <div class="nocturne-wallet-coin-notice" id="coin-preview-box" data-coin-buy-price="{{ $coinBuyPrice }}">
+                <i class="ph-fill ph-coins"></i>
+                <span>@lang('Current rate'): <strong>1 {{ __('Coin') }} = {{ gs('cur_sym') }}{{ showAmount($coinBuyPrice, currencyFormat: false) }}</strong> &middot; @lang("You'll receive"): <strong id="coin-preview-amount">0 @lang('Coins')</strong></span>
+            </div>
+        @endif
+    @endif
     @php
         $cryptoCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto === 1)->count();
         $winxpayCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1)->count();
@@ -110,7 +132,7 @@
             <div class="nocturne-wallet-conversion d-none gateway-conversion"></div>
             <div class="nocturne-wallet-conversion d-none conversion-currency"><span>@lang('In')</span> <span class="gateway-currency"></span>: <span class="in-currency"></span></div>
 
-            <button type="submit" class="nocturne-wallet-cta" id="deposit-cta" disabled><i class="ph-bold ph-arrow-circle-right"></i><span id="deposit-cta-label">@lang('Deposit Confirm')</span></button>
+            <button type="submit" class="nocturne-wallet-cta" id="deposit-cta" disabled><i class="ph-bold ph-arrow-circle-right"></i><span id="deposit-cta-label">{{ ($coinMode ?? false) ? __('Buy Coins') : __('Deposit Confirm') }}</span></button>
 
             <div class="nocturne-wallet-footrow">
                 <div><span>@lang('Minimum Deposit')</span><strong class="gateway-limit">—</strong></div>
@@ -136,7 +158,7 @@
                     <span class="nocturne-wallet-history__icon"><i class="ph-fill ph-wallet"></i></span>
                     <div class="nocturne-wallet-history__mid"><strong>{{ __($deposit->gateway->name ?? 'Payment') }}</strong><small>{{ $deposit->trx }} · {{ showDateTime($deposit->created_at, 'M d, Y') }}</small></div>
                     <div class="nocturne-wallet-history__end">
-                        <strong class="nocturne-wallet-history__amount">{{ showAmount($deposit->amount) }}</strong>
+                        <strong class="nocturne-wallet-history__amount">{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showAmount($deposit->amount) }}</strong>
                         <span class="nocturne-wallet-history__chip nocturne-wallet-history__chip--{{ $meta['cls'] }}"><i class="ph-fill {{ $meta['icon'] }}"></i> {{ __($meta['label']) }}</span>
                         <span class="nocturne-wallet-history__time"><i class="ph-bold ph-clock"></i> {{ diffForHumans($deposit->created_at) }}</span>
                     </div>
@@ -167,6 +189,11 @@
 .nocturne-wallet-hero__balance strong{display:block;margin-top:3px;color:#fff;font-size:19px;font-weight:800;white-space:nowrap}
 .nocturne-wallet-hero__balance small{color:var(--wallet-muted);font-size:11px}
 .nocturne-wallet-hero__balance>i{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--wallet-accent);font-size:22px}
+
+.nocturne-wallet-coin-notice{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:14px 18px;border:1px solid var(--wallet-line);border-radius:16px;background:rgba(0,231,138,.08);color:var(--wallet-text);font-size:13px}
+.nocturne-wallet-coin-notice i{color:var(--wallet-accent);font-size:18px;flex:0 0 auto}
+.nocturne-wallet-coin-notice--error{background:rgba(255,92,122,.1);border-color:rgba(255,92,122,.25)}
+.nocturne-wallet-coin-notice--error i{color:#ff5c7a}
 
 .nocturne-wallet-card{padding:clamp(18px,3vw,28px);border:1px solid var(--wallet-line);border-radius:26px;background:linear-gradient(160deg,#171d36,#11152a 75%);box-shadow:0 20px 55px rgba(0,0,0,.2)}
 .nocturne-wallet-card__heading{display:flex;align-items:center;gap:10px;margin:0 0 16px;color:var(--wallet-text);font-size:15px;font-weight:800}
@@ -289,10 +316,21 @@
 (function($) {
     var amount = parseFloat($('.amount').val() || 0);
     var gateway, minAmount, maxAmount;
+    var coinMode = {{ ($coinMode ?? false) ? 'true' : 'false' }};
+    var coinBuyPrice = parseFloat($('#coin-preview-box').data('coin-buy-price')) || 0;
+
+    function updateCoinPreview() {
+        if (!coinMode || !coinBuyPrice) return;
+        // Matches PaymentController::userDataUpdate()'s bcdiv($lockedDeposit->amount, $buyPrice, 0)
+        // - a plain truncating integer division, same as Math.floor for non-negative numbers.
+        var coins = amount > 0 ? Math.floor(amount / coinBuyPrice) : 0;
+        $('#coin-preview-amount').text(coins.toLocaleString() + ' {{ __('Coins') }}');
+    }
 
     $('.amount').on('input', function() {
         amount = parseFloat($(this).val()) || 0;
         calculation();
+        updateCoinPreview();
     });
 
     $('.gateway-input').on('change', gatewayChange);
@@ -333,10 +371,15 @@
             $('#pay-selected-fallback-icon').hide();
         }
         $('#pay-dropdown-name').text(selectedName + (gateway.currency ? ' ' + gateway.currency : ''));
-        $('#deposit-cta-label').text(gateway.method.crypto == 1 ? "{{ __('Confirm Deposit') }}" : "{{ __('Deposit Confirm') }}");
+        if (coinMode) {
+            $('#deposit-cta-label').text("{{ __('Buy Coins') }}");
+        } else {
+            $('#deposit-cta-label').text(gateway.method.crypto == 1 ? "{{ __('Confirm Deposit') }}" : "{{ __('Deposit Confirm') }}");
+        }
 
         renderWallet();
         calculation();
+        updateCoinPreview();
     }
 
     gatewayChange();

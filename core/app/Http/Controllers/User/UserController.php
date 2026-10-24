@@ -45,7 +45,7 @@ class UserController extends Controller {
     }
 
     public function depositHistory(Request $request) {
-        $pageTitle = 'Deposit History';
+        $pageTitle = gs('coin_mode') ? 'Buy Coins History' : 'Deposit History';
         $deposits  = auth()->user()->deposits()->searchable(['trx'])->with(['gateway'])->orderBy('id', 'desc')->paginate(getPaginate());
         return view('Template::user.deposit_history', compact('pageTitle', 'deposits'));
     }
@@ -97,10 +97,91 @@ class UserController extends Controller {
     }
 
     public function transactions() {
-        $pageTitle    = 'Transactions';
+        $pageTitle = 'Transactions';
+        $coinMode  = (bool) gs('coin_mode');
+
+        if ($coinMode) {
+            return $this->coinModeTransactions($pageTitle);
+        }
+
         $remarks      = Transaction::where('user_id', auth()->id())->distinct('remark')->orderBy('remark')->get('remark');
         $transactions = Transaction::where('user_id', auth()->id())->searchable(['trx'])->filter(['trx_type', 'remark'])->orderBy('id', 'desc')->paginate(getPaginate());
-        return view('Template::user.transactions', compact('pageTitle', 'transactions', 'remarks'));
+        return view('Template::user.transactions', compact('pageTitle', 'transactions', 'remarks', 'coinMode'));
+    }
+
+    /**
+     * Once coin_mode is on, new balance-affecting events (deposits, game stakes/wins, bonuses) are
+     * written as CoinLedgerEntry rows instead of Transaction rows, so the plain Transaction-based
+     * history would under-report activity from that point on. This merges the user's own
+     * CoinLedgerEntry rows (the current source of truth) with any pre-cutover Transaction rows
+     * (kept only as historical context, clearly labelled) into one chronological feed, so nothing
+     * a user did before or after the cutover silently disappears from their own history. Real
+     * balance math lives entirely in CoinLedger/PaymentController - this only reads and formats
+     * what those already wrote.
+     */
+    private function coinModeTransactions($pageTitle) {
+        $userId   = auth()->id();
+        $remarks  = collect();
+        $coinMode = true;
+
+        $typeLabels = [
+            'credit'       => 'Coin credit',
+            'debit'        => 'Coin debit',
+            'hold'         => 'Coins held',
+            'release'      => 'Coins released',
+            'mint'         => 'Coins purchased',
+            'burn'         => 'Coins spent',
+            'transfer_in'  => 'Coins received',
+            'transfer_out' => 'Coins sent',
+        ];
+        $creditTypes = ['credit', 'mint', 'transfer_in', 'release'];
+
+        $wallet = app(\App\Services\CoinLedger::class)->wallet('user', $userId);
+        $coinRows = $wallet->entries()->orderByDesc('created_at')->orderByDesc('id')->get()->map(function ($entry) use ($typeLabels, $creditTypes) {
+            $label = ($typeLabels[$entry->type] ?? ucfirst($entry->type)) . ' - ' . $entry->reason;
+            return (object) [
+                'trx'           => $entry->idempotency_key ?: ('COIN-' . $entry->id),
+                'created_at'    => $entry->created_at,
+                'trx_type'      => in_array($entry->type, $creditTypes, true) ? '+' : '-',
+                'amount_text'   => coinAmountText($entry->amount),
+                'balance_text'  => coinAmountText($entry->available_balance_after),
+                'details'       => $label,
+            ];
+        });
+
+        $legacyRows = Transaction::where('user_id', $userId)->orderByDesc('id')->get()->map(function ($trx) {
+            return (object) [
+                'trx'          => $trx->trx,
+                'created_at'   => $trx->created_at,
+                'trx_type'     => $trx->trx_type,
+                'amount_text'  => showAmount($trx->amount),
+                'balance_text' => showAmount($trx->post_balance),
+                'details'      => __($trx->details) . ' (' . __('pre-coin history') . ')',
+            ];
+        });
+
+        $merged = $coinRows->concat($legacyRows)->sortByDesc('created_at')->values();
+
+        $search = trim((string) request('search'));
+        if ($search !== '') {
+            $merged = $merged->filter(fn ($row) => str_contains(strtolower($row->trx), strtolower($search)))->values();
+        }
+        $trxType = request('trx_type');
+        if ($trxType === '+' || $trxType === '-') {
+            $merged = $merged->filter(fn ($row) => $row->trx_type === $trxType)->values();
+        }
+
+        $perPage = getPaginate();
+        $page    = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $transactions = new \Illuminate\Pagination\LengthAwarePaginator(
+            $merged->forPage($page, $perPage)->values(),
+            $merged->count(),
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => request()->query()]
+        );
+
+        return view('Template::user.transactions', compact('pageTitle', 'transactions', 'remarks', 'coinMode'));
     }
 
     public function kycForm() {
