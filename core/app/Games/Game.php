@@ -384,7 +384,12 @@ abstract class Game {
             return;
         }
 
-        $user = User::find($userId);
+        // This already runs nested inside complete()'s own locked transaction on this same
+        // user row, so a second concurrent complete() call for this user is already serialized
+        // behind that lock. Taking the lock again here explicitly (rather than a plain find())
+        // is defense in depth - it keeps this method safe on its own if it's ever called from
+        // anywhere that isn't already holding that lock.
+        $user = User::whereKey($userId)->lockForUpdate()->first();
         if (!$user) {
             return;
         }
@@ -394,7 +399,7 @@ abstract class Game {
         $playCount         = $user->gameLogs()->where('game_id', $gameId)->where('demo_play', Status::NO)->count();
 
         if ($playCount >= $requiredPlayCount) {
-            $user->balance += $bonusAmount;
+            $user->balance = bcadd((string) $user->balance, (string) $bonusAmount, 8);
             $user->save();
 
             $transaction               = new Transaction();
