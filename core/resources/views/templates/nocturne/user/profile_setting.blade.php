@@ -55,13 +55,22 @@
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label class="form-label">@lang('E-mail Address')</label>
-                                    <input class="form--control" value="{{ $user->email }}" readonly>
+                                    <input type="email" class="form--control" name="email" value="{{ old('email', $user->email) }}">
+                                    @if (!empty($user->pending_email))
+                                        <small class="text-muted d-block mt-1">
+                                            @lang('Confirmation pending for :email.', ['email' => $user->pending_email])
+                                            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#confirmEmailModal">@lang('Enter code')</a>
+                                            &middot;
+                                            <form action="{{ route('user.profile.email.cancel') }}" method="post" class="d-inline">@csrf<button type="submit" class="btn btn-link p-0 text-muted" style="text-decoration:underline">@lang('Cancel')</button></form>
+                                        </small>
+                                    @endif
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label class="form-label">@lang('Mobile Number')</label>
                                     <input class="form--control" value="{{ $user->mobile }}" readonly>
+                                    <small class="text-muted d-block mt-1">@lang('Contact support to change your mobile number.')</small>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -92,7 +101,16 @@
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label class="form-label">@lang('Country')</label>
-                                    <input class="form--control" value="{{ @$user->country_name }}" disabled>
+                                    @if ($countries->isNotEmpty())
+                                        <select class="form--control" name="country_id">
+                                            <option value="">{{ @$user->country_name ?: __('Select country') }}</option>
+                                            @foreach ($countries as $country)
+                                                <option value="{{ $country->id }}" @selected((int) old('country_id', $user->country_id) === $country->id)>{{ $country->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input class="form--control" value="{{ @$user->country_name }}" disabled>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -128,6 +146,32 @@
                                 @endforeach
                             </div>
                             <button type="submit" class="btn btn--base nocturne-currency-submit" id="currency-submit" disabled>@lang('Update Currency')</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (!empty($user->pending_email))
+        <div class="modal custom--modal fade" id="confirmEmailModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@lang('Confirm Your New Email')</h5>
+                        <span class="close" data-bs-dismiss="modal" type="button" aria-label="Close">
+                            <i class="ph-fill ph-x"></i>
+                        </span>
+                    </div>
+                    <div class="modal-body">
+                        <p>@lang('Enter the code we sent to :email to finish changing your email address.', ['email' => $user->pending_email])</p>
+                        <form action="{{ route('user.profile.email.confirm') }}" method="post">
+                            @csrf
+                            <div class="form-group">
+                                <label class="form-label">@lang('Verification Code')</label>
+                                <input type="text" class="form--control" name="code" required autocomplete="off" inputmode="numeric">
+                            </div>
+                            <button type="submit" class="btn btn--base w-100">@lang('Confirm Email')</button>
                         </form>
                     </div>
                 </div>

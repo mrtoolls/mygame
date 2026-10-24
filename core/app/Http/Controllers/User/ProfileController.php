@@ -3,35 +3,47 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Transaction;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller {
     public function profile() {
         $pageTitle  = "Profile Setting";
         $user       = auth()->user();
         $currencies = Currency::where('enabled', true)->orderBy('code')->get();
-        return view('Template::user.profile_setting', compact('pageTitle', 'user', 'currencies'));
+        $countries  = Schema::hasTable('countries')
+            ? Country::where('is_enabled', true)->where('is_allowed', true)->orderBy('name')->get()
+            : collect();
+        return view('Template::user.profile_setting', compact('pageTitle', 'user', 'currencies', 'countries'));
     }
 
     public function submitProfile(Request $request) {
         $user = auth()->user();
 
-        $request->validate([
+        $rules = [
             'firstname' => 'required|string',
             'lastname'  => 'required|string',
             'username'  => 'required|string|min:3|max:60|regex:/^[a-z0-9_]+$/|unique:users,username,' . $user->id,
             'image'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
-        ], [
+            'email'     => 'nullable|email|max:191|unique:users,email,' . $user->id,
+        ];
+        if (Schema::hasColumn('users', 'country_id')) $rules['country_id'] = 'nullable|exists:countries,id';
+
+        $request->validate($rules, [
             'firstname.required' => 'The first name field is required',
             'lastname.required'  => 'The last name field is required',
             'username.regex'     => 'Username can contain only lowercase letters, numbers and underscore.',
+            'email.unique'       => 'That email address is already in use by another account.',
         ]);
 
         $user->firstname = $request->firstname;
@@ -42,6 +54,37 @@ class ProfileController extends Controller {
         $user->city    = $request->city;
         $user->state   = $request->state;
         $user->zip     = $request->zip;
+
+        $notify = [];
+
+        // Country - keep both the modern FK (country_id, what new code should read) and the
+        // legacy free-text mirror columns (country_name/country_code/dial_code, what older code
+        // in this app - e.g. the admin users list - still reads) in sync, so nothing elsewhere
+        // silently breaks or shows stale data for a user who changes this.
+        if ($request->filled('country_id') && Schema::hasColumn('users', 'country_id')) {
+            $country = Country::where('is_enabled', true)->where('is_allowed', true)->find($request->country_id);
+            if ($country) {
+                $user->country_id = $country->id;
+                if (Schema::hasColumn('users', 'country_name')) $user->country_name = $country->name;
+                if (Schema::hasColumn('users', 'country_code')) $user->country_code = $country->iso_code;
+                if (Schema::hasColumn('users', 'dial_code')) $user->dial_code = $country->phone_code;
+            }
+        }
+
+        // Email - never overwritten directly. A changed address is held in pending_email until
+        // the user confirms it with a code sent to that NEW address, the same ver_code mechanism
+        // already used for registration's email verification - otherwise anyone who can submit
+        // this form (e.g. via a stolen session) could silently redirect the account's email to
+        // one they control and lock the real owner out.
+        if (Schema::hasColumn('users', 'pending_email') && $request->filled('email') && $request->email !== $user->email) {
+            $user->pending_email     = $request->email;
+            $user->ver_code          = verificationCode(6);
+            $user->ver_code_send_at  = Carbon::now();
+            $pending = clone $user;
+            $pending->email = $request->email;
+            notify($pending, 'EVER_CODE', ['code' => $user->ver_code], ['email']);
+            $notify[] = ['success', "We've sent a confirmation code to {$request->email}. Enter it below to finish changing your email."];
+        }
 
         if ($request->hasFile('image')) {
             // Only delete the old file when it's a previous custom upload of this user's own -
@@ -55,7 +98,52 @@ class ProfileController extends Controller {
         }
 
         $user->save();
-        $notify[] = ['success', 'Profile updated successfully'];
+        if (!$notify) $notify[] = ['success', 'Profile updated successfully'];
+        return back()->withNotify($notify);
+    }
+
+    // Confirms a pending email change (see submitProfile()) - the account's real email only
+    // ever changes here, after the code sent to the NEW address is proven to have been received.
+    public function confirmEmailChange(Request $request) {
+        $user = auth()->user();
+        $request->validate(['code' => 'required']);
+
+        if (!$user->pending_email) {
+            $notify[] = ['error', 'There is no pending email change to confirm.'];
+            return back()->withNotify($notify);
+        }
+        if (!$user->ver_code_send_at || $user->ver_code_send_at->addMinutes(30) < Carbon::now()) {
+            $notify[] = ['error', 'That code has expired. Please request the email change again.'];
+            return back()->withNotify($notify);
+        }
+        if ($user->ver_code !== $request->code) {
+            throw ValidationException::withMessages(['code' => "Verification code didn't match!"]);
+        }
+        // Re-check uniqueness at confirmation time too, not just when the change was requested -
+        // another account could have taken that address in the meantime.
+        if (User::where('email', $user->pending_email)->where('id', '!=', $user->id)->exists()) {
+            $notify[] = ['error', 'That email address was taken by another account in the meantime. Please choose a different one.'];
+            return back()->withNotify($notify);
+        }
+
+        $user->email            = $user->pending_email;
+        $user->pending_email    = null;
+        $user->ver_code         = null;
+        $user->ver_code_send_at = null;
+        $user->save();
+
+        $notify[] = ['success', 'Your email address has been updated.'];
+        return back()->withNotify($notify);
+    }
+
+    // Lets a user back out of a pending email change without waiting for the code to expire.
+    public function cancelEmailChange() {
+        $user = auth()->user();
+        $user->pending_email    = null;
+        $user->ver_code         = null;
+        $user->ver_code_send_at = null;
+        $user->save();
+        $notify[] = ['success', 'Email change cancelled.'];
         return back()->withNotify($notify);
     }
 
