@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Constants\Status;
 use App\Games\TableGames\TableGameService;
 use App\Models\CoinCutoverLog;
+use App\Models\CoinCutoverUserArchive;
+use App\Models\Currency;
 use App\Models\Deposit;
 use App\Models\GameLog;
 use App\Models\TableGame;
@@ -72,6 +74,16 @@ class CoinCutover
         $this->assertValidMode($mode, $resetAmount);
         $startedAt = now();
 
+        // Created up front (not after the loop) so every per-user archive row below can carry a
+        // real run id from the start, instead of a time-window query to backfill it afterwards.
+        $log = CoinCutoverLog::create([
+            'mode' => $mode,
+            'dry_run' => false,
+            'admin_id' => $adminId,
+            'summary' => [],
+            'started_at' => $startedAt,
+        ]);
+
         $gamesRefunded = $this->settleRunningGames();
         $tablesClosed = $this->closeOpenTables();
         $depositsCancelled = $this->cancelPendingDeposits();
@@ -83,9 +95,19 @@ class CoinCutover
         $errors = [];
         $vipController = $mode === 'convert' ? app(\App\Http\Controllers\User\VipController::class) : null;
 
-        User::chunkById(500, function ($users) use (&$usersConverted, &$totalCoinsMinted, &$rakebackMaterialized, &$errors, $mode, $resetAmount, $vipController, $adminId) {
+        User::chunkById(500, function ($users) use (&$usersConverted, &$totalCoinsMinted, &$rakebackMaterialized, &$errors, $mode, $resetAmount, $vipController, $adminId, $log) {
             foreach ($users as $user) {
                 try {
+                    $legacyBalance = (string) $user->balance;
+                    $hadBalance = bccomp($legacyBalance, '0', 8) > 0;
+                    $rateUsed = null;
+                    if ($mode === 'convert' && $hadBalance && $user->currency_id) {
+                        $currency = Currency::find($user->currency_id);
+                        if ($currency) {
+                            try { $rateUsed = $this->pricing->buyPrice($currency); } catch (InvalidArgumentException) {}
+                        }
+                    }
+
                     $coinAmount = $this->coinAmountFor($user, $mode, $resetAmount);
                     if (bccomp($coinAmount, '0', 8) > 0) {
                         $this->ledger->mint('user', $user->id, $coinAmount, 'Coin cutover (' . $mode . ')', 'cutover:' . $mode . ':user:' . $user->id);
@@ -96,6 +118,20 @@ class CoinCutover
                     // real accrued rakeback).
                     if ($vipController && $vipController->materializeRakebackToCoins($user, 'admin', $adminId)) {
                         $rakebackMaterialized++;
+                    }
+                    // Only a real legacy-balance conversion gets an archive row - a re-run against
+                    // an already-zeroed user (idempotency) or a reset_test mint has nothing to
+                    // archive here, so nothing new is written on a repeat run.
+                    if ($mode === 'convert' && $hadBalance) {
+                        CoinCutoverUserArchive::create([
+                            'coin_cutover_log_id' => $log->id,
+                            'user_id' => $user->id,
+                            'legacy_balance' => $legacyBalance,
+                            'currency_id' => $user->currency_id,
+                            'rate_used' => $rateUsed,
+                            'coins_minted' => $coinAmount,
+                            'created_at' => now(),
+                        ]);
                     }
                     $usersConverted++;
                     $totalCoinsMinted = bcadd($totalCoinsMinted, $coinAmount, 8);
@@ -119,14 +155,8 @@ class CoinCutover
             'reconciliation' => $this->ledger->reconcile(),
         ];
 
-        return CoinCutoverLog::create([
-            'mode' => $mode,
-            'dry_run' => false,
-            'admin_id' => $adminId,
-            'summary' => $summary,
-            'started_at' => $startedAt,
-            'finished_at' => now(),
-        ]);
+        $log->update(['summary' => $summary, 'finished_at' => now()]);
+        return $log->fresh();
     }
 
     private function coinAmountFor(User $user, string $mode, ?string $resetAmount): string

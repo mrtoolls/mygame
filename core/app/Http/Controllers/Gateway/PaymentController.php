@@ -49,7 +49,9 @@ class PaymentController extends Controller {
         $coinMode = (bool) gs('coin_mode');
         $coinBuyPrice = null;
         $coinPricingError = null;
+        $coinPegUsd = null;
         if ($coinMode) {
+            $coinPegUsd = (string) (gs('coin_peg_usd') ?: '0.01');
             $currency = auth()->user()->currency;
             if (!$currency) {
                 $coinPricingError = "A wallet currency is required to price coin purchases.";
@@ -57,13 +59,17 @@ class PaymentController extends Controller {
                 try {
                     $coinBuyPrice = app(\App\Services\CoinPricing::class)->buyPrice($currency);
                 } catch (\InvalidArgumentException $exception) {
-                    $coinPricingError = "Coin pricing isn't set up for your currency yet. Please contact support or try again later.";
+                    // Never a dead end: the exact local price isn't ready, but the USD peg always
+                    // is - show that plus the reason instead of leaving the page with just an
+                    // error and no numbers at all. The actual purchase stays disabled until an
+                    // admin prices this currency (Coin Settings > Seed Pricing for All Currencies).
+                    $coinPricingError = "Coin pricing isn't set up for {$currency->code} yet - purchases are paused for this currency until an admin sets a price.";
                 }
             }
         }
 
         $pageTitle = $coinMode ? 'Buy Coins' : 'Deposit Methods';
-        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle', 'coinMode', 'coinBuyPrice', 'coinPricingError'));
+        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle', 'coinMode', 'coinBuyPrice', 'coinPricingError', 'coinPegUsd'));
     }
 
     public function depositInsert(Request $request) {

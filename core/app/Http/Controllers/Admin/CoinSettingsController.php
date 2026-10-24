@@ -47,7 +47,14 @@ class CoinSettingsController extends Controller
         $general->coin_mode_confirmed_at = now();
         $general->save();
 
-        return back()->withNotify([['success', 'Coin mode is now on.']]);
+        // Make sure every enabled currency has a price (or is clearly marked paused with why)
+        // the moment coin mode goes live, instead of players hitting a cold, unpriced currency.
+        $results = app(CoinPricing::class)->recomputeAll();
+        $paused = array_filter($results, fn ($r) => !$r['ok']);
+        $notify = [['success', 'Coin mode is now on.']];
+        if ($paused) $notify[] = ['error', count($paused) . ' currenc' . (count($paused) === 1 ? 'y is' : 'ies are') . ' paused (no live coin price): ' . implode(', ', array_keys($paused)) . '. See the banner below.'];
+
+        return back()->withNotify($notify);
     }
 
     public function toggleTestKit(Request $request)

@@ -137,6 +137,9 @@ Schema::create('withdrawals', function (Blueprint $table) {
 
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
+$cutoverArchiveMigration = require dirname(__DIR__) . '/database/migrations/2026_10_25_000002_create_coin_cutover_user_archives_table.php';
+$cutoverArchiveMigration->up();
 $supervisorFlagMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000013_add_is_marketplace_supervisor_to_support_agents.php';
 $supervisorFlagMigration->up();
 $marketplaceMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000020_create_coin_marketplace_tables.php';
@@ -192,12 +195,25 @@ if (bccomp((string) $ledger->wallet('user', $richUser->id)->fresh()->available_b
 if (!$ledger->reconcile()['ok']) throw new RuntimeException('Reconciliation broke after the cutover.');
 fwrite(STDOUT, "Cutover: convert mode settles open games/withdrawals first, cancels pending deposits, then mints coins at the locked rate and zeroes the legacy balance.\n");
 
+// --- Per-user archive: exactly what was converted, in which currency, at what rate. ---
+$richArchive = \App\Models\CoinCutoverUserArchive::where('user_id', $richUser->id)->first();
+if (!$richArchive) throw new RuntimeException('The rich user was converted but no archive row was written.');
+if (bccomp((string) $richArchive->legacy_balance, '1055', 8) !== 0) throw new RuntimeException("Archive recorded the wrong legacy balance: {$richArchive->legacy_balance}");
+if ((int) $richArchive->currency_id !== (int) $ngn->id) throw new RuntimeException('Archive recorded the wrong currency.');
+if (bccomp((string) $richArchive->rate_used, $buyPrice, 8) !== 0) throw new RuntimeException('Archive did not record the exact buy price used.');
+if (bccomp((string) $richArchive->coins_minted, bcdiv('1055', $buyPrice, 0), 8) !== 0) throw new RuntimeException('Archive did not record the coins minted from the balance conversion.');
+if ((int) $richArchive->coin_cutover_log_id !== (int) $log->id) throw new RuntimeException('Archive row was not linked to the cutover run that produced it.');
+if (\App\Models\CoinCutoverUserArchive::where('user_id', $poorUser->id)->exists()) throw new RuntimeException('A user with zero legacy balance should not get an archive row.');
+fwrite(STDOUT, "Cutover: a per-user archive row records the exact legacy balance, currency, rate, and coins minted.\n");
+
 // --- Re-running the cutover must not double-mint (balances are already zero). ---
 $before = (string) $ledger->wallet('user', $richUser->id)->fresh()->available_balance;
+$archiveCountBefore = \App\Models\CoinCutoverUserArchive::count();
 $cutover->execute('convert', null, $adminId);
 $after = (string) $ledger->wallet('user', $richUser->id)->fresh()->available_balance;
 if (bccomp($before, $after, 8) !== 0) throw new RuntimeException('Re-running the cutover changed an already-converted balance.');
-fwrite(STDOUT, "Cutover: re-running it is safe - already-zeroed balances are not converted again.\n");
+if (\App\Models\CoinCutoverUserArchive::count() !== $archiveCountBefore) throw new RuntimeException('Re-running the cutover wrote duplicate archive rows for already-converted users.');
+fwrite(STDOUT, "Cutover: re-running it is safe - already-zeroed balances are not converted again, and no duplicate archive rows are written.\n");
 
 // --- reset_test mode applies a flat amount to every user, regardless of balance. ---
 $testA = $insertUser('cutover_test_a', '999', $ngn->id);
@@ -210,6 +226,34 @@ fwrite(STDOUT, "Cutover: reset_test mode applies a flat coin amount to every acc
 
 if (\App\Models\CoinCutoverLog::count() < 3) throw new RuntimeException('Cutover runs were not logged.');
 fwrite(STDOUT, "Cutover: every run is logged with a summary.\n");
+
+// --- Pricing seed: a currency with no exchange rate is paused (with a reason), not thrown away,
+// and seeding the rest keeps working around it. ---
+$noRateCurrency = Currency::create(['code' => 'XYZ', 'decimals' => 2, 'enabled' => true, 'rate_to_usd' => null]);
+$pricing = app(CoinPricing::class);
+$results = $pricing->recomputeAll();
+if (($results['XYZ']['ok'] ?? true) !== false) throw new RuntimeException('A currency with no exchange rate should fail to price.');
+if (($results['NGN']['ok'] ?? false) !== true) throw new RuntimeException('Seeding should still succeed for every other currency when one fails.');
+$pausedRate = \App\Models\CoinRate::where('currency_id', $noRateCurrency->id)->first();
+if (!$pausedRate || $pausedRate->status !== 'paused' || !$pausedRate->pause_reason) throw new RuntimeException('An unpriceable currency was not persisted as paused with a reason.');
+$ngnRate = \App\Models\CoinRate::where('currency_id', $ngn->id)->first();
+if ($ngnRate->status !== 'active') throw new RuntimeException('A successfully priced currency should be marked active.');
+fwrite(STDOUT, "Pricing seed: a currency with no exchange rate is marked paused with a reason, and does not block pricing every other currency.\n");
+
+// Idempotency: seeding again changes nothing about the paused currency except re-confirming it.
+$pricing->recomputeAll();
+$pausedRateAgain = \App\Models\CoinRate::where('currency_id', $noRateCurrency->id)->first();
+if ($pausedRateAgain->status !== 'paused' || $pausedRateAgain->buy_price !== null) throw new RuntimeException('Re-seeding should not invent a price for a currency that still has no exchange rate.');
+fwrite(STDOUT, "Pricing seed: re-running it is idempotent - a currency that is still unpriceable stays paused without a fabricated price.\n");
+
+// Once the currency gets a real rate, the very same seed call prices it and clears the pause.
+$noRateCurrency->rate_to_usd = '0.5';
+$noRateCurrency->last_updated_at = now();
+$noRateCurrency->save();
+$pricing->recomputeAll();
+$recoveredRate = \App\Models\CoinRate::where('currency_id', $noRateCurrency->id)->first();
+if ($recoveredRate->status !== 'active' || !$recoveredRate->buy_price) throw new RuntimeException('A currency that gained a real exchange rate should price successfully and clear its paused state.');
+fwrite(STDOUT, "Pricing seed: a currency recovers from paused to active as soon as it has a usable exchange rate.\n");
 
 // --- Admin test kit smoke test. ---
 $general = gs();
@@ -242,6 +286,7 @@ if (!$ledger->reconcile()['ok']) throw new RuntimeException('Reconciliation brok
 
 // Best-effort teardown.
 try {
+    $cutoverArchiveMigration->down();
     $cutoverLogMigration->down();
     $marketplaceMigration->down();
     $supervisorFlagMigration->down();

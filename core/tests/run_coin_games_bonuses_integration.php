@@ -130,6 +130,7 @@ Schema::create('gameplay_bonus_logs', function (Blueprint $table) {
 
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
 $bonusCodesMigration = require dirname(__DIR__) . '/database/migrations/2026_10_18_000005_create_bonus_codes_table.php';
 $bonusCodesMigration->up();
 

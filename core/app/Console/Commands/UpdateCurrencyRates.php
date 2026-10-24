@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Currency;
+use App\Services\CoinPricing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -50,6 +51,16 @@ class UpdateCurrencyRates extends Command
             $updated++;
         }
         $this->info("Updated {$updated} automatic currency reporting rates.");
+
+        // Keep coin pricing in step with every rate refresh - a currency whose FX rate just came
+        // back from stale/missing gets re-priced automatically instead of staying paused until an
+        // admin happens to click "Seed Pricing for All Currencies".
+        if (\Illuminate\Support\Facades\Schema::hasTable('coin_rates')) {
+            $results = app(CoinPricing::class)->recomputeAll();
+            $paused = count(array_filter($results, fn ($r) => !$r['ok']));
+            if ($paused) $this->warn("{$paused} currenc" . ($paused === 1 ? 'y is' : 'ies are') . " still paused for coin pricing.");
+        }
+
         return self::SUCCESS;
     }
 }

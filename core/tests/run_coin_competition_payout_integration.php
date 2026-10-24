@@ -71,6 +71,7 @@ Schema::create('currencies', function (Blueprint $table) {
 
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
 
 $competitionsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_22_000004_create_competitions_core_tables.php';
 $competitionsMigration->up();

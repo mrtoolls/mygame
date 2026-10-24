@@ -133,6 +133,7 @@ Schema::create('deposits', function (Blueprint $table) {
 
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
 $floatGrantsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000012_create_agent_coin_float_grants_table.php';
 $floatGrantsMigration->up();
 $depositFieldsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000014_add_coin_purchase_fields_to_deposits.php';

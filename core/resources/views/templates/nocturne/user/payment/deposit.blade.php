@@ -27,9 +27,12 @@
 
     @if($coinMode ?? false)
         @if($coinPricingError)
-            <div class="nocturne-wallet-coin-notice nocturne-wallet-coin-notice--error">
+            <div class="nocturne-wallet-coin-notice nocturne-wallet-coin-notice--error" id="coin-preview-box" data-coin-buy-price="0">
                 <i class="ph-fill ph-warning-circle"></i>
-                <span>{{ __($coinPricingError) }}</span>
+                <span>
+                    {{ __($coinPricingError) }}
+                    <br><small>@lang('USD peg'): <strong>1 {{ __('Coin') }} = ${{ showAmount($coinPegUsd, currencyFormat: false) }}</strong> @lang('(reference only - your currency price is not available)')</small>
+                </span>
             </div>
         @else
             <div class="nocturne-wallet-coin-notice" id="coin-preview-box" data-coin-buy-price="{{ $coinBuyPrice }}">
@@ -317,6 +320,7 @@
     var amount = parseFloat($('.amount').val() || 0);
     var gateway, minAmount, maxAmount;
     var coinMode = {{ ($coinMode ?? false) ? 'true' : 'false' }};
+    var coinPricingBlocked = {{ (($coinMode ?? false) && $coinPricingError) ? 'true' : 'false' }};
     var coinBuyPrice = parseFloat($('#coin-preview-box').data('coin-buy-price')) || 0;
 
     function updateCoinPreview() {
@@ -416,7 +420,7 @@
         $('.gateway-currency').text(gateway.currency);
         $('.nocturne-wallet-charges').toggleClass('d-none', !(percentCharge > 0 || fixedCharge > 0));
 
-        $('#deposit-cta').prop('disabled', !(amount >= Number(gateway.min_amount) && amount <= Number(gateway.max_amount)));
+        $('#deposit-cta').prop('disabled', coinPricingBlocked || !(amount >= Number(gateway.min_amount) && amount <= Number(gateway.max_amount)));
 
         if (gateway.currency != "{{ gs('cur_text') }}" && gateway.method.crypto != 1) {
             $('.gateway-conversion, .conversion-currency').removeClass('d-none');

@@ -94,6 +94,7 @@ $rakebackClaimsMigration->up();
 
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
 
 $ledger = app(CoinLedger::class);
 $insertUser = static function (string $username) {

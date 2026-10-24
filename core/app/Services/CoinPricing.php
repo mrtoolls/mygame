@@ -67,6 +67,8 @@ class CoinPricing
                 $rate->buy_price = $buyPrice;
                 $rate->sell_price = $sellPrice;
                 $rate->flagged_for_review = false;
+                $rate->status = 'active';
+                $rate->pause_reason = null;
                 $rate->last_computed_at = now();
                 $rate->updated_by_admin_id = $adminId;
                 $rate->save();
@@ -90,6 +92,15 @@ class CoinPricing
         });
     }
 
+    /**
+     * Prices every enabled currency that can be priced right now, and persists a 'paused' state
+     * (with the reason) for any that can't - called by the admin "Seed pricing for all
+     * currencies" button, automatically when coin_mode is switched on, and after the daily
+     * currency-rate refresh. Idempotent: an already-priced currency just gets re-recomputed (same
+     * as always), and a currency that's already paused for the same reason is simply re-marked,
+     * nothing duplicates. Never overwrites an existing buy_price/sell_price on failure - pausing
+     * only touches the status/reason fields.
+     */
     public function recomputeAll(): array
     {
         $results = [];
@@ -97,10 +108,23 @@ class CoinPricing
             try {
                 $results[$currency->code] = ['ok' => true, 'rate' => $this->recompute($currency)];
             } catch (InvalidArgumentException $exception) {
+                $this->markPaused($currency, $exception->getMessage());
                 $results[$currency->code] = ['ok' => false, 'error' => $exception->getMessage()];
             }
         }
         return $results;
+    }
+
+    private function markPaused(Currency $currency, string $reason): void
+    {
+        $general = gs();
+        $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id], [
+            'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 3,
+            'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 3,
+        ]);
+        $rate->status = 'paused';
+        $rate->pause_reason = $reason;
+        $rate->save();
     }
 
     /** The current, live buy price per coin in this currency - throws if none has been computed yet. */
