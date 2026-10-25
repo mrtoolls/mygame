@@ -22,7 +22,7 @@
                             <tr>
                                 <td>{{ __($log->userFrom->username) }}</td>
                                 <td>{{ __($log->level) }}</td>
-                                <td>{{ showAmount($log->amount) }}</td>
+                                <td>{{ gs('coin_mode') ? coinAmountText($log->amount) : showAmount($log->amount) }}</td>
                                 <td>{{ __($log->title) }}</td>
                                 <td>{{ $log->trx }}</td>
                             </tr>

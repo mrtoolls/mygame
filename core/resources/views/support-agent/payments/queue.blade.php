@@ -54,7 +54,7 @@
                 <div style="display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--agent-line);border-radius:14px;background:var(--agent-panel);flex-wrap:wrap">
                     <div style="flex:1;min-width:200px">
                         <strong>{{ $deposit->user?->username }}</strong>
-                        <div style="color:var(--agent-muted);font-size:12px">{{ showAmount($deposit->amount) }} · {{ $deposit->trx }} · {{ showDateTime($deposit->created_at) }}</div>
+                        <div style="color:var(--agent-muted);font-size:12px">{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showAmount($deposit->amount) }} · {{ $deposit->trx }} · {{ showDateTime($deposit->created_at) }}</div>
                     </div>
                     <a href="{{ route('support-agent.payments.show', $deposit->id) }}" style="padding:9px 14px;border:1px solid var(--agent-line);border-radius:10px;color:var(--agent-text);text-decoration:none;font-size:12px;font-weight:800">Review</a>
                     <form method="post" action="{{ route('support-agent.payments.confirm', $deposit->id) }}">

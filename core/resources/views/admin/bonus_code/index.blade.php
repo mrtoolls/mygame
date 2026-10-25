@@ -20,7 +20,7 @@
                                 @forelse($codes as $code)
                                     <tr>
                                         <td class="fw-bold">{{ $code->code }}</td>
-                                        <td>{{ showAmount($code->amount) }}</td>
+                                        <td>{{ gs('coin_mode') ? coinAmountText($code->amount) : showAmount($code->amount) }}</td>
                                         <td>{{ $code->used_count }}{{ $code->max_uses ? ' / ' . $code->max_uses : '' }}</td>
                                         <td>{{ $code->expires_at ? showDateTime($code->expires_at) : __('Never') }}</td>
                                         <td>@php echo $code->statusBadge @endphp</td>

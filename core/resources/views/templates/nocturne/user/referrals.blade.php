@@ -24,7 +24,7 @@
         <div class="nocturne-rakeback-card__stats">
             <div>
                 <span>@lang('Bets placed in 24 hours')</span>
-                <strong>{{ showAmount($wagered24h) }}</strong>
+                <strong>{{ gs('coin_mode') ? coinAmountText($wagered24h) : showAmount($wagered24h) }}</strong>
             </div>
             <div>
                 <span>@lang('Your rakeback percent')</span>
@@ -44,7 +44,7 @@
         <div class="nocturne-rakeback-card__claim">
             <div>
                 <span>@lang('Available to receive')</span>
-                <strong>{{ showAmount($claimable) }}</strong>
+                <strong>{{ gs('coin_mode') ? coinAmountText($claimable) : showAmount($claimable) }}</strong>
             </div>
             <form action="{{ route('user.vip.claim.rakeback') }}" method="POST" class="disableSubmission">
                 @csrf
@@ -76,7 +76,7 @@
                             @foreach ($activeBonuses as $redemption)
                                 <tr>
                                     <td>{{ $redemption->bonusCode?->code ?? '-' }}</td>
-                                    <td class="text--success">{{ showAmount($redemption->amount) }}</td>
+                                    <td class="text--success">{{ gs('coin_mode') ? coinAmountText($redemption->amount) : showAmount($redemption->amount) }}</td>
                                     <td>{{ showDateTime($redemption->created_at) }}</td>
                                 </tr>
                             @endforeach

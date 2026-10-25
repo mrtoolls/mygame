@@ -97,8 +97,12 @@
             <div class="game--card">
                 <h4 class="game-contet-title">
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    <span class="text balance">{{ showAmount($balance, currencyFormat: false) }}</span>
-                    {{ __(gs('cur_text')) }}
+                    @if (!$isDemo && gs('coin_mode'))
+                        <span class="text balance">{!! showUserBalance() !!}</span>
+                    @else
+                        <span class="text balance">{{ showAmount($balance, currencyFormat: false) }}</span>
+                        {{ __(gs('cur_text')) }}
+                    @endif
                 </h4>
                 <form id="game" method="post">
                     @csrf
@@ -106,11 +110,11 @@
                         <div class="input-group">
                             <input class="form-control form--control" name="invest" type="number" step="any"
                                    value="{{ old('invest') }}" placeholder="@lang('Enter amount')" autocomplete="off">
-                            <span class="input-group-text">{{ __(gs('cur_text')) }}</span>
+                            <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</span>
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i> @lang('Invest Limit'):
-                            {{ showAmount($game->min_limit) }} - {{ showAmount($game->max_limit) }}
+                            @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} - {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->min_limit) }} - {{ showAmount($game->max_limit) }} @endif
                         </small>
                         <small class="fw-light mt-1 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i> @lang('Select 2 cards from your High Hand for the Low Hand')
@@ -432,10 +436,10 @@
 
 @push('script')
     <script>
-        let userBalance = Number("{{ $balance }}");
-        let minLimit = Number("{{ $game->min_limit }}");
-        let maxLimit = Number("{{ $game->max_limit }}");
-        let currency = "{{ gs('cur_text') }}";
+        let userBalance = Number("@if (!$isDemo && gs('coin_mode')){{ app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance }}@else{{ $balance }}@endif");
+        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif");
+        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif");
+        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif";
         let investField = $("[name=invest]");
         let investBtn = $(".investBtn");
         let balance = $(".balance");

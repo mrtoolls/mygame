@@ -26,7 +26,14 @@
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;font-size:13px">
-                <div><span style="color:var(--agent-muted)">Amount</span><br><strong>{{ showAmount($deposit->amount) }}</strong></div>
+                <div><span style="color:var(--agent-muted)">Amount</span><br><strong>
+                    @if($deposit->coin_mode_purchase)
+                        {{ coinAmountText($deposit->coin_amount) }}
+                        <br><span style="color:var(--agent-muted);font-size:11px;font-weight:600">Paid {{ showAmount($deposit->amount) }} + <span style="color:#ff9aaa">{{ showAmount($deposit->charge) }} charge</span></span>
+                    @else
+                        {{ showAmount($deposit->amount) }}
+                    @endif
+                </strong></div>
                 <div><span style="color:var(--agent-muted)">Trx</span><br><strong>{{ $deposit->trx }}</strong></div>
                 <div><span style="color:var(--agent-muted)">Submitted</span><br><strong>{{ showDateTime($deposit->created_at) }}</strong></div>
                 @if($deposit->confirmation_deadline_at)

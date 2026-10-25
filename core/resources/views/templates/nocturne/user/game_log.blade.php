@@ -65,7 +65,7 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td><span>{{ showAmount($log->invest) }}</span> </td>
+                                    <td><span>{{ gs('coin_mode') ? coinAmountText($log->invest) : showAmount($log->invest) }}</span> </td>
                                     <td>
                                         @if ($log->win_status == Status::WIN)
                                             <span class="badge badge--success"><i class="las la-smile"></i>

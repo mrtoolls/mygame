@@ -59,8 +59,12 @@
                                         {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
                                     </p>
                                     <h5 class="color-predict-text">
-                                        {{ showAmount($balance, currencyFormat: false) }}
-                                        <span class="text--base">{{ __(gs('cur_text')) }}</span>
+                                        @if (!$isDemo && gs('coin_mode'))
+                                            {!! showUserBalance() !!}
+                                        @else
+                                            {{ showAmount($balance, currencyFormat: false) }}
+                                            <span class="text--base">{{ __(gs('cur_text')) }}</span>
+                                        @endif
                                     </h5>
                                 </div>
                             </div>
@@ -126,7 +130,7 @@
 
                             <div class="form-group">
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text">{{ gs('cur_sym') }}</span>
+                                    <span class="input-group-text">@if (gs('coin_mode'))<i class="ph-fill ph-coin"></i>@else{{ gs('cur_sym') }}@endif</span>
                                     <input class="form-control form--control" name="invest" type="number"
                                         step="any" value="{{ old('invest') }}" placeholder="@lang('Enter amount')"
                                         autocomplete="off">
@@ -137,9 +141,9 @@
                                 </div>
                                 <small class="form-text text-muted">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    @lang('Minimum'): {{ showAmount($game->min_limit) }}
+                                    @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showAmount($game->min_limit) }} @endif
                                     |
-                                    @lang('Maximum'): {{ showAmount($game->max_limit) }}
+                                    @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->max_limit) }} @endif
                                 </small>
                             </div>
                             <button class="btn btn--gradient w-100" id="playBtn"
@@ -229,9 +233,9 @@
 
         "use strict";
 
-        let minLimit = Number(`{{ $game->min_limit }}`);
-        let maxLimit = Number(`{{ $game->max_limit }}`);
-        let curText = `{{ gs('cur_text') }}`;
+        let minLimit = Number(`@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif`);
+        let maxLimit = Number(`@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif`);
+        let curText = `@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif`;
         let investField = $("[name=invest]");
         audioAssetPath = `{{ asset('assets/audio') }}`;
 

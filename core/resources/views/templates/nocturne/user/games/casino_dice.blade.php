@@ -37,7 +37,7 @@
                                 <label class="form-label">@lang('Enter Amount')</label>
                                 <div class="input-group input-wrapper">
                                     <input class="form-control form--control" name="invest" type="number"
-                                        value="{{ getAmount($game->min_limit) }}" autocomplete="off">
+                                        value="@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->min_limit) }}@endif" autocomplete="off">
                                     <span class="input-group-text min cursor-pointer">@lang('min')</span>
                                     <span class="input-group-text less cursor-pointer">-10</span>
                                     <span class="input-group-text more cursor-pointer">+10</span>
@@ -74,8 +74,8 @@
                                 <label class="form-label">@lang('Current Balance')</label>
                                 <div class="input-group">
                                     <input class="balance form-control form--control" type="text"
-                                        value="{{ getAmount($balance) }}" autocomplete="off" readonly>
-                                    <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                        value="@if (!$isDemo && gs('coin_mode')){{ number_format((float) app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance, 0, '.', '') }}@else{{ getAmount($balance) }}@endif" autocomplete="off" readonly>
+                                    <span class="input-group-text">{{ (!$isDemo && gs('coin_mode')) ? __('Coins') : gs('cur_text') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -186,7 +186,7 @@
 
         $('.less').on('click', function() {
             let val = $('input[name=invest]').val() - 10;
-            if (val < {{ getAmount($game->min_limit) }}) {
+            if (val < @if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->min_limit) }}@endif) {
                 return false;
             }
             $('input[name=invest]').val(val);
@@ -195,7 +195,7 @@
 
         $('.more').on('click', function() {
             let val = parseFloat($('input[name=invest]').val()) + 10;
-            if (val > {{ getAmount($game->max_limit) }}) {
+            if (val > @if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->max_limit) }}@endif) {
                 return false;
             }
             $('input[name=invest]').val(val);
@@ -203,12 +203,12 @@
         });
 
         $('.min').on('click', function() {
-            $('input[name=invest]').val({{ getAmount($game->min_limit) }});
+            $('input[name=invest]').val(@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->min_limit) }}@endif);
             playAudio(audioAssetPath, 'click.mp3');
         });
 
         $('.max').on('click', function() {
-            $('input[name=invest]').val({{ getAmount($game->max_limit) }});
+            $('input[name=invest]').val(@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->max_limit) }}@endif);
             playAudio(audioAssetPath, 'click.mp3');
         });
 

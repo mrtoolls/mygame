@@ -67,14 +67,18 @@
             <div class="headtail-wrapper">
                 <h4 class="game-contet-title">
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    <span class="text bal">{{ showAmount($balance, currencyFormat: false) }}</span>
-                    {{ __(gs('cur_text')) }}
+                    @if (!$isDemo && gs('coin_mode'))
+                        <span class="text bal">{!! showUserBalance() !!}</span>
+                    @else
+                        <span class="text bal">{{ showAmount($balance, currencyFormat: false) }}</span>
+                        {{ __(gs('cur_text')) }}
+                    @endif
                 </h4>
                 <form id="game" method="post">
                     @csrf
                     <div class="form-group">
                         <div class="input-group">
-                            <span class="input-group-text">{{ gs('cur_sym') }}</span>
+                            <span class="input-group-text">@if (gs('coin_mode'))<i class="ph-fill ph-coin"></i>@else{{ gs('cur_sym') }}@endif</span>
                             <input type="number" step="any" class="form-control form--control" name="invest"
                                 placeholder="@lang('Enter amount')" value="{{ old('invest') }}">
                             <button type="button" class="input-group-text minmax-btn minBtn">@lang('Min')</button>
@@ -82,9 +86,9 @@
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i>
-                            @lang('Minimum'): {{ showAmount($game->min_limit) }}
+                            @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showAmount($game->min_limit) }} @endif
                             |
-                            @lang('Maximum'): {{ showAmount($game->max_limit) }}
+                            @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->max_limit) }} @endif
                             |
                             <span class="text--warning">@lang('Win Amount')
                                 @if ($game->invest_back == 1)
@@ -174,9 +178,9 @@
         "use strict";
 
         let investField = $("[name=invest]");
-        let minLimit = Number("{{ $game->min_limit }}");
-        let maxLimit = Number("{{ $game->max_limit }}");
-        let currency = "{{ gs('cur_text') }}";
+        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif");
+        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif");
+        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif";
         investUrl = "{{ route('user.play.invest', ['dice_rolling', @$isDemo]) }}";
         gameEndUrl = "{{ route('user.play.end', ['dice_rolling', @$isDemo]) }}";
         audioAssetPath = `{{ asset('assets/audio') }}`;
