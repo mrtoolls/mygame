@@ -92,7 +92,7 @@
                                     <select name="linked_game_log_id">
                                         <option value="">@lang('None')</option>
                                         @foreach($recentWins as $log)
-                                            <option value="{{ $log->id }}">{{ __($log->game->name ?? 'Game') }} &middot; {{ showAmount($log->win_amo) }} &middot; {{ showDateTime($log->created_at, 'M d') }}</option>
+                                            <option value="{{ $log->id }}">{{ __($log->game->name ?? 'Game') }} &middot; {{ gs('coin_mode') ? coinAmountText($log->win_amo) : showAmount($log->win_amo) }} &middot; {{ showDateTime($log->created_at, 'M d') }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -148,7 +148,7 @@
                         @if($nextTier)
                             <div class="nocturne-arena-tier-progress">
                                 <div class="nocturne-arena-tier-progress__track"><span style="width:{{ $tierProgressPercent }}%"></span></div>
-                                <small>{{ showAmount(max($nextTier->min_wagered - $wagered, 0)) }} @lang('to') {{ __($nextTier->name) }}</small>
+                                <small>{{ formatVipThreshold(max($nextTier->min_wagered - $wagered, 0)) }} @lang('to') {{ __($nextTier->name) }}</small>
                             </div>
                         @endif
                         <a href="{{ route('user.arena.my-posts') }}" class="nocturne-arena-my-posts-link"><i class="ph-bold ph-list-bullets"></i>@lang('My Posts')</a>
@@ -156,9 +156,9 @@
 
                     <div class="nocturne-arena-widget">
                         <h3><i class="ph-fill ph-chart-bar"></i>@lang('Your Stats')</h3>
-                        <div class="nocturne-arena-stat-row"><span>@lang('Wagered')</span><strong>{{ showAmount($userStats['total_invest']) }}</strong></div>
-                        <div class="nocturne-arena-stat-row"><span>@lang('Won')</span><strong>{{ showAmount($userStats['total_win']) }}</strong></div>
-                        <div class="nocturne-arena-stat-row"><span>@lang('Lost')</span><strong>{{ showAmount($userStats['total_loss']) }}</strong></div>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Wagered')</span><strong>{{ gs('coin_mode') ? coinAmountText($userStats['total_invest']) : showAmount($userStats['total_invest']) }}</strong></div>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Won')</span><strong>{{ gs('coin_mode') ? coinAmountText($userStats['total_win']) : showAmount($userStats['total_win']) }}</strong></div>
+                        <div class="nocturne-arena-stat-row"><span>@lang('Lost')</span><strong>{{ gs('coin_mode') ? coinAmountText($userStats['total_loss']) : showAmount($userStats['total_loss']) }}</strong></div>
                     </div>
                 @endauth
 
