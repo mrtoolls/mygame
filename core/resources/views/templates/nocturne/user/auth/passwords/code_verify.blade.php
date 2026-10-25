@@ -1,53 +1,44 @@
-@extends('Template::layouts.frontend')
+@extends('Template::layouts.auth')
 @section('content')
-    <section class="py-100">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-7 col-xl-5">
-                    <div class="d-flex justify-content-center">
-                        <div class="verification-code-wrapper">
-                            <div class="verification-area">
-                                <form action="{{ route('user.password.verify.code') }}" method="POST"
-                                    class="submit-form row gap-2">
-                                    @csrf
-                                    <p class="pt-3">@lang('A 6 digit verification code sent to your email address') : {{ showEmailAddress($email) }}</p>
-                                    <input type="hidden" name="email" value="{{ $email }}">
+    @php
+        $loginContent = getContent('login.content', true);
+        $authImage = @$loginContent->data_values->image
+            ? getImage('assets/images/frontend/login/' . $loginContent->data_values->image, '1920x1080')
+            : asset('assets/images/frontend/nockturne_assets/landing_girl.jpg');
+    @endphp
+    <section class="nocturne-auth">
+        <div class="nocturne-auth-card">
+            <div class="nocturne-auth-visual" @if ($authImage) style="background-image:url('{{ $authImage }}')" @endif>
+                <a href="{{ route('landing') }}" class="nocturne-auth-visual__brand">
+                    <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
+                </a>
+                <div class="nocturne-auth-visual__copy">
+                    <h2>@lang('Almost there')</h2>
+                    <p>@lang('Enter the code we sent you to continue resetting your password.')</p>
+                    <div class="nocturne-auth-visual__trust"><x-icon name="shield" /> @lang('Secure, encrypted connection')</div>
+                </div>
+                <small class="nocturne-auth-visual__copyright">&copy; {{ date('Y') }} {{ gs('site_name') }} | @lang('All Rights Reserved').</small>
+            </div>
+            <div class="nocturne-auth-form">
+                <h1>@lang('Enter verification code')</h1>
+                <p class="nocturne-auth-form__intro">@lang('A 6 digit verification code sent to your email address'): <strong>{{ showEmailAddress($email) }}</strong></p>
 
-                                    @include('Template::partials.verification_code')
+                <form action="{{ route('user.password.verify.code') }}" method="POST" class="submit-form">
+                    @csrf
+                    <input type="hidden" name="email" value="{{ $email }}">
 
-                                    <div class="form-group">
-                                        <button type="submit" class="btn btn--base w-100">@lang('Submit')</button>
-                                    </div>
+                    @include('Template::partials.verification_code')
 
-                                    <div>
-                                        @lang('Please check including your Junk/Spam Folder. if not found, you can')
-                                        <a href="{{ route('user.password.request') }}"
-                                            class="text--base">@lang('Try to send again')</a>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="form-submit">
+                        <button type="submit" class="btn btn--gradient w-100">@lang('Submit')</button>
                     </div>
+                </form>
+
+                <div class="nocturne-auth-switch">
+                    <span>@lang("Please check including your Junk/Spam Folder. If not found, you can")</span>
+                    <a href="{{ route('user.password.request') }}"><x-icon name="arrow-clockwise" />@lang('Try again')</a>
                 </div>
             </div>
         </div>
     </section>
 @endsection
-
-@push('style')
-    <style>
-        .verification-code-wrapper {
-            background-color: #0f1a24;
-            border: 1px solid #{{ @gs('base_color') }}69;
-        }
-
-        .verification-code::after {
-            background-color: #0f1a24;
-        }
-
-        .verification-code span {
-            border: solid 1px #{{ @gs('base_color') }}69;
-            color: #{{ @gs('base_color') }}69;
-        }
-    </style>
-@endpush
