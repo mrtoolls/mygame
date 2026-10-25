@@ -41,6 +41,7 @@ Schema::create('transactions', function (Blueprint $table) {
 
 (require dirname(__DIR__) . '/database/migrations/2026_10_19_000000_create_framework_cache_and_sessions_tables.php')->up();
 (require dirname(__DIR__) . '/database/migrations/2026_10_19_000001_create_multiplayer_game_tables.php')->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000003_add_is_coin_mode_to_table_game_commissions.php')->up();
 Schema::table('table_games', fn (Blueprint $table) => $table->unsignedBigInteger('currency_id')->nullable()->index());
 Schema::table('table_game_players', fn (Blueprint $table) => $table->unsignedBigInteger('currency_id')->nullable()->index());
 (require dirname(__DIR__) . '/database/migrations/2026_10_19_000002_create_table_game_chat_tables.php')->up();

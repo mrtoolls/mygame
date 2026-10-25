@@ -170,42 +170,21 @@ if (str_contains($myResultOn, '$')) throw new RuntimeException('Competition \'yo
 fwrite(STDOUT, "Competition prize display: coin_mode on converts every USD prize amount through the coin peg and shows Coins, with no \$ sign.\n");
 
 // =====================================================================================
-// Table games: stakes are NOT backend coin-aware (see TableGameService - no gs('coin_mode')
-// branch anywhere, stakes still move through the legacy $user->balance + wallet-currency FX
-// path regardless of the flag). Per the task's own instruction, that means the display layer
-// must NOT be changed to show "Coins" for stakes - doing so would show a unit the backend
-// never actually moves. This is a regression guard: it proves (a) that fact still holds (so a
-// future change to TableGameService doesn't silently invalidate this decision) and (b) that
-// the real stake-formatting call site used by the lobby/live-table views - Currency::
-// formatMinor(), via TableGameService::liveTables()'s wallet_stake_formatted - renders
-// byte-for-byte identically whether coin_mode is on or off, exactly as coin_mode=off things
-// are supposed to behave everywhere.
+// Table games: a LATER pass wired TableGameService to CoinLedger (stakes are held/released/
+// settled in coins when coin_mode is on - hold on join, release+settleHeldToOwner on result,
+// commission burned to the platform wallet via settleHeldToOwner-to-platform). The full
+// settlement/hold/release/concurrency/mixed-mode-safety coverage for that lives in its own
+// dedicated test, tests/run_table_game_coin_mode_integration.php - this is just a lightweight
+// confirmation that the awareness is actually there (the inverse of what this guard used to
+// check), so a future regression on either side gets caught somewhere.
 // =====================================================================================
 
 $tableServiceSource = file_get_contents(dirname(__DIR__) . '/app/Games/TableGames/TableGameService.php');
 if ($tableServiceSource === false) throw new RuntimeException('Could not read TableGameService.php for the coin-mode-awareness check.');
-if (str_contains($tableServiceSource, "gs('coin_mode')") || str_contains($tableServiceSource, 'CoinLedger')) {
-    throw new RuntimeException('TableGameService now references coin_mode/CoinLedger - table stake display should be revisited to show coins (see formatVipThreshold()/coinAmountText() pattern), not left on the legacy USD/FX path.');
+if (!str_contains($tableServiceSource, "gs('coin_mode')") || !str_contains($tableServiceSource, 'CoinLedger')) {
+    throw new RuntimeException('TableGameService no longer references coin_mode/CoinLedger - table-game coin settlement appears to have been removed; see tests/run_table_game_coin_mode_integration.php for what this should still cover.');
 }
-
-$usd = \App\Models\Currency::create(['code' => 'USD', 'decimals' => 2, 'enabled' => true, 'symbol' => '$', 'symbol_position' => 'left', 'rate_to_usd' => '1', 'last_updated_at' => now()]);
-$money = app(\App\Support\Money::class);
-$stakeMinor = $money->toMinor('25.00', (int) $usd->decimals);
-
-$general = gs();
-$general->coin_mode = false;
-$general->save();
-$stakeDisplayOff = $usd->formatMinor($stakeMinor, true);
-
-$general = gs();
-$general->coin_mode = true;
-$general->save();
-$stakeDisplayOn = $usd->formatMinor($stakeMinor, true);
-
-if ($stakeDisplayOff !== $stakeDisplayOn) throw new RuntimeException("Table stake display changed between coin_mode off ({$stakeDisplayOff}) and on ({$stakeDisplayOn}) - it should be completely unaffected since TableGameService has no coin-mode logic to back a coin display with.");
-if (!str_contains($stakeDisplayOff, '$25.00')) throw new RuntimeException("Table stake display did not render the expected USD amount: {$stakeDisplayOff}");
-if (str_contains($stakeDisplayOff, 'Coins')) throw new RuntimeException('Table stake display unexpectedly showed Coins - this would be incorrect since table stakes are not yet coin-aware on the backend.');
-fwrite(STDOUT, "Table game stakes: confirmed TableGameService has no coin_mode/CoinLedger awareness, and its stake display is identical regardless of coin_mode (correctly left untouched).\n");
+fwrite(STDOUT, "Table game stakes: confirmed TableGameService has coin_mode/CoinLedger awareness - full settlement coverage lives in run_table_game_coin_mode_integration.php.\n");
 
 $general = gs();
 $general->coin_mode = false;

@@ -212,12 +212,20 @@ if (!str_contains($claimsHtml, '12') || !str_contains($claimsHtml, 'Coins')) thr
 if (!str_contains($claimsHtml, '600')) throw new RuntimeException('VIP rakeback claims lost the wagered snapshot.');
 fwrite(STDOUT, "Admin bonus code redemptions and VIP rakeback claims: both show coins once coin_mode is on.\n");
 
-// --- Confirm the deliberately-untouched surfaces really have no coin-ledger connection to touch. ---
+// --- Table game commissions: now coin-aware (see run_table_game_coin_mode_integration.php for
+// the full settlement coverage) - the admin Commission Summary keeps real-currency and coin
+// totals separate via the per-row is_coin_mode flag, rather than silently summing two units.
+// The withdrawal report and transaction report remain genuinely real-currency-only (withdrawals
+// are blocked entirely under coin_mode, so there is nothing for either report to show in coins).
 $tgServiceSource = file_get_contents(dirname(__DIR__) . '/app/Games/TableGames/TableGameService.php');
-if (str_contains($tgServiceSource, 'CoinLedger') || str_contains($tgServiceSource, "gs('coin_mode')")) {
-    throw new RuntimeException('TableGameService now has coin_mode/CoinLedger awareness - the admin table-game commission log and the withdrawal/transaction reports need revisiting, this test is now stale.');
+if (!str_contains($tgServiceSource, 'CoinLedger') || !str_contains($tgServiceSource, "gs('coin_mode')")) {
+    throw new RuntimeException('TableGameService no longer has coin_mode/CoinLedger awareness - table-game coin settlement appears to have been removed.');
 }
-fwrite(STDOUT, "Confirmed: table game commissions, the withdrawal report, and the transaction report remain genuinely real-currency-only (no coin-ledger connection exists to display) - correctly left untouched.\n");
+$adminTableGamesSource = file_get_contents(dirname(__DIR__) . '/resources/views/admin/table_games/index.blade.php');
+if ($adminTableGamesSource === false || !str_contains($adminTableGamesSource, 'is_coin_mode')) {
+    throw new RuntimeException('The admin table-game Commission Summary no longer distinguishes coin vs. real-currency commission - it would silently sum two different units together.');
+}
+fwrite(STDOUT, "Confirmed: table game commissions are coin-aware with real-currency/coin totals kept separate; the withdrawal and transaction reports remain correctly real-currency-only.\n");
 
 if (!app(CoinLedger::class)->reconcile()['ok']) throw new RuntimeException('Reconciliation broke during this test run.');
 

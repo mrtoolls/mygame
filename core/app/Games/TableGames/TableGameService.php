@@ -15,6 +15,7 @@ use App\Models\Transaction;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\User;
+use App\Services\CoinLedger;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -69,7 +70,11 @@ class TableGameService
                 return $existing->fresh(['players.user']);
             }
             $this->validateCreate($lockedUser, $gameType, $playerLimit, $stake, $setting);
-            $creatorRate = bccomp($stake, '0', 8) > 0 ? $this->currentCurrencyRate(Currency::findOrFail($lockedUser->currency_id)) : null;
+            // Coin mode: the stake is already a flat coin amount for every player - no real
+            // exchange rate applies, so wallet_rate_to_usd/table_rate_to_usd stay null (the same
+            // signal walletStakeQuoteFor()/ingestGame() already use to mean "this is coins, not
+            // a real-currency-converted stake").
+            $creatorRate = (!gs('coin_mode') && bccomp($stake, '0', 8) > 0) ? $this->currentCurrencyRate(Currency::findOrFail($lockedUser->currency_id)) : null;
             $tableData = [
                 'game_type' => $gameType,
                 'creator_id' => $lockedUser->id,
@@ -118,6 +123,18 @@ class TableGameService
             }
             if (TableGamePlayer::where('table_game_id', $table->id)->where('status', 'seated')->count() >= $table->player_limit) {
                 throw new InvalidArgumentException('This table is full.');
+            }
+            // A table's stake was charged to every existing player either as a real-currency
+            // balance debit or a coin hold, decided by whatever gs('coin_mode') was AT THE TIME
+            // each of them joined - never mix the two within one table (settlement can only pay
+            // everyone back the way they were actually charged). If an admin flips coin_mode
+            // while this table is still waiting, block new joins instead of silently charging
+            // the new player a different way than everyone already seated.
+            if (bccomp((string) $table->stake, '0', 8) > 0) {
+                $existingPlayer = TableGamePlayer::where('table_game_id', $table->id)->first();
+                if ($existingPlayer && ($existingPlayer->wallet_rate_to_usd === null) !== (bool) gs('coin_mode')) {
+                    throw new InvalidArgumentException('This table was created under a different wallet mode and can no longer accept new players. Ask the creator to cancel it and open a new one.');
+                }
             }
             $userLimit = TableGameUserLimit::where('user_id', $user->id)->first();
             if ($userLimit?->banned) throw new InvalidArgumentException('Your access to live tables is restricted.');
@@ -628,9 +645,16 @@ class TableGameService
     {
         $query = TableGame::with(['currency', 'players.user'])->whereIn('status', ['waiting', 'active']);
         return $query->latest()->limit(50)->get()->map(function ($table) use ($user) {
+            // A table this specific game was actually charged in coins for (not the live
+            // gs('coin_mode') flag - see tableUsedCoinStakes()'s own doc comment) shows its
+            // stake as coins everywhere, including a lobby still mixing older real-currency
+            // tables in with newer coin ones during a coin_mode transition.
+            $isCoinTable = bccomp((string) $table->stake, '0', 8) > 0 && $this->tableUsedCoinStakes($table, $table->players);
             $walletStake = null;
             $canJoin = true;
-            if (bccomp((string) $table->stake, '0', 8) > 0 && $user) {
+            if ($isCoinTable) {
+                $walletStake = (string) $table->stake;
+            } elseif (bccomp((string) $table->stake, '0', 8) > 0 && $user) {
                 try {
                     $walletStake = $this->walletStakeQuoteFor($user, $table)['wallet_stake'];
                     $this->validateParticipantWalletStake($user, $walletStake, $table);
@@ -638,16 +662,20 @@ class TableGameService
                     $canJoin = false;
                 }
             }
+            if ($isCoinTable && $user && (bool) gs('coin_mode') === false) $canJoin = false; // coin_mode is currently off - a coin table can't be joined under a real-currency wallet.
             $currency = $user?->walletCurrency ?? $table->currency;
             return [
                 'id' => $table->id, 'game' => $table->game_type, 'status' => $table->status,
                 'stake' => (string) $table->stake, 'wallet_stake' => $walletStake, 'can_join' => $canJoin,
                 'player_limit' => $table->player_limit,
+                'is_coin_stake' => $isCoinTable,
                 'currency_symbol' => $currency?->symbol ?? $table->currency?->symbol,
                 'currency_code' => $currency?->code ?? $table->currency?->code,
-                'wallet_stake_formatted' => $walletStake !== null && $currency
-                    ? $currency->formatMinor((new Money())->toMinor($walletStake, (int) $currency->decimals), true)
-                    : null,
+                'wallet_stake_formatted' => $isCoinTable
+                    ? coinAmountText($walletStake)
+                    : ($walletStake !== null && $currency
+                        ? $currency->formatMinor((new Money())->toMinor($walletStake, (int) $currency->decimals), true)
+                        : null),
                 'players' => $table->players->where('status', 'seated')->map(fn ($player) => ['id' => (int) $player->user_id, 'name' => $player->user?->username, 'seat' => $player->seat])->values(),
             ];
         })->all();
@@ -736,13 +764,20 @@ class TableGameService
         if (!in_array($gameType, TableGameRules::AVAILABLE, true)) throw new InvalidArgumentException('This game is not yet enabled for tables.');
         if ($playerLimit < $definition['min'] || $playerLimit > $definition['max']) throw new InvalidArgumentException('Select a supported player count.');
         if (bccomp($stake, '0', 8) < 0 || (bccomp($stake, '0', 8) > 0 && bccomp($stake, (string) $setting->min_stake, 8) < 0) || bccomp($stake, (string) $setting->max_stake, 8) > 0) throw new InvalidArgumentException('The stake is outside the allowed limits.');
-        if (bccomp($stake, '0', 8) > 0) {
+        // Coin mode: the stake IS a coin amount directly (same repurposing already used for VIP
+        // wagering thresholds) - no real-currency wallet, exchange rate, or country-currency
+        // check applies, since every player's wallet is coins. Coins are always whole numbers.
+        if (gs('coin_mode')) {
+            if (bccomp($stake, '0', 8) > 0 && bccomp($stake, bcadd(bcdiv($stake, '1', 0), '0', 8), 8) !== 0) {
+                throw new InvalidArgumentException('The stake must be a whole number of coins.');
+            }
+        } elseif (bccomp($stake, '0', 8) > 0) {
             $walletCurrency = Currency::find($user->currency_id);
             if (!$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games are unavailable for your wallet currency.');
             $this->currentCurrencyRate($walletCurrency);
             (new Money())->toMinor($stake, (int) $walletCurrency->decimals);
         }
-        if (bccomp($stake, '0', 8) > 0 && $user->country_id && Schema::hasTable('countries')) {
+        if (!gs('coin_mode') && bccomp($stake, '0', 8) > 0 && $user->country_id && Schema::hasTable('countries')) {
             $country = Country::with('currency')->find($user->country_id);
             if (!$country || !$country->is_enabled || !$country->is_allowed || !$country->currency?->enabled
                 || (int) $country->currency_id !== (int) $user->currency_id) {
@@ -781,6 +816,14 @@ class TableGameService
     {
         $amount = $amount ?? (string) $table->stake;
         if (bccomp($amount, '0', 8) === 0) return;
+        if (gs('coin_mode')) {
+            // Coins sit HELD (not gone) while the table is in play - they're still visibly the
+            // player's own coins, just committed to this table, released or paid out on
+            // settlement. hold() throws its own clear "insufficient balance" message, and is
+            // idempotent on this same key, matching stake_debit_key's format exactly.
+            app(CoinLedger::class)->hold('user', $user->id, $amount, $reason, $table->id . ':stake:' . $user->id, 'TableGame', null);
+            return;
+        }
         if (bccomp((string) $user->balance, $amount, 8) < 0) throw new InvalidArgumentException('Your available balance is too low for this stake.');
         $user->balance = bcsub((string) $user->balance, $amount, 8);
         $user->save();
@@ -806,6 +849,13 @@ class TableGameService
     {
         if (bccomp((string) $table->stake, '0', 8) === 0) {
             return ['wallet_stake' => '0.00000000', 'wallet_rate_to_usd' => null, 'table_rate_to_usd' => null];
+        }
+        // Coin mode: every wallet is coins - the stake is already the exact amount every player
+        // holds/pays, no real-currency conversion applies. null rates are the same "this is
+        // coins, not a converted real-currency stake" signal used everywhere else this session
+        // (ingestGame()'s competition volume counting, the display helpers, etc).
+        if (gs('coin_mode')) {
+            return ['wallet_stake' => (string) $table->stake, 'wallet_rate_to_usd' => null, 'table_rate_to_usd' => null];
         }
         if (!$table->currency_id || !$user->currency_id) throw new InvalidArgumentException('A supported wallet currency is required for staked games.');
 
@@ -853,6 +903,9 @@ class TableGameService
     private function validateParticipantWalletStake(User $user, string $walletStake, TableGame $table): void
     {
         if (bccomp((string) $table->stake, '0', 8) === 0) return;
+        // No real currency is involved in coin mode - none of the wallet-currency/country-FX
+        // restrictions below apply to a coin stake.
+        if (gs('coin_mode')) return;
         $walletCurrency = Currency::find($user->currency_id);
         if (!$walletCurrency?->enabled) throw new InvalidArgumentException('Staked games are unavailable for your wallet currency.');
         if (!$user->country_id || !Schema::hasTable('countries')) return;
@@ -889,6 +942,10 @@ class TableGameService
     {
         if (bccomp((string) $table->stake, '0', 8) === 0) return;
         $players = $table->players()->lockForUpdate()->get();
+        if ($this->tableUsedCoinStakes($table, $players)) {
+            $this->settleCoins($table, $players, $winnerSeat, $winnerSeats);
+            return;
+        }
         if ($winnerSeat === null) {
             foreach (TableGameSettlementMath::refunds($players->mapWithKeys(fn ($player) => [$player->user_id => (string) $player->stake])->all()) as $userId => $amount) {
                 $player = $players->firstWhere('user_id', $userId);
@@ -940,6 +997,117 @@ class TableGameService
         $this->markLosers($table, $players, [$winner->user_id]);
     }
 
+    /**
+     * Coin-mode settlement. Stakes were HELD (not debited) at join time, so settling never
+     * touches users.balance at all - every coin movement goes through CoinLedger:
+     *   - a draw/refund just releases each player's own held stake back to their own available
+     *     balance (symmetric, no transfer between players needed).
+     *   - a win releases each winner's own held stake, then drains the LOSERS' held stakes in a
+     *     waterfall: each loser's stake is split between (a) whatever the winners are still owed
+     *     (settleHeldToOwner straight from the loser's held balance to a winner's available
+     *     balance) and (b) the commission share of that stake (settleHeldToOwner to the platform
+     *     wallet - the exact burn-equivalent of removing coins from circulation, since the coins
+     *     never left a real wallet to begin with). Every loser's held balance is proven to drain
+     *     to exactly zero: by construction, sum(winner shares) + commission == sum(loser stakes).
+     * Commission is floored to a whole coin (unlike the real-currency path's 8-decimal math) so
+     * every ledger entry here stays a whole number, matching the rest of the coin economy.
+     */
+    private function settleCoins(TableGame $table, $players, ?int $winnerSeat, ?array $winnerSeats): void
+    {
+        $stakePerPlayer = (string) $table->stake;
+        $refundEveryone = function () use ($table, $players, $stakePerPlayer): void {
+            $ledger = app(CoinLedger::class);
+            foreach ($players as $player) {
+                if ($player->settlement_key || !in_array($player->status, ['seated', 'out'], true)) continue;
+                $ledger->release('user', $player->user_id, $stakePerPlayer, 'table_refund', $table->id . ':settle:' . $player->user_id, 'TableGame', null);
+                $player->settlement_key = $table->id . ':settle:' . $player->user_id;
+                $player->settlement_amount = $stakePerPlayer;
+                $player->settlement_type = 'refund';
+                $player->save();
+            }
+        };
+
+        if ($winnerSeat === null && !$winnerSeats) {
+            $refundEveryone();
+            return;
+        }
+
+        $winners = $winnerSeats
+            ? $players->filter(fn ($player) => in_array((int) $player->seat, $winnerSeats, true) && $player->status !== 'refunded')->values()
+            : collect([$players->firstWhere('seat', $winnerSeat)])->filter(fn ($player) => $player && $player->status !== 'refunded')->values();
+
+        if ($winners->isEmpty()) {
+            $refundEveryone();
+            return;
+        }
+
+        $rate = (string) data_get($table->settings, 'commission_percent', '5.00');
+        $raw = TableGameSettlementMath::payout($players->pluck('stake')->map(fn ($stake) => (string) $stake)->all(), $rate);
+        $commission = bcadd(bcdiv($raw['commission'], '1', 0), '0', 0); // floor to a whole coin
+        $winnerAmountTotal = bcsub($raw['pot'], $commission, 0);
+
+        $ledger = app(CoinLedger::class);
+        $winnerCount = $winners->count();
+        $owed = []; // user_id => coins still owed from the loser pool, beyond their own released stake
+        $shares = []; // user_id => this winner's total payout (own stake + net winnings) - saved for settlement bookkeeping below
+        $paidSoFar = '0';
+        foreach ($winners as $index => $winner) {
+            $ledger->release('user', $winner->user_id, $stakePerPlayer, 'table_stake_release', $table->id . ':release:' . $winner->user_id, 'TableGame', null);
+            $share = $index === $winnerCount - 1 ? bcsub($winnerAmountTotal, $paidSoFar, 0) : bcdiv($winnerAmountTotal, (string) $winnerCount, 0);
+            $paidSoFar = bcadd($paidSoFar, $share, 0);
+            $shares[(int) $winner->user_id] = $share;
+            $owed[(int) $winner->user_id] = bcsub($share, $stakePerPlayer, 0);
+        }
+
+        $winnerUserIds = $winners->pluck('user_id')->map(fn ($id) => (int) $id)->all();
+        $losers = $players->filter(fn ($player) => !in_array((int) $player->user_id, $winnerUserIds, true) && in_array($player->status, ['seated', 'out'], true))->values();
+        $winnerIdOrder = array_keys($owed);
+        $cursor = 0;
+        foreach ($losers as $loser) {
+            $remainingFromThisLoser = $stakePerPlayer;
+            while (bccomp($remainingFromThisLoser, '0', 0) > 0 && $cursor < count($winnerIdOrder)) {
+                $winnerId = $winnerIdOrder[$cursor];
+                $need = $owed[$winnerId];
+                if (bccomp($need, '0', 0) <= 0) { $cursor++; continue; }
+                $give = bccomp($need, $remainingFromThisLoser, 0) <= 0 ? $need : $remainingFromThisLoser;
+                if (bccomp($give, '0', 0) > 0) {
+                    $ledger->settleHeldToOwner('user', $loser->user_id, 'user', $winnerId, $give, 'table_payout', $table->id . ':payout:' . $loser->user_id . ':' . $winnerId, 'TableGame', null);
+                }
+                $owed[$winnerId] = bcsub($need, $give, 0);
+                $remainingFromThisLoser = bcsub($remainingFromThisLoser, $give, 0);
+                if (bccomp($owed[$winnerId], '0', 0) <= 0) $cursor++;
+            }
+            // Whatever is left of this loser's held stake after paying winners is their
+            // commission share - sent to the platform wallet, the exact equivalent of burning it
+            // out of circulation (see the doc comment above).
+            if (bccomp($remainingFromThisLoser, '0', 0) > 0) {
+                $ledger->settleHeldToOwner('user', $loser->user_id, 'platform', CoinLedger::PLATFORM_OWNER_ID, $remainingFromThisLoser, 'table_commission', $table->id . ':commission:' . $loser->user_id, 'TableGame', null);
+            }
+            $loser->settlement_key = $table->id . ':settle:' . $loser->user_id;
+            $loser->settlement_amount = '0.00000000';
+            $loser->settlement_type = 'loss';
+            $loser->save();
+        }
+
+        foreach ($winners as $winner) {
+            $winner->settlement_key = $table->id . ':settle:' . $winner->user_id;
+            $winner->settlement_amount = $shares[(int) $winner->user_id];
+            $winner->settlement_type = 'payout';
+            $winner->save();
+        }
+
+        if (bccomp($commission, '0', 0) > 0) {
+            TableGameCommission::create([
+                'table_game_id' => $table->id,
+                'game_type' => $table->game_type,
+                'amount' => $commission,
+                'is_coin_mode' => true,
+                'rate_percent' => data_get($table->settings, 'commission_percent', 5),
+                'status' => 'retained',
+            ]);
+        }
+    }
+
     private function creditPlayer(TableGame $table, TableGamePlayer $player, string $amount, string $remark, string $reason): void
     {
         if (bccomp($amount, '0', 8) <= 0) return;
@@ -979,11 +1147,40 @@ class TableGameService
         }
     }
 
+    /**
+     * Whether this table's players were actually charged in coins, rather than trusting the
+     * CURRENT gs('coin_mode') flag - an admin can flip the flag while a table is still open, and
+     * join() refuses to let a new player join under a different mode than whoever is already
+     * seated, so every real (stake > 0) player row on one table was charged the same way. Reads
+     * that from the first player's own row (wallet_rate_to_usd is null only for a coin-mode
+     * hold - see walletStakeQuoteFor()/create()), not from the live setting, so settlement always
+     * pays everyone back exactly the way their stake was actually taken.
+     */
+    private function tableUsedCoinStakes(TableGame $table, $players): bool
+    {
+        if (bccomp((string) $table->stake, '0', 8) === 0) return (bool) gs('coin_mode'); // friendly table - no real charge was made either way, so this only affects display.
+        $reference = $players->firstWhere('seat', 0) ?? $players->first();
+        return $reference !== null && $reference->wallet_rate_to_usd === null;
+    }
+
     private function refundAll(TableGame $table, string $reason): void
     {
         $players = $table->players()->lockForUpdate()->get();
-        foreach (TableGameSettlementMath::refunds($players->mapWithKeys(fn ($player) => [$player->user_id => (string) $player->stake])->all()) as $userId => $amount) {
-            $this->creditPlayer($table, $players->firstWhere('user_id', $userId), $amount, 'table_refund', $reason);
+        if ($this->tableUsedCoinStakes($table, $players)) {
+            $ledger = app(CoinLedger::class);
+            foreach ($players as $player) {
+                $amount = (string) $player->stake;
+                if (bccomp($amount, '0', 8) <= 0 || $player->settlement_key) continue;
+                $ledger->release('user', $player->user_id, $amount, 'table_refund', $table->id . ':settle:' . $player->user_id, 'TableGame', null);
+                $player->settlement_key = $table->id . ':settle:' . $player->user_id;
+                $player->settlement_amount = $amount;
+                $player->settlement_type = 'refund';
+                $player->save();
+            }
+        } else {
+            foreach (TableGameSettlementMath::refunds($players->mapWithKeys(fn ($player) => [$player->user_id => (string) $player->stake])->all()) as $userId => $amount) {
+                $this->creditPlayer($table, $players->firstWhere('user_id', $userId), $amount, 'table_refund', $reason);
+            }
         }
         $table->players()->whereIn('status', ['seated', 'out'])->update(['status' => 'refunded']);
     }

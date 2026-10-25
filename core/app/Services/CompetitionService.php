@@ -71,7 +71,13 @@ class CompetitionService
             }
 
             $tableRate = $players->first()->table_rate_to_usd;
-            $stakeUsd = $tableRate ? bcmul((string) $game->stake, (string) $tableRate, 8) : null;
+            // A coin-mode table has no table_rate_to_usd (the stake IS coins, see
+            // TableGameService::walletStakeQuoteFor()) - convert through the coin peg instead of
+            // falling through to "no USD value known", which would wrongly exclude every
+            // coin-mode table from any competition with a min_bet_usd floor.
+            $stakeUsd = $tableRate
+                ? bcmul((string) $game->stake, (string) $tableRate, 8)
+                : (gs('coin_mode') ? bcmul((string) $game->stake, (string) (gs('coin_peg_usd') ?: '0.01'), 8) : null);
 
             if ($competition->min_bet_usd !== null) {
                 if ($stakeUsd === null || bccomp($stakeUsd, (string) $competition->min_bet_usd, 8) < 0) {

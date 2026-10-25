@@ -58,6 +58,11 @@ class TableGameController extends Controller
         $isSpectator = !$table->players->contains('user_id', $request->user()->id);
         $walletCurrency = $request->user()->walletCurrency;
         $walletStake = $table->players->firstWhere('user_id', $request->user()->id)?->wallet_stake ?? $table->stake;
+        // This specific table's actual charging mode (not the live gs('coin_mode') flag) - a
+        // player row with no wallet_rate_to_usd recorded was charged in coins, same signal
+        // TableGameService::tableUsedCoinStakes() uses for settlement itself.
+        $isCoinStake = bccomp((string) $table->stake, '0', 8) > 0
+            && ($table->players->firstWhere('seat', 0) ?? $table->players->first())?->wallet_rate_to_usd === null;
         $setting = Schema::hasTable('table_game_settings') ? \App\Models\TableGameSetting::where('game_type', $table->game_type)->first() : null;
         $guideDefaults = \App\Games\TableGames\TableGameGuides::for($table->game_type);
         $guide = array_merge($guideDefaults, array_filter((array) ($setting->guide_json ?? []), fn ($value) => $value !== null && $value !== '' && $value !== []));
@@ -66,9 +71,12 @@ class TableGameController extends Controller
             'table' => $table,
             'walletCurrency' => $walletCurrency,
             'walletStake' => $walletStake,
-            'walletStakeFormatted' => $walletCurrency && bccomp((string) $table->stake, '0', 8) > 0
-                ? $walletCurrency->formatMinor((new \App\Support\Money())->toMinor((string) $walletStake, (int) $walletCurrency->decimals), true)
-                : null,
+            'isCoinStake' => $isCoinStake,
+            'walletStakeFormatted' => $isCoinStake
+                ? coinAmountText($walletStake)
+                : ($walletCurrency && bccomp((string) $table->stake, '0', 8) > 0
+                    ? $walletCurrency->formatMinor((new \App\Support\Money())->toMinor((string) $walletStake, (int) $walletCurrency->decimals), true)
+                    : null),
             'guide' => $guide,
             'commissionPercent' => (string) ($setting->commission_percent ?? 5),
             'turnSeconds' => (int) ($setting->turn_seconds ?? 60),

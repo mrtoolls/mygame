@@ -24,14 +24,19 @@ class TableGameAdminController extends Controller
         $service->sweepExpired();
         $settings = TableGameSetting::all()->keyBy('game_type');
         $liveTables = TableGame::with('creator', 'players.user')->whereIn('status', ['waiting', 'active'])->latest()->paginate(20, ['*'], 'live_page');
-        $history = TableGame::with('creator')->whereIn('status', ['finished', 'cancelled', 'force_closed'])->latest()->paginate(20, ['*'], 'history_page');
-        $commissionTotal = TableGameCommission::sum('amount');
-        $commissionByGame = TableGameCommission::selectRaw('game_type, SUM(amount) as total, COUNT(*) as settled_tables')->groupBy('game_type')->get();
+        $history = TableGame::with('creator', 'players')->whereIn('status', ['finished', 'cancelled', 'force_closed'])->latest()->paginate(20, ['*'], 'history_page');
+        // Commission rows can be real-currency OR coin-denominated (see TableGameService::
+        // settleCoins()) - a single summed total would silently mix two different units, so kept
+        // as two separate totals instead. is_coin_mode defaults false, so pre-existing rows (all
+        // real currency, from before table games could settle in coins) are unaffected.
+        $commissionTotal = TableGameCommission::where('is_coin_mode', false)->sum('amount');
+        $coinCommissionTotal = TableGameCommission::where('is_coin_mode', true)->sum('amount');
+        $commissionByGame = TableGameCommission::selectRaw('game_type, is_coin_mode, SUM(amount) as total, COUNT(*) as settled_tables')->groupBy('game_type', 'is_coin_mode')->get();
         $limits = TableGameUserLimit::with('user')->latest()->paginate(15, ['*'], 'limits_page');
         $reportedMessages = Schema::hasColumn('table_game_messages', 'reported_by')
             ? TableGameMessage::with(['user:id,username', 'reporter:id,username'])->whereNotNull('reported_by')->latest('reported_at')->paginate(15, ['*'], 'reports_page')
             : null;
-        return view('admin.table_games.index', compact('settings', 'liveTables', 'history', 'commissionTotal', 'commissionByGame', 'limits', 'reportedMessages'))
+        return view('admin.table_games.index', compact('settings', 'liveTables', 'history', 'commissionTotal', 'coinCommissionTotal', 'commissionByGame', 'limits', 'reportedMessages'))
             ->with('pageTitle', 'Table Game Management')
             ->with('gameDefinitions', TableGameRules::GAMES)
             ->with('availableGames', TableGameRules::AVAILABLE);
