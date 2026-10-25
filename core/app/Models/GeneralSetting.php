@@ -12,6 +12,8 @@ class GeneralSetting extends Model {
         'socialite_credentials' => 'object',
         'firebase_config'       => 'object',
         'config_progress'=>'object',
+        'currency_rates_last_success_at' => 'datetime',
+        'currency_rates_next_at' => 'datetime',
     ];
 
     protected $hidden = ['email_template', 'mail_config', 'sms_config', 'system_info', 'currency_rate_api_key'];

@@ -19,8 +19,8 @@ class WithdrawController extends Controller
      * Platform withdrawals don't exist in coin mode - cashing out happens by selling coins to a
      * verified agent on the marketplace. Blocked here, server-side, on every mutating action
      * (not just hidden from navigation), so a direct request to an old bookmarked URL or a
-     * stale form can't create or edit a withdrawal. withdrawLog() (history) is deliberately NOT
-     * gated - existing withdrawals stay visible, read-only.
+     * stale form can't create or edit a withdrawal. Withdrawal history is also unavailable
+     * while coin mode is active, since the platform does not offer withdrawals in that mode.
      */
     private function blockedInCoinMode()
     {
@@ -206,6 +206,7 @@ class WithdrawController extends Controller
 
     public function withdrawLog(Request $request)
     {
+        abort_unless(!gs('coin_mode'), 404);
         $pageTitle = "Withdrawal Log";
         $withdraws = Withdrawal::where('user_id', auth()->id())->where('status', '!=', Status::PAYMENT_INITIATE);
         if ($request->search) {

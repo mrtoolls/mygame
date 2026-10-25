@@ -22,6 +22,7 @@
                             <li><a href="{{ route('user.deposit.history') }}">@lang('Deposit Log')</a></li>
                         </ul>
                     </li>
+                    @unless(gs('coin_mode'))
                     <li class="menu_has_children nav-item">
                         <a href="#" class="nav-link">@lang('Withdraw')</a>
                         <ul class="sub-menu">
@@ -30,6 +31,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endunless
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('user.referrals') }}">@lang('Referrals')</a>
                     </li>

@@ -15,8 +15,6 @@
                 @if(auth()->user()->country?->coin_marketplace_enabled)
                     <a href="{{ route('user.coin.marketplace') }}" class="{{ request()->routeIs('user.coin.*') ? 'is-active' : '' }}"><i class="ph-fill ph-coins"></i>@lang('Coin Marketplace')</a>
                 @endif
-                {{-- Withdrawals are disabled in coin mode, but any pre-existing withdrawal stays visible, read-only, in its own history page. --}}
-                <a href="{{ route('user.withdraw.history') }}" class="{{ request()->routeIs('user.withdraw.history') ? 'is-active' : '' }}"><i class="ph-fill ph-clock-counter-clockwise"></i>@lang('Withdrawal History')</a>
             @else
                 <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw') || request()->routeIs('user.withdraw.preview') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
             @endif
@@ -27,7 +25,7 @@
             <a href="{{ route('user.sponsorships.index') }}" class="{{ request()->routeIs('user.sponsorships.*') ? 'is-active' : '' }}"><i class="ph-fill ph-handshake"></i>@lang('Sponsor Winxpot')</a>
             <a href="{{ route('user.kyc.form') }}" class="{{ request()->routeIs('user.kyc.*') ? 'is-active' : '' }}"><i class="ph-fill ph-shield-check"></i>@lang('Verification')</a>
             <a href="{{ route('user.profile.setting') }}" class="{{ request()->routeIs('user.profile.setting') || request()->routeIs('user.change.password') || request()->routeIs('user.twofactor') ? 'is-active' : '' }}"><i class="ph-fill ph-gear"></i>@lang('Settings')</a>
-            <a href="{{ route('user.transactions') }}" class="{{ request()->routeIs('user.transactions') || request()->routeIs('user.deposit.history') || request()->routeIs('user.withdraw.history') ? 'is-active' : '' }}"><i class="ph-fill ph-receipt"></i>@lang('Transactions')</a>
+            <a href="{{ route('user.transactions') }}" class="{{ request()->routeIs('user.transactions') || request()->routeIs('user.deposit.history') ? 'is-active' : '' }}"><i class="ph-fill ph-receipt"></i>@lang('Transactions')</a>
         </nav>
     </div>
     <div class="nocturne-account-support">
