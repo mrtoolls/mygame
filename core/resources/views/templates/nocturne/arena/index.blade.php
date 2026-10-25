@@ -344,9 +344,9 @@
 .pc-composer__avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .pc-composer__avatar i{color:#fff;font-size:22px}
 
-.pc-composer__field{--pc-tint-a:transparent;--pc-tint-b:transparent;flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;background:var(--arena-bg);border-radius:20px;padding:5px 8px 5px 15px;border:2px solid transparent;transition:border-color .15s ease,background .25s ease}
+.pc-composer__field{--pc-tint-a:transparent;--pc-tint-b:transparent;flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;background:var(--arena-bg);border-radius:20px;padding:10px 14px;transition:background .25s ease}
 .pc-composer__field[data-tint]{background:linear-gradient(135deg,color-mix(in srgb,var(--pc-tint-a) 26%,var(--arena-bg)),color-mix(in srgb,var(--pc-tint-b) 18%,var(--arena-bg)))}
-.pc-composer__field:focus-within{border-color:var(--arena-accent)}
+.pc-composer__field:focus-within{background:#1b2140}
 .pc-composer__field textarea{flex:1;min-width:0;min-height:28px;max-height:220px;padding:8px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;line-height:1.5;resize:none;overflow-y:auto;outline:0}
 .pc-composer__field textarea::placeholder{color:#606986}
 
