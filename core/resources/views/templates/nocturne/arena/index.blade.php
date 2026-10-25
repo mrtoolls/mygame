@@ -57,60 +57,114 @@
                 @endif
 
                 @auth
-                    <div class="nocturne-arena-composer">
-                        <form method="post" action="{{ route('user.arena.store') }}" enctype="multipart/form-data" id="arena-composer-form">
-                            @csrf
-                            <div class="nocturne-arena-composer__top">
-                                <span class="nocturne-arena-post__avatar">@if(auth()->user()->avatarUrl())<img src="{{ auth()->user()->avatarUrl() }}" alt="">@else{{ mb_strtoupper(mb_substr(auth()->user()->username, 0, 1)) }}@endif</span>
+                    @php
+                        $composerCategories = ['general' => ['General','ph-chat-circle-text'],'win' => ['Win','ph-trophy'],'challenge' => ['Challenge','ph-sword'],'question' => ['Question','ph-question']];
+                    @endphp
+                    <form method="post" action="{{ route('user.arena.store') }}" enctype="multipart/form-data" class="pc-composer" id="arena-composer-form">
+                        @csrf
+                        <div class="pc-composer__top">
+                            <span class="pc-composer__avatar">
+                                @if(auth()->user()->avatarUrl())
+                                    <img src="{{ auth()->user()->avatarUrl() }}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'ph-fill ph-user-circle'}))">
+                                @else
+                                    <i class="ph-fill ph-user-circle"></i>
+                                @endif
+                            </span>
+
+                            <div class="pc-composer__field" id="pc-field">
+                                <label class="sr-only" for="arena-composer-body">@lang('Share something')</label>
                                 <textarea name="body" rows="1" maxlength="2000" placeholder="@lang('Share a win, ask for a competition, or say something...')" id="arena-composer-body">{{ old('body') }}</textarea>
+                                <button type="button" class="pc-icon-btn" id="pc-emoji-toggle" aria-label="@lang('Add emoji')" aria-haspopup="true" aria-expanded="false">
+                                    <i class="ph-bold ph-smiley"></i>
+                                </button>
                             </div>
+                        </div>
 
-                            <div class="nocturne-arena-composer__preview" id="arena-image-preview" hidden><img src="" alt=""><button type="button" id="arena-image-remove"><i class="ph-bold ph-x"></i></button></div>
-                            <div class="nocturne-arena-composer__preview" id="arena-video-preview" hidden><video src="" controls muted></video><button type="button" id="arena-video-remove"><i class="ph-bold ph-x"></i></button></div>
+                        <div class="pc-emoji-pop" id="pc-emoji-pop" role="menu" aria-label="@lang('Emoji')">
+                            @foreach(['😊','😂','😍','🔥','👏','🎉','👍','🙌','💡','🚀','❤️','🏆'] as $emoji)
+                                <button type="button" role="menuitem">{{ $emoji }}</button>
+                            @endforeach
+                        </div>
 
-                            <div class="nocturne-arena-composer__swatches" id="arena-swatches">
-                                @foreach(\App\Models\ArenaPost::BACKGROUNDS as $swatch)
-                                    <button type="button" class="nocturne-arena-swatch nocturne-arena-swatch--{{ $swatch }} {{ $loop->first ? 'is-active' : '' }}" data-swatch="{{ $swatch }}" aria-label="{{ $swatch }}"></button>
-                                @endforeach
-                                <input type="hidden" name="background_style" id="arena-background-input" value="{{ \App\Models\ArenaPost::BACKGROUNDS[0] }}">
-                            </div>
+                        <div class="pc-composer__preview" id="arena-image-preview" hidden><img src="" alt=""><button type="button" id="arena-image-remove" aria-label="@lang('Remove image')"><i class="ph-bold ph-x"></i></button></div>
+                        <div class="pc-composer__preview" id="arena-video-preview" hidden><video src="" controls muted></video><button type="button" id="arena-video-remove" aria-label="@lang('Remove video')"><i class="ph-bold ph-x"></i></button></div>
+                        <div class="pc-chips" id="pc-chips"></div>
 
-                            <div class="nocturne-arena-composer__row">
-                                <div class="nocturne-arena-type-pick">
-                                    @foreach(['general' => ['General','ph-chat-circle-text'],'win' => ['Win','ph-trophy'],'challenge' => ['Challenge','ph-sword'],'question' => ['Question','ph-question']] as $key => $info)
-                                        <label class="nocturne-arena-type-opt {{ $loop->first ? 'is-active' : '' }}">
-                                            <input type="radio" name="type" value="{{ $key }}" {{ $loop->first ? 'checked' : '' }}>
-                                            <i class="ph-fill {{ $info[1] }}"></i><span>{{ __($info[0]) }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            @if(count($recentWins))
-                                <div class="nocturne-arena-win-pick" id="arena-win-pick" hidden>
-                                    <label>@lang('Attach a win (optional)')</label>
-                                    <select name="linked_game_log_id">
-                                        <option value="">@lang('None')</option>
-                                        @foreach($recentWins as $log)
-                                            <option value="{{ $log->id }}">{{ __($log->game->name ?? 'Game') }} &middot; {{ gs('coin_mode') ? coinAmountText($log->win_amo) : showAmount($log->win_amo) }} &middot; {{ showDateTime($log->created_at, 'M d') }}</option>
+                        <div class="pc-composer__bar">
+                            <div class="pc-dd" id="pc-color-dd">
+                                <button type="button" class="pc-round-btn" id="pc-color-btn" aria-label="@lang('Post color')" aria-haspopup="true" aria-expanded="false">
+                                    <i class="ph-fill ph-palette pc-palette-icon"></i>
+                                    <span class="pc-color-dot"></span>
+                                </button>
+                                @php
+                                    $swatchColors = [
+                                        'violet' => ['#7c3aed', '#4c1d95'],
+                                        'sunset' => ['#f97316', '#be123c'],
+                                        'forest' => ['#00e78a', '#065f46'],
+                                        'ocean' => ['#0ea5e9', '#1e3a8a'],
+                                        'rose' => ['#f472b6', '#9d174d'],
+                                    ];
+                                @endphp
+                                <div class="pc-menu" id="pc-color-menu" role="radiogroup" aria-label="@lang('Post color')">
+                                    <div class="pc-swatches">
+                                        <button type="button" class="pc-swatch pc-swatch--none" role="radio" aria-checked="true" data-swatch="" aria-label="@lang('No color')"><i class="ph-bold ph-x"></i></button>
+                                        @foreach($swatchColors as $swatch => [$c1, $c2])
+                                            <button type="button" class="pc-swatch pc-swatch--{{ $swatch }}" role="radio" aria-checked="false" data-swatch="{{ $swatch }}" aria-label="{{ ucfirst($swatch) }}" style="--pc-c1:{{ $c1 }};--pc-c2:{{ $c2 }}"></button>
                                         @endforeach
-                                    </select>
+                                    </div>
                                 </div>
-                            @endif
-
-                            <div class="nocturne-arena-composer__foot">
-                                <div class="nocturne-arena-attach-tools">
-                                    <label class="nocturne-arena-attach-btn" title="@lang('Add a photo')"><i class="ph-fill ph-image-square"></i><input type="file" name="image" id="arena-image-input" accept=".png,.jpg,.jpeg,.webp" hidden></label>
-                                    <label class="nocturne-arena-attach-btn" title="@lang('Add a video')"><i class="ph-fill ph-video-camera"></i><input type="file" name="video" id="arena-video-input" accept=".mp4,.mov,.webm" hidden></label>
-                                </div>
-                                <button type="submit" class="nocturne-arena-post-btn"><i class="ph-bold ph-paper-plane-tilt"></i>@lang('Post')</button>
+                                <input type="hidden" name="background_style" id="arena-background-input" value="{{ old('background_style') }}">
                             </div>
 
-                            @if(gs('arena_post_approval_required'))
-                                <p class="nocturne-arena-composer__note"><i class="ph-fill ph-info"></i>@lang('Posts are reviewed by a moderator before they go live.')</p>
-                            @endif
-                        </form>
-                    </div>
+                            <div class="pc-dd" id="pc-cat-dd">
+                                <button type="button" class="pc-cat-btn is-default" id="pc-cat-btn" aria-haspopup="listbox" aria-expanded="false">
+                                    <span class="pc-cat-icon" id="pc-cat-icon"><i class="ph-fill {{ $composerCategories['general'][1] }}"></i></span>
+                                    <span id="pc-cat-label">{{ __($composerCategories['general'][0]) }}</span>
+                                    <i class="ph-bold ph-caret-down pc-chev"></i>
+                                </button>
+                                <div class="pc-menu" id="pc-cat-menu">
+                                    <ul class="pc-cat-list" role="listbox" aria-label="@lang('Post category')">
+                                        @foreach($composerCategories as $key => $info)
+                                            <li><button type="button" class="pc-cat-item" role="option" aria-selected="{{ $key === 'general' ? 'true' : 'false' }}" data-value="{{ $key }}" data-icon="{{ $info[1] }}">
+                                                <i class="ph-fill {{ $info[1] }}"></i>{{ __($info[0]) }}
+                                                <i class="ph-bold ph-check pc-tick"></i>
+                                            </button></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                <input type="hidden" name="type" id="pc-cat-value" value="general">
+                            </div>
+
+                            <input class="sr-only" type="file" id="arena-image-input" name="image" accept=".png,.jpg,.jpeg,.webp" data-label="{{ __('image') }}">
+                            <label class="pc-round-btn" for="arena-image-input" title="@lang('Add a photo')">
+                                <span class="sr-only">@lang('Add a photo')</span>
+                                <i class="ph-fill ph-image-square"></i>
+                            </label>
+
+                            <input class="sr-only" type="file" id="arena-video-input" name="video" accept=".mp4,.mov,.webm" data-label="{{ __('video') }}">
+                            <label class="pc-round-btn" for="arena-video-input" title="@lang('Add a video')">
+                                <span class="sr-only">@lang('Add a video')</span>
+                                <i class="ph-fill ph-video-camera"></i>
+                            </label>
+
+                            <button type="submit" class="pc-send" id="pc-send" disabled>
+                                <i class="ph-bold ph-paper-plane-tilt"></i><i class="ph-fill ph-sparkle pc-send__sparkle"></i>
+                                @lang('Post')
+                            </button>
+                        </div>
+
+                        @if(count($recentWins))
+                            <div class="nocturne-arena-win-pick" id="arena-win-pick" hidden>
+                                <label>@lang('Attach a win (optional)')</label>
+                                <select name="linked_game_log_id">
+                                    <option value="">@lang('None')</option>
+                                    @foreach($recentWins as $log)
+                                        <option value="{{ $log->id }}">{{ __($log->game->name ?? 'Game') }} &middot; {{ gs('coin_mode') ? coinAmountText($log->win_amo) : showAmount($log->win_amo) }} &middot; {{ showDateTime($log->created_at, 'M d') }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </form>
                 @else
                     <div class="nocturne-arena-guest-cta">
                         <p>@lang('Sign in to post, comment, vote and follow other players.')</p>
@@ -281,44 +335,94 @@
 .nocturne-arena-rail-backdrop{display:none}
 #arena-rail-open{display:none}
 
-.nocturne-arena-composer{margin-bottom:20px;padding:18px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
-.nocturne-arena-composer__top{display:flex;gap:12px;align-items:flex-start}
-.nocturne-arena-composer textarea{flex:1;min-width:0;min-height:28px;max-height:260px;padding:10px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;resize:none;overflow-y:auto;outline:0}
-.nocturne-arena-composer textarea::placeholder{color:#606986}
-.nocturne-arena-composer__preview{position:relative;margin:12px 0 0 56px;border-radius:14px;overflow:hidden;max-width:320px}
-.nocturne-arena-composer__preview img{display:block;width:100%;max-height:220px;object-fit:cover}
-.nocturne-arena-composer__preview button{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:rgba(5,8,18,.7);color:#fff;cursor:pointer}
+/* ---------- Post composer (pc-*, namespaced to this page) ---------- */
+.pc-composer{position:relative;margin-bottom:20px;padding:16px;border:1px solid var(--arena-line);border-radius:22px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
+.pc-composer__top{display:flex;gap:10px;align-items:flex-start}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-.nocturne-arena-composer__swatches{display:flex;align-items:center;gap:8px;margin:12px 0 0 56px}
-.nocturne-arena-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer}
-.nocturne-arena-swatch.is-active{border-color:#fff}
-.nocturne-arena-swatch--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
-.nocturne-arena-swatch--sunset{background:linear-gradient(135deg,#f97316,#be123c)}
-.nocturne-arena-swatch--forest{background:linear-gradient(135deg,#00e78a,#065f46)}
-.nocturne-arena-swatch--ocean{background:linear-gradient(135deg,#0ea5e9,#1e3a8a)}
-.nocturne-arena-swatch--rose{background:linear-gradient(135deg,#f472b6,#9d174d)}
+.pc-composer__avatar{flex:none;width:40px;height:40px;margin-top:3px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,var(--arena-accent),#384269);border:2px solid rgba(0,231,138,.35)}
+.pc-composer__avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.pc-composer__avatar i{color:#fff;font-size:22px}
 
-.nocturne-arena-composer__row{margin:14px 0 0 56px}
-.nocturne-arena-type-pick{display:flex;flex-wrap:wrap;gap:8px}
-.nocturne-arena-type-opt{position:relative}
-.nocturne-arena-type-opt input{position:absolute;opacity:0;pointer-events:none}
-.nocturne-arena-type-opt>i,.nocturne-arena-type-opt>span{pointer-events:none}
-.nocturne-arena-type-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--arena-line);border-radius:999px;background:var(--arena-bg);color:var(--arena-muted);font-size:12px;font-weight:750;cursor:pointer}
-.nocturne-arena-type-opt i{font-size:14px}
-.nocturne-arena-type-opt.is-active{border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.1);color:var(--arena-accent)}
+.pc-composer__field{--pc-tint-a:transparent;--pc-tint-b:transparent;flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;background:var(--arena-bg);border-radius:20px;padding:5px 8px 5px 15px;border:2px solid transparent;transition:border-color .15s ease,background .25s ease}
+.pc-composer__field[data-tint]{background:linear-gradient(135deg,color-mix(in srgb,var(--pc-tint-a) 26%,var(--arena-bg)),color-mix(in srgb,var(--pc-tint-b) 18%,var(--arena-bg)))}
+.pc-composer__field:focus-within{border-color:var(--arena-accent)}
+.pc-composer__field textarea{flex:1;min-width:0;min-height:28px;max-height:220px;padding:8px 0;border:0;background:transparent;color:var(--arena-text);font:inherit;font-size:14.5px;line-height:1.5;resize:none;overflow-y:auto;outline:0}
+.pc-composer__field textarea::placeholder{color:#606986}
 
-.nocturne-arena-win-pick{margin:14px 0 0 56px}
+.pc-icon-btn{flex:none;width:30px;height:30px;margin-top:4px;border-radius:50%;border:0;cursor:pointer;background:transparent;color:var(--arena-muted);display:grid;place-items:center;padding:0;font-size:17px}
+.pc-icon-btn:hover{color:var(--arena-text);background:rgba(245,246,255,.08)}
+
+.pc-emoji-pop{position:absolute;right:16px;top:64px;z-index:30;background:var(--arena-raised);border:1px solid var(--arena-line);border-radius:14px;padding:8px;display:none;grid-template-columns:repeat(6,1fr);gap:2px;box-shadow:0 14px 34px rgba(0,0,0,.3)}
+.pc-emoji-pop.is-open{display:grid}
+.pc-emoji-pop button{border:0;background:none;font-size:19px;cursor:pointer;padding:5px;border-radius:8px;line-height:1}
+.pc-emoji-pop button:hover{background:rgba(245,246,255,.08)}
+
+.pc-composer__preview{position:relative;margin:12px 0 0 50px;border-radius:14px;overflow:hidden;max-width:320px}
+.pc-composer__preview img{display:block;width:100%;max-height:220px;object-fit:cover}
+.pc-composer__preview video{display:block;width:100%;max-height:260px;object-fit:cover;background:#000}
+.pc-composer__preview button{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:rgba(5,8,18,.7);color:#fff;cursor:pointer}
+
+.pc-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 0 50px}
+.pc-chips:empty{display:none}
+.pc-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:700;color:var(--arena-text);background:var(--arena-bg);border:1px solid var(--arena-line);border-radius:999px;padding:5px 6px 5px 11px}
+.pc-chip button{border:0;background:rgba(245,246,255,.1);color:var(--arena-muted);width:18px;height:18px;border-radius:50%;cursor:pointer;line-height:1;font-size:10px;padding:0}
+
+.pc-composer__bar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:14px 0 0 50px}
+.pc-dd{position:relative}
+
+.pc-round-btn{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--arena-line);background:var(--arena-bg);color:var(--arena-muted);cursor:pointer;display:grid;place-items:center;padding:0;font-size:17px;transition:color .15s ease,border-color .15s ease,background .15s ease}
+.pc-round-btn:hover,.pc-round-btn[aria-expanded="true"]{color:var(--arena-accent);border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.08)}
+.pc-round-btn:focus-visible,.pc-cat-btn:focus-visible,.pc-send:focus-visible,.pc-icon-btn:focus-visible{outline:2px solid var(--arena-accent);outline-offset:2px}
+
+.pc-color-dot{width:20px;height:20px;border-radius:50%;display:none;background:linear-gradient(135deg,var(--pc-c1),var(--pc-c2));box-shadow:0 0 0 2px var(--arena-bg),0 0 0 3.5px var(--pc-c1)}
+.pc-round-btn.has-color .pc-color-dot{display:block}
+.pc-round-btn.has-color .pc-palette-icon{display:none}
+
+.pc-menu{position:absolute;left:0;top:calc(100% + 8px);z-index:25;min-width:190px;background:var(--arena-raised);border:1px solid var(--arena-line);border-radius:16px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.3);display:none}
+.pc-menu.is-open{display:block;animation:pc-pop .14s ease-out}
+.pc-menu.is-up{top:auto;bottom:calc(100% + 8px)}
+@keyframes pc-pop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+
+.pc-swatches{display:flex;gap:10px;padding:4px}
+.pc-swatch{width:28px;height:28px;border-radius:50%;border:0;cursor:pointer;padding:0;transition:transform .12s ease}
+.pc-swatch:hover{transform:scale(1.12)}
+.pc-swatch[aria-checked="true"]{box-shadow:0 0 0 2px var(--arena-raised),0 0 0 4px #fff}
+.pc-swatch--none{background:transparent;border:1.5px dashed var(--arena-muted);color:var(--arena-muted);display:grid;place-items:center;font-size:12px}
+.pc-swatch--violet{background:linear-gradient(135deg,#7c3aed,#4c1d95)}
+.pc-swatch--sunset{background:linear-gradient(135deg,#f97316,#be123c)}
+.pc-swatch--forest{background:linear-gradient(135deg,#00e78a,#065f46)}
+.pc-swatch--ocean{background:linear-gradient(135deg,#0ea5e9,#1e3a8a)}
+.pc-swatch--rose{background:linear-gradient(135deg,#f472b6,#9d174d)}
+
+.pc-cat-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 13px;border-radius:999px;border:1.5px solid var(--arena-line);background:var(--arena-bg);cursor:pointer;font-size:12.5px;font-weight:750;color:var(--arena-text)}
+.pc-cat-btn .pc-chev{font-size:12px;opacity:.7;transition:transform .15s ease}
+.pc-cat-btn[aria-expanded="true"] .pc-chev{transform:rotate(180deg)}
+.pc-cat-btn.is-default{border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.1);color:var(--arena-accent);animation:pc-blink 2.2s ease-in-out infinite}
+.pc-cat-btn.is-picked{border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.1);color:var(--arena-accent)}
+@keyframes pc-blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,231,138,.45)}50%{opacity:.72;box-shadow:0 0 0 6px rgba(0,231,138,0)}}
+@media (prefers-reduced-motion:reduce){.pc-cat-btn.is-default{animation:none}}
+
+.pc-cat-list{list-style:none;margin:0;padding:0;min-width:180px}
+.pc-cat-item{width:100%;display:flex;align-items:center;gap:9px;border:0;background:none;cursor:pointer;padding:9px 11px;border-radius:10px;font-size:12.5px;font-weight:650;color:var(--arena-text);text-align:left}
+.pc-cat-item:hover,.pc-cat-item:focus-visible{background:rgba(245,246,255,.08);outline:0}
+.pc-tick{margin-left:auto;font-size:13px;color:var(--arena-accent);opacity:0}
+.pc-cat-item[aria-selected="true"] .pc-tick{opacity:1}
+
+.pc-send{margin-left:auto;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px;border:0;border-radius:999px;cursor:pointer;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;transition:opacity .15s ease,transform .12s ease}
+.pc-send__sparkle{font-size:11px;margin-left:-3px}
+.pc-send:active:not(:disabled){transform:scale(.97)}
+.pc-send:disabled{opacity:.4;cursor:not-allowed}
+
+.nocturne-arena-win-pick{margin:14px 0 0 50px}
 .nocturne-arena-win-pick label{display:block;margin-bottom:6px;color:var(--arena-muted);font-size:11px;font-weight:800;text-transform:uppercase}
 .nocturne-arena-win-pick select{width:100%;max-width:360px;padding:10px 12px;border:1px solid var(--arena-line);border-radius:12px;background:var(--arena-bg);color:var(--arena-text);font:inherit;font-size:13px}
 
-.nocturne-arena-composer__foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 0 56px}
-.nocturne-arena-attach-tools{display:flex;align-items:center;gap:8px}
-.nocturne-arena-attach-btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--arena-line);border-radius:50%;background:var(--arena-bg);color:var(--arena-muted);font-size:19px;cursor:pointer;transition:color .15s ease,border-color .15s ease,background .15s ease}
-.nocturne-arena-attach-btn:hover{color:var(--arena-accent);border-color:rgba(0,231,138,.4);background:rgba(0,231,138,.08)}
-.nocturne-arena-composer__preview video{display:block;width:100%;max-height:260px;object-fit:cover;background:#000}
-.nocturne-arena-post-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:0;border-radius:12px;background:var(--arena-accent);color:#062a23;font-size:13px;font-weight:800;cursor:pointer}
-.nocturne-arena-composer__note{display:flex;align-items:center;gap:6px;margin:12px 0 0 56px;color:var(--arena-muted);font-size:11.5px}
-.nocturne-arena-composer__note i{color:var(--arena-accent)}
+@media (max-width:520px){
+    .pc-composer__bar{margin-left:0}
+    .pc-composer__preview,.pc-chips,.nocturne-arena-win-pick{margin-left:0}
+    .pc-send{flex:1 0 100%;margin-left:0;justify-content:center}
+}
 
 .nocturne-arena-guest-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;padding:16px 18px;border:1px solid var(--arena-line);border-radius:16px;background:var(--arena-panel);flex-wrap:wrap}
 .nocturne-arena-guest-cta p{margin:0;color:var(--arena-muted);font-size:13px}
@@ -499,57 +603,165 @@
 <script>
 "use strict";
 (function($) {
-    // Facebook/X-style auto-growing composer - no manual drag handle, it just grows with content.
-    var composerBody = document.getElementById('arena-composer-body');
-    function autoGrow() { composerBody.style.height = 'auto'; composerBody.style.height = Math.min(composerBody.scrollHeight, 260) + 'px'; }
-    if (composerBody) { composerBody.addEventListener('input', autoGrow); autoGrow(); }
+    // ---------- Post composer ----------
+    (function() {
+        var form = document.getElementById('arena-composer-form');
+        if (!form) return;
+        var body = document.getElementById('arena-composer-body');
+        var field = document.getElementById('pc-field');
+        var send = document.getElementById('pc-send');
+        var chips = document.getElementById('pc-chips');
+        var imageInput = document.getElementById('arena-image-input');
+        var videoInput = document.getElementById('arena-video-input');
+        var imagePreview = document.getElementById('arena-image-preview');
+        var videoPreview = document.getElementById('arena-video-preview');
+        var fileInputs = [imageInput, videoInput];
 
-    $('#arena-image-input').on('change', function() {
-        var file = this.files[0];
-        if (!file) return;
-        $('#arena-video-input').val('');
-        $('#arena-video-preview').prop('hidden', true).find('video').attr('src', '');
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            $('#arena-image-preview img').attr('src', e.target.result);
-            $('#arena-image-preview').prop('hidden', false);
-            $('#arena-swatches').hide();
-        };
-        reader.readAsDataURL(file);
-    });
-    $('#arena-image-remove').on('click', function() {
-        $('#arena-image-input').val('');
-        $('#arena-image-preview').prop('hidden', true).find('img').attr('src', '');
-        $('#arena-swatches').show();
-    });
-    $('#arena-video-input').on('change', function() {
-        var file = this.files[0];
-        if (!file) return;
-        $('#arena-image-input').val('');
-        $('#arena-image-preview').prop('hidden', true).find('img').attr('src', '');
-        $('#arena-video-preview img').remove();
-        var url = URL.createObjectURL(file);
-        $('#arena-video-preview video').attr('src', url);
-        $('#arena-video-preview').prop('hidden', false);
-        $('#arena-swatches').hide();
-    });
-    $('#arena-video-remove').on('click', function() {
-        $('#arena-video-input').val('');
-        $('#arena-video-preview').prop('hidden', true).find('video').attr('src', '');
-        $('#arena-swatches').show();
-    });
+        // Facebook/X-style auto-growing composer - no manual drag handle, it just grows with content.
+        function autoGrow() { body.style.height = 'auto'; body.style.height = Math.min(body.scrollHeight, 220) + 'px'; }
+        function hasContent() {
+            if (body.value.trim()) return true;
+            return fileInputs.some(function(input) { return input.files.length; });
+        }
+        function refreshSend() { send.disabled = !hasContent(); }
+        body.addEventListener('input', function() { autoGrow(); refreshSend(); });
+        autoGrow();
 
-    $('.nocturne-arena-swatch').on('click', function() {
-        $('.nocturne-arena-swatch').removeClass('is-active');
-        $(this).addClass('is-active');
-        $('#arena-background-input').val($(this).data('swatch'));
-    });
+        function renderChips() {
+            chips.innerHTML = '';
+            fileInputs.forEach(function(input) {
+                if (!input.files.length) return;
+                var chip = document.createElement('span');
+                chip.className = 'pc-chip';
+                chip.textContent = input.files[0].name + ' ';
+                var remove = document.createElement('button');
+                remove.type = 'button';
+                remove.setAttribute('aria-label', "{{ __('Remove') }} " + input.dataset.label);
+                remove.innerHTML = '<i class="ph-bold ph-x"></i>';
+                remove.addEventListener('click', function() {
+                    input.value = '';
+                    if (input === imageInput) { imagePreview.hidden = true; imagePreview.querySelector('img').src = ''; }
+                    else { videoPreview.hidden = true; videoPreview.querySelector('video').src = ''; }
+                    renderChips(); refreshSend();
+                });
+                chip.appendChild(remove);
+                chips.appendChild(chip);
+            });
+        }
 
-    $('.nocturne-arena-type-opt input').on('change', function() {
-        $('.nocturne-arena-type-opt').removeClass('is-active');
-        $(this).closest('.nocturne-arena-type-opt').addClass('is-active');
-        $('#arena-win-pick').prop('hidden', $(this).val() !== 'win');
-    });
+        imageInput.addEventListener('change', function() {
+            var file = this.files[0];
+            if (!file) return;
+            videoInput.value = ''; videoPreview.hidden = true; videoPreview.querySelector('video').src = '';
+            var reader = new FileReader();
+            reader.onload = function(e) { imagePreview.querySelector('img').src = e.target.result; imagePreview.hidden = false; };
+            reader.readAsDataURL(file);
+            renderChips(); refreshSend();
+        });
+        videoInput.addEventListener('change', function() {
+            var file = this.files[0];
+            if (!file) return;
+            imageInput.value = ''; imagePreview.hidden = true; imagePreview.querySelector('img').src = '';
+            videoPreview.querySelector('video').src = URL.createObjectURL(file);
+            videoPreview.hidden = false;
+            renderChips(); refreshSend();
+        });
+        document.getElementById('arena-image-remove').addEventListener('click', function() {
+            imageInput.value = ''; imagePreview.hidden = true; imagePreview.querySelector('img').src = '';
+            renderChips(); refreshSend();
+        });
+        document.getElementById('arena-video-remove').addEventListener('click', function() {
+            videoInput.value = ''; videoPreview.hidden = true; videoPreview.querySelector('video').src = '';
+            renderChips(); refreshSend();
+        });
+
+        // ---------- Dropdown helper: outside click / Escape to close, flips upward if there's
+        // no room below, same behaviour for the color menu, the category menu and the emoji pop. ----------
+        var dropdowns = [];
+        function makeDropdown(btn, menu) {
+            var dd = {
+                open: function() {
+                    closeAll(dd);
+                    menu.classList.remove('is-up');
+                    menu.classList.add('is-open');
+                    btn.setAttribute('aria-expanded', 'true');
+                    var rect = menu.getBoundingClientRect();
+                    if (rect.bottom > window.innerHeight - 8 && btn.getBoundingClientRect().top > rect.height + 16) menu.classList.add('is-up');
+                },
+                close: function() { menu.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); },
+                isOpen: function() { return menu.classList.contains('is-open'); }
+            };
+            btn.addEventListener('click', function(e) { e.stopPropagation(); dd.isOpen() ? dd.close() : dd.open(); });
+            dropdowns.push(dd);
+            return dd;
+        }
+        function closeAll(except) { dropdowns.forEach(function(dd) { if (dd !== except) dd.close(); }); }
+        document.addEventListener('click', function() { closeAll(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAll(); });
+
+        // Emoji popover - inserts at the cursor, same dropdown open/close behaviour.
+        var emojiBtn = document.getElementById('pc-emoji-toggle');
+        var emojiPop = document.getElementById('pc-emoji-pop');
+        makeDropdown(emojiBtn, emojiPop);
+        emojiPop.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON') return;
+            var start = body.selectionStart != null ? body.selectionStart : body.value.length;
+            var end = body.selectionEnd != null ? body.selectionEnd : start;
+            body.value = body.value.slice(0, start) + e.target.textContent + body.value.slice(end);
+            body.focus(); body.selectionStart = body.selectionEnd = start + e.target.textContent.length;
+            autoGrow(); refreshSend();
+        });
+
+        // Color dropdown.
+        var colorBtn = document.getElementById('pc-color-btn');
+        var colorDd = makeDropdown(colorBtn, document.getElementById('pc-color-menu'));
+        var colorValue = document.getElementById('arena-background-input');
+        var swatches = document.querySelectorAll('#pc-color-menu .pc-swatch');
+        swatches.forEach(function(swatch) {
+            swatch.addEventListener('click', function() {
+                swatches.forEach(function(other) { other.setAttribute('aria-checked', other === swatch ? 'true' : 'false'); });
+                colorValue.value = swatch.dataset.swatch;
+                if (swatch.dataset.swatch) {
+                    var c1 = swatch.style.getPropertyValue('--pc-c1');
+                    var c2 = swatch.style.getPropertyValue('--pc-c2');
+                    colorBtn.classList.add('has-color');
+                    colorBtn.style.setProperty('--pc-c1', c1);
+                    colorBtn.style.setProperty('--pc-c2', c2);
+                    field.style.setProperty('--pc-tint-a', c1);
+                    field.style.setProperty('--pc-tint-b', c2);
+                    field.setAttribute('data-tint', '');
+                } else {
+                    colorBtn.classList.remove('has-color');
+                    field.removeAttribute('data-tint');
+                }
+                colorDd.close();
+            });
+        });
+
+        // Category dropdown - "General" blinks gently until another category is chosen.
+        var catBtn = document.getElementById('pc-cat-btn');
+        var catDd = makeDropdown(catBtn, document.getElementById('pc-cat-menu'));
+        var catValue = document.getElementById('pc-cat-value');
+        var catIcon = document.getElementById('pc-cat-icon');
+        var catLabel = document.getElementById('pc-cat-label');
+        var catItems = document.querySelectorAll('#pc-cat-menu .pc-cat-item');
+        catItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+                catItems.forEach(function(other) { other.setAttribute('aria-selected', other === item ? 'true' : 'false'); });
+                catValue.value = item.dataset.value;
+                catIcon.innerHTML = '<i class="ph-fill ' + item.dataset.icon + '"></i>';
+                catLabel.textContent = item.textContent.trim();
+                var isGeneral = item.dataset.value === 'general';
+                catBtn.classList.toggle('is-default', isGeneral);
+                catBtn.classList.toggle('is-picked', !isGeneral);
+                document.getElementById('arena-win-pick') && (document.getElementById('arena-win-pick').hidden = item.dataset.value !== 'win');
+                catDd.close(); catBtn.focus();
+            });
+        });
+
+        form.addEventListener('submit', function() { send.disabled = true; send.querySelector('.ph-paper-plane-tilt')?.classList.replace('ph-paper-plane-tilt', 'ph-spinner'); });
+        refreshSend();
+    })();
 
     $('#arena-load-more').on('click', function() {
         var btn = $(this);

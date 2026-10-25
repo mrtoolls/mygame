@@ -200,9 +200,11 @@ class ArenaController extends Controller
         $post->body              = $request->body;
         $post->type              = $request->type ?: 'general';
         $post->linked_game_log_id = $linkedGameLogId;
-        if (!$hasMedia) {
-            $post->background_style = $request->background_style ?: ArenaPost::BACKGROUNDS[array_rand(ArenaPost::BACKGROUNDS)];
-        }
+        // The composer's color picker defaults to an explicit "none" (no auto-random color
+        // assigned when nothing was chosen) - respects exactly what the user picked, same as
+        // every other field here. Still only rendered for text-only posts (arena_post_cards.blade.php),
+        // so saving it even alongside media is harmless - it simply goes unused in that case.
+        $post->background_style = $request->filled('background_style') ? $request->background_style : null;
         if ($request->hasFile('image')) {
             // Intervention already re-encodes every upload at a fixed box size and jpg/webp
             // quality=82 (FileManager::uploadImage) - that resize/re-encode step is the
