@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\CoinRate;
 use App\Services\CoinLedger;
 use App\Services\CoinPricing;
+use App\Services\CurrencyRateRefresher;
 use Illuminate\Http\Request;
 
 class CoinSettingsController extends Controller
@@ -20,6 +21,49 @@ class CoinSettingsController extends Controller
         $reconciliation = app(CoinLedger::class)->reconcile();
 
         return view('admin.coin.settings', compact('pageTitle', 'general', 'rates', 'currencies', 'reconciliation'));
+    }
+
+    public function pricing()
+    {
+        $pageTitle = 'Coin Pricing';
+        $general = gs();
+        $currencies = Currency::where('enabled', true)->orderBy('code')->get();
+        $rates = CoinRate::all()->keyBy('currency_id');
+        return view('admin.coin.pricing', compact('pageTitle', 'general', 'currencies', 'rates'));
+    }
+
+    public function saveGlobalMargins(Request $request)
+    {
+        $data = $request->validate(['buy_margin_percent' => 'required|numeric|min:0|max:100', 'sell_margin_percent' => 'required|numeric|min:0|max:100']);
+        $general = gs();
+        $general->coin_default_buy_margin_percent = $data['buy_margin_percent'];
+        $general->coin_default_sell_margin_percent = $data['sell_margin_percent'];
+        $general->save();
+        $results = app(CoinPricing::class)->recomputeAll(auth('admin')->id());
+        return redirect()->route('admin.coin.pricing')->with('coin_pricing_results', $results);
+    }
+
+    public function refreshPricing(CurrencyRateRefresher $refresher)
+    {
+        try {
+            $refresh = $refresher->refresh(auth('admin')->id());
+            return redirect()->route('admin.coin.pricing')->with('coin_refresh_result', $refresh);
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.coin.pricing')->with('coin_refresh_error', $exception->getMessage());
+        }
+    }
+
+    public function saveCurrencyMargins(Request $request, int $currencyId)
+    {
+        $data = $request->validate(['buy_margin_override' => 'nullable|numeric|min:0|max:100', 'sell_margin_override' => 'nullable|numeric|min:0|max:100']);
+        $currency = Currency::findOrFail($currencyId);
+        $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id]);
+        $rate->buy_margin_override = $data['buy_margin_override'] ?? null;
+        $rate->sell_margin_override = $data['sell_margin_override'] ?? null;
+        $rate->save();
+        try { app(CoinPricing::class)->recompute($currency, auth('admin')->id()); }
+        catch (\InvalidArgumentException $exception) { $rate->status = 'paused'; $rate->pause_reason = $exception->getMessage(); $rate->save(); }
+        return redirect()->route('admin.coin.pricing')->with('coin_pricing_results', app(CoinPricing::class)->recomputeAll(auth('admin')->id()));
     }
 
     /** Turning coin_mode ON requires an explicit confirmation checkbox and a live, passing reconciliation check - this is the point of no casual return once real trading starts. */
@@ -51,8 +95,7 @@ class CoinSettingsController extends Controller
         // the moment coin mode goes live, instead of players hitting a cold, unpriced currency.
         $results = app(CoinPricing::class)->recomputeAll();
         $paused = array_filter($results, fn ($r) => !$r['ok']);
-        $notify = [['success', 'Coin mode is now on.']];
-        if ($paused) $notify[] = ['error', count($paused) . ' currenc' . (count($paused) === 1 ? 'y is' : 'ies are') . ' paused (no live coin price): ' . implode(', ', array_keys($paused)) . '. See the banner below.'];
+        $notify = [['success', $paused ? 'Coin mode is now on. Review Coin Pricing for currencies that need attention.' : 'Coin mode is now on.']];
 
         return back()->withNotify($notify);
     }
@@ -89,8 +132,8 @@ class CoinSettingsController extends Controller
 
         $currency = Currency::findOrFail($currencyId);
         $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id]);
-        $rate->buy_margin_percent = $data['buy_margin_percent'];
-        $rate->sell_margin_percent = $data['sell_margin_percent'];
+        $rate->buy_margin_override = $data['buy_margin_percent'];
+        $rate->sell_margin_override = $data['sell_margin_percent'];
         $rate->save();
 
         try {
@@ -104,11 +147,6 @@ class CoinSettingsController extends Controller
 
     public function recomputeAll()
     {
-        $results = app(CoinPricing::class)->recomputeAll();
-        $failed = array_filter($results, fn ($r) => !$r['ok']);
-        if ($failed) {
-            return back()->withNotify([['error', 'Recomputed with ' . count($failed) . ' currency error(s): ' . implode(', ', array_map(fn ($r) => $r['error'], $failed))]]);
-        }
-        return back()->withNotify([['success', 'Coin prices recomputed for all enabled currencies.']]);
+        return redirect()->route('admin.coin.pricing')->with('coin_pricing_results', app(CoinPricing::class)->recomputeAll(auth('admin')->id()));
     }
 }

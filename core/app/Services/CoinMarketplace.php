@@ -28,6 +28,7 @@ class CoinMarketplace
 
     public function createListing(User $seller, string $amount): CoinListing
     {
+        app(CoinMarketplaceCountryAccess::class)->assertEnabled($seller);
         $this->assertWithinLimits($amount, 'coin_min_listing_amount', 'coin_max_listing_amount');
         $this->assertWholeCoins($amount);
         $this->assertOpenTradeLimit('user', $seller->id);
@@ -92,6 +93,7 @@ class CoinMarketplace
 
     public function initiateBuyFromAgent(User $buyer, SupportAgent $agent, string $amount): CoinTrade
     {
+        app(CoinMarketplaceCountryAccess::class)->assertEnabled($buyer);
         if (!$agent->is_selling_coins || !$agent->is_active) {
             throw new InvalidArgumentException('This agent is not currently selling coins.');
         }

@@ -23,8 +23,19 @@ Schema::create('countries', function (Blueprint $table) {
     $table->boolean('is_enabled')->default(true);
     $table->boolean('is_allowed')->default(false);
 });
+Schema::create('country_block_attempts', function (Blueprint $table) {
+    $table->id();
+    $table->unsignedBigInteger('country_id')->nullable();
+    $table->unsignedBigInteger('user_id')->nullable();
+    $table->string('ip_address', 45)->nullable();
+    $table->string('detected_country_code', 2)->nullable();
+    $table->string('path', 500)->nullable();
+    $table->string('method', 12)->nullable();
+    $table->string('reason', 255)->nullable();
+    $table->timestamp('created_at')->nullable();
+});
 $us = DB::table('countries')->insertGetId(['iso_code' => 'US', 'is_enabled' => true, 'is_allowed' => true]);
-DB::table('countries')->insert(['iso_code' => 'FR', 'is_enabled' => true, 'is_allowed' => false]);
+$fr = DB::table('countries')->insertGetId(['iso_code' => 'FR', 'is_enabled' => true, 'is_allowed' => false]);
 $middleware = app(CountryAccess::class);
 $next = static fn () => response('allowed', 200);
 
@@ -43,6 +54,13 @@ $blockedApiRequest = Request::create('/api/games', 'GET', [], [], [], ['HTTP_ACC
 $blockedApi = $middleware->handle($blockedApiRequest, $next);
 if ($blockedApi->getStatusCode() !== 403) throw new RuntimeException('A known blocked country was allowed through the API path.');
 
+$signupFallbackBlockedRequest = Request::create('/games');
+$signupFallbackBlockedRequest->setUserResolver(static fn () => (object) ['id' => 45, 'country_id' => $fr]);
+$signupFallbackBlocked = $middleware->handle($signupFallbackBlockedRequest, $next);
+if ($signupFallbackBlocked->getStatusCode() !== 403) throw new RuntimeException('A blocked signup country was allowed when the country header was missing.');
+$unknownAttempt = DB::table('country_block_attempts')->where('user_id', 45)->latest('id')->first();
+if ($unknownAttempt?->detected_country_code !== null || !str_contains((string) $unknownAttempt?->reason, 'no usable CF-IPCountry header')) throw new RuntimeException('A signup-country fallback was mislabeled as the detected country instead of Unknown with its missing-signal reason.');
+
 $fallbackRequest = Request::create('/games');
 $fallbackRequest->setUserResolver(static fn () => (object) ['id' => 44, 'country_id' => $us]);
 $fallback = $middleware->handle($fallbackRequest, $next);
@@ -54,4 +72,4 @@ if ($guest->getStatusCode() !== 200) throw new RuntimeException('A guest was blo
 
 DB::disconnect();
 if (is_file($dbPath)) unlink($dbPath);
-echo "Country access checks passed for enabled, blocked, authenticated-fallback, and missing-header guest requests.\n";
+echo "Country access checks passed for allowed/blocked countries, signup fallback, unknown detected-country logging, and missing-header guests.\n";

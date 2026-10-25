@@ -128,7 +128,8 @@ return new class extends Migration
 
         $now = now();
         foreach (self::CURRENCIES as [$code, $name, $symbol, $decimals, $position, $usdRate]) {
-            DB::table('currencies')->updateOrInsert(['code' => $code], [
+            DB::table('currencies')->insertOrIgnore([
+                'code' => $code,
                 'name' => $name, 'symbol' => $symbol, 'decimals' => $decimals,
                 'enabled' => true, 'symbol_position' => $position,
                 'rate_to_usd' => $usdRate, 'rate_source' => 'manual',
@@ -140,7 +141,8 @@ return new class extends Migration
         $countryData = json_decode(file_get_contents(resource_path('views/partials/country.json')), true, 512, JSON_THROW_ON_ERROR);
         foreach ($countryData as $isoCode => $definition) {
             $isAllowed = array_key_exists($isoCode, self::COUNTRY_CURRENCIES);
-            DB::table('countries')->updateOrInsert(['iso_code' => strtoupper($isoCode)], [
+            DB::table('countries')->insertOrIgnore([
+                'iso_code' => strtoupper($isoCode),
                 'name' => $definition['country'],
                 'is_enabled' => true,
                 'is_allowed' => $isAllowed,

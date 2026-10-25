@@ -59,6 +59,10 @@ Route::middleware('admin')->group(function () {
 
     Route::controller('CurrencyCountryController')->prefix('currency-country')->name('currency-country.')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::post('refresh-rates', 'refreshRates')->name('rates.refresh');
+        Route::post('rate-source', 'saveRateSource')->name('rate-source.save');
+        Route::post('currency/{currency}/manual-rate', 'manualRateOverride')->name('currency.manual-rate');
+        Route::post('countries/bulk', 'bulkCountries')->name('countries.bulk');
         Route::get('money-audit', 'moneyAudit')->name('money-audit');
         Route::post('currency/{currency}', 'updateCurrency')->name('currency.update');
         Route::post('country/{country}', 'updateCountry')->name('country.update');
@@ -68,6 +72,10 @@ Route::middleware('admin')->group(function () {
 
     Route::controller('CoinSettingsController')->prefix('coin')->name('coin.')->group(function () {
         Route::get('/', 'index')->name('settings');
+        Route::get('pricing', 'pricing')->name('pricing');
+        Route::post('pricing/margins', 'saveGlobalMargins')->name('pricing.margins');
+        Route::post('pricing/refresh', 'refreshPricing')->name('pricing.refresh');
+        Route::post('pricing/currency/{currencyId}/margins', 'saveCurrencyMargins')->name('pricing.currency.margins');
         Route::post('mode', 'toggleCoinMode')->name('mode.toggle');
         Route::post('single-approver', 'toggleSingleApprover')->name('single-approver.toggle');
         Route::post('test-kit', 'toggleTestKit')->name('test-kit.toggle');

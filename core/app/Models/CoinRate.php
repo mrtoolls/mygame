@@ -11,6 +11,8 @@ class CoinRate extends Model
     protected $casts = [
         'buy_margin_percent' => 'decimal:4',
         'sell_margin_percent' => 'decimal:4',
+        'buy_margin_override' => 'decimal:4',
+        'sell_margin_override' => 'decimal:4',
         'buy_price' => 'decimal:8',
         'sell_price' => 'decimal:8',
         'last_computed_at' => 'datetime',

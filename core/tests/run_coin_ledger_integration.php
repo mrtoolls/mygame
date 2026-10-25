@@ -16,10 +16,13 @@ use App\Models\Referral;
 use App\Models\User;
 use App\Services\CoinLedger;
 use App\Services\CoinPricing;
+use App\Services\CurrencyRateRefresher;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
 $dbPath = __DIR__ . '/coin_ledger_integration.sqlite';
@@ -51,6 +54,10 @@ Schema::create('general_settings', function (Blueprint $table) {
 DB::table('general_settings')->insert(['id' => 1]);
 $coinSettingsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000011_add_coin_settings_to_general_settings.php';
 $coinSettingsMigration->up();
+$generalSettings = gs();
+$generalSettings->coin_default_buy_margin_percent = 5;
+$generalSettings->coin_default_sell_margin_percent = 2;
+$generalSettings->save();
 
 Schema::create('users', function (Blueprint $table) {
     $table->id();
@@ -75,6 +82,16 @@ Schema::create('currencies', function (Blueprint $table) {
     $table->boolean('auto_update')->default(false);
     $table->timestamp('last_updated_at')->nullable();
     $table->timestamps();
+});
+Schema::create('currency_rate_logs', function (Blueprint $table) {
+    $table->id();
+    $table->unsignedBigInteger('currency_id');
+    $table->decimal('old_rate_to_usd', 24, 12)->nullable();
+    $table->decimal('new_rate_to_usd', 24, 12)->nullable();
+    $table->string('source', 16);
+    $table->unsignedBigInteger('changed_by')->nullable();
+    $table->string('reason', 500)->nullable();
+    $table->timestamp('created_at')->useCurrent();
 });
 Schema::create('transactions', function (Blueprint $table) {
     $table->id();
@@ -134,6 +151,7 @@ Schema::create('deposits', function (Blueprint $table) {
 $coinCoreMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000010_create_coin_core_tables.php';
 $coinCoreMigration->up();
 (require dirname(__DIR__) . '/database/migrations/2026_10_25_000001_add_pause_state_to_coin_rates.php')->up();
+(require dirname(__DIR__) . '/database/migrations/2026_10_25_000003_add_currency_rate_admin_controls.php')->up();
 $floatGrantsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000012_create_agent_coin_float_grants_table.php';
 $floatGrantsMigration->up();
 $depositFieldsMigration = require dirname(__DIR__) . '/database/migrations/2026_10_24_000014_add_coin_purchase_fields_to_deposits.php';
@@ -222,6 +240,45 @@ $afterAdmin = CoinRate::where('currency_id', $ngn->id)->first();
 if ($afterAdmin->flagged_for_review) throw new RuntimeException('An admin-triggered recompute should clear the flagged state.');
 if (bccomp((string) $afterAdmin->buy_price, (string) $beforeFlagged->buy_price, 8) === 0) throw new RuntimeException('An admin-triggered recompute should have applied the new price.');
 fwrite(STDOUT, "CoinPricing: USD-peg margins, stale-rate guard, and large-swing guard all behave correctly.\n");
+
+// A fresh currency with no history row is still priceable; freshness is read from the currency
+// rate and timestamp, never from a mandatory rate-log lookup.
+$ngnCurrent = Currency::create(['code' => 'NGN2', 'decimals' => 2, 'enabled' => true, 'rate_to_usd' => '0.000754307000', 'last_updated_at' => now()]);
+if (DB::table('currency_rate_logs')->where('currency_id', $ngnCurrent->id)->exists()) throw new RuntimeException('The no-history pricing scenario unexpectedly has a currency rate log.');
+$currentNgnPrice = $pricing->recompute($ngnCurrent);
+if (bccomp((string) $currentNgnPrice->buy_price, '13.80', 2) < 0 || bccomp((string) $currentNgnPrice->buy_price, '14.10', 2) > 0) throw new RuntimeException("NGN buy price with 5% margin should be near 14: {$currentNgnPrice->buy_price}");
+if (bccomp((string) $currentNgnPrice->sell_price, '12.80', 2) < 0 || bccomp((string) $currentNgnPrice->sell_price, '13.20', 2) > 0) throw new RuntimeException("NGN sell price with 2% margin should be near 13: {$currentNgnPrice->sell_price}");
+$ugx = Currency::create(['code' => 'UGX', 'decimals' => 0, 'enabled' => true, 'rate_to_usd' => '0.000246252200', 'last_updated_at' => now()]);
+$ugxPrice = $pricing->recompute($ugx);
+if ((int) $ugxPrice->buy_price !== 43 || (int) $ugxPrice->sell_price !== 40) throw new RuntimeException("Zero-decimal UGX price rounding failed: buy {$ugxPrice->buy_price}, sell {$ugxPrice->sell_price}");
+fwrite(STDOUT, "CoinPricing: no-history fresh rate, stale-rate guard, 5%/2% NGN prices, and zero-decimal rounding all pass.\n");
+
+// A successful refresh fills the missing timestamp on an existing auto-updated rate row.
+$snapshotAt = now()->subHour()->timestamp;
+$missingRefreshTime = Currency::create(['code' => 'MTR', 'decimals' => 2, 'enabled' => true, 'auto_update' => true, 'rate_source' => 'api', 'rate_to_usd' => '0.500000000000', 'last_updated_at' => null]);
+$sameSnapshotMismatch = Currency::create(['code' => 'EQD', 'decimals' => 2, 'enabled' => true, 'auto_update' => true, 'rate_source' => 'api', 'rate_to_usd' => '0.200000000000', 'last_updated_at' => \Illuminate\Support\Carbon::createFromTimestampUTC($snapshotAt)]);
+Http::fake(['open.er-api.com/*' => Http::response(['result' => 'success', 'base_code' => 'USD', 'time_last_update_unix' => $snapshotAt, 'time_next_update_unix' => $snapshotAt + 86400, 'rates' => ['USD' => 1, 'MTR' => 2, 'EQD' => 4]], 200)]);
+$refreshResult = app(CurrencyRateRefresher::class)->refresh();
+$missingRefreshTime->refresh();
+$sameSnapshotMismatch->refresh();
+if (!$missingRefreshTime->last_updated_at || abs($missingRefreshTime->last_updated_at->timestamp - $snapshotAt) > 1) throw new RuntimeException('A valid refresh did not set the missing exchange-rate timestamp to the provider snapshot time.');
+if (bccomp((string) $sameSnapshotMismatch->rate_to_usd, '0.250000000000', 12) !== 0) throw new RuntimeException('A refresh with an equal snapshot timestamp did not reconcile the stored rate value.');
+if (!DB::table('currency_rate_logs')->where('currency_id', $sameSnapshotMismatch->id)->where('source', 'api')->exists()) throw new RuntimeException('A changed rate was not written to the currency rate log.');
+if ($missingRefreshTime->rate_source !== 'api' || $refreshResult['source'] !== 'free') throw new RuntimeException('The free endpoint refresh did not mark the rate source correctly.');
+fwrite(STDOUT, "CurrencyRateRefresher: successful free-endpoint refresh repairs missing rate timestamps.\n");
+config(['app.key' => 'base64:' . base64_encode(str_repeat('x', 32))]);
+$generalSettings = gs();
+$generalSettings->currency_rate_api_key = Crypt::encryptString('integration-test-key');
+$generalSettings->save();
+Http::fake([
+    'v6.exchangerate-api.com/*' => Http::response(['result' => 'error', 'error-type' => 'invalid-key'], 403),
+    'open.er-api.com/*' => Http::response(['result' => 'success', 'base_code' => 'USD', 'time_last_update_unix' => $snapshotAt, 'time_next_update_unix' => $snapshotAt + 86400, 'rates' => ['USD' => 1, 'MTR' => 2, 'EQD' => 4]], 200),
+]);
+$fallbackResult = app(CurrencyRateRefresher::class)->refresh();
+if ($fallbackResult['source'] !== 'free' || !$fallbackResult['fallback_notice']) throw new RuntimeException('A failed keyed API request did not fall back to the free endpoint.');
+$generalSettings->currency_rate_api_key = null;
+$generalSettings->save();
+fwrite(STDOUT, "CurrencyRateRefresher: encrypted keyed configuration falls back to free rates when the keyed request fails.\n");
 
 // --- Gateway purchase integration: coin_mode off leaves legacy behavior untouched. ---
 $dave = $insertUser('coin_dave', $ngn->id);

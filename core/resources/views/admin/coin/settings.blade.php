@@ -13,24 +13,15 @@
             </div>
         @endif
 
-        @php($unpriced = $currencies->map(fn ($currency) => ['currency' => $currency, 'rate' => $rates->get($currency->id)])->filter(fn ($row) => !$row['rate'] || $row['rate']->status === 'paused' || !$row['rate']->buy_price))
+        @php
+            $unpriced = $currencies->filter(function ($currency) use ($rates, $general) {
+                $rate = $rates->get($currency->id);
+                return !$rate || $rate->status === 'paused' || !$rate->buy_price || !$currency->last_updated_at || $currency->last_updated_at->lt(now()->subHours((int) ($general->coin_rate_stale_hours ?? 48)));
+            });
+        @endphp
         @if($unpriced->isNotEmpty())
-            <div class="col-12">
-                <div class="alert alert--danger d-flex align-items-start gap-2 mb-0">
-                    <i class="las la-exclamation-circle fs-4"></i>
-                    <div>
-                        <strong>{{ $unpriced->count() }} currenc{{ $unpriced->count() === 1 ? 'y has' : 'ies have' }} no live coin price.</strong>
-                        Buy Coins falls back to the USD peg for these and the purchase stays disabled until a price is set.
-                        <ul class="mb-0 ps-3 mt-1">
-                            @foreach($unpriced as $row)
-                                <li><strong>{{ $row['currency']->code }}</strong> — {{ $row['rate']?->pause_reason ?? 'No price has ever been computed for this currency.' }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <div class="col-12"><div class="alert alert--warning mb-0"><strong>{{ $unpriced->count() }} currencies need pricing attention.</strong> <a href="{{ route('admin.coin.pricing') }}">Review Coin Pricing and refresh rates</a>.</div></div>
         @endif
-
         <div class="col-12">
             <div class="coin-admin-hero">
                 <div>
@@ -133,7 +124,7 @@
                 <div class="text-end mt-3">
                     <form method="post" action="{{ route('admin.coin.recompute') }}" class="d-inline mb-0">
                         @csrf
-                        <button type="submit" class="btn btn-outline--primary btn-sm"><i class="las la-sync"></i> Seed Pricing for All Currencies</button>
+                        <a href="{{ route('admin.coin.pricing') }}" class="btn btn-outline--primary btn-sm"><i class="las la-coins"></i> Open Coin Pricing</a>
                     </form>
                 </div>
             </div>
@@ -153,59 +144,5 @@
             </div>
         </div>
 
-        <div class="col-12">
-            <div class="coin-admin-panel">
-                <div class="coin-admin-panel__head">
-                    <h2><i class="las la-money-bill-wave"></i> Coin Pricing per Currency</h2>
-                    <p>1 coin = {{ gs('coin_peg_usd') ?: '0.01' }} USD, converted through each currency's live exchange rate plus your margin.</p>
-                </div>
-                @if($currencies->isEmpty())
-                    <div class="text-center text-muted py-5"><i class="las la-globe fs-1 d-block mb-2"></i>No enabled currencies found.</div>
-                @else
-                    <div class="coin-admin-currency-grid">
-                        @foreach($currencies as $currency)
-                            @php($rate = $rates->get($currency->id))
-                            <div class="coin-admin-currency-card">
-                                <div class="coin-admin-currency-card__head">
-                                    <span class="coin-admin-currency-card__code"><span>{{ substr($currency->code, 0, 2) }}</span> {{ $currency->code }}</span>
-                                    @if($rate?->status === 'paused' || !$rate?->buy_price)
-                                        <span class="coin-admin-status-pill coin-admin-status-pill--off"><i class="las la-pause-circle"></i> Paused</span>
-                                    @elseif($rate?->flagged_for_review)
-                                        <span class="coin-admin-status-pill coin-admin-status-pill--warn"><i class="las la-exclamation-triangle"></i> Flagged</span>
-                                    @else
-                                        <span class="coin-admin-status-pill coin-admin-status-pill--on">OK</span>
-                                    @endif
-                                </div>
-                                <div class="coin-admin-currency-card__prices">
-                                    <div><small>Buy / Coin</small><strong>{{ $rate?->buy_price ?? '—' }}</strong></div>
-                                    <div><small>Sell / Coin</small><strong class="is-sell">{{ $rate?->sell_price ?? '—' }}</strong></div>
-                                </div>
-                                @if($rate?->status === 'paused')
-                                    <p class="text-danger small mb-2"><i class="las la-info-circle"></i> {{ $rate->pause_reason }}</p>
-                                @endif
-                                <form id="coin-margin-{{ $currency->id }}" method="post" action="{{ route('admin.coin.margins.save', $currency->id) }}">
-                                    @csrf
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <div class="form-group mb-2">
-                                                <label>Buy Margin %</label>
-                                                <input type="number" step="0.01" name="buy_margin_percent" value="{{ $rate?->buy_margin_percent ?? 3 }}" class="form-control form-control-sm">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="form-group mb-2">
-                                                <label>Sell Margin %</label>
-                                                <input type="number" step="0.01" name="sell_margin_percent" value="{{ $rate?->sell_margin_percent ?? 3 }}" class="form-control form-control-sm">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn--primary btn-sm w-100"><i class="las la-save"></i> Save &amp; Recompute</button>
-                                </form>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
+        <div class="col-12"><div class="coin-admin-panel d-flex flex-wrap align-items-center justify-content-between gap-3"><div><h2 class="mb-1"><i class="las la-money-bill-wave"></i> Coin Pricing</h2><p class="mb-0">Manage global margins, exchange rates, and per-currency prices in one place.</p></div><a class="btn btn--primary" href="{{ route('admin.coin.pricing') }}">Open Coin Pricing <i class="las la-arrow-right"></i></a></div></div>    </div>
 @endsection

@@ -225,6 +225,11 @@
                 "menu_active": "admin.coin.settings"
             },
             {
+                "title": "Coin Pricing",
+                "route_name": "admin.coin.pricing",
+                "menu_active": "admin.coin.pricing"
+            },
+            {
                 "title": "Agent Float Grants",
                 "route_name": "admin.coin.float.index",
                 "menu_active": "admin.coin.float.index"

@@ -4,6 +4,7 @@ use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\AuthenticateSupportAgent;
 use App\Http\Middleware\CheckStatus;
 use App\Http\Middleware\CountryAccess;
+use App\Http\Middleware\EnsureCountryCoinMarketplaceEnabled;
 use App\Http\Middleware\Demo;
 use App\Http\Middleware\KycMiddleware;
 use App\Http\Middleware\MaintenanceMode;
@@ -73,6 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => RedirectIfNotAdmin::class,
             'admin.guest' => RedirectIfAdmin::class,
             'support.agent' => AuthenticateSupportAgent::class,
+            'country.coin-marketplace' => EnsureCountryCoinMarketplaceEnabled::class,
 
             'check.status' => CheckStatus::class,
             'demo' => Demo::class,

@@ -26,7 +26,9 @@
             <div class="nocturne-balance-card__actions">
                 <a href="{{ route('user.deposit.index') }}"><i class="ph-fill ph-wallet"></i>{{ gs('coin_mode') ? __('Buy Coins') : __('Deposit') }}</a>
                 @if(gs('coin_mode'))
-                    <a href="{{ route('user.coin.marketplace') }}"><i class="ph-fill ph-coins"></i>@lang('Marketplace')</a>
+                    @if($user->country?->coin_marketplace_enabled)
+                        <a href="{{ route('user.coin.marketplace') }}"><i class="ph-fill ph-coins"></i>@lang('Marketplace')</a>
+                    @endif
                 @else
                     <a href="{{ route('user.withdraw') }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
                 @endif

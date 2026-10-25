@@ -45,7 +45,9 @@
                     @auth
                         <li><a href="{{ route('user.deposit.index') }}">{{ gs('coin_mode') ? __('Buy Coins') : __('Deposit') }}</a></li>
                         @if(gs('coin_mode'))
-                            <li><a href="{{ route('user.coin.marketplace') }}">@lang('Coin Marketplace')</a></li>
+                            @if(auth()->user()->country?->coin_marketplace_enabled)
+                                <li><a href="{{ route('user.coin.marketplace') }}">@lang('Coin Marketplace')</a></li>
+                            @endif
                         @else
                             <li><a href="{{ route('user.withdraw') }}">@lang('Withdraw')</a></li>
                         @endif

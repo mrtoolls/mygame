@@ -14,7 +14,7 @@ class GeneralSetting extends Model {
         'config_progress'=>'object',
     ];
 
-    protected $hidden = ['email_template', 'mail_config', 'sms_config', 'system_info'];
+    protected $hidden = ['email_template', 'mail_config', 'sms_config', 'system_info', 'currency_rate_api_key'];
 
     public function scopeSiteName($query, $pageTitle) {
         $pageTitle = empty($pageTitle) ? '' : ' - ' . $pageTitle;

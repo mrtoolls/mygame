@@ -29,13 +29,19 @@ class CoinPricing
         return DB::transaction(function () use ($currency, $adminId) {
             $general = gs();
             $staleHours = (int) ($general->coin_rate_stale_hours ?? 48);
-            if (!$currency->rate_to_usd || !$currency->last_updated_at || $currency->last_updated_at->lt(now()->subHours($staleHours))) {
-                throw new InvalidArgumentException("Currency {$currency->code} has no current exchange rate - cannot price coins against it.");
+            if (!$currency->rate_to_usd || bccomp((string) $currency->rate_to_usd, '0', 12) <= 0) {
+                throw new InvalidArgumentException("{$currency->code}: no exchange rate is set. Refresh rates or enter a manual rate.");
+            }
+            if (!$currency->last_updated_at) {
+                throw new InvalidArgumentException("{$currency->code}: the rate has no update time. Refresh rates now.");
+            }
+            if ($currency->last_updated_at->lt(now()->subHours($staleHours))) {
+                throw new InvalidArgumentException("{$currency->code}: the rate is older than {$staleHours} hours. Click Refresh rates.");
             }
 
             $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id], [
-                'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 3,
-                'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 3,
+                'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 5,
+                'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 2,
             ]);
             $rate = CoinRate::whereKey($rate->id)->lockForUpdate()->first();
 
@@ -44,8 +50,10 @@ class CoinPricing
             $precision = max(12, $decimals + 4);
 
             $basePrice = bcdiv($peg, (string) $currency->rate_to_usd, $precision);
-            $buyPrice = $this->roundTo(bcmul($basePrice, bcadd('1', bcdiv((string) $rate->buy_margin_percent, '100', $precision), $precision), $precision), $decimals);
-            $sellPrice = $this->roundTo(bcmul($basePrice, bcsub('1', bcdiv((string) $rate->sell_margin_percent, '100', $precision), $precision), $precision), $decimals);
+            $buyMargin = $rate->buy_margin_override ?? $general->coin_default_buy_margin_percent ?? 5;
+            $sellMargin = $rate->sell_margin_override ?? $general->coin_default_sell_margin_percent ?? 2;
+            $buyPrice = $this->roundTo(bcmul($basePrice, bcadd('1', bcdiv((string) $buyMargin, '100', $precision), $precision), $precision), $decimals);
+            $sellPrice = $this->roundTo(bcmul($basePrice, bcsub('1', bcdiv((string) $sellMargin, '100', $precision), $precision), $precision), $decimals);
 
             $changePercent = null;
             $isLargeSwing = false;
@@ -101,12 +109,12 @@ class CoinPricing
      * nothing duplicates. Never overwrites an existing buy_price/sell_price on failure - pausing
      * only touches the status/reason fields.
      */
-    public function recomputeAll(): array
+    public function recomputeAll(?int $adminId = null): array
     {
         $results = [];
         foreach (Currency::where('enabled', true)->get() as $currency) {
             try {
-                $results[$currency->code] = ['ok' => true, 'rate' => $this->recompute($currency)];
+                $results[$currency->code] = ['ok' => true, 'rate' => $this->recompute($currency, $adminId)];
             } catch (InvalidArgumentException $exception) {
                 $this->markPaused($currency, $exception->getMessage());
                 $results[$currency->code] = ['ok' => false, 'error' => $exception->getMessage()];
@@ -119,8 +127,8 @@ class CoinPricing
     {
         $general = gs();
         $rate = CoinRate::firstOrCreate(['currency_id' => $currency->id], [
-            'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 3,
-            'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 3,
+            'buy_margin_percent' => $general->coin_default_buy_margin_percent ?? 5,
+            'sell_margin_percent' => $general->coin_default_sell_margin_percent ?? 2,
         ]);
         $rate->status = 'paused';
         $rate->pause_reason = $reason;
@@ -138,7 +146,8 @@ class CoinPricing
     private function roundTo(string $value, int $decimals): string
     {
         $half = '0.' . str_repeat('0', $decimals) . '5';
-        return bcadd(bcadd($value, $half, $decimals + 1), '0', $decimals);
+        $rounded = bcadd($value, $half, max(16, $decimals + 8));
+        return bcadd($rounded, '0', $decimals);
     }
 
     private function abs(string $value): string

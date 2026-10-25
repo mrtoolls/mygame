@@ -18,6 +18,7 @@ class Country extends Model
         'max_table_stake_minor' => 'integer',
         'is_allowed' => 'boolean',
         'is_enabled' => 'boolean',
+        'coin_marketplace_enabled' => 'boolean',
     ];
 
     public function currency()

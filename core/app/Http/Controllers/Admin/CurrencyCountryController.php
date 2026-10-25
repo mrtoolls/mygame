@@ -8,7 +8,9 @@ use App\Models\Country;
 use App\Models\Currency;
 use App\Models\User;
 use App\Support\MoneyConversionAudit;
+use App\Services\CurrencyRateRefresher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -23,15 +25,45 @@ class CurrencyCountryController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(Schema::hasTable('currencies') && Schema::hasTable('countries'), 503, 'Run the database updater to enable currency and country controls.');
 
+        $countryQuery = Country::with('currency')->orderBy('name');
+        if ($search = trim((string) $request->query('country_search'))) $countryQuery->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('iso_code', 'like', "%{$search}%"));
+        if ($request->query('access') === 'allowed') $countryQuery->where('is_enabled', true)->where('is_allowed', true);
+        elseif ($request->query('access') === 'blocked') $countryQuery->where(fn ($q) => $q->where('is_enabled', false)->orWhere('is_allowed', false));
+        if ($currencyId = $request->query('country_currency')) $countryQuery->where('currency_id', $currencyId);
+        if ($request->query('coin_marketplace') === 'on') $countryQuery->where('coin_marketplace_enabled', true);
+        elseif ($request->query('coin_marketplace') === 'off') $countryQuery->where('coin_marketplace_enabled', false);
+
+        $attemptQuery = DB::table('country_block_attempts')->latest('created_at');
+        if ($request->filled('attempt_country')) {
+            $country = strtoupper((string) $request->query('attempt_country'));
+            $country === 'UNKNOWN' ? $attemptQuery->whereNull('detected_country_code') : $attemptQuery->where('detected_country_code', $country);
+        }
+        if ($request->query('attempt_reason') === 'missing_signal') $attemptQuery->where('reason', 'like', '%no usable CF-IPCountry%');
+        elseif ($request->query('attempt_reason') === 'country_block') $attemptQuery->where(fn ($q) => $q->where('reason', 'like', '%blocked or unavailable%')->orWhere('reason', 'like', '%signup country is blocked%'));
+        elseif ($request->query('attempt_reason') === 'override') $attemptQuery->where('reason', 'like', '%override%');
+
+        $settings = gs();
+        $hasApiKey = false;
+        try { $hasApiKey = (bool) $settings->currency_rate_api_key && Crypt::decryptString($settings->currency_rate_api_key) !== ''; } catch (\Throwable) {}
+        $activeCoinCurrencyIds = Schema::hasTable('coin_rates')
+            ? DB::table('coin_rates')->where('status', 'active')->whereNotNull('buy_price')->pluck('currency_id')->all()
+            : [];
+
         return view('admin.currency_country.index', [
             'currencies' => Currency::withCount('countries')->orderBy('code')->get(),
-            'countries' => Country::with('currency')->orderBy('name')->paginate(100),
-            'blockedAttempts' => DB::table('country_block_attempts')->latest('created_at')->paginate(20, ['*'], 'attempts_page'),
+            'countries' => $countryQuery->paginate(100)->withQueryString(),
+            'countryAllowedCount' => Country::where('is_enabled', true)->where('is_allowed', true)->count(),
+            'countryBlockedCount' => Country::where(fn ($q) => $q->where('is_enabled', false)->orWhere('is_allowed', false))->count(),
+            'countryCoinMarketplaceOnCount' => Schema::hasColumn('countries', 'coin_marketplace_enabled') ? Country::where('coin_marketplace_enabled', true)->count() : 0,
+            'blockedAttempts' => $attemptQuery->paginate(20, ['*'], 'attempts_page')->withQueryString(),
             'mismatches' => DB::table('country_access_mismatches')->latest('created_at')->paginate(20, ['*'], 'mismatches_page'),
+            'rateSettings' => $settings,
+            'hasApiKey' => $hasApiKey,
+            'activeCoinCurrencyIds' => $activeCoinCurrencyIds,
         ])->with('pageTitle', 'Currencies & Countries');
     }
 
@@ -45,6 +77,7 @@ class CurrencyCountryController extends Controller
             'auto_update' => 'nullable|boolean',
             'symbol_position' => ['required', Rule::in(['left', 'right'])],
             'rate_to_usd' => 'nullable|numeric|gt:0|max:999999999999',
+            'rate_reason' => 'nullable|string|required_without:auto_update|max:500',
         ]);
 
         DB::transaction(function () use ($currency, $data) {
@@ -72,11 +105,69 @@ class CurrencyCountryController extends Controller
                     'new_rate_to_usd' => $rateToSave,
                     'source' => $autoUpdate ? 'api' : 'manual',
                     'changed_by' => auth('admin')->id(),
+                        'reason' => $data['rate_reason'] ?? null,
                 ]);
             }
         });
 
         return back()->withNotify([['success', 'Currency settings saved. Wallet balances are unchanged; automatic rates refresh once a day.']]);
+    }
+
+    public function refreshRates(CurrencyRateRefresher $refresher)
+    {
+        try {
+            $result = $refresher->refresh(auth('admin')->id());
+            $summary = "Rates refreshed from the {$result['source']} endpoint; {$result['updated']} currencies checked and coin prices recomputed.";
+            if ($result['fallback_notice']) $summary .= ' The keyed endpoint failed, so the free endpoint was used.';
+            return back()->withNotify([['success', $summary]]);
+        } catch (\Throwable $exception) {
+            return back()->withNotify([['error', 'Rates could not be refreshed: ' . $exception->getMessage()]]);
+        }
+    }
+
+    public function saveRateSource(Request $request)
+    {
+        $data = $request->validate(['api_key' => 'nullable|string|max:500', 'clear_api_key' => 'nullable|boolean']);
+        $settings = gs();
+        if ($request->boolean('clear_api_key')) $settings->currency_rate_api_key = null;
+        elseif (trim((string) ($data['api_key'] ?? '')) !== '') $settings->currency_rate_api_key = Crypt::encryptString(trim($data['api_key']));
+        $settings->save();
+        return back()->withNotify([['success', 'Rate source settings saved. The stored API key is encrypted and cannot be viewed here.']]);
+    }
+
+    public function manualRateOverride(Request $request, Currency $currency)
+    {
+        $data = $request->validate(['rate_to_usd' => 'required|numeric|gt:0|max:999999999999', 'reason' => 'required|string|min:5|max:500']);
+        DB::transaction(function () use ($currency, $data) {
+            $locked = Currency::whereKey($currency->id)->lockForUpdate()->firstOrFail();
+            $oldRate = $locked->rate_to_usd;
+            $locked->rate_to_usd = $data['rate_to_usd'];
+            $locked->rate_source = 'manual';
+            $locked->auto_update = false;
+            $locked->last_updated_at = now();
+            $locked->save();
+            $locked->rateLogs()->create(['old_rate_to_usd' => $oldRate, 'new_rate_to_usd' => $data['rate_to_usd'], 'source' => 'manual', 'changed_by' => auth('admin')->id(), 'reason' => $data['reason']]);
+        });
+        if (Schema::hasTable('coin_rates')) {
+            try { app(\App\Services\CoinPricing::class)->recompute($currency->fresh(), auth('admin')->id()); }
+            catch (\InvalidArgumentException $exception) { return back()->withNotify([['warning', "Manual {$currency->code} rate saved; coin price needs review: {$exception->getMessage()}"]]); }
+        }
+        return back()->withNotify([['success', "Manual {$currency->code} rate saved and logged. Automatic refresh is off for this currency."]]);
+    }
+
+    public function bulkCountries(Request $request)
+    {
+        $data = $request->validate(['country_ids' => 'required|array|min:1', 'country_ids.*' => 'integer|exists:countries,id', 'bulk_action' => 'required|in:allow,block,set_currency,marketplace_on,marketplace_off', 'currency_id' => 'required_if:bulk_action,set_currency|nullable|integer|exists:currencies,id']);
+        if ($data['bulk_action'] === 'set_currency') {
+            abort_unless(Currency::whereKey($data['currency_id'])->where('enabled', true)->exists(), 422, 'Choose an enabled currency.');
+            Country::whereIn('id', $data['country_ids'])->update(['currency_id' => $data['currency_id']]);
+        } elseif (in_array($data['bulk_action'], ['marketplace_on', 'marketplace_off'], true)) {
+            abort_unless(Schema::hasColumn('countries', 'coin_marketplace_enabled'), 503, 'Run the database updater to enable marketplace country controls.');
+            Country::whereIn('id', $data['country_ids'])->update(['coin_marketplace_enabled' => $data['bulk_action'] === 'marketplace_on']);
+        } else {
+            Country::whereIn('id', $data['country_ids'])->update(['is_enabled' => true, 'is_allowed' => $data['bulk_action'] === 'allow']);
+        }
+        return back()->withNotify([['success', count($data['country_ids']) . ' country settings updated.']]);
     }
 
     public function updateCountry(Request $request, Country $country)
@@ -85,6 +176,7 @@ class CurrencyCountryController extends Controller
             'name' => 'required|string|max:100',
             'is_enabled' => 'required|boolean',
             'is_allowed' => 'required|boolean',
+            'coin_marketplace_enabled' => 'required|boolean',
             'currency_id' => 'required|integer|exists:currencies,id',
             'phone_code' => 'nullable|string|max:12',
             'allowed_payment_methods' => 'nullable|string|max:1000',
