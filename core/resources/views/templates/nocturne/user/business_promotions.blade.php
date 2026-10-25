@@ -25,11 +25,27 @@
                             'month' => (int) $rates->monthly_price_minor,
                         ];
                         $enabledPrices = array_filter($prices, fn ($price) => $price > 0);
+                        // Same currency->USD->coin conversion BusinessPromotionController::store()
+                        // actually charges with, so this preview can never disagree with the real
+                        // mint. Decimals-aware: a minor-unit int needs dividing back down first.
+                        $priceToCoins = function ($minor) use ($currency) {
+                            $decimal = bcdiv((string) $minor, bcpow('10', (string) $currency->decimals), (int) $currency->decimals);
+                            return formatHistoricalAmountAsCoins($decimal, $currency->id);
+                        };
+                        $rawCoinPrices = [];
+                        if (gs('coin_mode') && $currency->rate_to_usd) {
+                            $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+                            foreach ($prices as $durationKey => $minor) {
+                                $decimal = bcdiv((string) $minor, bcpow('10', (string) $currency->decimals), (int) $currency->decimals);
+                                $usd = bcmul($decimal, (string) $currency->rate_to_usd, 12);
+                                $rawCoinPrices[$durationKey] = (int) bcdiv($usd, $peg, 0);
+                            }
+                        }
                     @endphp
                     @if (empty($enabledPrices))
                         <div class="nocturne-business-promo-empty"><i class="ph-fill ph-wallet"></i><strong>@lang('Business promotions are not available yet')</strong><span>@lang('Pricing has not been configured for your wallet currency. Please check back later.')</span></div>
                     @else
-                        <form method="post" action="{{ route('user.business-promotions.store') }}" enctype="multipart/form-data" class="nocturne-business-promo-form" id="business-promotion-form" data-prices='@json($prices)' data-decimals="{{ $currency->decimals }}" data-symbol="{{ $currency->symbol }}" data-position="{{ $currency->symbol_position }}">
+                        <form method="post" action="{{ route('user.business-promotions.store') }}" enctype="multipart/form-data" class="nocturne-business-promo-form" id="business-promotion-form" data-prices='@json($prices)' data-coin-prices='@json($rawCoinPrices)' data-coin-mode="{{ gs('coin_mode') ? 1 : 0 }}" data-decimals="{{ $currency->decimals }}" data-symbol="{{ $currency->symbol }}" data-position="{{ $currency->symbol_position }}">
                             @csrf
                             <input type="hidden" name="idempotency_key" value="{{ $submissionKey }}">
                             <div class="nocturne-business-promo-fields">
@@ -38,8 +54,8 @@
                                 <label class="is-wide"><span>@lang('Description')</span><textarea name="description" rows="4" maxlength="1200" placeholder="@lang('Tell players what makes this business or offer special')" required>{{ old('description') }}</textarea></label>
                                 <label class="is-wide"><span>@lang('Website or destination link')</span><input type="url" name="destination_url" value="{{ old('destination_url') }}" placeholder="https://example.com" required></label>
                                 <label class="is-wide"><span>@lang('Campaign image') <small>@lang('JPG, PNG or WebP · up to 5 MB')</small></span><input type="file" name="image" accept="image/jpeg,image/png,image/webp" required></label>
-                                <label><span>@lang('Campaign duration')</span><select name="duration" id="business-promotion-duration" required>@foreach ($enabledPrices as $duration => $price)<option value="{{ $duration }}" @selected(old('duration', array_key_first($enabledPrices)) === $duration)>{{ __($duration === 'day' ? '1 day' : ($duration === 'week' ? '1 week' : '1 month')) }} · {{ $currency->formatMinor($price, true) }}</option>@endforeach</select></label>
-                                <div class="nocturne-business-promo-price"><span>@lang('Campaign total')</span><strong id="business-promotion-total">{{ $currency->formatMinor(reset($enabledPrices), true) }}</strong><small>@lang('Paid from your wallet now. Admin review is required before publishing.')</small></div>
+                                <label><span>@lang('Campaign duration')</span><select name="duration" id="business-promotion-duration" required>@foreach ($enabledPrices as $duration => $price)<option value="{{ $duration }}" @selected(old('duration', array_key_first($enabledPrices)) === $duration)>{{ __($duration === 'day' ? '1 day' : ($duration === 'week' ? '1 week' : '1 month')) }} · {{ gs('coin_mode') ? $priceToCoins($price) : $currency->formatMinor($price, true) }}</option>@endforeach</select></label>
+                                <div class="nocturne-business-promo-price"><span>@lang('Campaign total')</span><strong id="business-promotion-total">{{ gs('coin_mode') ? $priceToCoins(reset($enabledPrices)) : $currency->formatMinor(reset($enabledPrices), true) }}</strong><small>@lang('Paid from your wallet now. Admin review is required before publishing.')</small></div>
                             </div>
                             <div class="nocturne-business-promo-consent"><i class="ph-fill ph-shield-check"></i><span>@lang('Campaign content must follow our policies. The selected duration starts when your promotion is approved. If an admin rejects it, the payment is refunded to your wallet.')</span></div>
                             <button type="submit" class="nocturne-business-promo-submit"><i class="ph-bold ph-lock-key"></i>@lang('Pay and submit for review')</button>
@@ -61,7 +77,7 @@
                     @php $displayStatus = $promotion->status === 'active' && $promotion->ends_at?->isPast() ? 'expired' : $promotion->status; @endphp
                     <article class="nocturne-business-promo-row">
                         <img src="{{ getImage('assets/images/business-promotions/' . $promotion->image) }}" alt="" loading="lazy">
-                        <div class="nocturne-business-promo-row__copy"><strong>{{ $promotion->title }}</strong><span>{{ $promotion->business_name }} · {{ __(ucfirst($promotion->duration)) }} · {{ $promotion->currency->formatMinor($promotion->amount_minor, true) }}</span>@if($promotion->status === 'active')<small>{{ __('Runs :start to :end', ['start' => showDateTime($promotion->starts_at, 'M d, Y'), 'end' => showDateTime($promotion->ends_at, 'M d, Y')]) }}</small>@elseif($promotion->admin_note)<small>{{ $promotion->admin_note }}</small>@endif</div>
+                        <div class="nocturne-business-promo-row__copy"><strong>{{ $promotion->title }}</strong><span>{{ $promotion->business_name }} · {{ __(ucfirst($promotion->duration)) }} · {{ $promotion->is_coin_mode ? coinAmountText($promotion->amount_minor) : $promotion->currency->formatMinor($promotion->amount_minor, true) }}</span>@if($promotion->status === 'active')<small>{{ __('Runs :start to :end', ['start' => showDateTime($promotion->starts_at, 'M d, Y'), 'end' => showDateTime($promotion->ends_at, 'M d, Y')]) }}</small>@elseif($promotion->admin_note)<small>{{ $promotion->admin_note }}</small>@endif</div>
                         <span class="nocturne-business-promo-status is-{{ $displayStatus }}">{{ __(ucfirst($displayStatus)) }}</span>
                     </article>
                 @empty
@@ -82,9 +98,16 @@
     const duration = document.getElementById('business-promotion-duration');
     const output = document.getElementById('business-promotion-total');
     const prices = JSON.parse(form.dataset.prices || '{}');
+    const coinPrices = JSON.parse(form.dataset.coinPrices || '{}');
+    const coinMode = form.dataset.coinMode === '1';
     const decimals = Number(form.dataset.decimals || 2);
     const fmt = new Intl.NumberFormat(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+    const coinFmt = new Intl.NumberFormat();
     const render = () => {
+        if (coinMode) {
+            output.textContent = `${coinFmt.format(Number(coinPrices[duration.value] || 0))} Coins`;
+            return;
+        }
         const amount = Number(prices[duration.value] || 0) / (10 ** decimals);
         const value = fmt.format(amount);
         output.textContent = form.dataset.position === 'right' ? `${value} ${form.dataset.symbol}` : `${form.dataset.symbol}${value}`;

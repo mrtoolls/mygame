@@ -8,6 +8,7 @@ use App\Models\BusinessPromotionRate;
 use App\Models\Currency;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\CoinLedger;
 use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,10 +69,55 @@ class BusinessPromotionController extends Controller
                 if ($priceMinor < 1) throw ValidationException::withMessages(['duration' => 'Business promotions are not available for this currency yet.']);
 
                 $money = app(Money::class);
+                $coinMode = (bool) gs('coin_mode');
+
+                if ($coinMode) {
+                    // The price is still configured per currency (admin hasn't re-priced every
+                    // campaign in coins) - convert that currency amount to coins through the
+                    // same rate_to_usd + coin_peg_usd math CoinPricing itself uses, floored to a
+                    // whole coin, same as every other coin amount in this codebase.
+                    if (!$currency->rate_to_usd || bccomp((string) $currency->rate_to_usd, '0', 12) <= 0) {
+                        throw ValidationException::withMessages(['duration' => 'Coin pricing is not available for your currency yet. Please contact support.']);
+                    }
+                    $priceInCurrency = $money->formatMinor((string) $priceMinor, (int) $currency->decimals, false);
+                    $usdValue = bcmul($priceInCurrency, (string) $currency->rate_to_usd, 12);
+                    $coinAmount = bcdiv($usdValue, (string) (gs('coin_peg_usd') ?: '0.01'), 0);
+                    if (bccomp($coinAmount, '0', 8) <= 0) throw ValidationException::withMessages(['duration' => 'This promotion is too small to price in whole coins.']);
+
+                    $promotion = BusinessPromotion::create([
+                        'user_id' => $lockedUser->id,
+                        'currency_id' => $currency->id,
+                        'business_name' => $request->business_name,
+                        'title' => $request->title,
+                        'description' => $request->description,
+                        'image' => $imageName,
+                        'destination_url' => $request->destination_url,
+                        'duration' => $request->duration,
+                        'amount_minor' => $coinAmount,
+                        'is_coin_mode' => true,
+                        'payment_reference' => $reference,
+                        'status' => 'pending',
+                        'paid_at' => now(),
+                    ]);
+
+                    // burn(), not a plain debit(): the coins actually leave circulation here
+                    // (there is no counterparty to credit - the platform just keeps the ad
+                    // revenue, same as the real-currency path simply never paying it back out
+                    // unless rejected), so this must debit the user AND credit the platform wallet
+                    // to keep reconcile() balanced. Approval has no further money logic (same as
+                    // real-currency mode); rejection reverses this via mint().
+                    app(CoinLedger::class)->burn('user', $lockedUser->id, $coinAmount, 'business_promotion', $reference, 'BusinessPromotion', $promotion->id);
+                    return true;
+                }
+
                 $balanceMinor = (int) $money->toMinor((string) $lockedUser->balance, (int) $currency->decimals);
                 if ($balanceMinor < $priceMinor) throw ValidationException::withMessages(['duration' => 'Your wallet balance is too low for this promotion.']);
-                $postBalance = $money->formatMinor((string) ($balanceMinor - $priceMinor), (int) $currency->decimals);
-                $amount = $money->formatMinor((string) $priceMinor, (int) $currency->decimals);
+                // false = no thousands separator: this feeds a decimal DB column (balance) and a
+                // bcmath comparison downstream, both of which would corrupt/choke on a "5,000.00"
+                // style string - formatMinor()'s grouped-by-default output is for on-screen
+                // display only, never for a value that gets stored or computed with again.
+                $postBalance = $money->formatMinor((string) ($balanceMinor - $priceMinor), (int) $currency->decimals, false);
+                $amount = $money->formatMinor((string) $priceMinor, (int) $currency->decimals, false);
 
                 $promotion = BusinessPromotion::create([
                     'user_id' => $lockedUser->id,

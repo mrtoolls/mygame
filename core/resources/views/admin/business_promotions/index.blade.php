@@ -17,7 +17,7 @@
         <tr>
             <td><strong>{{ $promotion->business_name }}</strong><br><small>{{ $promotion->user->username }} · {{ $promotion->user->email }}</small></td>
             <td><strong>{{ $promotion->title }}</strong><br><small>{{ Str::limit($promotion->description, 100) }}</small><br><a href="{{ $promotion->destination_url }}" target="_blank" rel="noopener">@lang('Open destination')</a><br><a href="{{ getImage('assets/images/business-promotions/' . $promotion->image) }}" target="_blank" rel="noopener">@lang('View creative')</a></td>
-            <td>{{ __(ucfirst($promotion->duration)) }}<br>{{ $promotion->currency->formatMinor($promotion->amount_minor, true) }}</td>
+            <td>{{ __(ucfirst($promotion->duration)) }}<br>{{ $promotion->is_coin_mode ? coinAmountText($promotion->amount_minor) : $promotion->currency->formatMinor($promotion->amount_minor, true) }}</td>
             <td><span class="badge badge--{{ $displayStatus === 'active' ? 'success' : ($displayStatus === 'pending' ? 'warning' : 'dark') }}">{{ __(ucfirst($displayStatus)) }}</span>@if($promotion->refunded_at)<br><small>@lang('Refunded')</small>@endif</td>
             <td>{{ $promotion->starts_at ? showDateTime($promotion->starts_at, 'd M Y H:i') : '—' }}<br>{{ $promotion->ends_at ? showDateTime($promotion->ends_at, 'd M Y H:i') : '' }}</td>
             <td>

@@ -10,6 +10,7 @@ class BusinessPromotion extends Model
 
     protected $casts = [
         'amount_minor' => 'integer',
+        'is_coin_mode' => 'boolean',
         'paid_at' => 'datetime',
         'approved_at' => 'datetime',
         'starts_at' => 'datetime',

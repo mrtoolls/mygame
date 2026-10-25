@@ -8,6 +8,7 @@ use App\Models\BusinessPromotionRate;
 use App\Models\Currency;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\CoinLedger;
 use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -95,26 +96,41 @@ class BusinessPromotionController extends Controller
 
             if (!$promotion->refunded_at) {
                 $user = User::whereKey($promotion->user_id)->lockForUpdate()->firstOrFail();
-                if ((int) $user->currency_id !== (int) $promotion->currency_id) abort(422, 'Promotion and wallet currencies do not match; refund requires manual review.');
-                $currency = Currency::findOrFail($promotion->currency_id);
-                $money = app(Money::class);
-                $currentMinor = (int) $money->toMinor((string) $user->balance, (int) $currency->decimals);
-                $postBalance = $money->formatMinor((string) ($currentMinor + $promotion->amount_minor), (int) $currency->decimals);
-                $amount = $money->formatMinor((string) $promotion->amount_minor, (int) $currency->decimals);
-                $user->balance = $postBalance;
-                $user->save();
 
-                $transaction = new Transaction();
-                $transaction->user_id = $user->id;
-                $transaction->amount = $amount;
-                $transaction->charge = 0;
-                $transaction->post_balance = $postBalance;
-                $transaction->trx_type = '+';
-                $transaction->details = 'Refund for rejected business promotion';
-                $transaction->trx = 'BP-REFUND-' . $promotion->id;
-                $transaction->remark = 'business_promotion_refund';
-                if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $promotion->currency_id;
-                $transaction->save();
+                // Refund the way this specific promotion was actually charged (its own
+                // is_coin_mode flag), never the live gs('coin_mode') setting - a promotion paid
+                // for in real currency before coin mode went on must still be refunded in real
+                // currency even if it's being rejected after the switch, and vice versa.
+                if ($promotion->is_coin_mode) {
+                    // mint(), reversing the burn() in store() exactly: brings the coins back
+                    // into circulation (credits the user, debits the platform wallet back down),
+                    // not a plain credit() which would leave reconcile() unbalanced.
+                    app(CoinLedger::class)->mint('user', $user->id, (string) $promotion->amount_minor, 'business_promotion_refund', 'BP-REFUND-' . $promotion->id, 'BusinessPromotion', $promotion->id);
+                } else {
+                    if ((int) $user->currency_id !== (int) $promotion->currency_id) abort(422, 'Promotion and wallet currencies do not match; refund requires manual review.');
+                    $currency = Currency::findOrFail($promotion->currency_id);
+                    $money = app(Money::class);
+                    $currentMinor = (int) $money->toMinor((string) $user->balance, (int) $currency->decimals);
+                    // false = no thousands separator - see the matching fix/comment in
+                    // User\BusinessPromotionController::store(); this value is stored straight
+                    // into the balance column, a "5,000.00" string would corrupt it.
+                    $postBalance = $money->formatMinor((string) ($currentMinor + $promotion->amount_minor), (int) $currency->decimals, false);
+                    $amount = $money->formatMinor((string) $promotion->amount_minor, (int) $currency->decimals, false);
+                    $user->balance = $postBalance;
+                    $user->save();
+
+                    $transaction = new Transaction();
+                    $transaction->user_id = $user->id;
+                    $transaction->amount = $amount;
+                    $transaction->charge = 0;
+                    $transaction->post_balance = $postBalance;
+                    $transaction->trx_type = '+';
+                    $transaction->details = 'Refund for rejected business promotion';
+                    $transaction->trx = 'BP-REFUND-' . $promotion->id;
+                    $transaction->remark = 'business_promotion_refund';
+                    if (Schema::hasColumn('transactions', 'currency_id')) $transaction->currency_id = $promotion->currency_id;
+                    $transaction->save();
+                }
                 $promotion->refunded_at = now();
             }
 
