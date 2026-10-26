@@ -650,10 +650,10 @@ app(CoinVendorService::class)->deletePrivate($privateVendorFile);
 // pipelines (including CSRF), with explicit limits on the expensive application endpoints.
 $routes = app('router')->getRoutes();
 foreach ([
-    'user.coin-vendor.draft' => 'throttle:10,1',
-    'user.coin-vendor.challenge' => 'throttle:5,1',
-    'user.coin-vendor.liveness.record' => 'throttle:5,1',
-    'user.coin-vendor.submit' => 'throttle:5,1',
+    'user.coin-vendor.draft' => 'throttle:coin-vendor-draft',
+    'user.coin-vendor.challenge' => 'throttle:coin-vendor-challenge',
+    'user.coin-vendor.liveness.record' => 'throttle:coin-vendor-selfie-upload',
+    'user.coin-vendor.submit' => 'throttle:coin-vendor-submit',
 ] as $routeName => $throttle) {
     $route = $routes->getByName($routeName);
     if (!$route || !in_array('web', $route->gatherMiddleware(), true) || !in_array($throttle, $route->gatherMiddleware(), true)) {

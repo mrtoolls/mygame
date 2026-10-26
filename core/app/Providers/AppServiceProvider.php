@@ -11,7 +11,10 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
@@ -28,6 +31,19 @@ class AppServiceProvider extends ServiceProvider {
      * Bootstrap any application services.
      */
     public function boot(): void {
+        // Keep vendor application actions in separate buckets. Numeric throttle
+        // middleware shares a user/IP key, which let repeated camera retries
+        // exhaust the draft, challenge, and upload limits together.
+        foreach ([
+            'coin-vendor-draft' => 10,
+            'coin-vendor-challenge' => 8,
+            'coin-vendor-selfie-upload' => 5,
+            'coin-vendor-submit' => 5,
+        ] as $name => $attempts) {
+            RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)
+                ->by($name . '|' . ($request->user()?->getAuthIdentifier() ?? 'guest') . '|' . $request->ip()));
+        }
+
         // Never query the configured cache store during application boot: a fresh
         // install may not have database cache tables yet, and Artisan must still
         // be able to run the migration that creates them.

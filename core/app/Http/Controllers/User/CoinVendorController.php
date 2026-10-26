@@ -133,8 +133,16 @@ class CoinVendorController extends Controller
     public function uploadSelfie(Request $request, CoinVendorService $vendors)
     {
         if (!$request->hasFile('video')) {
-            $limit = ini_get('post_max_size') ?: 'unknown';
-            return response()->json(['message' => "The video did not reach the server. Check camera permission and keep the recording under 6 MB (server post limit: {$limit})."], 422);
+            $postLimit = ini_get('post_max_size') ?: 'unknown';
+            $uploadLimit = ini_get('upload_max_filesize') ?: 'unknown';
+            $file = $request->file('video');
+            $uploadError = $file && method_exists($file, 'getError') ? $file->getError() : UPLOAD_ERR_NO_FILE;
+            $reason = match ($uploadError) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => "The server's per-file upload limit is {$uploadLimit}.",
+                UPLOAD_ERR_PARTIAL => 'The connection interrupted the upload before it finished.',
+                default => "The server did not receive the video. Its request-size limit is {$postLimit}; record a shorter clip and try again.",
+            };
+            return response()->json(['message' => $reason . ' Keep the recording small and use a stable connection.'], 422);
         }
         $data = $request->validate(['video' => 'required|file|max:6144', 'liveness_token' => 'required|string|min:32|max:100', 'challenge_id' => 'required|uuid', 'duration_ms' => 'required|integer|between:8000,15000']);
         $application = CoinVendorApplication::where('user_id', auth()->id())->latest('id')->firstOrFail();
@@ -148,8 +156,13 @@ class CoinVendorController extends Controller
             && hash_equals((string) $application->challenge_session_hash, hash_hmac('sha256', (string) $request->session()->getId(), (string) config('app.key'))), 403, 'This camera challenge expired or has already been used. Request a new code.');
 
         $video = $request->file('video');
-        $mime = $video->getMimeType();
-        if (!in_array($mime, ['video/webm', 'video/mp4', 'application/mp4'], true) || $video->getSize() < 100_000 || $video->getSize() > 6 * 1024 * 1024) {
+        $header = file_get_contents($video->getRealPath(), false, null, 0, 64);
+        $isWebm = is_string($header) && str_starts_with($header, "\x1A\x45\xDF\xA3");
+        $isMp4 = is_string($header) && substr($header, 4, 4) === 'ftyp';
+        // Some iOS/Safari versions label MediaRecorder MP4 as QuickTime or
+        // octet-stream. Trust the container signature, never the filename.
+        $mime = $isMp4 ? 'video/mp4' : ($isWebm ? 'video/webm' : $video->getMimeType());
+        if ((!$isWebm && !$isMp4) || !in_array($mime, ['video/webm', 'video/mp4'], true) || $video->getSize() < 100_000 || $video->getSize() > 6 * 1024 * 1024) {
             return response()->json(['message' => 'The camera recording format or size is not supported. Record 8–15 seconds in MP4 or WebM and keep it under 6 MB.'], 422);
         }
         $consumed = CoinVendorApplication::whereKey($application->id)

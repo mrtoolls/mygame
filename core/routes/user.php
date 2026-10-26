@@ -156,10 +156,10 @@ Route::middleware('auth')->name('user.')->group(function () {
 
             Route::controller('CoinVendorController')->prefix('coin-vendor')->name('coin-vendor.')->group(function () {
                 Route::get('apply', 'apply')->name('apply');
-                Route::post('draft', 'saveDraft')->middleware('throttle:10,1')->name('draft');
-                Route::post('liveness/challenge', 'challenge')->middleware('throttle:5,1')->name('challenge');
-                Route::post('liveness/record', 'uploadSelfie')->middleware('throttle:5,1')->name('liveness.record');
-                Route::post('submit', 'submit')->middleware('throttle:5,1')->name('submit');
+                Route::post('draft', 'saveDraft')->middleware('throttle:coin-vendor-draft')->name('draft');
+                Route::post('liveness/challenge', 'challenge')->middleware('throttle:coin-vendor-challenge')->name('challenge');
+                Route::post('liveness/record', 'uploadSelfie')->middleware('throttle:coin-vendor-selfie-upload')->name('liveness.record');
+                Route::post('submit', 'submit')->middleware('throttle:coin-vendor-submit')->name('submit');
                 Route::post('delete-rejected-data', 'deleteRejectedApplication')->name('delete-rejected-data');
                 Route::get('desk', 'desk')->name('desk');
                 Route::post('selling', 'updateSelling')->name('selling');
