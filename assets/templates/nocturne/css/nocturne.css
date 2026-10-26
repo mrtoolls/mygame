@@ -595,14 +595,10 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
    Keep those intrinsic widths inside the mobile viewport so the whole page
    cannot pan into a blank strip beside the content. */
 @media (max-width: 850px) {
-    /* Keep the live lobby out of iOS's nested-scroll path. `hidden` on the x axis turns a
-       visible y axis into `auto`, which makes this main element a second vertical scroller;
-       WebKit can then carry a horizontal offset along with vertical momentum. `clip` prevents
-       sideways spill without creating that scroll container. The inner game picker retains its
-       own intentional overflow-x:auto for touch swipes. */
-    html:has(.nocturne-live-games-page),
-    body:has(.nocturne-live-games-page) { overflow-x: clip; }
-    .nocturne-live-games-page { min-width: 0; max-width: 100%; overflow-x: clip; overflow-y: visible; }
+    /* Use hidden here as well as on the document root: clip is ignored by some mobile
+       WebViews, which lets the lobby's horizontal rails widen the document scroll area. */
+    html, body { overscroll-behavior-x: none; }
+    .nocturne-live-games-page { min-width: 0; max-width: 100%; overflow-x: hidden; overscroll-behavior-x: none; }
     .nocturne-live-games-page .nocturne-content,
     .nocturne-live-games-page .nocturne-content > section,
     .nocturne-live-games-page .nocturne-content .container { min-width: 0; max-width: 100%; }

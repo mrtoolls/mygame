@@ -138,7 +138,7 @@
 
 @push('style')
     <style>
-        .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);width:100%;min-width:0;max-width:1120px;margin:auto;color:var(--tg-text);overflow-x:clip;overflow-y:visible;box-sizing:border-box}
+        .table-lobby{--tg-line:var(--nocturne-line,rgba(145,156,205,.16));--tg-panel:var(--nocturne-panel,#151a31);--tg-raised:var(--nocturne-raised,#232a47);--tg-text:var(--nocturne-text,#f5f6ff);--tg-muted:var(--nocturne-muted,#929abc);--tg-green:var(--nocturne-green,#00ef87);width:100%;min-width:0;max-width:1120px;margin:auto;color:var(--tg-text);overflow-x:hidden;overscroll-behavior-x:none;box-sizing:border-box}
         .table-lobby__hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:0 0 22px;padding:clamp(22px,4vw,38px);border:1px solid var(--tg-line);border-radius:24px;background:radial-gradient(ellipse at 90% 15%,rgba(0,239,135,.16),transparent 35%),linear-gradient(125deg,#171d37,#11152a)}
         .table-lobby__hero-text{min-width:0}
         .table-lobby__eyebrow{color:var(--tg-green);font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.table-lobby__hero h1{margin:7px 0;font-size:clamp(27px,4vw,38px);font-weight:950}.table-lobby__hero p{max-width:660px;margin:0;color:var(--tg-muted);font-size:14px;line-height:1.6}
@@ -210,7 +210,7 @@
             .table-list-item__game{grid-column:1;grid-row:1;min-width:0}
         }
         @media(max-width:575px){
-            .table-lobby{width:100%;min-width:0;overflow-x:clip;overflow-y:visible}
+            .table-lobby{width:100%;min-width:0;overflow-x:hidden;overscroll-behavior-x:none}
             .table-lobby__hero{margin-inline:0;padding:18px;border-radius:19px;gap:12px}
             .table-lobby__hero h1{font-size:23px}
             .table-lobby__hero p{font-size:12.5px}
