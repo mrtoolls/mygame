@@ -503,8 +503,13 @@ DB::table('users')->where('id', $eligibilityUser->id)->update(['sv' => 1, 'creat
 if (app(CoinVendorService::class)->eligibility($eligibilityUser->fresh())['eligible']) throw new RuntimeException('An account younger than the configured minimum passed vendor eligibility.');
 DB::table('users')->where('id', $eligibilityUser->id)->update(['created_at' => now()->subDays(10)]);
 DB::table('countries')->where('id', 1)->update(['vendors_allowed' => 0]);
-if (app(CoinVendorService::class)->eligibility($eligibilityUser->fresh())['eligible']) throw new RuntimeException('A country with vendor access disabled passed eligibility.');
+ $vendorCountryResult = app(CoinVendorService::class)->eligibility($eligibilityUser->fresh());
+if ($vendorCountryResult['eligible'] || !str_contains($vendorCountryResult['checks'][3]['message'], 'vendor applications are switched off')) throw new RuntimeException('A disabled vendor country passed eligibility or did not identify the country setting that blocks it.');
 DB::table('countries')->where('id', 1)->update(['vendors_allowed' => 1]);
+DB::table('countries')->where('id', 1)->update(['coin_marketplace_enabled' => 0]);
+ $vendorMarketplaceResult = app(CoinVendorService::class)->eligibility($eligibilityUser->fresh());
+if ($vendorMarketplaceResult['eligible'] || !str_contains($vendorMarketplaceResult['checks'][3]['message'], 'Coin Marketplace is switched off')) throw new RuntimeException('A country with its Coin Marketplace disabled passed vendor eligibility or lacked a clear explanation.');
+DB::table('countries')->where('id', 1)->update(['coin_marketplace_enabled' => 1]);
 DB::table('coin_vendor_applications')->insert(['user_id' => $eligibilityUser->id, 'status' => 'rejected', 'rejected_at' => now()->subDay(), 'created_at' => now()->subDay(), 'updated_at' => now()]);
 if (app(CoinVendorService::class)->eligibility($eligibilityUser->fresh())['eligible']) throw new RuntimeException('A rejected applicant passed the rejection cooldown.');
 DB::table('coin_vendor_applications')->where('user_id', $eligibilityUser->id)->update(['rejected_at' => now()->subDays(31)]);

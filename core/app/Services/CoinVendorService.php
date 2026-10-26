@@ -23,8 +23,21 @@ class CoinVendorService
         $minimumAge = (int) (gs('coin_vendor_min_account_age_days') ?? 7);
         $checks[] = ['label' => 'Account age', 'ok' => $ageDays >= $minimumAge, 'message' => $ageDays >= $minimumAge ? "Account age: {$ageDays} days." : "Your account must be at least {$minimumAge} days old. ({$ageDays} days so far.)"];
         $country = $user->country;
-        $countryOk = $country && $country->is_enabled && $country->is_allowed && $country->vendors_allowed;
-        $checks[] = ['label' => 'Country can apply', 'ok' => (bool) $countryOk, 'message' => $countryOk ? "Vendor applications are available in {$country->name}." : 'Your account country is not currently enabled for vendor applications.'];
+        $countryIssues = [];
+        if (!$country) {
+            $countryIssues[] = 'no country is selected on your account';
+        } else {
+            if (!$country->is_enabled) $countryIssues[] = 'the country record is disabled';
+            if (!$country->is_allowed) $countryIssues[] = 'general country access is blocked';
+            if (!$country->coin_marketplace_enabled) $countryIssues[] = 'the Coin Marketplace is switched off for this country';
+            if (!$country->vendors_allowed) $countryIssues[] = 'vendor applications are switched off for this country';
+        }
+        $countryOk = !$countryIssues;
+        $countryLabel = $country ? $country->name . ($country->iso_code ? ' (' . strtoupper($country->iso_code) . ')' : '') : 'your account country';
+        $countryMessage = $countryOk
+            ? "Vendor applications are available in {$countryLabel}."
+            : "{$countryLabel}: " . implode('; ', $countryIssues) . '. Ask support to check this country in Coin Vendor settings.';
+        $checks[] = ['label' => 'Country can apply', 'ok' => (bool) $countryOk, 'message' => $countryMessage];
         $statusOk = (int) $user->status === 1 && !(bool) $user->coin_vendor_flagged;
         $checks[] = ['label' => 'Account standing', 'ok' => $statusOk, 'message' => $statusOk ? 'Your account is in good standing.' : ((bool) $user->coin_vendor_flagged ? 'This account is restricted from vendor applications.' : 'Banned or restricted accounts cannot apply.')];
 

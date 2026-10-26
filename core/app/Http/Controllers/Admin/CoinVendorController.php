@@ -66,7 +66,7 @@ class CoinVendorController extends Controller
             ? CoinVendorApplication::where('device_fingerprint_hash', $application->device_fingerprint_hash)->where('id', '!=', $application->id)->count()
             : 0;
         $pageTitle = 'Vendor Application #' . $application->id;
-        return view('admin.coin.vendors.show', compact('pageTitle', 'application', 'address', 'addressCountry'));
+        return view('admin.coin.vendors.show', compact('pageTitle', 'application', 'address', 'addressCountry', 'duplicateDeviceCount'));
     }
 
     public function file(int $id, string $kind, CoinVendorService $vendors)
@@ -105,7 +105,8 @@ class CoinVendorController extends Controller
         if ($application->duplicate_flag && !$data['duplicate_face_note']) return back()->withErrors(['duplicate_face_note' => 'Explain the duplicate ID or phone flag before approving.'])->withInput();
         $approvalUser = $application->user;
         if (!$approvalUser || (int) $approvalUser->status !== 1 || (int) $approvalUser->ev !== 1 || (int) $approvalUser->sv !== 1 || (bool) $approvalUser->coin_vendor_flagged
-            || !$approvalUser->country?->is_enabled || !$approvalUser->country?->is_allowed || !$approvalUser->country?->vendors_allowed) {
+            || !$approvalUser->country?->is_enabled || !$approvalUser->country?->is_allowed
+            || !$approvalUser->country?->coin_marketplace_enabled || !$approvalUser->country?->vendors_allowed) {
             return back()->withNotify([['error', 'The applicant no longer meets the verified account, standing, or country requirements.']]);
         }
         $approvalRate = $approvalUser->currency_id ? CoinRate::where('currency_id', $approvalUser->currency_id)->first() : null;
@@ -180,8 +181,9 @@ class CoinVendorController extends Controller
         if ($request->filled('status')) $query->where('status', $request->input('status'));
         if ($request->filled('search')) { $term = trim($request->input('search')); $query->whereHas('user', fn ($q) => $q->where('username', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")); }
         $vendors = $query->paginate(getPaginate())->withQueryString();
+        $vendorStats = CoinVendor::selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $pageTitle = 'Coin Vendors';
-        return view('admin.coin.vendors.vendors', compact('pageTitle', 'vendors'));
+        return view('admin.coin.vendors.vendors', compact('pageTitle', 'vendors', 'vendorStats'));
     }
 
     public function vendorAction(Request $request, int $id, string $action)
