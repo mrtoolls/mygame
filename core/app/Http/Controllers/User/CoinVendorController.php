@@ -200,8 +200,15 @@ class CoinVendorController extends Controller
         $user = auth()->user();
         $eligibility = $vendors->eligibility($user);
         $application = CoinVendorApplication::where('user_id', $user->id)->latest('id')->firstOrFail();
-        $requirementsOkay = collect($eligibility['checks'])->reject(fn ($check) => $check['label'] === 'Application status')->every(fn ($check) => $check['ok']);
-        abort_unless($eligibility['eligible'] || (in_array($application->status, ['draft', 'more_information'], true) && $requirementsOkay), 403);
+        if (!in_array($application->status, ['draft', 'more_information'], true)) {
+            return back()->withNotify([['error', 'This application is no longer a draft. Refresh the page to see its current status.']]);
+        }
+        $blockingChecks = collect($eligibility['checks'])
+            ->reject(fn ($check) => $check['label'] === 'Application status' || $check['ok'])
+            ->pluck('message')->filter()->values();
+        if ($blockingChecks->isNotEmpty()) {
+            return back()->withNotify([['error', 'Your application cannot be submitted yet: ' . $blockingChecks->implode(' ')]]);
+        }
         if (!$application->id_front_path || !$application->selfie_video_path || !$application->challenge_used_at || !$application->consent_identity || !$application->consent_p2p_risk) {
             return back()->withNotify([['error', 'Save your identity details, upload ID photos, record the live camera check, and accept both consent statements before submitting.']]);
         }
