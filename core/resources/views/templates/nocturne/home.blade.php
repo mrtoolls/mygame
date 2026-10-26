@@ -8,7 +8,7 @@
     @else
         <section class="nocturne-welcome">
             <div class="nocturne-welcome-copy">
-                <span>{{ gs('site_name') }}</span>
+                <span class="nocturne-welcome-greeting"><i class="ph-fill ph-hand-waving" aria-hidden="true"></i>@lang('Welcome Back, Champion!')</span>
                 <h1>@lang('A sharper way to play.')</h1>
                 <div class="nocturne-welcome-actions">
                     <a class="nocturne-deposit" href="{{ route('games') }}"><i class="ph-bold ph-dice-five"></i>@lang('Explore games')</a>

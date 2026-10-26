@@ -511,8 +511,9 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 }
 .nocturne-welcome { position: relative; display: flex; min-height: 320px; align-items: center; overflow: hidden; margin: 8px 0 28px; padding: clamp(28px, 5vw, 72px); border-radius: 24px; background: radial-gradient(ellipse at 90% 95%, rgba(0,239,135,.22), transparent 43%), radial-gradient(ellipse at 15% 10%, rgba(123,141,224,.16), transparent 40%), linear-gradient(120deg,#151a31 12%,#171e38 60%,#102b33); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
 .nocturne-welcome-copy { position: relative; z-index: 2; max-width: 660px; }
-.nocturne-welcome-copy > span { display: inline-flex; align-items: center; gap: 8px; color: #a6f2d0; font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-.nocturne-welcome-copy > span::before { content: ''; width: 20px; height: 2px; background: var(--nocturne-green); }
+.nocturne-welcome-copy > .nocturne-welcome-greeting { display: inline-flex; align-items: center; gap: 8px; color: #a6f2d0; font-size: clamp(11px,1.15vw,14px); font-weight: 700; letter-spacing: .035em; line-height: 1.35; }
+.nocturne-welcome-greeting i { display: inline-block; flex: 0 0 auto; color: #00ef9a; font-size: clamp(18px,1.8vw,23px); filter: drop-shadow(0 2px 0 #087850) drop-shadow(0 5px 7px rgba(0,0,0,.28)); transform-origin: 72% 82%; animation: nocturneWelcomeWave 2.8s ease-in-out infinite; }
+@keyframes nocturneWelcomeWave { 0%,72%,100% { transform: perspective(40px) rotateZ(0) rotateY(0); } 78% { transform: perspective(40px) rotateZ(13deg) rotateY(-8deg); } 84% { transform: perspective(40px) rotateZ(-8deg) rotateY(8deg); } 90% { transform: perspective(40px) rotateZ(11deg) rotateY(-6deg); } 96% { transform: perspective(40px) rotateZ(0) rotateY(0); } }
 .nocturne-welcome-copy h1 { margin: 14px 0 0; font-size: clamp(32px, 4.2vw, 56px); font-weight: 950; line-height: 1.06; }
 .nocturne-welcome-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
 .nocturne-welcome-secondary { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 1px solid rgba(145,156,205,.22); border-radius: 13px; background: rgba(255,255,255,.04); color: var(--nocturne-text); font: inherit; font-size: 14px; font-weight: 800; text-decoration: none; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .1s ease; }
@@ -705,6 +706,8 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-main .card-body { padding: 16px; }
     .nocturne-welcome { min-height: 0; align-items: flex-start; padding: 24px 20px; }
     .nocturne-welcome-copy { max-width: 100%; }
+    .nocturne-welcome-copy > .nocturne-welcome-greeting { gap: 6px; font-size: 12px; }
+    .nocturne-welcome-greeting i { font-size: 19px; }
     .nocturne-welcome-copy h1 { max-width: 320px; font-size: 28px; }
     .nocturne-welcome-art { width: 58%; opacity: .38; }
     /* Both hero actions stay side by side on mobile, never stacked. */
