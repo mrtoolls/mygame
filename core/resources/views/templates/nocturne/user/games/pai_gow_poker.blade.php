@@ -1,6 +1,12 @@
 @extends('Template::layouts.master')
 @section('content')
-    <div class="row gy-4">
+    <div class="pai-gow-page">
+    <header class="pai-gow-heading">
+        <div class="pai-gow-heading__mark"><i class="ph-fill ph-cards"></i></div>
+        <div><span>@lang('TABLE GAME')</span><h1>@lang('Pai Gow Poker')</h1><p>@lang('Build a five-card high hand and a two-card low hand to challenge the dealer.')</p></div>
+        <button type="button" class="pai-gow-heading__rules" data-bs-toggle="modal" data-bs-target="#exampleModalCenter"><i class="ph ph-book-open-text"></i><span>@lang('How to play')</span></button>
+    </header>
+    <div class="row gy-4 pai-gow-layout">
         <!-- Game Table Section -->
         <div class="col-xl-9" id="game--card">
             <div class="game--card">
@@ -136,6 +142,7 @@
             </div>
         </div>
     </div>
+    </div>
 
     <!-- Game Instruction Modal -->
     <div class="modal custom--modal fade" id="exampleModalCenter">
@@ -163,6 +170,29 @@
 
 @push('style')
     <style>
+        .pai-gow-page { --pg-line:rgba(143,158,207,.18); --pg-muted:#9ca9ca; }
+        .pai-gow-heading { display:flex; align-items:center; gap:14px; margin:0 0 18px; padding:18px 20px; border:1px solid var(--pg-line); border-radius:18px; background:radial-gradient(ellipse at 90% 0%,rgba(0,239,135,.1),transparent 42%),linear-gradient(135deg,#171d36,#12182b); }
+        .pai-gow-heading__mark { display:grid; width:48px; height:48px; flex:0 0 48px; place-items:center; border:1px solid rgba(0,239,135,.24); border-radius:15px; background:rgba(0,239,135,.1); color:#00ef87; font-size:24px; }
+        .pai-gow-heading>div:nth-child(2) { min-width:0; }
+        .pai-gow-heading>div:nth-child(2)>span { color:#00e994; font-size:9px; font-weight:800; letter-spacing:.14em; }
+        .pai-gow-heading h1 { margin:3px 0 2px; color:#f4f6ff; font-size:clamp(21px,2.1vw,29px); font-weight:750; letter-spacing:-.035em; line-height:1.15; }
+        .pai-gow-heading p { margin:0; color:var(--pg-muted); font-size:13px; line-height:1.45; }
+        .pai-gow-heading__rules { display:inline-flex; min-height:40px; flex:0 0 auto; align-items:center; justify-content:center; gap:8px; margin-inline-start:auto; padding:0 13px; border:1px solid var(--pg-line); border-radius:12px; background:rgba(255,255,255,.045); color:#e7ebfa; font-size:12px; font-weight:700; }
+        .pai-gow-layout > [id="game--card"] { min-width:0; }
+        .pai-gow-table { overflow:hidden; border:1px solid var(--pg-line); border-radius:20px; background:radial-gradient(ellipse at 50% 50%,rgba(0,183,116,.09),transparent 68%),linear-gradient(145deg,#11192b,#101626); }
+        .pai-gow-table .dealer-section,.pai-gow-table .player-section { border:1px solid rgba(143,158,207,.12); border-radius:16px; background:rgba(21,29,49,.72); }
+        .pai-gow-table .dealer-section { margin:16px 16px 12px!important; }
+        .pai-gow-table .player-section { margin:0 16px 16px; }
+        .pai-gow-table .dealer-section__text,.pai-gow-table .player-section__title { margin-bottom:14px; color:#eef2ff; font-size:16px; font-weight:750; }
+        .pai-gow-table .dealer-section__title,.pai-gow-table .high-hand__title { color:#aab7d6; font-size:10px; font-weight:800; letter-spacing:.11em; }
+        .pai-gow-table .card-thumb { flex:0 0 80px; border-radius:9px; filter:drop-shadow(0 9px 12px rgba(0,0,0,.25)); }
+        .pai-gow-table .card-face,.pai-gow-table .card-inner { border-radius:9px; }
+        .pai-gow-page #form--area .game--card { height:100%; padding:20px; border:1px solid var(--pg-line); border-radius:20px; background:linear-gradient(155deg,#191f38,#12182c); }
+        .pai-gow-page .game-contet-title { color:#aab7d6; font-size:12px; font-weight:650; }
+        .pai-gow-page .game-contet-title .balance { display:block; margin-top:7px; color:#f5f7ff; font-size:24px; font-weight:780; }
+        .pai-gow-page .input-inner-note { color:#9da9c9; font-size:11px; line-height:1.5; }
+        .pai-gow-page .investBtn,.pai-gow-table .standBtn,.pai-gow-table .resetBtn { min-height:46px; border-radius:13px; font-size:14px!important; font-weight:800; }
+        .pai-gow-page .sound--btn { display:grid; width:40px; height:40px; place-items:center; border:1px solid var(--pg-line); border-radius:12px; background:rgba(255,255,255,.05); }
         /* --- Layout --- */
         .pai-gow-table .hand {
             margin-bottom: 15px;
@@ -381,6 +411,11 @@
         }
 
         @media (max-width:767px) {
+            .pai-gow-heading { gap:11px; margin-bottom:12px; padding:13px; border-radius:15px; }
+            .pai-gow-heading__mark { width:42px; height:42px; flex-basis:42px; border-radius:13px; font-size:21px; }
+            .pai-gow-heading h1 { font-size:21px; }
+            .pai-gow-heading p { font-size:11px; }
+            .pai-gow-heading__rules { min-height:38px; padding:0 10px; font-size:11px; }
             .dealer-section__inner {
                 flex-direction: column;
             }
@@ -400,9 +435,28 @@
 
         @media (max-width:575px) {
 
+            .pai-gow-heading { align-items:flex-start; }
+            .pai-gow-heading__rules { width:38px; min-width:38px; height:38px; padding:0; }
+            .pai-gow-heading__rules span { display:none; }
+            .pai-gow-table .dealer-section { margin:10px 10px 8px!important; }
+            .pai-gow-table .player-section { margin:0 10px 10px; }
+            .pai-gow-page #form--area .game--card { padding:15px; border-radius:17px; }
+            .pai-gow-table .cards { gap:clamp(3px,1.2vw,7px); }
+            .pai-gow-table .card-thumb { width:clamp(38px,12vw,52px); height:clamp(57px,18vw,78px); flex:0 0 clamp(38px,12vw,52px); }
+            .pai-gow-table .player-section { padding:14px 8px; }
+            .pai-gow-table .dealer-section { padding:14px 8px; }
+            .pai-gow-table .player-section__title,.pai-gow-table .dealer-section__text { margin-bottom:10px; font-size:14px; }
+            .pai-gow-table .dealer-section__inner { gap:10px; }
+            .pai-gow-table .low-slot { width:clamp(48px,15vw,64px); height:clamp(72px,22.5vw,96px); }
+            .pai-gow-table .player-low-hand-shape { width:100%; height:100%; }
+            .pai-gow-table .low-slot:first-child .low-slot__text,.pai-gow-table .low-slot:last-child .low-slot__text { width:clamp(72px,22.5vw,96px); font-size:9px; letter-spacing:.07em; }
+            .pai-gow-table .player-section .hand.low-hand { padding:0 clamp(28px,9vw,42px); }
+            .pai-gow-table .dealer-section__title,.pai-gow-table .high-hand__title { font-size:9px; }
+            .pai-gow-table .card-face,.pai-gow-table .card-inner { border-radius:6px; }
+
             .dealer-section,
             .player-section {
-                padding: 20px;
+                padding: 14px;
             }
 
             .player-section .hand.low-hand {
@@ -429,6 +483,13 @@
                 width: 100px;
                 font-size: 12px;
             }
+        }
+        @media (max-width:360px) {
+            .pai-gow-heading { gap:8px; padding:11px; }
+            .pai-gow-heading__mark { width:36px; height:36px; flex-basis:36px; }
+            .pai-gow-heading h1 { font-size:19px; }
+            .pai-gow-table .card-thumb { width:38px; height:57px; flex-basis:38px; }
+            .pai-gow-table .cards { gap:3px; }
         }
     </style>
 @endpush
