@@ -9,7 +9,7 @@
         <section class="nocturne-welcome">
             <div class="nocturne-welcome-copy">
                 <span class="nocturne-welcome-greeting"><i class="ph-fill ph-hand-waving" aria-hidden="true"></i>@lang('Welcome Back, Champion!')</span>
-                <h1>@lang('A sharper way to play.')</h1>
+                <h1>@lang('Who’s your next opponent?')</h1>
                 <div class="nocturne-welcome-actions">
                     <a class="nocturne-deposit" href="{{ route('games') }}"><i class="ph-bold ph-dice-five"></i>@lang('Explore games')</a>
                     <a id="hero-arena-link" class="nocturne-welcome-secondary" href="{{ route('arena.index') }}" hidden><i class="ph-fill ph-fire"></i>@lang('Arena')</a>
