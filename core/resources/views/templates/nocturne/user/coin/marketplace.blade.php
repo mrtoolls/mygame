@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="{{ asset('assets/global/css/coin-marketplace.css') }}?v={{ @filemtime('assets/global/css/coin-marketplace.css') }}">
     <div class="nocturne-account">
         @include('Template::partials.account_nav')
-        <div class="nocturne-account-content">
+        <div class="nocturne-account-content coin-marketplace-content">
             <h1 class="nocturne-page-title">@lang('Coin Marketplace')</h1>
 
             <div class="coin-page">
