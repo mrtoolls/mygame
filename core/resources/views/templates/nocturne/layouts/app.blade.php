@@ -56,13 +56,6 @@
         html, body { max-width: 100%; overflow-x: hidden; }
         /* No "back to top" button anywhere, on any device. */
         .scroll-top { display: none !important; }
-        /* Sitewide mobile polish: the bottom tab bar sat flush against the
-           very edge of the screen (home-indicator area on notched phones),
-           reading as cramped rather than a native app's tab bar, which
-           always leaves a little breathing room above the edge. */
-        @media (max-width: 575.98px) {
-            .nocturne-mobile-nav { padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important; }
-        }
         /* Breadcrumb trails read as clutter on a phone-width screen where there's no room for
            them to earn their keep - hidden on mobile only, every page's breadcrumb markup and
            desktop display is untouched. Covers every breadcrumb class used across the theme. */

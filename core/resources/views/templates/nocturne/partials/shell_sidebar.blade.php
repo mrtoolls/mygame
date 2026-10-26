@@ -72,11 +72,19 @@
      frontend.blade.php, which drops that reservation for guests so it doesn't leave a dead gap. --}}
 @auth
 <nav class="nocturne-mobile-nav" aria-label="@lang('Quick navigation')">
-    <button class="nocturne-mobile-menu" type="button"><i class="ph-fill ph-squares-four"></i><span>@lang('Menu')</span></button>
-    <a href="{{ route('games') }}" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><i class="ph-fill ph-dice-five"></i><span>@lang('Games')</span></a>
-    <a href="{{ route('user.tables.index') }}" class="{{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}"><i class="ph-fill ph-broadcast nocturne-live-pulse"></i><span>@lang('Live')</span></a>
-    <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i><span>@lang('Bonuses')</span></a>
-    <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i><span>@lang('Profile')</span></a>
+    <svg class="nocturne-mobile-nav__shape" viewBox="0 0 390 96" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0,96 V28 A28,28 0 0 1 28,0 H156 C174,0 178,34 195,34 C212,34 216,0 234,0 H362 A28,28 0 0 1 390,28 V96 Z" /><path class="nocturne-mobile-nav__outline" d="M0,28 A28,28 0 0 1 28,0 H156 C174,0 178,34 195,34 C212,34 216,0 234,0 H362 A28,28 0 0 1 390,28" /></svg>
+    <div class="nocturne-mobile-nav__items">
+        <button class="nocturne-mobile-menu" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.7"/></svg><span class="nocturne-mobile-nav__label">@lang('Menu')</span></button>
+        <a href="{{ route('games') }}" aria-label="@lang('Games')" class="{{ request()->routeIs('games') ? 'is-active' : '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/></svg><span class="nocturne-mobile-nav__label">@lang('Games')</span></a>
+        <a href="{{ route('user.tables.index') }}" aria-label="@lang('Live')" class="nocturne-mobile-nav__live {{ request()->routeIs('user.tables.*') ? 'is-active' : '' }}">
+            <svg class="nocturne-mobile-nav__live-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path class="wave wave-in" d="M5.6 8.6a6.4 6.4 0 0 0 0 6.8"/><path class="wave wave-in" d="M18.4 8.6a6.4 6.4 0 0 1 0 6.8"/><path class="wave wave-out" d="M2.6 6.4a10.4 10.4 0 0 0 0 11.2"/><path class="wave wave-out" d="M21.4 6.4a10.4 10.4 0 0 1 0 11.2"/><path d="M10.3 8.7v6.6a.5.5 0 0 0 .76.43l5.3-3.3a.5.5 0 0 0 0-.86l-5.3-3.3a.5.5 0 0 0-.76.43Z" fill="currentColor" stroke-width="1.6"/>
+            </svg><span class="nocturne-mobile-nav__label">@lang('Live')</span>
+        </a>
+        <a href="{{ route('user.referrals') }}" aria-label="@lang('Bonuses')" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18v11H3zM2 6h20v4H2zM12 6v15M12 6H7.5a2.5 2.5 0 1 1 2.3-3.5L12 6Zm0 0h4.5a2.5 2.5 0 1 0-2.3-3.5L12 6Z"/></svg><span class="nocturne-mobile-nav__label">@lang('Bonuses')</span></a>
+        <a href="{{ route('user.home') }}" aria-label="@lang('Profile')" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4"/><path d="M3.5 21a8.5 8.5 0 0 1 17 0"/></svg><span class="nocturne-mobile-nav__label">@lang('Profile')</span></a>
+    </div>
+    <span class="nocturne-mobile-nav__home-indicator" aria-hidden="true"></span>
 </nav>
 @endauth
 @push('script')
