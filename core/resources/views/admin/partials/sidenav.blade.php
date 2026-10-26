@@ -80,6 +80,10 @@
                 @endforeach
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.feedback.*') ? 'active' : '' }}"><a href="{{ route('admin.feedback.index') }}" class="nav-link"><i class="menu-icon las la-star"></i><span class="menu-title">@lang('Feedback Moderation')</span></a></li>
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.currency-country.*') ? 'active' : '' }}"><a href="{{ route('admin.currency-country.index') }}" class="nav-link"><i class="menu-icon las la-globe"></i><span class="menu-title">@lang('Currencies & Countries')</span></a></li>
+                @if(auth('admin')->user()?->can_review_vendor_identity)
+                    <li class="sidebar-menu-item {{ request()->routeIs('admin.coin.vendors.applications*') ? 'active' : '' }}"><a href="{{ route('admin.coin.vendors.applications') }}" class="nav-link"><i class="menu-icon las la-id-badge"></i><span class="menu-title">@lang('Vendor Applications')</span></a></li>
+                @endif
+                <li class="sidebar-menu-item {{ request()->routeIs('admin.coin.vendors.settings') ? 'active' : '' }}"><a href="{{ route('admin.coin.vendors.settings') }}" class="nav-link"><i class="menu-icon las la-store"></i><span class="menu-title">@lang('Vendor Settings')</span></a></li>
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.business-promotions.*') ? 'active' : '' }}"><a href="{{ route('admin.business-promotions.index') }}" class="nav-link"><i class="menu-icon las la-bullhorn"></i><span class="menu-title">@lang('Business Promotions')</span></a></li>
                 <li class="sidebar-menu-item {{ request()->routeIs('admin.sponsorship-submissions.*') ? 'active' : '' }}"><a href="{{ route('admin.sponsorship-submissions.index') }}" class="nav-link"><i class="menu-icon las la-handshake"></i><span class="menu-title">@lang('Sponsorship Submissions')</span></a></li>
             </ul>

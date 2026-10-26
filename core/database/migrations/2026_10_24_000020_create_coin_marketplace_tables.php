@@ -15,6 +15,7 @@ return new class extends Migration {
     {
         if (!Schema::hasTable('coin_listings')) {
             Schema::create('coin_listings', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('seller_user_id');
                 $table->decimal('amount', 28, 8);
@@ -28,6 +29,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_trades')) {
             Schema::create('coin_trades', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('listing_id')->nullable();
                 $table->string('direction', 20); // sell_to_agent, buy_from_agent
@@ -62,6 +64,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_trade_events')) {
             Schema::create('coin_trade_events', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('trade_id');
                 $table->string('actor_type', 20);
@@ -77,6 +80,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_trade_messages')) {
             Schema::create('coin_trade_messages', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('trade_id');
                 $table->string('sender_type', 20);
@@ -94,6 +98,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_penalties')) {
             Schema::create('coin_penalties', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('trade_id');
                 $table->string('offender_type', 20);

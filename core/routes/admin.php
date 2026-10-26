@@ -125,6 +125,7 @@ Route::middleware('admin')->group(function () {
         Route::post('demo-rates', 'setDemoRates')->name('demo-rates');
         Route::post('sample-listing', 'createSampleListing')->name('sample-listing');
         Route::post('simulate-timeout', 'simulateTimeout')->name('simulate-timeout');
+        Route::post('concurrency-self-test', 'concurrencySelfTest')->name('concurrency-self-test');
     });
 
     Route::controller('AdminController')->group(function () {

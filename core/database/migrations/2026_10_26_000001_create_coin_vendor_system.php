@@ -42,6 +42,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_vendor_applications')) {
             Schema::create('coin_vendor_applications', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('user_id')->index();
                 $table->string('status', 24)->default('draft')->index();
@@ -83,6 +84,7 @@ return new class extends Migration {
         }
         if (!Schema::hasTable('coin_vendors')) {
             Schema::create('coin_vendors', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('user_id')->unique();
                 $table->unsignedBigInteger('application_id')->index();
@@ -107,6 +109,7 @@ return new class extends Migration {
         }
         if (!Schema::hasTable('coin_vendor_audits')) {
             Schema::create('coin_vendor_audits', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('application_id')->nullable()->index();
                 $table->unsignedBigInteger('vendor_id')->nullable()->index();

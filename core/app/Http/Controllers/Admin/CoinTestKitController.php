@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Concurrency;
 
 /**
  * Hidden behind general_settings.coin_marketplace_test_kit_enabled (off by default) - lets the
@@ -134,6 +135,67 @@ class CoinTestKitController extends Controller
         $expired = app(CoinMarketplace::class)->sweepPaymentWindowExpiry();
 
         return back()->withNotify([['success', "Simulated a payment-window timeout on trade #{$trade->id} - it should now show as expired and the listing should be back on sale. Swept {$expired} trade(s)."]]);
+    }
+
+    /** Exercise row-lock safety using five genuinely concurrent MySQL worker processes. */
+    public function concurrencySelfTest()
+    {
+        $this->assertEnabled();
+        abort_unless(DB::connection()->getDriverName() === 'mysql', 422, 'Concurrency self-test requires MySQL/InnoDB.');
+
+        $tables = ['coin_vendor_applications', 'coin_vendors', 'coin_wallets', 'coin_ledger_entries', 'coin_listings', 'coin_trades'];
+        $engines = DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', DB::getDatabaseName())
+            ->whereIn('TABLE_NAME', $tables)->pluck('ENGINE', 'TABLE_NAME');
+        $wrongEngines = collect($tables)->filter(fn ($table) => strtoupper((string) $engines->get($table)) !== 'INNODB')->values();
+        abort_if($wrongEngines->isNotEmpty(), 500, 'Concurrency test stopped: these required tables are missing or not InnoDB: ' . $wrongEngines->implode(', '));
+
+        $country = DB::table('countries')->where('coin_marketplace_enabled', true)->first();
+        abort_unless($country, 422, 'Concurrency test needs one country enabled for the Coin Marketplace.');
+        $suffix = Str::lower(Str::random(8));
+        $userId = DB::table('users')->insertGetId([
+            'username' => 'testkit_race_' . $suffix,
+            'email' => 'testkit_race_' . $suffix . '@testkit.local',
+            'password' => Hash::make(Str::random(32)),
+            'balance' => 0,
+            'status' => 1,
+            'country_id' => $country->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $seller = User::findOrFail($userId);
+        $amount = '100';
+        app(CoinLedger::class)->mint('user', $seller->id, $amount, 'TEST DATA: marketplace concurrency self-test', 'testkit_race_mint:' . $suffix, null, null, 'admin', auth('admin')->id());
+        $listing = app(CoinMarketplace::class)->createListing($seller, $amount);
+
+        $agentIds = collect(range(1, 5))->map(function () {
+            $username = 'testkit_race_' . Str::lower(Str::random(6));
+            return SupportAgent::forceCreate([
+                'name' => 'TEST DATA concurrency claimant',
+                'email' => $username . '@testkit.local',
+                'username' => $username,
+                'password' => Hash::make(Str::random(32)),
+                'is_active' => true,
+                'is_payment_agent' => true,
+                'is_selling_coins' => false,
+            ])->id;
+        });
+
+        $listingId = $listing->id;
+        $results = Concurrency::run($agentIds->map(fn ($agentId) => function () use ($listingId, $agentId) {
+            try {
+                $trade = app(CoinMarketplace::class)->claimListing(CoinListing::findOrFail($listingId), SupportAgent::findOrFail($agentId));
+                return ['ok' => true, 'trade_id' => $trade->id];
+            } catch (\Throwable $exception) {
+                return ['ok' => false, 'message' => $exception->getMessage()];
+            }
+        })->all());
+
+        $successes = collect($results)->where('ok', true)->count();
+        $reconciliation = app(CoinLedger::class)->reconcile();
+        $summary = "TEST DATA only — listing #{$listing->id}; {$successes}/5 concurrent claims succeeded; reconciliation " . ($reconciliation['ok'] ? 'passed' : 'FAILED') . '. Exactly one claim must succeed.';
+        $passed = $successes === 1 && $reconciliation['ok'];
+
+        return back()->withNotify([[$passed ? 'success' : 'error', $summary]]);
     }
 
     private function assertEnabled(): void

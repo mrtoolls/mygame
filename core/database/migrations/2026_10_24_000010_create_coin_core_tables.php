@@ -19,6 +19,7 @@ return new class extends Migration {
     {
         if (!Schema::hasTable('coin_wallets')) {
             Schema::create('coin_wallets', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->string('owner_type', 20);
                 $table->unsignedBigInteger('owner_id');
@@ -31,6 +32,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_ledger_entries')) {
             Schema::create('coin_ledger_entries', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('wallet_id');
                 $table->string('type', 20); // mint, burn, credit, debit, hold, release, transfer_out, transfer_in
@@ -52,6 +54,7 @@ return new class extends Migration {
 
         if (!Schema::hasTable('coin_rates')) {
             Schema::create('coin_rates', function (Blueprint $table) {
+                $table->engine = 'InnoDB';
                 $table->id();
                 $table->unsignedBigInteger('currency_id')->unique();
                 $table->decimal('buy_margin_percent', 8, 4)->default(3);

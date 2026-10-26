@@ -3,3 +3,6 @@
 .env
 .env.*
 !.env.example
+/.vscode/
+/core/tests/*.sqlite
+/core/tests/*.sqlite-*
