@@ -62,11 +62,22 @@
                 $fxUsdish = $currency->rate_to_usd && (float) $currency->rate_to_usd > 0 ? 1 / (float) $currency->rate_to_usd : null;
                 $isFresh = $currency->rate_to_usd && $currency->last_updated_at && $currency->last_updated_at->gte(now()->subHours($staleHours));
                 $isPriced = $isFresh && $rate && $rate->status === 'active' && $rate->buy_price !== null && $rate->sell_price !== null;
+                $pauseReason = !$currency->rate_to_usd
+                    ? 'No exchange rate is set. Refresh rates or add a manual rate below.'
+                    : (!$currency->last_updated_at
+                        ? 'The rate has no update time. Refresh rates to restore pricing.'
+                        : (!$isFresh
+                            ? 'The rate is older than ' . $staleHours . ' hours. Refresh rates to restore pricing.'
+                            : ($rate?->pause_reason ?? 'Price not computed. Save margins or refresh rates.')));
             @endphp
             <article class="cp-currency-card {{ $isPriced ? '' : 'is-paused' }}">
                 <header class="cp-currency-card__head">
                     <div class="cp-currency-id"><span class="cp-currency-symbol">{{ $currency->code }}</span><div><h3>{{ $currency->name }}</h3><small>{{ $currency->decimals }} decimal places <span>·</span> {{ $currency->symbol }}</small></div></div>
-                    @if($isPriced)<span class="cp-status cp-status--active"><i class="las la-check-circle"></i> Active</span>@else<span class="cp-status cp-status--paused"><i class="las la-exclamation-circle"></i> Paused</span>@endif
+                    @if($isPriced)
+                        <span class="cp-status cp-status--active"><i class="las la-check-circle"></i> Active</span>
+                    @else
+                        <span class="cp-status cp-status--paused"><i class="las la-exclamation-circle"></i> Paused</span>
+                    @endif
                 </header>
 
                 <div class="cp-fx-line">
@@ -75,7 +86,7 @@
                 </div>
 
                 @if(!$isPriced)
-                    <div class="cp-paused-note"><i class="las la-info-circle"></i><span>@if(!$currency->rate_to_usd)No exchange rate is set. Refresh rates or add a manual rate below.@elseif(!$currency->last_updated_at)The rate has no update time. Refresh rates to restore pricing.@elseif(!$isFresh)The rate is older than {{ $staleHours }} hours. Refresh rates to restore pricing.@else{{ $rate?->pause_reason ?? 'Price not computed. Save margins or refresh rates.' }}@endif</span></div>
+                    <div class="cp-paused-note"><i class="las la-info-circle"></i><span>{{ $pauseReason }}</span></div>
                 @endif
 
                 <div class="cp-prices">
