@@ -30,12 +30,16 @@
     @endif
     @if(session('coin_refresh_error'))<div class="alert alert--danger cp-alert" role="alert">{{ session('coin_refresh_error') }}</div>@endif
     @if(session('coin_refresh_result'))
-        @php($refreshResult = session('coin_refresh_result'))
+        @php
+            $refreshResult = session('coin_refresh_result');
+        @endphp
         <div class="alert alert--success cp-alert" role="status">Rates refreshed using {{ $refreshResult['source'] }}; {{ $refreshResult['updated'] }} currency rates checked and prices recomputed. <a href="{{ route('admin.currency-country.index') }}">Rate source details</a>.</div>
     @endif
     @if(session('coin_pricing_results'))
-        @php($pricingResults = session('coin_pricing_results'))
-        @php($pausedCount = collect($pricingResults)->where('ok', false)->count())
+        @php
+            $pricingResults = session('coin_pricing_results');
+            $pausedCount = collect($pricingResults)->where('ok', false)->count();
+        @endphp
         <div class="alert alert--{{ $pausedCount ? 'warning' : 'success' }} cp-alert" role="status">{{ $pausedCount ? $pausedCount . ' currencies need attention. See their rate status below.' : 'Prices recomputed for all enabled currencies.' }}</div>
     @endif
 
