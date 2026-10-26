@@ -174,6 +174,9 @@ class ManageUsersController extends Controller {
 
     public function update(Request $request, $id) {
         $user         = User::findOrFail($id);
+        if (Schema::hasColumn('users', 'coin_vendor_flagged')) {
+            $request->validate(['coin_vendor_flagged' => 'nullable|boolean', 'coin_vendor_flag_reason' => 'required_if:coin_vendor_flagged,1|nullable|string|max:1000']);
+        }
         $countryData  = json_decode(file_get_contents(resource_path('views/partials/country.json')));
         $countryArray = (array) $countryData;
         $countries    = implode(',', array_keys($countryArray));
@@ -212,6 +215,20 @@ class ManageUsersController extends Controller {
         $user->ev = $request->ev ? Status::VERIFIED : Status::UNVERIFIED;
         $user->sv = $request->sv ? Status::VERIFIED : Status::UNVERIFIED;
         $user->ts = $request->ts ? Status::ENABLE : Status::DISABLE;
+        if (Schema::hasColumn('users', 'coin_vendor_flagged')) {
+            $wasVendorFlagged = (bool) $user->coin_vendor_flagged;
+            $user->coin_vendor_flagged = $request->boolean('coin_vendor_flagged');
+            if ($wasVendorFlagged !== $user->coin_vendor_flagged && Schema::hasTable('coin_vendor_audits')) {
+                \App\Models\CoinVendorAudit::record(
+                    $user->coin_vendor_flagged ? 'user_vendor_flagged' : 'user_vendor_flag_cleared',
+                    null,
+                    null,
+                    auth('admin')->id(),
+                    'user #' . $user->id,
+                    $request->input('coin_vendor_flag_reason')
+                );
+            }
+        }
         if (!$request->kv) {
             $user->kv = Status::KYC_UNVERIFIED;
             if ($user->kyc_data) {

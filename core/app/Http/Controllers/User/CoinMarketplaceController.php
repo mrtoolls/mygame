@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\CoinListing;
 use App\Models\CoinTrade;
+use App\Models\CoinVendor;
 use App\Models\SupportAgent;
 use App\Services\CoinLedger;
 use App\Services\CoinMarketplace;
@@ -74,8 +75,12 @@ class CoinMarketplaceController extends Controller
         $trade = CoinTrade::findOrFail($tradeId);
         abort_unless($trade->isParticipant('user', auth()->id()), 403);
         $pageTitle = 'Trade #' . $trade->id;
+        $myVendor = \Illuminate\Support\Facades\Schema::hasTable('coin_vendors')
+            ? CoinVendor::where('user_id', auth()->id())->where('status', 'active')->first()
+            : null;
+        $vendorPaymentMethods = $myVendor?->encrypted_payment_methods ?: [];
 
-        return view('Template::user.coin.trade', compact('pageTitle', 'trade'));
+        return view('Template::user.coin.trade', compact('pageTitle', 'trade', 'vendorPaymentMethods'));
     }
 
     public function claimPayment(Request $request, int $tradeId)

@@ -14,9 +14,11 @@
                         <span class="badge badge--danger">Disputed</span>
                     </div>
                     <div class="card-body">
+                        @php($sellerParty = $trade->coin_seller_type === 'user' && in_array((int)$trade->coin_seller_id,$vendorUserIds,true) ? 'Vendor' : ucfirst($trade->coin_seller_type))
+                        @php($buyerParty = $trade->coin_buyer_type === 'user' && in_array((int)$trade->coin_buyer_id,$vendorUserIds,true) ? 'Vendor' : ucfirst($trade->coin_buyer_type))
                         <p class="text-muted small mb-3">
-                            <i class="las la-arrow-circle-up text-warning"></i> Seller: <strong>{{ $trade->coin_seller_type }}#{{ $trade->coin_seller_id }}</strong>
-                            &nbsp; <i class="las la-arrow-circle-down text-success"></i> Buyer: <strong>{{ $trade->coin_buyer_type }}#{{ $trade->coin_buyer_id }}</strong>
+                            <i class="las la-arrow-circle-up text-warning"></i> Seller: <strong>{{ $sellerParty }}#{{ $trade->coin_seller_id }}</strong>
+                            &nbsp; <i class="las la-arrow-circle-down text-success"></i> Buyer: <strong>{{ $buyerParty }}#{{ $trade->coin_buyer_id }}</strong>
                             &nbsp; · Opened by {{ $trade->dispute_opened_by_type }}#{{ $trade->dispute_opened_by_id }} at {{ $trade->dispute_opened_at }}
                         </p>
 

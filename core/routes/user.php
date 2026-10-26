@@ -154,6 +154,22 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('trade/{tradeId}/reopen-listing', 'reopenListing')->name('trade.reopen-listing')->whereNumber('tradeId');
             });
 
+            Route::controller('CoinVendorController')->prefix('coin-vendor')->name('coin-vendor.')->group(function () {
+                Route::get('apply', 'apply')->name('apply');
+                Route::post('draft', 'saveDraft')->middleware('throttle:10,1')->name('draft');
+                Route::post('liveness/challenge', 'challenge')->middleware('throttle:5,1')->name('challenge');
+                Route::post('liveness/record', 'uploadSelfie')->middleware('throttle:5,1')->name('liveness.record');
+                Route::post('submit', 'submit')->middleware('throttle:5,1')->name('submit');
+                Route::post('delete-rejected-data', 'deleteRejectedApplication')->name('delete-rejected-data');
+                Route::get('desk', 'desk')->name('desk');
+                Route::post('selling', 'updateSelling')->name('selling');
+                Route::post('rate', 'updateRate')->name('rate');
+                Route::post('payment-methods', 'updatePaymentMethods')->name('payment-methods');
+                Route::post('resign', 'resign')->name('resign');
+                Route::post('listings/{listing}/claim', 'claimListing')->whereNumber('listing')->middleware('throttle:10,1')->name('listings.claim');
+                Route::post('buy', 'buyFromVendor')->middleware('throttle:10,1')->name('buy');
+            });
+
             // Withdraw
             Route::controller('WithdrawController')->prefix('withdraw')->name('withdraw')->group(function () {
                 Route::middleware('kyc')->group(function () {

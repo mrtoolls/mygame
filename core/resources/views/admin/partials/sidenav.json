@@ -230,6 +230,21 @@
                 "menu_active": "admin.coin.pricing"
             },
             {
+                "title": "Vendor Applications",
+                "route_name": "admin.coin.vendors.applications",
+                "menu_active": "admin.coin.vendors.applications*"
+            },
+            {
+                "title": "Coin Vendors",
+                "route_name": "admin.coin.vendors.index",
+                "menu_active": "admin.coin.vendors.index"
+            },
+            {
+                "title": "Vendor Settings",
+                "route_name": "admin.coin.vendors.settings",
+                "menu_active": "admin.coin.vendors.settings"
+            },
+            {
                 "title": "Agent Float Grants",
                 "route_name": "admin.coin.float.index",
                 "menu_active": "admin.coin.float.index"

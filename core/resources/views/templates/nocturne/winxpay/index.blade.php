@@ -8,6 +8,7 @@
 </section>
 
 <section class="nocturne-section">
+    @if(!count($directoryItems ?? []))
     @if($agents->isEmpty())
         <div class="nocturne-winxpay-empty"><i class="ph-fill ph-handshake"></i><h3>@lang('No WinxPay agents available yet')</h3><p>@lang('Check back soon, or use Crypto or another deposit method.')</p></div>
     @else
@@ -45,6 +46,27 @@
                     @else
                         <a href="{{ route('user.login') }}" class="nocturne-winxpay-card__deposit"><i class="ph-bold ph-sign-in"></i> @lang('Sign in to deposit')</a>
                     @endauth
+                </article>
+            @endforeach
+        </div>
+    @endif
+    @else
+        <div class="nocturne-winxpay-grid">
+            @foreach($directoryItems as $offer)
+                <article class="nocturne-winxpay-card">
+                    <div class="nocturne-winxpay-card__head"><span class="nocturne-winxpay-card__avatar">@if($offer['avatar_url'])<img src="{{ $offer['avatar_url'] }}" alt="">@else{{ strtoupper(substr($offer['name'],0,1)) }}@endif</span><div class="nocturne-winxpay-card__identity"><strong>{{ $offer['name'] }} <span class="nocturne-winxpay-verified"><i class="ph-fill ph-seal-check"></i></span></strong><span>{{ $offer['type']==='vendor'?'Verified Coin Vendor':'Payment agent' }} · {{ $offer['reliability_score'] }}/100</span></div></div>
+                    @if($coinMode ?? false)<div class="nocturne-winxpay-card__speed-label"><span>Rate per coin</span><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_coin'],4) }}</strong></div><div class="nocturne-winxpay-card__speed-label"><span>Per 100 / 1,000</span><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_100'],2) }} / {{ number_format($offer['rate_per_1000'],2) }}</strong></div>@endif
+                    <div class="nocturne-winxpay-card__speed-label"><span>{{ number_format($offer['completed_trades']) }} completed · {{ $offer['average_release_minutes'] ? $offer['average_release_minutes'].' min avg' : 'New offer' }}</span><strong>{{ $offer['online']?'Online':'Offline' }}</strong></div>
+                    @if($offer['payment_methods'])<div class="nocturne-winxpay-card__type-tags">@foreach($offer['payment_methods'] as $method)<span>{{ $method }}</span>@endforeach</div>@endif
+                    @auth
+                        @if(($coinMode ?? false) && $offer['type']==='vendor')
+                            <form method="post" action="{{ route('user.coin-vendor.buy') }}" class="nocturne-vendor-buy">@csrf<input type="hidden" name="vendor_id" value="{{ $offer['id'] }}"><label>Coins<input type="number" name="amount" min="10" max="{{ min($offer['per_trade_limit'],$offer['available_coins']) }}" step="1" required placeholder="Amount"></label><button type="submit">Buy coins</button></form>
+                        @elseif(($coinMode ?? false) && $offer['type']==='agent')
+                            <form method="post" action="{{ route('user.coin.buy') }}" class="nocturne-vendor-buy">@csrf<input type="hidden" name="support_agent_id" value="{{ $offer['id'] }}"><label>Coins<input type="number" name="amount" min="10" max="{{ min($offer['per_trade_limit'],$offer['available_coins']) }}" step="1" required placeholder="Amount"></label><button type="submit">Buy coins</button></form>
+                        @else
+                            <a href="{{ route('user.deposit.index') }}" class="nocturne-winxpay-card__deposit"><i class="ph-bold ph-wallet"></i> @lang('Open WinxPay')</a>
+                        @endif
+                    @else<a href="{{ route('user.login') }}" class="nocturne-winxpay-card__deposit">@lang('Sign in to trade')</a>@endauth
                 </article>
             @endforeach
         </div>

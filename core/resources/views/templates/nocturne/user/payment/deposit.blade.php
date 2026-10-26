@@ -43,7 +43,7 @@
     @endif
     @php
         $cryptoCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto === 1)->count();
-        $winxpayCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1)->count();
+        $winxpayCount = $gatewayCurrency->filter(fn($g) => (int) $g->method->crypto !== 1)->count() + count($vendorOffers ?? []);
         $hasWinxpay = $winxpayCount > 0;
         $hasCrypto = $cryptoCount > 0;
         $preselectAgentId = request()->integer('agent') ?: null;
@@ -144,6 +144,27 @@
         </div>
     </form>
 
+    @if(($coinMode ?? false) && count($vendorOffers ?? []))
+        <section class="nocturne-vendor-market" id="coin-vendor-directory" hidden aria-labelledby="coin-vendor-title">
+            <div class="nocturne-wallet-history__heading"><div><span class="nocturne-wallet-kicker">WINXPAY · PERSON TO PERSON</span><h2 id="coin-vendor-title">Buy from a verified coin vendor</h2><p>Compare today's rate, availability, and payment methods. Your rate is locked when a trade opens.</p></div></div>
+            <div class="nocturne-vendor-tools"><label><i class="ph-bold ph-magnifying-glass"></i><input id="vendor-search" type="search" placeholder="Search vendors or payment methods" aria-label="Search vendors"></label><select id="vendor-sort" aria-label="Sort vendors"><option value="rate">Best rate</option><option value="fastest">Fastest release</option><option value="reliable">Most reliable</option></select></div>
+            <div class="nocturne-vendor-grid" id="vendor-grid">
+                @foreach($vendorOffers as $offer)
+                    <article class="nocturne-vendor-card" data-rate="{{ $offer['rate_per_coin'] }}" data-release="{{ $offer['average_release_minutes'] ?: 9999 }}" data-score="{{ $offer['reliability_score'] }}" data-search="{{ strtolower($offer['name'].' '.implode(' ', $offer['payment_methods'])) }}">
+                        <div class="nocturne-vendor-card__head"><span class="nocturne-vendor-avatar">@if($offer['avatar_url'])<img src="{{ $offer['avatar_url'] }}" alt="">@else{{ strtoupper(substr($offer['name'],0,1)) }}@endif</span><div class="nocturne-vendor-id"><strong>{{ $offer['name'] }} <i class="ph-fill ph-seal-check" title="Verified vendor"></i></strong><small><span class="nocturne-presence {{ $offer['online'] ? 'is-online' : '' }}"></span>{{ $offer['online'] ? 'Online' : 'Verified vendor' }} · {{ number_format($offer['reliability_score'], 0) }}% reliability</small></div></div>
+                        <div class="nocturne-vendor-prices"><div><small>Per 100 coins</small><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_100'], 2) }}</strong></div><div><small>Per 1,000 coins</small><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_1000'], 2) }}</strong></div></div>
+                        <div class="nocturne-vendor-meta"><span><i class="ph-fill ph-check-circle"></i> {{ number_format($offer['completed_trades']) }} completed</span><span><i class="ph-fill ph-clock"></i> {{ $offer['average_release_minutes'] ? $offer['average_release_minutes'].' min avg' : 'New vendor' }}</span></div>
+                        @if($offer['payment_methods'])<div class="nocturne-vendor-methods">@foreach($offer['payment_methods'] as $method)<span>{{ $method }}</span>@endforeach</div>@endif
+                        <form method="post" action="{{ route('user.coin-vendor.buy') }}" class="nocturne-vendor-buy">@csrf<input type="hidden" name="vendor_id" value="{{ $offer['id'] }}"><label>Coins<input type="number" name="amount" min="10" max="{{ min($offer['per_trade_limit'], $offer['available_coins']) }}" step="1" required placeholder="Amount"></label><button type="submit"><i class="ph-bold ph-arrow-right"></i> Buy coins</button><small>Up to {{ number_format(min($offer['per_trade_limit'], $offer['available_coins'])) }} available</small></form>
+                    </article>
+                @endforeach
+            </div>
+            <div class="nocturne-wallet-empty" id="vendor-empty" hidden><i class="ph-fill ph-storefront"></i><strong>No vendors match that search</strong><span>Try another name or payment method.</span></div>
+        </section>
+    @elseif(($coinMode ?? false) && gs('coin_vendor_enabled'))
+        <section class="nocturne-vendor-market" id="coin-vendor-directory" hidden><div class="nocturne-wallet-empty"><i class="ph-fill ph-storefront"></i><strong>No coin vendors are available right now</strong><span>Try another WinxPay option or check back later.</span></div></section>
+    @endif
+
     @php
         $txnStatusMeta = fn ($status) => match ((int) $status) {
             Status::PAYMENT_PENDING => ['label' => 'Pending', 'icon' => 'ph-hourglass-medium', 'cls' => 'pending'],
@@ -183,6 +204,7 @@
 :root{--wallet-accent:#00e78a;--wallet-bg:#10152a;--wallet-panel:#151a31;--wallet-raised:#1b2140;--wallet-muted:#858eaf;--wallet-line:rgba(133,142,175,.18);--wallet-text:#f5f6ff}
 .nocturne-wallet-page{max-width:900px;margin-inline:auto}
 .nocturne-wallet-page .nocturne-page-title{margin-bottom:16px;font-size:26px}
+.nocturne-vendor-market{margin:22px 0;padding:clamp(16px,2.5vw,24px);border:1px solid rgba(0,231,138,.2);border-radius:22px;background:radial-gradient(ellipse at 95% 0,rgba(0,231,138,.09),transparent 34%),var(--wallet-panel)}.nocturne-vendor-market[hidden]{display:none}.nocturne-vendor-market .nocturne-wallet-history__heading{margin-bottom:18px}.nocturne-vendor-market .nocturne-wallet-history__heading h2{margin:5px 0;font-size:22px}.nocturne-vendor-market .nocturne-wallet-history__heading p{margin:0;color:var(--wallet-muted);font-size:12px}.nocturne-vendor-tools{display:flex;gap:10px;margin-bottom:15px}.nocturne-vendor-tools label{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding-inline:12px;border:1px solid var(--wallet-line);border-radius:12px;color:var(--wallet-muted);background:#11162a}.nocturne-vendor-tools input,.nocturne-vendor-tools select{min-height:42px;border:0;outline:0;color:var(--wallet-text);background:transparent}.nocturne-vendor-tools input{width:100%}.nocturne-vendor-tools select{padding:0 12px;border:1px solid var(--wallet-line);border-radius:12px;background:#11162a}.nocturne-vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px}.nocturne-vendor-card{display:grid;gap:14px;min-width:0;padding:16px;border:1px solid var(--wallet-line);border-radius:17px;background:linear-gradient(150deg,rgba(32,42,72,.8),rgba(18,24,43,.9))}.nocturne-vendor-card__head{display:flex;align-items:center;gap:11px;min-width:0}.nocturne-vendor-avatar{display:grid;place-items:center;overflow:hidden;flex:0 0 46px;width:46px;height:46px;border-radius:50%;background:rgba(0,231,138,.13);color:var(--wallet-accent);font-weight:900}.nocturne-vendor-avatar img{width:100%;height:100%;object-fit:cover}.nocturne-vendor-id{min-width:0}.nocturne-vendor-id strong{display:block;overflow:hidden;color:var(--wallet-text);text-overflow:ellipsis;white-space:nowrap}.nocturne-vendor-id strong i{color:var(--wallet-accent)}.nocturne-vendor-id small{display:block;margin-top:4px;color:var(--wallet-muted);font-size:10px}.nocturne-presence{display:inline-block;width:7px;height:7px;margin-inline-end:5px;border-radius:50%;background:#69718e}.nocturne-presence.is-online{background:var(--wallet-accent);box-shadow:0 0 8px var(--wallet-accent)}.nocturne-vendor-prices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nocturne-vendor-prices>div{padding:10px;border-radius:11px;background:rgba(255,255,255,.035)}.nocturne-vendor-prices small,.nocturne-vendor-prices strong{display:block}.nocturne-vendor-prices small{margin-bottom:5px;color:var(--wallet-muted);font-size:9px}.nocturne-vendor-prices strong{font-size:12px}.nocturne-vendor-meta{display:flex;justify-content:space-between;gap:8px;color:var(--wallet-muted);font-size:10px}.nocturne-vendor-meta i{color:var(--wallet-accent)}.nocturne-vendor-methods{display:flex;flex-wrap:wrap;gap:5px}.nocturne-vendor-methods span{padding:4px 8px;border-radius:999px;background:rgba(0,231,138,.08);color:var(--wallet-accent);font-size:9px;font-weight:800}.nocturne-vendor-buy{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.nocturne-vendor-buy label{display:grid;gap:5px;color:var(--wallet-muted);font-size:10px}.nocturne-vendor-buy input{min-width:0;min-height:42px;padding:0 10px;border:1px solid var(--wallet-line);border-radius:10px;background:#10162a;color:var(--wallet-text)}.nocturne-vendor-buy button{min-height:42px;padding:0 13px;border:0;border-radius:10px;background:var(--wallet-accent);color:#062a23;font-weight:900}.nocturne-vendor-buy small{grid-column:1/-1;color:var(--wallet-muted);font-size:9px}.nocturne-vendor-market .nocturne-wallet-empty{margin-top:10px}
 .nocturne-wallet-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;margin:0 0 22px;padding:24px 28px;border:1px solid var(--wallet-line);border-radius:24px;background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.18)}
 .nocturne-wallet-hero__eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--wallet-accent);font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 .nocturne-wallet-hero__copy h2{margin:8px 0 4px;color:var(--wallet-text);font-size:clamp(18px,2.2vw,22px);font-weight:850;letter-spacing:-.03em}
@@ -301,6 +323,7 @@
     .nocturne-wallet-hero{flex-direction:column;align-items:stretch;padding:18px}
     .nocturne-wallet-hero__balance{width:100%}
     .nocturne-wallet-switch__opt{min-height:76px;padding:10px}
+    .nocturne-vendor-tools{flex-direction:column}.nocturne-vendor-tools select{min-height:42px}.nocturne-vendor-buy{grid-template-columns:1fr}.nocturne-vendor-buy button{width:100%}
     .nocturne-wallet-reveal{flex-direction:column;align-items:stretch;text-align:center}
     .nocturne-wallet-reveal__qr{justify-self:center;margin:0 auto}
     .nocturne-wallet-footrow{flex-direction:column;gap:10px}
@@ -391,6 +414,7 @@
     $('.nocturne-wallet-switch__opt').on('click', function() {
         if (this.disabled) return;
         let filter = String($(this).data('filter'));
+        $('#coin-vendor-directory').prop('hidden', filter !== 'winxpay');
         $('.nocturne-wallet-switch__opt').removeClass('is-active');
         $(this).addClass('is-active');
         $('.gateway-option').each(function() {
@@ -401,6 +425,24 @@
         if (firstVisible.length) firstVisible.find('.gateway-input').prop('checked', true);
         else $('.gateway-input').prop('checked', false);
         gatewayChange();
+    });
+
+    $('#vendor-search').on('input', function() {
+        let term = String($(this).val() || '').toLowerCase().trim();
+        let visible = 0;
+        $('.nocturne-vendor-card').each(function() {
+            let matches = String($(this).data('search') || '').includes(term);
+            $(this).toggle(matches);
+            if (matches) visible++;
+        });
+        $('#vendor-empty').prop('hidden', visible > 0);
+    });
+    $('#vendor-sort').on('change', function() {
+        const key = String($(this).val());
+        const attr = key === 'fastest' ? 'release' : (key === 'reliable' ? 'score' : 'rate');
+        const direction = key === 'reliable' ? -1 : 1;
+        const cards = $('.nocturne-vendor-card').get().sort((a, b) => direction * ((Number($(a).data(attr)) || 0) - (Number($(b).data(attr)) || 0)));
+        $('#vendor-grid').append(cards);
     });
 
     function calculation() {

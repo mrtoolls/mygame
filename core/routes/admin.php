@@ -83,6 +83,20 @@ Route::middleware('admin')->group(function () {
         Route::post('recompute', 'recomputeAll')->name('recompute');
     });
 
+    Route::controller('CoinVendorController')->prefix('coin/vendors')->name('coin.vendors.')->group(function () {
+        Route::get('applications', 'applications')->name('applications');
+        Route::get('applications/{id}', 'show')->name('applications.show')->whereNumber('id');
+        Route::get('applications/{id}/files/{kind}', 'file')->name('applications.file')->whereNumber('id');
+        Route::post('applications/{id}/approve', 'approve')->name('applications.approve')->whereNumber('id');
+        Route::post('applications/{id}/reject', 'reject')->name('applications.reject')->whereNumber('id');
+        Route::post('applications/{id}/request-information', 'requestInformation')->name('applications.request-information')->whereNumber('id');
+        Route::get('/', 'vendors')->name('index');
+        Route::post('{id}/{action}', 'vendorAction')->name('action')->whereNumber('id');
+        Route::get('settings', 'settings')->name('settings');
+        Route::post('settings', 'saveSettings')->name('settings.save');
+        Route::post('reviewer-permission/{admin}', 'reviewerPermission')->name('reviewer-permission')->whereNumber('admin');
+    });
+
     Route::controller('AgentCoinFloatController')->prefix('coin/float')->name('coin.float.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');

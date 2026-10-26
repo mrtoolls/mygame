@@ -12,6 +12,7 @@
                         <div class="coin-trade-head__amount">{{ number_format($trade->amount, 0) }} <small style="font-size:14px;color:var(--nocturne-muted);font-weight:700">@lang('coins')</small></div>
                         <div class="coin-trade-head__meta">
                             <span>@lang('Fee'): {{ number_format($trade->fee_amount, 2) }} ({{ $trade->fee_payer }} @lang('pays'))</span>
+                            @if($trade->fiat_total && $trade->fiat_currency)<span>Locked rate: {{ $trade->fiat_currency }} {{ number_format($trade->fiat_total,2) }} total · {{ number_format($trade->price_per_coin,4) }} per coin</span>@endif
                             <span>{{ ucfirst(str_replace('_', ' ', $trade->direction)) }}</span>
                         </div>
                     </div>
@@ -59,6 +60,13 @@
 
                 <div class="coin-chat">
                     <div class="coin-chat__head"><i class="ph-fill ph-chat-circle-dots"></i> <strong>@lang('Trade chat')</strong></div>
+                    @if(count($vendorPaymentMethods ?? []))
+                        <div class="coin-chat__vendor-methods" style="display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px;border-bottom:1px solid var(--nocturne-line)">
+                            @foreach($vendorPaymentMethods as $method)
+                                <button type="button" class="coin-btn coin-btn--outline" data-payment-details="{{ e(($method['label']??$method['type']).': '.($method['details']??'')) }}">Insert {{ $method['label']??ucfirst(str_replace('_',' ',$method['type']??'payment')) }}</button>
+                            @endforeach
+                        </div>
+                    @endif
                     <div id="coinTradeMessages" class="coin-chat__messages"><div class="coin-chat__empty">@lang('Loading messages…')</div></div>
                     <form id="coinTradeChatForm" class="coin-chat__composer">
                         <input type="text" name="body" placeholder="@lang('Write a message…')" maxlength="1000">
@@ -89,7 +97,7 @@
                 var mine = m.sender_type === 'user' && Number(m.sender_id) === authUserId;
                 var att = m.attachment_url ? '<a class="coin-msg__attachment" href="' + m.attachment_url + '" target="_blank" rel="noopener"><i class="ph-bold ph-paperclip"></i> @lang('Attachment')</a>' : '';
                 return '<div class="coin-msg' + (mine ? ' is-mine' : '') + '">' +
-                    '<span class="coin-msg__meta">' + escapeHtml(m.sender_type) + ' #' + escapeHtml(m.sender_id) + '</span>' +
+                    '<span class="coin-msg__meta">' + escapeHtml(m.sender_label || m.sender_type) + ' #' + escapeHtml(m.sender_id) + '</span>' +
                     '<div class="coin-msg__bubble">' + escapeHtml(m.body || '') + att + '</div>' +
                     '</div>';
             }).join('');
@@ -118,6 +126,7 @@
                 body: 'body=' + encodeURIComponent(body)
             }).finally(function () { form.body.disabled = false; form.body.value = ''; form.body.focus(); });
         });
+        document.querySelectorAll('[data-payment-details]').forEach(function(button){button.addEventListener('click',function(){form.body.value=button.getAttribute('data-payment-details')||'';form.body.focus();});});
     })();
     </script>
 @endsection

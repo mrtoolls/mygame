@@ -28,9 +28,11 @@
                     <div class="coin-dispute-card__head">
                         <div>
                             <strong style="font-size:15px">@lang('Trade') #{{ $trade->id }} &middot; {{ number_format($trade->amount, 0) }} @lang('coins')</strong>
+                            @php($sellerParty = $trade->coin_seller_type === 'user' && in_array((int)$trade->coin_seller_id,$vendorUserIds,true) ? 'Vendor' : ucfirst($trade->coin_seller_type))
+                            @php($buyerParty = $trade->coin_buyer_type === 'user' && in_array((int)$trade->coin_buyer_id,$vendorUserIds,true) ? 'Vendor' : ucfirst($trade->coin_buyer_type))
                             <div class="coin-dispute-card__parties">
-                                <span><i class="ph-fill ph-arrow-up-right" style="color:#ffbf5c"></i> {{ $trade->coin_seller_type }}#{{ $trade->coin_seller_id }} ({{ __('seller') }})</span>
-                                <span><i class="ph-fill ph-arrow-down-left" style="color:var(--agent-green)"></i> {{ $trade->coin_buyer_type }}#{{ $trade->coin_buyer_id }} ({{ __('buyer') }})</span>
+                                <span><i class="ph-fill ph-arrow-up-right" style="color:#ffbf5c"></i> {{ $sellerParty }}#{{ $trade->coin_seller_id }} ({{ __('seller') }})</span>
+                                <span><i class="ph-fill ph-arrow-down-left" style="color:var(--agent-green)"></i> {{ $buyerParty }}#{{ $trade->coin_buyer_id }} ({{ __('buyer') }})</span>
                             </div>
                         </div>
                         <span class="coin-agent-badge coin-agent-badge--disputed">@lang('Disputed')</span>

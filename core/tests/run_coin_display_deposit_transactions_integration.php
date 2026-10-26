@@ -69,6 +69,8 @@ Schema::create('gateways', function (Blueprint $table) {
     $table->id();
     $table->integer('code')->default(5000);
     $table->string('name')->nullable();
+    $table->string('alias')->nullable();
+    $table->boolean('crypto')->default(false);
     $table->boolean('status')->default(1);
     $table->timestamps();
 });
@@ -78,6 +80,12 @@ Schema::create('gateway_currencies', function (Blueprint $table) {
     $table->string('currency', 10)->nullable();
     $table->integer('method_code')->default(5000);
     $table->unsignedBigInteger('support_agent_id')->nullable();
+    $table->decimal('min_amount', 20, 8)->default(1);
+    $table->decimal('max_amount', 20, 8)->default(1000000);
+    $table->decimal('fixed_charge', 20, 8)->default(0);
+    $table->decimal('percent_charge', 8, 4)->default(0);
+    $table->decimal('rate', 20, 8)->default(1);
+    $table->string('symbol', 8)->default('$');
     $table->timestamps();
 });
 Schema::create('support_agents', function (Blueprint $table) {
@@ -96,6 +104,13 @@ Schema::create('deposits', function (Blueprint $table) {
     $table->integer('status')->default(1);
     $table->string('trx');
     $table->unsignedBigInteger('currency_id')->nullable();
+    $table->string('method_currency', 10)->nullable();
+    $table->decimal('rate', 20, 8)->default(1);
+    $table->decimal('final_amount', 20, 8)->default(0);
+    $table->decimal('btc_amount', 20, 8)->default(0);
+    $table->string('btc_wallet')->nullable();
+    $table->text('success_url')->nullable();
+    $table->text('failed_url')->nullable();
     $table->decimal('coin_amount', 28, 8)->nullable();
     $table->decimal('coin_buy_price_snapshot', 28, 8)->nullable();
     $table->unsignedBigInteger('coin_rate_id')->nullable();
@@ -164,6 +179,18 @@ $buyPrice = (string) \App\Models\CoinRate::where('currency_id', $ngn->id)->first
 $user = $insertUser('deposit_user', '0', $ngn->id);
 Auth::guard('web')->setUser($user);
 
+// A crypto gateway can be automatic (code < 1000) and still charge in its asset currency.
+// It must remain available to a player whose wallet currency is NGN; fiat gateways still
+// require a matching wallet currency.
+DB::table('gateways')->insert([
+    ['code' => 101, 'name' => 'Automatic Crypto', 'alias' => 'CryptoTest', 'crypto' => true, 'status' => true, 'created_at' => now(), 'updated_at' => now()],
+    ['code' => 102, 'name' => 'Automatic Fiat', 'alias' => 'FiatTest', 'crypto' => false, 'status' => true, 'created_at' => now(), 'updated_at' => now()],
+]);
+DB::table('gateway_currencies')->insert([
+    ['name' => 'Bitcoin', 'currency' => 'BTC', 'method_code' => 101, 'created_at' => now(), 'updated_at' => now()],
+    ['name' => 'USD Card', 'currency' => 'USD', 'method_code' => 102, 'created_at' => now(), 'updated_at' => now()],
+]);
+
 // --- coin_mode OFF: deposit() page is unchanged (regression). ---
 $general = gs();
 $general->coin_mode = false;
@@ -186,6 +213,18 @@ $onData = $onView->getData();
 if ($onData['pageTitle'] !== 'Buy Coins') throw new RuntimeException('coin_mode=on did not set the "Buy Coins" page title.');
 if ($onData['coinPricingError'] !== null) throw new RuntimeException('coin_mode=on incorrectly reported a pricing error for a priced currency.');
 if (bccomp((string) $onData['coinBuyPrice'], $buyPrice, 8) !== 0) throw new RuntimeException('coin_mode=on showed a different buy price than the one PaymentController::userDataUpdate() would actually use.');
+if (!$onData['gatewayCurrency']->contains(fn ($gateway) => $gateway->currency === 'BTC')) throw new RuntimeException('An automatic crypto gateway priced in BTC was hidden from an NGN wallet.');
+if ($onData['gatewayCurrency']->contains(fn ($gateway) => $gateway->currency === 'USD')) throw new RuntimeException('A fiat automatic gateway with no NGN configuration was shown to an NGN wallet.');
+
+$cryptoPost = \Illuminate\Http\Request::create('/user/deposit/insert', 'POST', ['amount' => '100', 'gateway' => '101', 'currency' => 'BTC']);
+$cryptoPost->headers->set('Accept', 'application/json');
+$cryptoAccepted = $controller->depositInsert($cryptoPost);
+if ($cryptoAccepted->getStatusCode() !== 200 || !$cryptoAccepted->getData(true)['ok']) throw new RuntimeException('An automatic crypto gateway in its asset currency was rejected for an NGN wallet.');
+
+$fiatPost = \Illuminate\Http\Request::create('/user/deposit/insert', 'POST', ['amount' => '100', 'gateway' => '102', 'currency' => 'USD']);
+$fiatPost->headers->set('Accept', 'application/json');
+$fiatRejected = $controller->depositInsert($fiatPost);
+if ($fiatRejected->getStatusCode() !== 422) throw new RuntimeException('A fiat automatic gateway in a different currency bypassed the wallet currency check.');
 
 $noPriceUser = $insertUser('no_price_user', '0', $noPrice->id);
 Auth::guard('web')->setUser($noPriceUser);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CoinTrade;
+use App\Models\CoinVendor;
 use App\Services\CoinMarketplace;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -19,8 +20,15 @@ class CoinDisputeController extends Controller
     {
         $pageTitle = 'Coin Trade Disputes';
         $disputed = CoinTrade::where('status', 'disputed')->with(['events', 'messages', 'penalties'])->latest('dispute_opened_at')->paginate(getPaginate());
+        $partyIds = $disputed->getCollection()->flatMap(fn ($trade) => [
+            $trade->coin_seller_type === 'user' ? (int) $trade->coin_seller_id : null,
+            $trade->coin_buyer_type === 'user' ? (int) $trade->coin_buyer_id : null,
+        ])->filter()->unique();
+        $vendorUserIds = \Illuminate\Support\Facades\Schema::hasTable('coin_vendors')
+            ? CoinVendor::whereIn('user_id', $partyIds)->pluck('user_id')->map(fn ($id) => (int) $id)->all()
+            : [];
 
-        return view('admin.coin.disputes', compact('pageTitle', 'disputed'));
+        return view('admin.coin.disputes', compact('pageTitle', 'disputed', 'vendorUserIds'));
     }
 
     public function resolve(Request $request, int $tradeId)

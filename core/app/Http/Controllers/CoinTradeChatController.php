@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CoinTrade;
 use App\Models\CoinTradeMessage;
+use App\Models\CoinVendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -26,6 +27,7 @@ class CoinTradeChatController extends Controller
             'id' => $message->id,
             'sender_type' => $message->sender_type,
             'sender_id' => $message->sender_id,
+            'sender_label' => $message->sender_type === 'user' && \Illuminate\Support\Facades\Schema::hasTable('coin_vendors') && CoinVendor::where('user_id', $message->sender_id)->exists() ? 'Vendor' : ucfirst($message->sender_type),
             'body' => $message->body,
             'attachment_url' => $message->attachment_path ? route('coin-trade.chat.attachment', [$tradeId, $message->id]) : null,
             'attachment_name' => $message->attachment_name,
@@ -57,6 +59,7 @@ class CoinTradeChatController extends Controller
             'trade_id' => $tradeId,
             'sender_type' => $senderType,
             'sender_id' => $senderId,
+            'sender_label' => $senderType === 'user' && \Illuminate\Support\Facades\Schema::hasTable('coin_vendors') && CoinVendor::where('user_id', $senderId)->exists() ? 'Vendor' : ucfirst($senderType),
             'body' => $request->input('body'),
             'attachment_path' => $attachmentPath,
             'attachment_name' => $attachmentName,

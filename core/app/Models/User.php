@@ -43,6 +43,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'kyc_data'          => 'object',
         'ver_code_send_at'  => 'datetime',
+        'coin_vendor_flagged' => 'boolean',
     ];
 
     protected $data = [
@@ -263,5 +264,15 @@ class User extends Authenticatable
     public function deviceTokens()
     {
         return $this->hasMany(DeviceToken::class);
+    }
+
+    public function coinVendor()
+    {
+        return $this->hasOne(CoinVendor::class);
+    }
+
+    public function coinVendorApplications()
+    {
+        return $this->hasMany(CoinVendorApplication::class);
     }
 }

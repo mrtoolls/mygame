@@ -18,6 +18,11 @@
             @else
                 <a href="{{ route('user.withdraw') }}" class="{{ request()->routeIs('user.withdraw') || request()->routeIs('user.withdraw.preview') ? 'is-active' : '' }}"><i class="ph-fill ph-money-wavy"></i>@lang('Withdraw')</a>
             @endif
+            @if(\Illuminate\Support\Facades\Schema::hasTable('coin_vendors') && \App\Models\CoinVendor::where('user_id', auth()->id())->where('status', 'active')->exists())
+                <a href="{{ route('user.coin-vendor.desk') }}" class="{{ request()->routeIs('user.coin-vendor.desk') ? 'is-active' : '' }}"><i class="ph-fill ph-storefront"></i>@lang('Vendor Desk')</a>
+            @elseif(gs('coin_mode') && gs('coin_vendor_enabled'))
+                <a href="{{ route('user.coin-vendor.apply') }}" class="{{ request()->routeIs('user.coin-vendor.*') ? 'is-active' : '' }}"><i class="ph-fill ph-storefront"></i>@lang('Become a Coin Vendor')</a>
+            @endif
             <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i>@lang('Bonuses')</a>
             <a href="{{ route('user.gifts.index') }}" class="{{ request()->routeIs('user.gifts.*') ? 'is-active' : '' }}"><i class="ph-fill ph-package"></i>@lang('My Gifts')</a>
             <a href="{{ route('user.vip.index') }}" class="{{ request()->routeIs('user.vip.*') ? 'is-active' : '' }}"><i class="ph-fill ph-crown"></i>@lang('VIP Club')</a>

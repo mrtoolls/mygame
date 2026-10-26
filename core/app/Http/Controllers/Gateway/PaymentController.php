@@ -26,12 +26,14 @@ class PaymentController extends Controller {
         });
         if (Schema::hasColumn('gateway_currencies', 'currency')) {
             $walletCode = $user->currency?->code;
-            // Wallet-currency matching only makes sense for automatic gateways (code < 1000),
-            // which can have one GatewayCurrency row per supported fiat currency. Manual
-            // gateways (crypto wallets, WinxPay agent methods, code >= 1000) use `currency`
-            // to label the method's own coin/currency, not the user's wallet - filtering
-            // those by wallet currency hid every manual/crypto method regardless of setup.
-            if ($walletCode) $query->where(fn ($q) => $q->where('method_code', '>=', 1000)->orWhereRaw('UPPER(currency) = ?', [strtoupper($walletCode)]));
+            // Fiat automatic gateways need a row in the player's wallet currency. Automatic
+            // crypto gateways charge in the selected crypto asset, so their currency must not
+            // be compared with the player's fiat wallet currency. Manual gateways likewise
+            // use their own currency label.
+            if ($walletCode) $query->where(fn ($q) => $q
+                ->where('method_code', '>=', 1000)
+                ->orWhereHas('method', fn ($method) => $method->where('crypto', 1))
+                ->orWhereRaw('UPPER(currency) = ?', [strtoupper($walletCode)]));
         }
         $gatewayCurrency = $query->with(['method', 'supportAgent:id,name'])->orderby('name')->get()
             ->filter(fn ($gateway) => app(\App\Support\CountryPaymentLimits::class)->allowsMethod($user, [$gateway->currency, $gateway->method_code, $gateway->method?->alias, $gateway->name]))
@@ -69,7 +71,8 @@ class PaymentController extends Controller {
         }
 
         $pageTitle = $coinMode ? 'Buy Coins' : 'Deposit Methods';
-        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle', 'coinMode', 'coinBuyPrice', 'coinPricingError', 'coinPegUsd'));
+        $vendorOffers = $coinMode ? app(\App\Support\WinxPayDirectory::class)->forBuyer($user) : [];
+        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'deposits', 'pageTitle', 'coinMode', 'coinBuyPrice', 'coinPricingError', 'coinPegUsd', 'vendorOffers'));
     }
 
     public function depositInsert(Request $request) {
@@ -87,16 +90,17 @@ class PaymentController extends Controller {
             $query->whereNull('support_agent_id')
                 ->orWhereHas('supportAgent', fn ($agent) => $agent->paymentAgents());
         })->where('method_code', $request->gateway)->where('currency', $request->currency);
-        $walletCode = $user->currency?->code;
-        if ($walletCode && (int) $request->gateway < 1000 && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
-            if ($request->wantsJson()) return response()->json(['message' => 'Choose a deposit method in your wallet currency.'], 422);
-            return back()->withErrors(['currency' => 'Choose a deposit method in your wallet currency.'])->withInput();
-        }
-        $gate = $query->first();
+        $gate = $query->with('method')->first();
         if (!$gate) {
             if ($request->wantsJson()) return response()->json(['message' => 'Invalid gateway'], 422);
             $notify[] = ['error', 'Invalid gateway'];
             return back()->withNotify($notify);
+        }
+        $walletCode = $user->currency?->code;
+        if ($walletCode && (int) $request->gateway < 1000 && !(bool) $gate->method?->crypto
+            && strtoupper($walletCode) !== strtoupper((string) $request->currency)) {
+            if ($request->wantsJson()) return response()->json(['message' => 'Choose a deposit method in your wallet currency.'], 422);
+            return back()->withErrors(['currency' => 'Choose a deposit method in your wallet currency.'])->withInput();
         }
         app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$gate->currency, $gate->method_code, $gate->method?->alias, $gate->name]);
 

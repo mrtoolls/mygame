@@ -11,6 +11,7 @@ class CoinWallet extends Model
     protected $casts = [
         'available_balance' => 'decimal:8',
         'held_balance' => 'decimal:8',
+        'vendor_bond_balance' => 'decimal:8',
     ];
 
     public function entries()

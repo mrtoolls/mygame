@@ -19,6 +19,7 @@ class Country extends Model
         'is_allowed' => 'boolean',
         'is_enabled' => 'boolean',
         'coin_marketplace_enabled' => 'boolean',
+        'vendors_allowed' => 'boolean',
     ];
 
     public function currency()

@@ -219,6 +219,15 @@
                                     <input type="checkbox" data-width="100%" data-height="50" data-onstyle="-success" data-offstyle="-danger" data-bs-toggle="toggle" data-on="@lang('Verified')" data-off="@lang('Unverified')" name="kv" @if ($user->kv == Status::KYC_VERIFIED) checked @endif>
                                 </div>
                             </div>
+                            @if(\Illuminate\Support\Facades\Schema::hasColumn('users', 'coin_vendor_flagged'))
+                                <div class="col-xl-3 col-12">
+                                    <div class="form-group">
+                                        <label>Coin vendor access</label>
+                                        <label class="d-flex align-items-center gap-2"><input type="checkbox" name="coin_vendor_flagged" value="1" @checked($user->coin_vendor_flagged)> Restrict from applying or trading</label>
+                                        <input class="form-control mt-2" type="text" name="coin_vendor_flag_reason" maxlength="1000" placeholder="Required when restricting access" value="">
+                                    </div>
+                                </div>
+                            @endif
                             <div class="col-md-12">
                                 <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')
                                 </button>

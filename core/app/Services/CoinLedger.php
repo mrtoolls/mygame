@@ -94,7 +94,9 @@ class CoinLedger
             if ($existing = $this->existingEntry($idempotencyKey)) return $existing;
 
             $wallet = $this->lockedWallet($ownerType, $ownerId);
-            if (bccomp((string) $wallet->held_balance, $amount, 8) < 0) {
+            $bondBalance = \Illuminate\Support\Facades\Schema::hasColumn('coin_wallets', 'vendor_bond_balance') ? (string) $wallet->vendor_bond_balance : '0';
+            $tradeHeld = bcsub((string) $wallet->held_balance, $bondBalance, 8);
+            if (bccomp($tradeHeld, $amount, 8) < 0) {
                 throw new InvalidArgumentException('Insufficient held coin balance to release.');
             }
             $wallet->held_balance = bcsub((string) $wallet->held_balance, $amount, 8);
@@ -123,7 +125,8 @@ class CoinLedger
             $this->lockWalletsInOrder([[$fromOwnerType, $fromOwnerId], [$toOwnerType, $toOwnerId]]);
 
             $fromWallet = $this->wallet($fromOwnerType, $fromOwnerId)->fresh();
-            if (bccomp((string) $fromWallet->held_balance, $amount, 8) < 0) {
+            $bondBalance = \Illuminate\Support\Facades\Schema::hasColumn('coin_wallets', 'vendor_bond_balance') ? (string) $fromWallet->vendor_bond_balance : '0';
+            if (bccomp(bcsub((string) $fromWallet->held_balance, $bondBalance, 8), $amount, 8) < 0) {
                 throw new InvalidArgumentException('Insufficient held coin balance to settle.');
             }
             $fromWallet->held_balance = bcsub((string) $fromWallet->held_balance, $amount, 8);
@@ -146,6 +149,64 @@ class CoinLedger
             $credit = $this->credit($ownerType, $ownerId, $amount, $reason, $idempotencyKey . ':mint_in', $referenceType, $referenceId, $actorType, $actorId);
             $debit = $this->debit('platform', self::PLATFORM_OWNER_ID, $amount, $reason, $idempotencyKey . ':mint_out', $referenceType, $referenceId, $actorType, $actorId);
             return ['credit' => $credit, 'platform_debit' => $debit];
+        });
+    }
+
+    /** Holds vendor security collateral in a separately tracked reserve, outside trade escrow. */
+    public function holdVendorBond(int $userId, string $amount, string $idempotencyKey, string $actorType = 'admin', ?int $actorId = null): CoinLedgerEntry
+    {
+        $this->assertPositiveAmount($amount);
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('coin_wallets', 'vendor_bond_balance')) throw new InvalidArgumentException('Vendor bond wallet support is not installed.');
+        return DB::transaction(function () use ($userId, $amount, $idempotencyKey, $actorType, $actorId) {
+            if ($existing = $this->existingEntry($idempotencyKey)) return $existing;
+            $this->assertNoOpenVendorTrades($userId);
+            $wallet = $this->lockedWallet('user', $userId);
+            if (bccomp((string) $wallet->available_balance, $amount, 8) < 0) throw new InvalidArgumentException('Insufficient available coins for the vendor security bond.');
+            $wallet->available_balance = bcsub((string) $wallet->available_balance, $amount, 8);
+            $wallet->held_balance = bcadd((string) $wallet->held_balance, $amount, 8);
+            $wallet->vendor_bond_balance = bcadd((string) $wallet->vendor_bond_balance, $amount, 8);
+            $wallet->save();
+            return $this->writeEntry($wallet, 'vendor_bond_hold', $amount, 'vendor_bond: security bond held', $idempotencyKey, 'CoinVendorBond', $userId, $actorType, $actorId);
+        });
+    }
+
+    /** Releases only separately reserved vendor bond. Generic trade-release code cannot reach it. */
+    public function releaseVendorBond(int $userId, string $amount, string $idempotencyKey, string $reason, string $actorType = 'admin', ?int $actorId = null): CoinLedgerEntry
+    {
+        $this->assertPositiveAmount($amount);
+        return DB::transaction(function () use ($userId, $amount, $idempotencyKey, $reason, $actorType, $actorId) {
+            if ($existing = $this->existingEntry($idempotencyKey)) return $existing;
+            $this->assertNoOpenVendorTrades($userId);
+            $this->assertNoUnresolvedVendorPenalties($userId);
+            $wallet = $this->lockedWallet('user', $userId);
+            if (bccomp((string) $wallet->vendor_bond_balance, $amount, 8) < 0) throw new InvalidArgumentException('Insufficient reserved vendor bond to release.');
+            $wallet->vendor_bond_balance = bcsub((string) $wallet->vendor_bond_balance, $amount, 8);
+            $wallet->held_balance = bcsub((string) $wallet->held_balance, $amount, 8);
+            $wallet->available_balance = bcadd((string) $wallet->available_balance, $amount, 8);
+            $wallet->save();
+            return $this->writeEntry($wallet, 'vendor_bond_release', $amount, $reason, $idempotencyKey, 'CoinVendorBond', $userId, $actorType, $actorId);
+        });
+    }
+
+    /** Deducts from the reserved bond first for an approved penalty, capped at the reserve. */
+    public function deductVendorBond(int $userId, string $amount, string $idempotencyKey, string $reason, string $actorType = 'system', ?int $actorId = null): string
+    {
+        $this->assertPositiveAmount($amount);
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('coin_wallets', 'vendor_bond_balance')) return '0';
+        return DB::transaction(function () use ($userId, $amount, $idempotencyKey, $reason, $actorType, $actorId) {
+            if ($existing = $this->existingEntry($idempotencyKey)) return (string) $existing->amount;
+            $wallet = $this->lockedWallet('user', $userId);
+            $deduct = bccomp((string) $wallet->vendor_bond_balance, $amount, 8) < 0 ? (string) $wallet->vendor_bond_balance : $amount;
+            if (bccomp($deduct, '0', 8) <= 0) return '0';
+            $wallet->vendor_bond_balance = bcsub((string) $wallet->vendor_bond_balance, $deduct, 8);
+            $wallet->held_balance = bcsub((string) $wallet->held_balance, $deduct, 8);
+            $wallet->save();
+            $this->writeEntry($wallet, 'vendor_bond_deduct', $deduct, $reason, $idempotencyKey, 'CoinVendorBond', $userId, $actorType, $actorId);
+            $platform = $this->lockedWallet('platform', self::PLATFORM_OWNER_ID);
+            $platform->available_balance = bcadd((string) $platform->available_balance, $deduct, 8);
+            $platform->save();
+            $this->writeEntry($platform, 'vendor_bond_penalty', $deduct, $reason, $idempotencyKey . ':platform', 'CoinVendorBond', $userId, $actorType, $actorId);
+            return $deduct;
         });
     }
 
@@ -174,8 +235,14 @@ class CoinLedger
         $platform = (string) ($this->wallet('platform', self::PLATFORM_OWNER_ID)->available_balance);
         $difference = bcadd($circulating, $platform, 8);
 
+        $vendorBondHeld = \Illuminate\Support\Facades\Schema::hasColumn('coin_wallets', 'vendor_bond_balance')
+            ? (string) CoinWallet::sum('vendor_bond_balance') : '0';
+        $vendorBondExpected = \Illuminate\Support\Facades\Schema::hasTable('coin_vendors') ? (string) \Illuminate\Support\Facades\DB::table('coin_vendors')->sum('bond_amount') : '0';
         return [
-            'ok' => bccomp($difference, '0', 8) === 0,
+            'ok' => bccomp($difference, '0', 8) === 0 && bccomp($vendorBondHeld, $vendorBondExpected, 8) === 0,
+            'vendor_bonds_ok' => bccomp($vendorBondHeld, $vendorBondExpected, 8) === 0,
+            'vendor_bond_held' => $vendorBondHeld,
+            'vendor_bond_expected' => $vendorBondExpected,
             'circulating' => $circulating,
             'platform_balance' => $platform,
             'difference' => $difference,
@@ -198,6 +265,26 @@ class CoinLedger
     private function existingEntry(string $idempotencyKey): ?CoinLedgerEntry
     {
         return CoinLedgerEntry::where('idempotency_key', $idempotencyKey)->first();
+    }
+
+    private function assertNoOpenVendorTrades(int $userId): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('coin_trades')) return;
+        $open = \App\Models\CoinTrade::whereIn('status', ['pending', 'paid_claimed', 'disputed'])
+            ->where(fn ($query) => $query
+                ->where(fn ($side) => $side->where('coin_seller_type', 'user')->where('coin_seller_id', $userId))
+                ->orWhere(fn ($side) => $side->where('coin_buyer_type', 'user')->where('coin_buyer_id', $userId)))
+            ->exists();
+        if ($open) throw new InvalidArgumentException('Resolve all open or disputed trades before changing the vendor bond.');
+    }
+
+    private function assertNoUnresolvedVendorPenalties(int $userId): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('coin_penalties') || !\Illuminate\Support\Facades\Schema::hasTable('coin_trades')) return;
+        $unresolved = DB::table('coin_penalties')->join('coin_trades', 'coin_trades.id', '=', 'coin_penalties.trade_id')
+            ->where('coin_penalties.offender_type', 'user')->where('coin_penalties.offender_id', $userId)
+            ->whereIn('coin_trades.status', ['pending', 'paid_claimed', 'disputed'])->exists();
+        if ($unresolved) throw new InvalidArgumentException('Resolve all outstanding vendor penalties before releasing the bond.');
     }
 
     private function writeEntry(CoinWallet $wallet, string $type, string $amount, string $reason, string $idempotencyKey, ?string $referenceType, ?int $referenceId, string $actorType, ?int $actorId): CoinLedgerEntry
