@@ -171,7 +171,7 @@ body:has(#hero){height:100%;overflow:hidden;overscroll-behavior:none}
 .wx-landing__btn:hover svg{transform:scale(1.08)}
 .wx-landing__btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .wx-landing__btn--primary{background:var(--wxl-green);color:var(--wxl-green-d);box-shadow:0 10px 30px rgba(0,238,136,.28),0 0 0 1px rgba(0,238,136,.15)}
-.wx-landing__btn--primary:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 0 0 8px rgba(0,238,136,.12),0 18px 44px rgba(0,238,136,.45)}
+.wx-landing__btn--primary:hover,.wx-landing__btn--primary:focus-visible{color:#fff;-webkit-text-fill-color:#fff;transform:translateY(-3px) scale(1.02);box-shadow:0 0 0 8px rgba(0,238,136,.12),0 18px 44px rgba(0,238,136,.45)}
 .wx-landing__btn--ghost{background:rgba(255,255,255,.06);color:var(--wxl-ink);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .wx-landing__btn--ghost svg{color:var(--wxl-green)}
 .wx-landing__btn--ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-3px) scale(1.02);border-color:rgba(0,238,136,.35);box-shadow:0 0 0 5px rgba(0,238,136,.08),0 14px 36px rgba(0,0,0,.4)}

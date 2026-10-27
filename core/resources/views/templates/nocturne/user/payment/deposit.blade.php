@@ -203,12 +203,14 @@
 <style>
 :root{--wallet-accent:#00e78a;--wallet-bg:#10152a;--wallet-panel:#151a31;--wallet-raised:#1b2140;--wallet-muted:#858eaf;--wallet-line:rgba(133,142,175,.18);--wallet-text:#f5f6ff}
 .nocturne-wallet-page{max-width:900px;margin-inline:auto}
-.nocturne-wallet-page .nocturne-page-title{margin-bottom:16px;font-size:26px}
+.nocturne-wallet-page .nocturne-page-title{margin:0 0 16px;font-size:clamp(23px,2.2vw,29px);font-weight:750;letter-spacing:-.035em;line-height:1.15;text-transform:none}
 .nocturne-vendor-market{margin:22px 0;padding:clamp(16px,2.5vw,24px);border:1px solid rgba(0,231,138,.2);border-radius:22px;background:radial-gradient(ellipse at 95% 0,rgba(0,231,138,.09),transparent 34%),var(--wallet-panel)}.nocturne-vendor-market[hidden]{display:none}.nocturne-vendor-market .nocturne-wallet-history__heading{margin-bottom:18px}.nocturne-vendor-market .nocturne-wallet-history__heading h2{margin:5px 0;font-size:22px}.nocturne-vendor-market .nocturne-wallet-history__heading p{margin:0;color:var(--wallet-muted);font-size:12px}.nocturne-vendor-tools{display:flex;gap:10px;margin-bottom:15px}.nocturne-vendor-tools label{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding-inline:12px;border:1px solid var(--wallet-line);border-radius:12px;color:var(--wallet-muted);background:#11162a}.nocturne-vendor-tools input,.nocturne-vendor-tools select{min-height:42px;border:0;outline:0;color:var(--wallet-text);background:transparent}.nocturne-vendor-tools input{width:100%}.nocturne-vendor-tools select{padding:0 12px;border:1px solid var(--wallet-line);border-radius:12px;background:#11162a}.nocturne-vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px}.nocturne-vendor-card{display:grid;gap:14px;min-width:0;padding:16px;border:1px solid var(--wallet-line);border-radius:17px;background:linear-gradient(150deg,rgba(32,42,72,.8),rgba(18,24,43,.9))}.nocturne-vendor-card__head{display:flex;align-items:center;gap:11px;min-width:0}.nocturne-vendor-avatar{display:grid;place-items:center;overflow:hidden;flex:0 0 46px;width:46px;height:46px;border-radius:50%;background:rgba(0,231,138,.13);color:var(--wallet-accent);font-weight:900}.nocturne-vendor-avatar img{width:100%;height:100%;object-fit:cover}.nocturne-vendor-id{min-width:0}.nocturne-vendor-id strong{display:block;overflow:hidden;color:var(--wallet-text);text-overflow:ellipsis;white-space:nowrap}.nocturne-vendor-id strong i{color:var(--wallet-accent)}.nocturne-vendor-id small{display:block;margin-top:4px;color:var(--wallet-muted);font-size:10px}.nocturne-presence{display:inline-block;width:7px;height:7px;margin-inline-end:5px;border-radius:50%;background:#69718e}.nocturne-presence.is-online{background:var(--wallet-accent);box-shadow:0 0 8px var(--wallet-accent)}.nocturne-vendor-prices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nocturne-vendor-prices>div{padding:10px;border-radius:11px;background:rgba(255,255,255,.035)}.nocturne-vendor-prices small,.nocturne-vendor-prices strong{display:block}.nocturne-vendor-prices small{margin-bottom:5px;color:var(--wallet-muted);font-size:9px}.nocturne-vendor-prices strong{font-size:12px}.nocturne-vendor-meta{display:flex;justify-content:space-between;gap:8px;color:var(--wallet-muted);font-size:10px}.nocturne-vendor-meta i{color:var(--wallet-accent)}.nocturne-vendor-methods{display:flex;flex-wrap:wrap;gap:5px}.nocturne-vendor-methods span{padding:4px 8px;border-radius:999px;background:rgba(0,231,138,.08);color:var(--wallet-accent);font-size:9px;font-weight:800}.nocturne-vendor-buy{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.nocturne-vendor-buy label{display:grid;gap:5px;color:var(--wallet-muted);font-size:10px}.nocturne-vendor-buy input{min-width:0;min-height:42px;padding:0 10px;border:1px solid var(--wallet-line);border-radius:10px;background:#10162a;color:var(--wallet-text)}.nocturne-vendor-buy button{min-height:42px;padding:0 13px;border:0;border-radius:10px;background:var(--wallet-accent);color:#062a23;font-weight:900}.nocturne-vendor-buy small{grid-column:1/-1;color:var(--wallet-muted);font-size:9px}.nocturne-vendor-market .nocturne-wallet-empty{margin-top:10px}
-.nocturne-wallet-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;margin:0 0 22px;padding:24px 28px;border:1px solid var(--wallet-line);border-radius:24px;background:radial-gradient(ellipse at 80% 0,rgba(0,231,138,.2),transparent 36%),linear-gradient(120deg,#171d37,#11162b 70%);box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.nocturne-wallet-hero{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;margin:0 0 22px;padding:clamp(20px,3vw,34px);border:1px solid rgba(133,148,192,.22);border-radius:24px;background:radial-gradient(ellipse at 90% 0,rgba(0,231,138,.18),transparent 37%),radial-gradient(ellipse at 52% 110%,rgba(45,83,145,.2),transparent 47%),linear-gradient(125deg,#171d37,#11162b 72%);box-shadow:0 18px 50px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.035)}
+.nocturne-wallet-hero::before{position:absolute;z-index:-1;top:50%;right:clamp(210px,28%,390px);width:180px;aspect-ratio:1;transform:translateY(-50%);border:1px solid rgba(0,231,138,.13);border-radius:50%;box-shadow:0 0 0 18px rgba(0,231,138,.025),inset 0 0 34px rgba(0,231,138,.035);content:"";pointer-events:none}
+.nocturne-wallet-hero__copy,.nocturne-wallet-hero__balance{position:relative;z-index:1}
 .nocturne-wallet-hero__eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--wallet-accent);font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-.nocturne-wallet-hero__copy h2{margin:8px 0 4px;color:var(--wallet-text);font-size:clamp(18px,2.2vw,22px);font-weight:850;letter-spacing:-.03em}
-.nocturne-wallet-hero__copy p{margin:0;color:var(--wallet-muted);font-size:13.5px}
+.nocturne-wallet-hero__copy h2{margin:8px 0 5px;color:var(--wallet-text);font-size:clamp(21px,2.4vw,29px);font-weight:740;letter-spacing:-.035em;line-height:1.18}
+.nocturne-wallet-hero__copy p{max-width:620px;margin:0;color:#a4afcd;font-size:13px;line-height:1.6}
 .nocturne-wallet-hero__balance{position:relative;min-width:190px;padding:14px 46px 14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(7,11,27,.5)}
 .nocturne-wallet-hero__balance>span{display:block;color:var(--wallet-muted);font-size:11px;font-weight:700}
 .nocturne-wallet-hero__balance strong{display:block;margin-top:3px;color:#fff;font-size:19px;font-weight:800;white-space:nowrap}
@@ -300,13 +302,14 @@
 .nocturne-wallet-kicker{display:block;margin-bottom:3px;color:var(--wallet-accent);font-size:9px;font-weight:850;letter-spacing:.14em}
 .nocturne-wallet-history__heading>a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;background:var(--wallet-raised);color:var(--wallet-text);font-size:12px;font-weight:750;text-decoration:none}
 .nocturne-wallet-history__list{display:grid;gap:9px}
-.nocturne-wallet-history__row{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--wallet-line);border-radius:16px;background:rgba(9,13,28,.5);flex-wrap:wrap}
+.nocturne-wallet-history__row{display:flex;min-width:0;align-items:center;gap:14px;padding:14px;border:1px solid var(--wallet-line);border-radius:16px;background:linear-gradient(125deg,rgba(23,30,53,.86),rgba(9,13,28,.62));flex-wrap:wrap;transition:border-color .18s,transform .18s}
+.nocturne-wallet-history__row:hover{border-color:rgba(0,231,138,.2);transform:translateY(-1px)}
 .nocturne-wallet-history__icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:rgba(0,231,138,.1);color:var(--wallet-accent);font-size:18px}
 .nocturne-wallet-history__mid{flex:1 1 160px;min-width:0;display:grid;gap:3px}
 .nocturne-wallet-history__mid strong{overflow:hidden;color:var(--wallet-text);font-size:13.5px;text-overflow:ellipsis;white-space:nowrap}
-.nocturne-wallet-history__mid small{color:var(--wallet-muted);font-size:11px}
-.nocturne-wallet-history__end{display:flex;align-items:center;gap:10px;flex:0 0 auto;margin-left:auto}
-.nocturne-wallet-history__amount{color:var(--wallet-text);font-size:14.5px;font-weight:800;white-space:nowrap}
+.nocturne-wallet-history__mid small{overflow:hidden;color:var(--wallet-muted);font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}
+.nocturne-wallet-history__end{display:flex;min-width:0;align-items:center;gap:10px;flex:0 0 auto;margin-inline-start:auto}
+.nocturne-wallet-history__amount{min-width:0;color:var(--wallet-text);font-size:14px;font-weight:750;white-space:nowrap}
 .nocturne-wallet-history__chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
 .nocturne-wallet-history__chip--pending{background:rgba(255,181,71,.14);color:#ffb547}
 .nocturne-wallet-history__chip--success{background:rgba(0,231,138,.14);color:var(--wallet-accent)}
@@ -320,18 +323,36 @@
 }
 
 @media(max-width:575.98px){
-    .nocturne-wallet-hero{flex-direction:column;align-items:stretch;padding:18px}
-    .nocturne-wallet-hero__balance{width:100%}
+    .nocturne-wallet-page{width:100%;max-width:none}
+    .nocturne-wallet-page .nocturne-page-title{margin-bottom:12px;font-size:23px}
+    .nocturne-wallet-hero{flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px;padding:17px;border-radius:19px}
+    .nocturne-wallet-hero::before{top:auto;right:-20px;bottom:-88px;width:165px;transform:none}
+    .nocturne-wallet-hero__copy h2{max-width:23ch;font-size:clamp(20px,5.7vw,25px);font-weight:720}
+    .nocturne-wallet-hero__copy p{max-width:42ch;font-size:12px}
+    .nocturne-wallet-hero__balance{width:100%;min-width:0;padding:12px 44px 12px 14px;border-radius:14px}
+    .nocturne-wallet-hero__balance strong{font-size:17px}
+    .nocturne-wallet-history{margin-top:17px;padding:13px;border-radius:18px}
+    .nocturne-wallet-history__heading{align-items:center;gap:8px;margin-bottom:12px}
+    .nocturne-wallet-history__heading h2{font-size:15px;font-weight:750}
+    .nocturne-wallet-history__heading>a{flex:0 0 auto;padding:8px 10px;font-size:10.5px}
+    .nocturne-wallet-history__row{display:grid;grid-template-columns:38px minmax(0,1fr);align-items:center;gap:9px 10px;padding:12px;border-radius:14px}
+    .nocturne-wallet-history__icon{width:38px;height:38px;flex-basis:38px;border-radius:11px;font-size:16px}
+    .nocturne-wallet-history__mid{grid-column:2;grid-row:1;flex:initial;min-width:0;gap:4px}
+    .nocturne-wallet-history__mid strong{font-size:12.5px}
+    .nocturne-wallet-history__mid small{font-size:9.5px}
+    .nocturne-wallet-history__end{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 8px;align-items:center;width:100%;margin:0}
+    .nocturne-wallet-history__amount{overflow:hidden;font-size:13px;text-overflow:ellipsis}
+    .nocturne-wallet-history__chip{justify-self:end;padding:5px 8px;font-size:9.5px}
+    .nocturne-wallet-history__time{grid-column:1/-1;justify-self:end;font-size:10px}
     .nocturne-wallet-switch__opt{min-height:76px;padding:10px}
     .nocturne-vendor-tools{flex-direction:column}.nocturne-vendor-tools select{min-height:42px}.nocturne-vendor-buy{grid-template-columns:1fr}.nocturne-vendor-buy button{width:100%}
     .nocturne-wallet-reveal{flex-direction:column;align-items:stretch;text-align:center}
     .nocturne-wallet-reveal__qr{justify-self:center;margin:0 auto}
     .nocturne-wallet-footrow{flex-direction:column;gap:10px}
-    .nocturne-wallet-history__row{align-items:flex-start}
-    .nocturne-wallet-history__mid{flex-basis:100%;order:1}
-    .nocturne-wallet-history__end{flex-basis:100%;order:2;margin-left:56px;flex-wrap:wrap}
+    .nocturne-wallet-history__row{align-items:center}
     .nocturne-wallet-history__time{display:inline-flex}
 }
+@media(max-width:359.98px){.nocturne-wallet-history{padding:10px}.nocturne-wallet-history__row{padding:10px;gap:8px}.nocturne-wallet-history__end{grid-template-columns:minmax(0,1fr);justify-items:start}.nocturne-wallet-history__chip,.nocturne-wallet-history__time{grid-column:1;justify-self:start}.nocturne-wallet-hero{padding:14px}}
 </style>
 @endpush
 
