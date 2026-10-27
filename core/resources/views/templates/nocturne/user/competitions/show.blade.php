@@ -17,7 +17,8 @@
             <span>{{ __($competition->title) }}</span>
         </div>
 
-        <section class="nocturne-comp-hero" @if($competition->banner_image) data-has-image @endif style="--comp-accent:{{ $accent }}@if($competition->banner_image);background-image:url('{{ getImage('assets/images/competitions/' . $competition->banner_image, '1200x600') }}')@endif">
+        <section class="nocturne-comp-hero" style="--comp-accent:{{ $accent }}">
+            @if($competition->banner_image)<div class="nocturne-comp-hero__art" aria-hidden="true" style="background-image:url('{{ getImage('assets/images/competitions/' . $competition->banner_image, '1200x600') }}')"></div>@endif
             <div class="nocturne-comp-hero__shade"></div>
             <div class="nocturne-comp-hero__glow"></div>
             <div class="nocturne-comp-hero__copy">
@@ -49,15 +50,15 @@
                         <tbody>
                             @forelse ($standings as $row)
                                 <tr @class(['is-me' => auth()->check() && auth()->id() === $row->user_id, 'is-dq' => $row->disqualified, 'is-top' => $row->rank <= 3])>
-                                    <td class="is-rank">@if($row->rank <= 3)<span class="nocturne-comp-medal">{{ $medals[$row->rank - 1] }}</span>@else<span class="nocturne-comp-rank-num">#{{ $row->rank }}</span>@endif</td>
-                                    <td>
+                                    <td class="is-rank" data-label="{{ __('Rank') }}">@if($row->rank <= 3)<span class="nocturne-comp-medal">{{ $medals[$row->rank - 1] }}</span>@else<span class="nocturne-comp-rank-num">#{{ $row->rank }}</span>@endif</td>
+                                    <td class="is-player" data-label="{{ __('Player') }}">
                                         <span class="nocturne-comp-player"><span class="nocturne-comp-player__avatar">{{ strtoupper(substr($row->username, 0, 1)) }}</span>{{ $row->username }}</span>
                                         @if($row->disqualified)<span class="nocturne-comp-dq">@lang('Disqualified')</span>@endif
                                     </td>
-                                    <td class="is-score">{{ rtrim(rtrim(number_format((float) $row->metric_value, 4), '0'), '.') }}{{ $metricSuffix[$metricLabel] ?? '' }}</td>
+                                    <td class="is-score" data-label="{{ __('Score') }}">{{ rtrim(rtrim(number_format((float) $row->metric_value, 4), '0'), '.') }}{{ $metricSuffix[$metricLabel] ?? '' }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="3" class="nocturne-comp-empty-row"><i class="ph-fill ph-confetti"></i>@lang('No qualifying entries yet - be the first.')</td></tr>
+                                <tr class="is-empty"><td colspan="3" class="nocturne-comp-empty-row"><i class="ph-fill ph-confetti"></i>@lang('No qualifying entries yet - be the first.')</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -157,6 +158,24 @@
 .nocturne-comp-flag-btn{width:100%;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-weight:800;cursor:pointer;transition:background .15s ease}
 .nocturne-comp-flag-btn:hover{background:rgba(255,255,255,.12)}
 @media(max-width:575px){.nocturne-comp-timer__units{gap:6px}.nocturne-comp-timer__unit{min-width:0;flex:1;padding:7px 4px}.nocturne-comp-timer__unit b{font-size:17px}}
+.nocturne-competition-page{grid-template-columns:minmax(0,1fr);min-width:0}
+.nocturne-comp-hero{isolation:isolate;min-height:clamp(250px,32vw,380px);border-radius:22px;background:radial-gradient(ellipse at 90% 15%,color-mix(in srgb,var(--comp-accent) 16%,transparent),transparent 42%),linear-gradient(130deg,#171d37,#0d1224);box-shadow:0 18px 45px rgba(0,0,0,.16)}
+.nocturne-comp-hero__art{position:absolute;z-index:-2;inset:0 0 0 auto;width:min(70%,900px);background-size:cover;background-position:center 42%;opacity:.32;mask-image:linear-gradient(90deg,transparent 0%,#000 35%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 35%)}
+.nocturne-comp-hero__shade{z-index:-1;background:linear-gradient(90deg,#12172c 0%,rgba(18,23,44,.97) 36%,rgba(13,18,36,.55) 100%),linear-gradient(0deg,rgba(8,11,22,.45),transparent 60%)}
+.nocturne-comp-hero__copy{width:min(100%,780px);padding:clamp(22px,4vw,42px)}
+.nocturne-comp-hero__copy h1{max-width:760px;font-size:clamp(25px,3.2vw,38px);font-weight:760;line-height:1.13;letter-spacing:-.035em;text-wrap:balance}
+.nocturne-comp-hero__copy p{max-width:600px;font-size:clamp(13px,1.2vw,15px);line-height:1.65}
+.nocturne-comp-layout{grid-template-columns:minmax(0,1fr) minmax(250px,310px);align-items:start}
+.nocturne-comp-panel h2{font-size:16px;font-weight:720}
+.nocturne-comp-table-wrap,.nocturne-comp-card-box{border-color:rgba(255,255,255,.085);border-radius:17px;background:linear-gradient(145deg,rgba(24,30,54,.86),rgba(15,19,37,.93));box-shadow:0 12px 30px rgba(0,0,0,.12)}
+.nocturne-comp-table{min-width:0;font-size:13px}
+.nocturne-comp-table th{font-size:10px;letter-spacing:.08em}
+.nocturne-comp-card-box h3{font-size:12px;font-weight:750}
+.nocturne-comp-prize-row{font-size:12.5px;color:#abb4cc}
+.nocturne-comp-prize-row b{font-size:13px;font-weight:700}
+@media(max-width:900px){.nocturne-comp-layout{grid-template-columns:minmax(0,1fr)}.nocturne-comp-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}.nocturne-comp-card-box{margin-bottom:0}}
+@media(max-width:575px){.nocturne-competition-page{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.nocturne-comp-hero{min-height:0;margin-top:10px;border-radius:18px}.nocturne-comp-hero__art{inset:0;width:100%;opacity:.18;mask-image:linear-gradient(90deg,transparent 0%,#000 76%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 76%)}.nocturne-comp-hero__shade{background:linear-gradient(90deg,rgba(15,20,39,.97),rgba(15,20,39,.82)),linear-gradient(0deg,rgba(8,11,22,.3),transparent)}.nocturne-comp-hero__copy{padding:20px 17px}.nocturne-comp-hero__copy h1{font-size:clamp(23px,7vw,30px)}.nocturne-comp-hero__copy p{margin-bottom:15px;font-size:13px}.nocturne-comp-timer__units{gap:6px}.nocturne-comp-timer__unit{min-width:0;flex:1;padding:8px 4px;background:rgba(11,15,30,.83)}.nocturne-comp-timer__unit b{font-size:18px}.nocturne-comp-layout{gap:18px;margin-top:20px}.nocturne-comp-table-wrap{overflow:visible;border:0;background:transparent;box-shadow:none}.nocturne-comp-table,.nocturne-comp-table tbody{display:block;width:100%}.nocturne-comp-table thead{display:none}.nocturne-comp-table tbody tr:not(.is-empty){display:grid;grid-template-columns:48px minmax(0,1fr);gap:0 10px;margin-bottom:8px;padding:9px 12px;border:1px solid rgba(255,255,255,.075);border-radius:14px;background:linear-gradient(145deg,rgba(24,30,54,.9),rgba(15,19,37,.95))}.nocturne-comp-table td{min-width:0;padding:5px 0;border:0;white-space:normal}.nocturne-comp-table td.is-rank{grid-row:1 / span 2;align-self:center;width:auto}.nocturne-comp-table td.is-player,.nocturne-comp-table td.is-score{grid-column:2}.nocturne-comp-table td.is-score{text-align:left;color:#b9c2d8}.nocturne-comp-table td.is-score:before{content:attr(data-label) ": ";color:#8792b1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:650}.nocturne-comp-table tbody tr.is-empty{display:block}.nocturne-comp-empty-row{display:block!important}.nocturne-comp-side{grid-template-columns:1fr}.nocturne-comp-card-box{padding:15px}.nocturne-comp-rules{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.nocturne-comp-flag-btn{transition:none}}
 </style>
 
 <script>
