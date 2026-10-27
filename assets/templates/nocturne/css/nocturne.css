@@ -2394,3 +2394,17 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     .nocturne-live-table,.nocturne-live-table__art>img,.nocturne-live-tables__controls>a,.nocturne-live-table__button { transition:none; }
     .nocturne-live-tables__rail { scroll-behavior:auto; }
 }
+
+/* The base theme and a few page components set button label colors with
+   !important. Keep every action label white on hover/focus, after those rules. */
+.nocturne-shell :is(.btn, .btn--base, .btn--gradient, .btn--gradient-success, .btn--primary, .btn--success,
+    .nocturne-deposit, .nocturne-login, .nocturne-user-dropdown__deposit,
+    .nocturne-support-new, .nocturne-support-submit, .nocturne-balance-card__actions a:first-child,
+    .nocturne-play-btn--play, .nocturne-footer-cta__btn, .newsletter__btn, .nocturne-sponsor-cta,
+    .nocturne-promotions-hero__cta, .table-create-button, .table-join-button,
+    .nocturne-business-promo-submit, .nocturne-winxpay-card__deposit, .nc-confirm__btn--ok,
+    .nocturne-about-license-card__expand, .nocturne-about-license-dialog__close):is(:hover, :focus, :focus-visible),
+.app-install__action:is(:hover, :focus, :focus-visible) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
