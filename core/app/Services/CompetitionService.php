@@ -233,7 +233,7 @@ class CompetitionService
     public function previewRanking(Competition $competition): array
     {
         return match ($competition->type) {
-            Competition::TYPE_WAGER_RACE => ['rows' => $this->rankWagerRace($competition), 'metric_label' => 'usd'],
+            Competition::TYPE_WAGER_RACE => ['rows' => $this->rankWagerRace($competition), 'metric_label' => gs('coin_mode') ? 'coins' : 'usd'],
             Competition::TYPE_TABLE_LEAGUE => ['rows' => $this->rankTableLeague($competition), 'metric_label' => 'points'],
             Competition::TYPE_BIGGEST_WIN => ['rows' => $this->rankBiggestWin($competition), 'metric_label' => 'multiplier'],
             Competition::TYPE_LUCKY_DRAW => ['rows' => $this->previewTickets($competition), 'metric_label' => 'tickets'],
@@ -291,6 +291,11 @@ class CompetitionService
 
         if ($competition->min_games) {
             $rows = $rows->filter(fn ($row) => $row->games_played >= $competition->min_games)->values();
+        }
+
+        if (gs('coin_mode')) {
+            $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+            $rows->each(fn ($row) => $row->metric_value = bcdiv((string) $row->metric_value, $peg, 8));
         }
 
         return $rows->sort(function ($a, $b) {

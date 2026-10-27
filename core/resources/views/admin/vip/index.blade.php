@@ -30,10 +30,10 @@
                                                 <span>{{ __($tier->name) }} @if ($tier->badge) <span class="badge badge--dark">{{ __($tier->badge) }}</span> @endif</span>
                                             </div>
                                         </td>
-                                        <td>{{ showAmount($tier->min_wagered) }}</td>
-                                        <td>{{ showAmount($tier->bonus_amount) }}</td>
+                                        <td>{{ formatVipThreshold($tier->min_wagered) }}</td>
+                                        <td>{{ formatCoinOrUsd($tier->bonus_amount) }}</td>
                                         <td>{{ showAmount($tier->rakeback_percent, currencyFormat: false) }}%</td>
-                                        <td>{{ $tier->max_bet ? showAmount($tier->max_bet) : '-' }}</td>
+                                        <td>{{ $tier->max_bet ? formatCoinOrUsd($tier->max_bet) : '-' }}</td>
                                         <td>@php echo $tier->statusBadge @endphp</td>
                                         <td>
                                             <div class="button--group">

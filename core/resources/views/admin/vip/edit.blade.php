@@ -43,7 +43,7 @@
                                     <label>@lang('Minimum Lifetime Wagered to Unlock')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="min_wagered" value="{{ old('min_wagered', $tier->min_wagered) }}" required>
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -51,8 +51,8 @@
                                 <div class="form-group">
                                     <label>@lang('One-time Bonus on Unlock')</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" class="form-control" name="bonus_amount" value="{{ old('bonus_amount', $tier->bonus_amount) }}" required>
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <input type="number" step="any" min="0" class="form-control" name="bonus_amount" value="{{ old('bonus_amount', gs('coin_mode') ? bcdiv((string) $tier->bonus_amount, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $tier->bonus_amount) }}" required>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -70,8 +70,8 @@
                                 <div class="form-group">
                                     <label>@lang('Max Bet Limit (optional)')</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" class="form-control" name="max_bet" value="{{ old('max_bet', $tier->max_bet) }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <input type="number" step="any" min="0" class="form-control" name="max_bet" value="{{ old('max_bet', gs('coin_mode') && $tier->max_bet ? bcdiv((string) $tier->max_bet, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $tier->max_bet) }}">
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -79,8 +79,8 @@
                                 <div class="form-group">
                                     <label>@lang('Daily Free Reward')</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" class="form-control" name="daily_reward_amount" value="{{ old('daily_reward_amount', $tier->daily_reward_amount) }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <input type="number" step="any" min="0" class="form-control" name="daily_reward_amount" value="{{ old('daily_reward_amount', gs('coin_mode') ? bcdiv((string) $tier->daily_reward_amount, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $tier->daily_reward_amount) }}">
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -88,8 +88,8 @@
                                 <div class="form-group">
                                     <label>@lang('Birthday Bonus')</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" class="form-control" name="birthday_bonus_amount" value="{{ old('birthday_bonus_amount', $tier->birthday_bonus_amount) }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <input type="number" step="any" min="0" class="form-control" name="birthday_bonus_amount" value="{{ old('birthday_bonus_amount', gs('coin_mode') ? bcdiv((string) $tier->birthday_bonus_amount, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $tier->birthday_bonus_amount) }}">
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>

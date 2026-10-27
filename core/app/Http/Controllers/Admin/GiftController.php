@@ -46,8 +46,9 @@ class GiftController extends Controller
         $gift              = new Gift();
         $gift->name        = $request->name;
         $gift->slug        = $this->uniqueSlug($request->name);
-        $gift->buy_price   = $request->buy_price;
-        $gift->cashout_value = $request->cashout_value;
+        [$buyPrice, $cashoutValue] = $this->storedPrices($request);
+        $gift->buy_price   = $buyPrice;
+        $gift->cashout_value = $cashoutValue;
         $gift->sort_order  = $request->sort_order ?: 0;
         $gift->status      = 1;
 
@@ -86,8 +87,9 @@ class GiftController extends Controller
         ]);
 
         $gift->name          = $request->name;
-        $gift->buy_price     = $request->buy_price;
-        $gift->cashout_value = $request->cashout_value;
+        [$buyPrice, $cashoutValue] = $this->storedPrices($request);
+        $gift->buy_price     = $buyPrice;
+        $gift->cashout_value = $cashoutValue;
         $gift->sort_order    = $request->sort_order ?: 0;
 
         if ($request->hasFile('image')) {
@@ -127,5 +129,18 @@ class GiftController extends Controller
             $slug = $base . '-' . (++$i);
         }
         return $slug;
+    }
+
+    /** Gift rows keep their legacy USD-peg columns for compatibility. Admins enter the
+     * operational unit shown to users; coin prices are converted through the fixed peg. */
+    private function storedPrices(Request $request): array
+    {
+        if (!gs('coin_mode')) return [$request->buy_price, $request->cashout_value];
+
+        $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+        return [
+            bcmul((string) $request->buy_price, $peg, 8),
+            bcmul((string) $request->cashout_value, $peg, 8),
+        ];
     }
 }

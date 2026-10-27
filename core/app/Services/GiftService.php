@@ -9,6 +9,7 @@ use App\Models\TableGameMessage;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserGiftInventory;
+use App\Services\CoinLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -28,22 +29,36 @@ class GiftService
 
         return DB::transaction(function () use ($user, $gift, $quantity) {
             $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            $unitPrice = $this->quoteInWalletCurrency((string) $gift->buy_price, $lockedUser);
+            $coinMode = (bool) gs('coin_mode');
+            $unitPrice = $coinMode
+                ? $this->quoteInCoins((string) $gift->buy_price)
+                : $this->quoteInWalletCurrency((string) $gift->buy_price, $lockedUser);
             $totalPrice = bcmul($unitPrice, (string) $quantity, 8);
-            if (bccomp((string) $lockedUser->balance, $totalPrice, 8) < 0) {
-                throw new InvalidArgumentException('Your available balance is too low to buy this gift.');
+            if (!$coinMode) {
+                if (bccomp((string) $lockedUser->balance, $totalPrice, 8) < 0) {
+                    throw new InvalidArgumentException('Your available balance is too low to buy this gift.');
+                }
+                $lockedUser->balance = bcsub((string) $lockedUser->balance, $totalPrice, 8);
+                $lockedUser->save();
+                $this->ledger($lockedUser, $totalPrice, '-', 'gift_purchase', "Bought {$quantity}x {$gift->name}");
             }
-            $lockedUser->balance = bcsub((string) $lockedUser->balance, $totalPrice, 8);
-            $lockedUser->save();
-            $this->ledger($lockedUser, $totalPrice, '-', 'gift_purchase', "Bought {$quantity}x {$gift->name}");
 
             $inventory = UserGiftInventory::firstOrCreate(['user_id' => $lockedUser->id, 'gift_id' => $gift->id], ['quantity' => 0]);
             $inventory->increment('quantity', $quantity);
 
-            GiftTransaction::create([
+            $giftTransaction = GiftTransaction::create([
                 'type' => 'purchase', 'gift_id' => $gift->id, 'from_user_id' => null, 'to_user_id' => $lockedUser->id,
                 'quantity' => $quantity, 'unit_buy_price' => $gift->buy_price, 'unit_cashout_value' => $gift->cashout_value,
             ]);
+
+            if ($coinMode) {
+                app(CoinLedger::class)->debit(
+                    'user', $lockedUser->id, $totalPrice,
+                    "Gift purchase: {$quantity}x {$gift->name}",
+                    'gift_purchase:' . $giftTransaction->id,
+                    'GiftTransaction', $giftTransaction->id, 'user', $lockedUser->id
+                );
+            }
 
             return $inventory->fresh();
         });
@@ -97,16 +112,30 @@ class GiftService
             $inventory->decrement('quantity', $quantity);
 
             $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-            $unitValue = $this->quoteInWalletCurrency((string) $gift->cashout_value, $lockedUser);
+            $coinMode = (bool) gs('coin_mode');
+            $unitValue = $coinMode
+                ? $this->quoteInCoins((string) $gift->cashout_value)
+                : $this->quoteInWalletCurrency((string) $gift->cashout_value, $lockedUser);
             $totalValue = bcmul($unitValue, (string) $quantity, 8);
-            $lockedUser->balance = bcadd((string) $lockedUser->balance, $totalValue, 8);
-            $lockedUser->save();
-            $this->ledger($lockedUser, $totalValue, '+', 'gift_cashout', "Cashed out {$quantity}x {$gift->name}");
+            if (!$coinMode) {
+                $lockedUser->balance = bcadd((string) $lockedUser->balance, $totalValue, 8);
+                $lockedUser->save();
+                $this->ledger($lockedUser, $totalValue, '+', 'gift_cashout', "Cashed out {$quantity}x {$gift->name}");
+            }
 
-            GiftTransaction::create([
+            $giftTransaction = GiftTransaction::create([
                 'type' => 'cashout', 'gift_id' => $gift->id, 'from_user_id' => $user->id, 'to_user_id' => null,
                 'quantity' => $quantity, 'unit_buy_price' => $gift->buy_price, 'unit_cashout_value' => $gift->cashout_value,
             ]);
+
+            if ($coinMode && bccomp($totalValue, '0', 8) > 0) {
+                app(CoinLedger::class)->credit(
+                    'user', $lockedUser->id, $totalValue,
+                    "Gift cash-out: {$quantity}x {$gift->name}",
+                    'gift_cashout:' . $giftTransaction->id,
+                    'GiftTransaction', $giftTransaction->id, 'user', $lockedUser->id
+                );
+            }
 
             return $inventory->fresh();
         });
@@ -134,6 +163,17 @@ class GiftService
         $halfUnit = '0.' . str_repeat('0', $decimals) . '5';
         $rounded = bcadd($walletAmount, $halfUnit, max(12, $decimals + 1));
         return bcadd($rounded, '0', $decimals);
+    }
+
+    /** Gift prices remain stored as their legacy USD peg equivalent; in coin mode they are
+     * quoted and settled as whole coins, matching the catalogue's coin display. */
+    private function quoteInCoins(string $usdAmount): string
+    {
+        $peg = (string) (gs('coin_peg_usd') ?: '0.01');
+        if (bccomp($peg, '0', 8) <= 0) throw new InvalidArgumentException('Coin pricing is not configured.');
+        $coins = bcdiv($usdAmount, $peg, 0);
+        if (bccomp($coins, '0', 0) <= 0) throw new InvalidArgumentException('This gift has no whole-coin price configured.');
+        return $coins;
     }
 
     private function ledger(User $user, string $amount, string $type, string $remark, string $details): void

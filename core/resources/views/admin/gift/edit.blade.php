@@ -27,20 +27,20 @@
                                 <div class="form-group">
                                     <label>@lang('Buy Price')</label>
                                     <div class="input-group">
-                                        <div class="input-group-text">$</div>
-                                        <input type="number" step="any" min="0.00000001" class="form-control" name="buy_price" value="{{ old('buy_price', $gift->buy_price) }}" required>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : '$' }}</div>
+                                        <input type="number" step="any" min="0.00000001" class="form-control" name="buy_price" value="{{ old('buy_price', gs('coin_mode') ? bcdiv((string) $gift->buy_price, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $gift->buy_price) }}" required>
                                     </div>
-                                    <small class="text-muted">@lang('Priced in USD - converted to each user\'s own wallet currency automatically.')</small>
+                                    <small class="text-muted">{{ gs('coin_mode') ? __('Users pay this price from their available coin wallet.') : __('Priced in USD - converted to each user\'s own wallet currency automatically.') }}</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Cash-out Value')</label>
                                     <div class="input-group">
-                                        <div class="input-group-text">$</div>
-                                        <input type="number" step="any" min="0" class="form-control" name="cashout_value" value="{{ old('cashout_value', $gift->cashout_value) }}" required>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : '$' }}</div>
+                                        <input type="number" step="any" min="0" class="form-control" name="cashout_value" value="{{ old('cashout_value', gs('coin_mode') ? bcdiv((string) $gift->cashout_value, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $gift->cashout_value) }}" required>
                                     </div>
-                                    <small class="text-muted">@lang('Must not exceed the buy price.')</small>
+                                    <small class="text-muted">{{ gs('coin_mode') ? __('Coins returned to the coin wallet on cash-out; must not exceed the buy price.') : __('Must not exceed the buy price.') }}</small>
                                 </div>
                             </div>
                             <div class="col-md-12">

@@ -32,7 +32,7 @@
                                     <label>@lang('Minimum Lifetime Wagered to Unlock')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="min_wagered" value="{{ old('min_wagered', 0) }}" required>
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -60,7 +60,7 @@
                                     <label>@lang('Max Bet Limit (optional)')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="max_bet" value="{{ old('max_bet') }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -69,7 +69,7 @@
                                     <label>@lang('Daily Free Reward')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="daily_reward_amount" value="{{ old('daily_reward_amount', 0) }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -78,7 +78,7 @@
                                     <label>@lang('Birthday Bonus')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="birthday_bonus_amount" value="{{ old('birthday_bonus_amount', 0) }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -97,7 +97,7 @@
                                     <label>@lang('Monthly Withdrawal Limit (optional)')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="monthly_withdrawal_limit" value="{{ old('monthly_withdrawal_limit') }}">
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>

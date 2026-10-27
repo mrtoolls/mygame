@@ -80,9 +80,9 @@
 
         <div class="col-md-4">
             <div class="form-group">
-                <label>@lang('Minimum Stake (USD)')</label>
-                <input type="number" step="0.01" min="0" class="form-control" name="min_bet_usd" value="{{ old('min_bet_usd', $competition->min_bet_usd) }}">
-                <small class="text-muted">@lang('Games below this stake, converted via the locked table rate, are excluded.')</small>
+                <label>{{ gs('coin_mode') ? __('Minimum Stake (Coins)') : __('Minimum Stake (USD)') }}</label>
+                <input type="number" step="{{ gs('coin_mode') ? '1' : '0.01' }}" min="0" class="form-control" name="{{ gs('coin_mode') ? 'min_bet_coins' : 'min_bet_usd' }}" value="{{ gs('coin_mode') ? old('min_bet_coins', $competition->min_bet_usd !== null ? bcdiv((string) $competition->min_bet_usd, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : '') : old('min_bet_usd', $competition->min_bet_usd) }}">
+                <small class="text-muted">{{ gs('coin_mode') ? __('Games below this coin stake are excluded.') : __('Games below this stake, converted via the locked table rate, are excluded.') }}</small>
             </div>
         </div>
         <div class="col-md-4">
@@ -122,8 +122,8 @@
         <div class="col-md-12"><p class="text-muted mb-2">@lang('Lucky Draw settings')</p></div>
         <div class="col-md-6">
             <div class="form-group">
-                <label>@lang('USD Per Ticket')</label>
-                <input type="number" step="0.01" min="0" class="form-control" name="ticket_usd_per_ticket" value="{{ old('ticket_usd_per_ticket', $competition->ticket_usd_per_ticket) }}">
+                <label>{{ gs('coin_mode') ? __('Coins Per Ticket') : __('USD Per Ticket') }}</label>
+                <input type="number" step="{{ gs('coin_mode') ? '1' : '0.01' }}" min="0" class="form-control" name="{{ gs('coin_mode') ? 'ticket_coins_per_ticket' : 'ticket_usd_per_ticket' }}" value="{{ gs('coin_mode') ? old('ticket_coins_per_ticket', $competition->ticket_usd_per_ticket ? bcdiv((string) $competition->ticket_usd_per_ticket, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : '') : old('ticket_usd_per_ticket', $competition->ticket_usd_per_ticket) }}">
             </div>
         </div>
         <div class="col-md-6">
@@ -166,8 +166,8 @@
     <div class="col-md-12"><hr><h6 class="mb-3">@lang('Prizes')</h6></div>
     <div class="col-md-12">
         <div class="form-group">
-            <label>@lang('One prize per line: rank,amount_usd')</label>
-            <textarea class="form-control" name="prizes_raw" rows="5" placeholder="1,500&#10;2,250&#10;3,100" {{ $competition->exists && $competition->hasAnyPaidResult() ? 'disabled' : '' }}>{{ old('prizes_raw', $competition->exists ? $competition->prizes->map(fn($p) => $p->rank . ',' . $p->amount_usd)->implode("\n") : '') }}</textarea>
+            <label>{{ gs('coin_mode') ? __('One prize per line: rank,coin amount') : __('One prize per line: rank,amount in USD') }}</label>
+            <textarea class="form-control" name="prizes_raw" rows="5" placeholder="1,500&#10;2,250&#10;3,100" {{ $competition->exists && $competition->hasAnyPaidResult() ? 'disabled' : '' }}>{{ old('prizes_raw', $competition->exists ? $competition->prizes->map(fn($p) => $p->rank . ',' . (gs('coin_mode') ? bcdiv((string) $p->amount_usd, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : $p->amount_usd))->implode("\n") : '') }}</textarea>
             @if ($competition->exists && $competition->hasAnyPaidResult())
                 <small class="text-warning">@lang('Prizes are locked - at least one has already been paid.')</small>
             @else

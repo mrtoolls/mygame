@@ -244,17 +244,18 @@ class CompetitionController extends Controller
         ];
 
         if ($isCreate || !$competition?->isScoringLocked()) {
+            $coinMode = (bool) gs('coin_mode');
             $rules = array_merge($rules, [
                 'type' => 'required|in:wager_race,biggest_win,lucky_draw,table_league',
                 'start_at' => 'required|date',
                 'end_at' => 'required|date|after:start_at',
-                'min_bet_usd' => 'nullable|numeric|min:0',
+                ($coinMode ? 'min_bet_coins' : 'min_bet_usd') => 'nullable|numeric|min:0',
                 'eligible_games' => 'nullable|string',
                 'min_account_age_days' => 'nullable|integer|min:0',
                 'min_games' => 'nullable|integer|min:0',
                 'min_distinct_opponents' => 'nullable|integer|min:0',
                 'max_games_per_opponent_pair' => 'nullable|integer|min:0',
-                'ticket_usd_per_ticket' => 'nullable|numeric|min:0',
+                ($coinMode ? 'ticket_coins_per_ticket' : 'ticket_usd_per_ticket') => 'nullable|numeric|min:0',
                 'max_tickets_per_user' => 'nullable|integer|min:0',
                 'points_win' => 'nullable|numeric',
                 'points_draw' => 'nullable|numeric',
@@ -279,10 +280,14 @@ class CompetitionController extends Controller
         }
 
         if ($isCreate || !$competition->isScoringLocked()) {
+            $coinMode = (bool) gs('coin_mode');
+            $peg = (string) (gs('coin_peg_usd') ?: '0.01');
             $competition->type = $request->type;
             $competition->start_at = $request->start_at;
             $competition->end_at = $request->end_at;
-            $competition->min_bet_usd = $request->min_bet_usd;
+            $competition->min_bet_usd = $coinMode && $request->filled('min_bet_coins')
+                ? bcmul((string) $request->min_bet_coins, $peg, 8)
+                : $request->min_bet_usd;
             $competition->eligible_games = $request->filled('eligible_games')
                 ? array_values(array_filter(array_map('trim', explode(',', $request->eligible_games))))
                 : null;
@@ -290,7 +295,9 @@ class CompetitionController extends Controller
             $competition->min_games = $request->min_games;
             $competition->min_distinct_opponents = $request->min_distinct_opponents;
             $competition->max_games_per_opponent_pair = $request->max_games_per_opponent_pair;
-            $competition->ticket_usd_per_ticket = $request->ticket_usd_per_ticket;
+            $competition->ticket_usd_per_ticket = $coinMode && $request->filled('ticket_coins_per_ticket')
+                ? bcmul((string) $request->ticket_coins_per_ticket, $peg, 8)
+                : $request->ticket_usd_per_ticket;
             $competition->max_tickets_per_user = $request->max_tickets_per_user;
 
             if ($request->type === Competition::TYPE_TABLE_LEAGUE) {
@@ -329,10 +336,14 @@ class CompetitionController extends Controller
             [$rank, $amount] = array_map('trim', array_pad(explode(',', $line), 2, null));
             if (!$rank || !is_numeric($rank) || !is_numeric($amount)) continue;
 
+            $coinMode = (bool) gs('coin_mode');
+            $storedAmount = $coinMode
+                ? bcmul((string) $amount, (string) (gs('coin_peg_usd') ?: '0.01'), 8)
+                : (string) $amount;
             CompetitionPrize::create([
                 'competition_id' => $competition->id,
                 'rank' => (int) $rank,
-                'amount_usd' => (float) $amount,
+                'amount_usd' => $storedAmount,
             ]);
         }
     }

@@ -18,7 +18,7 @@
                                     <th>@lang('Rank')</th>
                                     <th>@lang('Player')</th>
                                     <th>@lang('Metric')</th>
-                                    <th>@lang('Prize (USD)')</th>
+                                    <th>{{ gs('coin_mode') ? __('Prize (Coins)') : __('Prize (USD)') }}</th>
                                     <th>@lang('Payout')</th>
                                     <th>@lang('Action')</th>
                                 </tr>
@@ -35,7 +35,7 @@
                                             @endif
                                         </td>
                                         <td>{{ rtrim(rtrim(number_format((float) $result->metric_value, 4), '0'), '.') }} {{ $result->metric_label }}</td>
-                                        <td>{{ $result->prize_amount_usd ? number_format($result->prize_amount_usd, 2) : '-' }}</td>
+                                        <td>{{ $result->prize_amount_usd ? (gs('coin_mode') ? formatCoinOrUsd($result->prize_amount_usd) : number_format($result->prize_amount_usd, 2)) : '-' }}</td>
                                         <td>
                                             @if ($result->isPaid())
                                                 <span class="badge badge--success">@lang('Paid')</span>
@@ -63,6 +63,9 @@
                                                     @csrf
                                                     <div class="modal-header"><h5 class="modal-title">@lang('Mark Prize Paid')</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                                                     <div class="modal-body">
+                                                        @if(gs('coin_mode'))
+                                                            <p class="text-muted">{{ __('This will credit :amount to the winner’s coin wallet.', ['amount' => formatCoinOrUsd($result->prize_amount_usd)]) }}</p>
+                                                        @else
                                                         <p class="text-muted">@lang('This only records the conversion and marks the prize paid. Send the actual money to the player manually.')</p>
                                                         <div class="form-group">
                                                             <label>@lang('Payout Currency')</label>
@@ -80,8 +83,9 @@
                                                             <label>@lang('Reference (optional)')</label>
                                                             <input type="text" class="form-control" name="source_ref" maxlength="191">
                                                         </div>
+                                                        @endif
                                                     </div>
-                                                    <div class="modal-footer"><button type="submit" class="btn btn--primary">@lang('Confirm')</button></div>
+                                                    <div class="modal-footer"><button type="submit" class="btn btn--primary">{{ gs('coin_mode') ? __('Pay Coins') : __('Confirm') }}</button></div>
                                                 </form>
                                             </div>
                                         </div>
