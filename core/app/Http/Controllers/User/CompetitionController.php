@@ -7,6 +7,7 @@ use App\Models\Competition;
 use App\Models\CompetitionFlag;
 use App\Models\User;
 use App\Services\CompetitionService;
+use App\Support\CompetitionRichText;
 use Illuminate\Http\Request;
 
 class CompetitionController extends Controller
@@ -26,6 +27,8 @@ class CompetitionController extends Controller
     {
         $competition = Competition::where('slug', $slug)->firstOrFail();
         $pageTitle = $competition->title;
+        $safeDescription = CompetitionRichText::sanitize($competition->description);
+        $safeRules = CompetitionRichText::sanitize($competition->rules);
 
         if (in_array($competition->status, [Competition::STATUS_FINALIZED, Competition::STATUS_PAID], true)) {
             $standings = $competition->results()->with('user:id,username')->orderBy('rank')->limit(50)->get()
@@ -48,7 +51,7 @@ class CompetitionController extends Controller
         $prizes = $competition->prizes()->orderBy('rank')->get();
         $myResult = auth()->check() ? $competition->results()->where('user_id', auth()->id())->first() : null;
 
-        return view('Template::user.competitions.show', compact('pageTitle', 'competition', 'standings', 'metricLabel', 'prizes', 'myResult'));
+        return view('Template::user.competitions.show', compact('pageTitle', 'competition', 'standings', 'metricLabel', 'prizes', 'myResult', 'safeDescription', 'safeRules'));
     }
 
     public function flag(Request $request, string $slug)

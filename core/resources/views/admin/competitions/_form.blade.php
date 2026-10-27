@@ -25,13 +25,15 @@
     <div class="col-md-12">
         <div class="form-group">
             <label>@lang('Description')</label>
-            <textarea class="form-control" name="description" rows="2" maxlength="2000">{{ old('description', $competition->description) }}</textarea>
+            <textarea class="form-control nicEdit" name="description" rows="5" maxlength="6000">{{ old('description', $competition->description) }}</textarea>
+            <small class="text-muted">@lang('Use the formatting toolbar for emphasis, headings, lists and links. Unsafe markup is removed automatically.')</small>
         </div>
     </div>
     <div class="col-md-12">
         <div class="form-group">
             <label>@lang('Rules (shown to players)')</label>
-            <textarea class="form-control" name="rules" rows="3" maxlength="5000">{{ old('rules', $competition->rules) }}</textarea>
+            <textarea class="form-control nicEdit" name="rules" rows="8" maxlength="16000">{{ old('rules', $competition->rules) }}</textarea>
+            <small class="text-muted">@lang('Formatting is preserved on the competition page. Scripts, embeds and unsafe markup are not allowed.')</small>
         </div>
     </div>
     <div class="col-md-12">

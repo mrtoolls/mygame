@@ -3,6 +3,7 @@
     $typeIcons = ['wager_race' => 'ph-fill ph-flame', 'biggest_win' => 'ph-fill ph-trophy', 'lucky_draw' => 'ph-fill ph-ticket', 'table_league' => 'ph-fill ph-chess-king'];
     $typeColors = ['wager_race' => '#ff9a4d', 'biggest_win' => '#ffd166', 'lucky_draw' => '#c58bff', 'table_league' => '#00ef87'];
     $allPool = $live->sum(fn ($c) => $c->prizes->sum('amount_usd')) + $upcoming->sum(fn ($c) => $c->prizes->sum('amount_usd'));
+    $allPoolCoins = (int) bcdiv((string) $allPool, (string) (gs('coin_peg_usd') ?: '0.01'), 0);
 @endphp
 @extends('Template::layouts.master')
 @section('content')
@@ -20,7 +21,7 @@
             <div class="nocturne-comp-hero__stats">
                 <div class="nocturne-comp-hero__stat"><strong>{{ $live->count() }}</strong><span>@lang('Live now')</span></div>
                 <div class="nocturne-comp-hero__stat"><strong>{{ $upcoming->count() }}</strong><span>@lang('Upcoming')</span></div>
-                <div class="nocturne-comp-hero__stat nocturne-comp-hero__stat--accent"><strong>@if (gs('coin_mode')) {{ formatCoinOrUsd($allPool) }} @else ${{ number_format($allPool, 0) }} @endif</strong><span>@lang('Prize pool')</span></div>
+                <div class="nocturne-comp-hero__stat nocturne-comp-hero__stat--accent"><strong>@if (gs('coin_mode'))<span class="nocturne-comp-coin-value"><i class="ph-fill ph-coin" aria-hidden="true"></i><span>{{ number_format($allPoolCoins) }}</span><span>@lang('Coins')</span></span>@else${{ number_format($allPool, 0) }}@endif</strong><span>@lang('Prize pool')</span></div>
             </div>
         </section>
 
@@ -34,6 +35,7 @@
                         @foreach ($list as $competition)
                             @php
                                 $prizePool = $competition->prizes->sum('amount_usd');
+                                $prizeCoins = (int) bcdiv((string) $prizePool, (string) (gs('coin_peg_usd') ?: '0.01'), 0);
                                 $accent = $typeColors[$competition->type] ?? '#00ef87';
                             @endphp
                             <a href="{{ route('user.competitions.show', $competition->slug) }}" class="nocturne-comp-card nocturne-comp-card--{{ $key }}" style="--comp-accent:{{ $accent }}">
@@ -46,13 +48,13 @@
                                     <h3>{{ __($competition->title) }}</h3>
                                     <div class="nocturne-comp-card__foot">
                                         @if ($prizePool > 0)
-                                            <div class="nocturne-comp-card__pool">@if (gs('coin_mode')) {{ formatCoinOrUsd($prizePool) }} @else ${{ number_format($prizePool, 0) }} @endif<small>@lang('prize pool')</small></div>
+                                            <div class="nocturne-comp-card__pool"><small>@lang('Prize pool')</small>@if (gs('coin_mode'))<span class="nocturne-comp-coin-value"><i class="ph-fill ph-coin" aria-hidden="true"></i><span>{{ number_format($prizeCoins) }}</span><span>@lang('Coins')</span></span>@else<span class="nocturne-comp-card__cash">${{ number_format($prizePool, 0) }}</span>@endif</div>
                                         @endif
                                         <div class="nocturne-comp-card__window">
                                             @if ($key === 'upcoming')
-                                                <i class="ph-bold ph-calendar"></i> {{ showDateTime($competition->start_at) }}
+                                                <i class="ph-bold ph-calendar"></i><time datetime="{{ $competition->start_at->toIso8601String() }}" title="{{ showDateTime($competition->start_at) }}">{{ showDateTime($competition->start_at) }}</time>
                                             @else
-                                                <i class="ph-bold ph-clock-countdown"></i> {{ showDateTime($competition->end_at) }}
+                                                <i class="ph-bold ph-clock-countdown"></i><time datetime="{{ $competition->end_at->toIso8601String() }}" title="{{ showDateTime($competition->end_at) }}">{{ showDateTime($competition->end_at) }}</time>
                                             @endif
                                         </div>
                                     </div>
@@ -110,5 +112,25 @@
 .nocturne-comp-card--past{opacity:.92}
 @media(max-width:575px){.nocturne-comp-hero{flex-direction:column;align-items:flex-start;gap:17px;margin-top:10px;padding:19px 16px;border-radius:18px}.nocturne-comp-hero__copy h1{font-size:26px}.nocturne-comp-hero__stats{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.nocturne-comp-hero__stat{min-width:0;padding:9px 5px}.nocturne-comp-hero__stat strong{max-width:100%;font-size:16px}.nocturne-comp-hero__stat span{font-size:8px}.nocturne-comp-section{margin-top:22px}.nocturne-comp-grid{grid-template-columns:minmax(0,1fr);gap:10px}.nocturne-comp-card{display:grid;grid-template-columns:94px minmax(0,1fr);min-height:118px;border-radius:15px}.nocturne-comp-card__banner{height:100%;min-height:118px}.nocturne-comp-card__body{padding:12px;gap:7px}.nocturne-comp-card__body h3{font-size:14px}.nocturne-comp-card__foot{align-items:center;padding-top:7px}.nocturne-comp-card__pool{font-size:14px}.nocturne-comp-card__window{font-size:9px}.nocturne-comp-card__arrow{display:none}}
 @media(prefers-reduced-motion:reduce){.nocturne-comp-card,.nocturne-comp-card__live-badge i{transition:none;animation:none}}
+.nocturne-comp-hero__stats{min-width:0;max-width:100%}
+.nocturne-comp-hero__stat{min-width:0}
+.nocturne-comp-hero__stat strong{max-width:none;overflow:visible;text-overflow:clip;white-space:normal}
+.nocturne-comp-hero__stat--accent{min-width:max-content}
+.nocturne-comp-coin-value{display:inline-flex;align-items:center;justify-content:center;gap:.28em;max-width:100%;white-space:nowrap;font-size:clamp(10px,1.3vw,15px);font-weight:750;letter-spacing:-.025em;line-height:1.2;font-variant-numeric:tabular-nums}
+.nocturne-comp-coin-value>i{flex:0 0 auto;color:#00ef9a;font-size:1.05em}
+.nocturne-comp-coin-value>span{flex:0 0 auto}
+.nocturne-comp-card{min-height:320px}
+.nocturne-comp-card__banner{height:auto;min-height:116px;aspect-ratio:2.45/1;flex:0 0 auto}
+.nocturne-comp-card__body{display:grid;grid-template-rows:auto minmax(2.6em,1fr) auto;gap:10px;padding:15px 16px 16px}
+.nocturne-comp-card__body h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.6em;overflow-wrap:break-word;font-weight:650}
+.nocturne-comp-card__foot{min-width:0;align-items:center;gap:8px}
+.nocturne-comp-card__pool{display:grid;min-width:0;gap:4px;font-size:inherit;line-height:1.2}
+.nocturne-comp-card__pool small{font-size:9px;line-height:1.2}
+.nocturne-comp-card__cash{color:#7CFFB2;font-size:clamp(14px,1.3vw,18px);font-weight:750;white-space:nowrap}
+.nocturne-comp-card__pool .nocturne-comp-coin-value{justify-content:flex-start;font-size:clamp(10px,1.05vw,14px)}
+.nocturne-comp-card__window{min-width:0;max-width:48%;flex:0 1 auto;justify-content:flex-end;gap:5px;font-size:10px;line-height:1.35}
+.nocturne-comp-card__window i{flex:0 0 auto}
+.nocturne-comp-card__window time{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:575px){.nocturne-comp-hero__stats{grid-template-columns:repeat(2,minmax(0,1fr))}.nocturne-comp-hero__stat--accent{grid-column:1/-1;min-width:0}.nocturne-comp-hero__stat--accent strong{font-size:clamp(13px,4vw,17px)}.nocturne-comp-coin-value{font-size:clamp(11px,3.4vw,15px)}.nocturne-comp-card{min-height:130px}.nocturne-comp-card__banner{min-height:130px;aspect-ratio:auto}.nocturne-comp-card__foot{align-items:center}.nocturne-comp-card__pool .nocturne-comp-coin-value{font-size:clamp(9px,2.8vw,12px)}.nocturne-comp-card__window{max-width:46%;font-size:9px}}
 </style>
 @endsection

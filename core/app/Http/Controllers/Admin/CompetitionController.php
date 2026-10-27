@@ -13,6 +13,7 @@ use App\Services\CompetitionService;
 use Illuminate\Http\Request;
 use App\Services\CompetitionLaunchSeeder;
 use App\Services\CoinLedger;
+use App\Support\CompetitionRichText;
 use Illuminate\Support\Str;
 
 class CompetitionController extends Controller
@@ -235,8 +236,8 @@ class CompetitionController extends Controller
     {
         $rules = [
             'title' => 'required|string|max:160',
-            'description' => 'nullable|string|max:2000',
-            'rules' => 'nullable|string|max:5000',
+            'description' => 'nullable|string|max:6000',
+            'rules' => 'nullable|string|max:16000',
             'banner_image' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:4096',
             'status' => 'required|in:draft,scheduled,live,ended,finalized,paid',
             'grace_minutes' => 'required|integer|min:0|max:1440',
@@ -268,8 +269,8 @@ class CompetitionController extends Controller
     {
         $competition->title = $request->title;
         $competition->slug = $competition->slug ?: $this->uniqueSlug($request->title);
-        $competition->description = $request->description;
-        $competition->rules = $request->rules;
+        $competition->description = CompetitionRichText::sanitize($request->input('description')) ?: null;
+        $competition->rules = CompetitionRichText::sanitize($request->input('rules')) ?: null;
         $competition->status = $request->status;
         $competition->grace_minutes = $request->grace_minutes;
 

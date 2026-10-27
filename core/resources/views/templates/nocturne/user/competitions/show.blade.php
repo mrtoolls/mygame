@@ -24,7 +24,7 @@
             <div class="nocturne-comp-hero__copy">
                 <span class="nocturne-comp-hero__type"><i class="{{ $typeIcons[$competition->type] ?? 'ph-fill ph-trophy' }}"></i>{{ __($typeLabels[$competition->type] ?? $competition->type) }}</span>
                 <h1>{{ __($competition->title) }}</h1>
-                @if ($competition->description)<p>{{ __($competition->description) }}</p>@endif
+                @if ($safeDescription)<div class="nocturne-comp-richtext nocturne-comp-description">{!! $safeDescription !!}</div>@endif
                 @if (!$isFinal)
                     <div class="nocturne-comp-timer" data-end="{{ $competition->end_at->toIso8601String() }}" data-start="{{ $competition->start_at->toIso8601String() }}">
                         <span class="nocturne-comp-timer__label"><i class="ph-bold ph-hourglass"></i>{{ $competition->status === 'scheduled' ? __('Starts in') : __('Ends in') }}</span>
@@ -66,7 +66,7 @@
 
                 @if ($competition->rules)
                     <h2 class="mt-4"><i class="ph-fill ph-scroll"></i>@lang('Rules')</h2>
-                    <p class="nocturne-comp-rules">{{ $competition->rules }}</p>
+                    <div class="nocturne-comp-rules nocturne-comp-richtext">{!! $safeRules !!}</div>
                 @endif
             </section>
 
@@ -147,6 +147,12 @@
 .nocturne-comp-empty-row{text-align:center;color:var(--nocturne-text-muted,#9aa0b4);padding:28px;white-space:normal}
 .nocturne-comp-empty-row i{display:block;font-size:24px;color:#ffd782;margin-bottom:8px}
 .nocturne-comp-rules{color:var(--nocturne-text-muted,#c3c6d6);white-space:pre-line;font-size:13.5px;line-height:1.7}
+.nocturne-comp-richtext{color:var(--nocturne-text-muted,#c3c6d6);font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+.nocturne-comp-richtext>*:last-child{margin-bottom:0}
+.nocturne-comp-richtext p,.nocturne-comp-richtext ul,.nocturne-comp-richtext ol,.nocturne-comp-richtext blockquote{margin:0 0 .65em}
+.nocturne-comp-richtext ul,.nocturne-comp-richtext ol{padding-inline-start:1.35em}
+.nocturne-comp-richtext a{color:#7cffb2;text-decoration:underline;text-underline-offset:2px}
+.nocturne-comp-richtext blockquote{padding-inline-start:12px;border-inline-start:2px solid var(--comp-accent);color:#d1d7e8}
 .nocturne-comp-card-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:16px}
 .nocturne-comp-card-box--accent{border-color:color-mix(in srgb,var(--comp-accent) 35%,transparent);background:color-mix(in srgb,var(--comp-accent) 7%,transparent)}
 .nocturne-comp-card-box h3{display:flex;align-items:center;gap:7px;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.04em;font-weight:900;color:#fff}
@@ -176,6 +182,7 @@
 @media(max-width:900px){.nocturne-comp-layout{grid-template-columns:minmax(0,1fr)}.nocturne-comp-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}.nocturne-comp-card-box{margin-bottom:0}}
 @media(max-width:575px){.nocturne-competition-page{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.nocturne-comp-hero{min-height:0;margin-top:10px;border-radius:18px}.nocturne-comp-hero__art{inset:0;width:100%;opacity:.18;mask-image:linear-gradient(90deg,transparent 0%,#000 76%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 76%)}.nocturne-comp-hero__shade{background:linear-gradient(90deg,rgba(15,20,39,.97),rgba(15,20,39,.82)),linear-gradient(0deg,rgba(8,11,22,.3),transparent)}.nocturne-comp-hero__copy{padding:20px 17px}.nocturne-comp-hero__copy h1{font-size:clamp(23px,7vw,30px)}.nocturne-comp-hero__copy p{margin-bottom:15px;font-size:13px}.nocturne-comp-timer__units{gap:6px}.nocturne-comp-timer__unit{min-width:0;flex:1;padding:8px 4px;background:rgba(11,15,30,.83)}.nocturne-comp-timer__unit b{font-size:18px}.nocturne-comp-layout{gap:18px;margin-top:20px}.nocturne-comp-table-wrap{overflow:visible;border:0;background:transparent;box-shadow:none}.nocturne-comp-table,.nocturne-comp-table tbody{display:block;width:100%}.nocturne-comp-table thead{display:none}.nocturne-comp-table tbody tr:not(.is-empty){display:grid;grid-template-columns:48px minmax(0,1fr);gap:0 10px;margin-bottom:8px;padding:9px 12px;border:1px solid rgba(255,255,255,.075);border-radius:14px;background:linear-gradient(145deg,rgba(24,30,54,.9),rgba(15,19,37,.95))}.nocturne-comp-table td{min-width:0;padding:5px 0;border:0;white-space:normal}.nocturne-comp-table td.is-rank{grid-row:1 / span 2;align-self:center;width:auto}.nocturne-comp-table td.is-player,.nocturne-comp-table td.is-score{grid-column:2}.nocturne-comp-table td.is-score{text-align:left;color:#b9c2d8}.nocturne-comp-table td.is-score:before{content:attr(data-label) ": ";color:#8792b1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:650}.nocturne-comp-table tbody tr.is-empty{display:block}.nocturne-comp-empty-row{display:block!important}.nocturne-comp-side{grid-template-columns:1fr}.nocturne-comp-card-box{padding:15px}.nocturne-comp-rules{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.nocturne-comp-flag-btn{transition:none}}
+@media(max-width:575px){.nocturne-comp-richtext{font-size:12.5px;line-height:1.6}.nocturne-comp-rules{white-space:normal}}
 </style>
 
 <script>
