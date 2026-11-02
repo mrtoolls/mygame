@@ -102,11 +102,11 @@ abstract class Game {
         // from the same place - otherwise every play would visibly revert the on-screen number
         // back to a stale real-currency figure the instant a result comes in. Demo play never
         // touches the ledger (it's play money in users.demo_balance), but once coin mode is on
-        // it should still be LABELLED as coins for display - only the balance SOURCE differs.
+        // it's peg-converted to coins for display the same as the balance check above.
         $useLedgerBalance = !$this->demoPlay && gs('coin_mode');
         $coinModeDisplay  = gs('coin_mode');
         $balance            = $this->demoPlay
-            ? @$this->user->demo_balance
+            ? $this->demoBalanceDisplay()
             : ($useLedgerBalance ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
         $res['game_log_id'] = @$invest['game_log']->id;
         $res['balance']     = $coinModeDisplay ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
@@ -212,8 +212,7 @@ abstract class Game {
                 $investBack = $gameLog->invest;
 
                 if ($this->demoPlay) {
-                    $this->user->demo_balance += $gameLog->invest;
-                    $this->user->save();
+                    $this->adjustDemoBalance((string) $gameLog->invest);
                 } elseif (!$coinMode) {
                     $this->user->balance += $gameLog->invest;
                     $this->user->save();
@@ -252,8 +251,7 @@ abstract class Game {
             }
 
             if ($this->demoPlay) {
-                $this->user->demo_balance += $amount;
-                $this->user->save();
+                $this->adjustDemoBalance((string) $amount);
             } elseif (!$coinMode) {
                 $this->user->balance += $amount;
                 $this->user->save();
@@ -306,12 +304,12 @@ abstract class Game {
         // Same as the response built in play() above - $user->balance is frozen once coin mode
         // is on, so the end-of-round balance this response hands back has to come from the live
         // CoinLedger wallet or the page's balance would visibly snap back to a stale number.
-        // Demo play never touches the ledger, but it's still labelled as coins once coin mode
-        // is on - only the balance SOURCE differs between demo and real.
+        // Demo play never touches the ledger, but it's peg-converted to coins for display once
+        // coin mode is on - only the balance SOURCE differs between demo and real.
         $useLedgerBalance = !$this->demoPlay && gs('coin_mode');
         $coinModeDisplay  = gs('coin_mode');
         $balance = $this->demoPlay
-            ? @$this->user->demo_balance
+            ? $this->demoBalanceDisplay()
             : ($useLedgerBalance ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
 
         $res['result']      = in_array($this->game->alias, ['keno']) ? json_decode($gameLog->result) : $gameLog->result;
@@ -355,6 +353,36 @@ abstract class Game {
         return array_merge($this->globalValidationRule, $this->extraValidationRule);
     }
 
+    /**
+     * users.demo_balance is a literal real-currency figure - it meant dollars before coin mode
+     * existed and it still means dollars in the column today. Once coin mode is on, every demo
+     * stake/win the player types or sees is in coins (same bet field, same min/max hints as real
+     * play), so it has to be peg-converted at every read/write boundary - the same convention
+     * already used for other legacy USD-denominated admin settings (VIP tier bonuses, game bet
+     * limits) - rather than treating the stored number as if it were already a coin count, which
+     * would silently revalue a demo balance configured in dollars down to 1/peg of its worth.
+     */
+    protected function demoCoinPeg(): string {
+        return (string) (gs('coin_peg_usd') ?: '0.01');
+    }
+
+    /** The player's demo balance in whatever unit is currently on screen (coins or currency). */
+    protected function demoBalanceDisplay(): string {
+        if (!gs('coin_mode')) return (string) $this->user->demo_balance;
+        return bcdiv((string) $this->user->demo_balance, $this->demoCoinPeg(), 8);
+    }
+
+    /**
+     * Applies a stake/win delta that's already in the unit the player sees (coins when coin mode
+     * is on, currency otherwise) to the real, USD-denominated demo_balance column - a negative
+     * delta debits, a positive delta credits.
+     */
+    protected function adjustDemoBalance(string $deltaInCurrentUnit): void {
+        $delta = gs('coin_mode') ? bcmul($deltaInCurrentUnit, $this->demoCoinPeg(), 8) : $deltaInCurrentUnit;
+        $this->user->demo_balance = bcadd((string) $this->user->demo_balance, $delta, 8);
+        $this->user->save();
+    }
+
     private function fallback() {
         // Coin mode never credits/debits $user->balance for real play any more (see invest()
         // below), so the sufficiency pre-check here has to read the coin wallet instead - the
@@ -364,7 +392,7 @@ abstract class Game {
         // same early, friendlier rejection the legacy path already gave before even trying.
         $coinMode = !$this->demoPlay && gs('coin_mode');
         $balance = $this->demoPlay
-            ? @$this->user->demo_balance
+            ? $this->demoBalanceDisplay()
             : ($coinMode ? app(CoinLedger::class)->wallet('user', $this->user->id)->available_balance : @$this->user->balance);
         if ($this->request->invest > $balance) {
             return ['error' => 'Oops! You have no sufficient balance'];
@@ -387,8 +415,7 @@ abstract class Game {
         $coinMode = !$this->demoPlay && gs('coin_mode');
 
         if ($this->demoPlay) {
-            $user->demo_balance -= $this->request->invest;
-            $user->save();
+            $this->adjustDemoBalance('-' . $this->request->invest);
         } elseif (!$coinMode) {
             $user->balance -= $this->request->invest;
             $user->save();

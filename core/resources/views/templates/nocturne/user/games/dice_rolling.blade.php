@@ -68,7 +68,7 @@
                 <h4 class="game-contet-title">
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
                     @if ($isDemo && gs('coin_mode'))
-                        <span class="text bal">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                        <span class="text bal">{{ bcdiv((string) $balance, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}</span> {{ __('Coins') }}
                     @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text bal">{!! showUserBalance() !!}</span>
                     @else

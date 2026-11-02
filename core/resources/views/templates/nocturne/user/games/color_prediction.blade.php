@@ -60,7 +60,7 @@
                                     </p>
                                     <h5 class="color-predict-text">
                                         @if ($isDemo && gs('coin_mode'))
-                                            {{ number_format((float) $balance, 0, '.', '') }} {{ __('Coins') }}
+                                            {{ bcdiv((string) $balance, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }} {{ __('Coins') }}
                                         @elseif (!$isDemo && gs('coin_mode'))
                                             {!! showUserBalance() !!}
                                         @else

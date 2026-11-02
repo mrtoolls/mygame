@@ -22,10 +22,12 @@ class PlayController extends Controller {
         }
         // $user->balance is frozen/zeroed once coin_mode is on (see showUserBalance()'s doc
         // comment) - the real, live number lives in the CoinLedger wallet instead. demo_balance
-        // is deliberately untouched by coin mode either way - it is its own separate "Demo
-        // Coins" concept, never minted as real coins and never mixed with the real wallet.
+        // keeps its own separate play-money pool either way (never minted as real coins, never
+        // mixed with the real wallet), but it's a literal real-currency figure in the column -
+        // once coin mode is on it's peg-converted to coins for display, the same convention used
+        // for other legacy USD-denominated settings, same as App\Games\Game::demoBalanceDisplay().
         $balance = ($isDemo === 'demo')
-            ? @$user->demo_balance
+            ? (gs('coin_mode') ? bcdiv((string) $user->demo_balance, (string) (gs('coin_peg_usd') ?: '0.01'), 8) : (string) $user->demo_balance)
             : (gs('coin_mode') ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->available_balance : @$user->balance);
 
         $pokerImg           = null;

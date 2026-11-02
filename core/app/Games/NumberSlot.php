@@ -49,8 +49,7 @@ class NumberSlot extends Game {
                 $amount = $winBon;
 
                 if ($this->demoPlay) {
-                    $this->user->demo_balance += $amount;
-                    $this->user->save();
+                    $this->adjustDemoBalance((string) $amount);
                 } elseif ($coinMode) {
                     if (bccomp((string) $amount, '0', 8) > 0) {
                         app(\App\Services\CoinLedger::class)->mint(
@@ -91,7 +90,7 @@ class NumberSlot extends Game {
             }
         }
         $balance            = $this->demoPlay
-            ? @$this->user->demo_balance
+            ? $this->demoBalanceDisplay()
             : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : @$this->user->balance);
         $res['user_choose'] = $gameLog->user_select;
         // Demo play is never credited through the ledger (see above), but coin mode still

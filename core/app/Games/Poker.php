@@ -123,8 +123,7 @@ class Poker extends Game {
             // frozen real-currency balance instead of the coin wallet.
             $coinMode = !$this->demoPlay && gs('coin_mode');
             if ($this->demoPlay) {
-                $user->demo_balance += $winAmount;
-                $user->save();
+                $this->adjustDemoBalance((string) $winAmount);
             } elseif ($coinMode) {
                 if (bccomp((string) $winAmount, '0', 8) > 0) {
                     app(\App\Services\CoinLedger::class)->mint(
@@ -157,7 +156,7 @@ class Poker extends Game {
                 $transaction->save();
             }
             $balance        = $this->demoPlay
-                ? $user->demo_balance
+                ? $this->demoBalanceDisplay()
                 : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : $user->balance);
             $res['message'] = 'Yahoo! You Win!!!';
             $res['type']    = 'success';

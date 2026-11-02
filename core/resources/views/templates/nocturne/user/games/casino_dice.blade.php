@@ -74,7 +74,7 @@
                                 <label class="form-label">@lang('Current Balance')</label>
                                 <div class="input-group">
                                     <input class="balance form-control form--control" type="text"
-                                        value="@if (gs('coin_mode')){{ $isDemo ? number_format((float) $balance, 0, '.', '') : number_format((float) app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance, 0, '.', '') }}@else{{ getAmount($balance) }}@endif" autocomplete="off" readonly>
+                                        value="@if (gs('coin_mode')){{ $isDemo ? bcdiv((string) $balance, (string) (gs('coin_peg_usd') ?: '0.01'), 0) : number_format((float) app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance, 0, '.', '') }}@else{{ getAmount($balance) }}@endif" autocomplete="off" readonly>
                                     <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : gs('cur_text') }}</span>
                                 </div>
                             </div>

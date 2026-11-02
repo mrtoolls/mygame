@@ -161,9 +161,12 @@ $onGameHtml = view('Template::user.games.mines', ['pageTitle' => 'Mines', 'game'
 check($failures, $pass, 'mines.blade.php coin_mode on: shows the live coin wallet balance (350), not the stale real-currency balance (777)', str_contains($onGameHtml, '350') && !str_contains($onGameHtml, '777.00'));
 check($failures, $pass, 'mines.blade.php coin_mode on: min/max limits now show Coins', str_contains($onGameHtml, 'Coins'));
 
-// Demo play never touches the coin ledger (it's play money in users.demo_balance), but once
-// coin mode is on it must still be LABELLED as coins, not a stale currency figure - and it must
-// never show the real coin wallet balance (350), since demo stays on its own play-money pool.
+// Demo play never touches the coin ledger (it's play money in users.demo_balance - its own
+// separate pool, never the real coin wallet balance of 350), but the column is a literal
+// real-currency figure (it meant dollars before coin mode existed), so once coin mode is on it
+// has to be peg-converted to coins for display - 42.00 at the default 0.01 peg is 4200 coins,
+// NOT a bare relabelled "42" (that would silently devalue a demo balance configured in dollars
+// to 1/100th of what it was).
 $general->coin_mode = false;
 $general->save();
 $offDemoHtml = view('Template::user.games.mines', ['pageTitle' => 'Mines', 'game' => $game, 'balance' => '42.00000000', 'isDemo' => true])->render();
@@ -174,7 +177,7 @@ $general->coin_mode = true;
 $general->save();
 $onDemoHtml = view('Template::user.games.mines', ['pageTitle' => 'Mines', 'game' => $game, 'balance' => '42.00000000', 'isDemo' => true])->render();
 preg_match('/<span class="text balance">([^<]*)<\/span>/', $onDemoHtml, $onDemoMatch);
-check($failures, $pass, 'mines.blade.php demo play, coin_mode on: the demo figure is now shown as a whole coin number, not a 2-decimal currency figure', trim($onDemoMatch[1] ?? '') === '42');
+check($failures, $pass, 'mines.blade.php demo play, coin_mode on: the demo figure is peg-converted to whole coins (42.00 / 0.01 = 4200), not a bare relabelled currency figure', trim($onDemoMatch[1] ?? '') === '4200');
 check($failures, $pass, 'mines.blade.php demo play, coin_mode on: labelled as Coins', str_contains($onDemoHtml, 'Coins'));
 check($failures, $pass, 'mines.blade.php demo play, coin_mode on: must not show the real coin wallet balance (350) - demo stays on its own play-money pool', !str_contains($onDemoMatch[1] ?? '', '350'));
 fwrite(STDOUT, "mines.blade.php: balance, bet-input symbol, and min/max limits all become coin-mode-aware for both real and demo play (demo keeps its own play-money pool, just labelled as coins).\n");

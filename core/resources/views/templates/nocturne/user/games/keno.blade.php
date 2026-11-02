@@ -38,7 +38,7 @@
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
                     @if ($isDemo && gs('coin_mode'))
                         <span class="text--base">
-                            <span class="bal text-white">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                            <span class="bal text-white">{{ bcdiv((string) $balance, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}</span> {{ __('Coins') }}
                         </span>
                     @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text--base">
