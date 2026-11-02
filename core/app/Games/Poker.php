@@ -52,7 +52,7 @@ class Poker extends Game {
         $winLossData['win_status'] = $win;
         $winLossData['result']     = Crypt::encrypt($hand);
 
-        $betMessageAmount = (!$this->demoPlay && gs('coin_mode'))
+        $betMessageAmount = gs('coin_mode')
             ? number_format((float) $this->request->invest, 0, '.', '') . ' Coins'
             : getAmount($this->request->invest) . ' ' . gs('cur_text');
         $this->extraResponseOnStart = array_merge($this->extraResponseOnStart, ['message' => $betMessageAmount . ' ' . 'betted successfully']);
@@ -161,7 +161,10 @@ class Poker extends Game {
                 : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : $user->balance);
             $res['message'] = 'Yahoo! You Win!!!';
             $res['type']    = 'success';
-            $res['balance'] = $coinMode ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
+            // Demo play is never credited through the ledger (see above), but coin mode still
+            // decides how this response's balance is LABELLED - gs('coin_mode') alone, not
+            // $coinMode (which is false for demo), or a demo win would show a stale currency figure.
+            $res['balance'] = gs('coin_mode') ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
             $res['sound']   = 'win.wav';
         }
         $res['rank']   = str_replace("_", " ", $rank);

@@ -21,7 +21,9 @@
         <div class="col-lg-6">
             <div class="game--card">
                 <h4 class="game-contet-title">{{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    @if (!$isDemo && gs('coin_mode'))
+                    @if ($isDemo && gs('coin_mode'))
+                        <span class="text balance">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                    @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text balance">{!! showUserBalance() !!}</span>
                     @else
                         <span class="text balance">{{ showAmount($balance, currencyFormat: false) }}</span>
@@ -95,7 +97,7 @@
         let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif");
         let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif");
         let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif";
-        let userBalance = Number("@if (!$isDemo && gs('coin_mode')){{ app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance }}@else{{ auth()->user()->balance }}@endif");
+        let userBalance = Number("@if (!$isDemo && gs('coin_mode')){{ app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance }}@else{{ $balance }}@endif");
         audioAssetPath = `{{ asset('assets/audio') }}`;
 
         $(".minBtn").on('click', function(e) {

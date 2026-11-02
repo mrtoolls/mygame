@@ -100,13 +100,16 @@ abstract class Game {
         // coin mode is on (the invest/win money actually just moved through CoinLedger), so the
         // balance this AJAX response hands back to the page's live balance display has to come
         // from the same place - otherwise every play would visibly revert the on-screen number
-        // back to a stale real-currency figure the instant a result comes in.
-        $coinModeForResponse = !$this->demoPlay && gs('coin_mode');
+        // back to a stale real-currency figure the instant a result comes in. Demo play never
+        // touches the ledger (it's play money in users.demo_balance), but once coin mode is on
+        // it should still be LABELLED as coins for display - only the balance SOURCE differs.
+        $useLedgerBalance = !$this->demoPlay && gs('coin_mode');
+        $coinModeDisplay  = gs('coin_mode');
         $balance            = $this->demoPlay
             ? @$this->user->demo_balance
-            : ($coinModeForResponse ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
+            : ($useLedgerBalance ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
         $res['game_log_id'] = @$invest['game_log']->id;
-        $res['balance']     = $coinModeForResponse ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
+        $res['balance']     = $coinModeDisplay ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
 
         if ($this->resultShowOnStart) {
             $res['result'] = $gameResult['result'];
@@ -303,17 +306,20 @@ abstract class Game {
         // Same as the response built in play() above - $user->balance is frozen once coin mode
         // is on, so the end-of-round balance this response hands back has to come from the live
         // CoinLedger wallet or the page's balance would visibly snap back to a stale number.
-        $coinModeForResponse = !$this->demoPlay && gs('coin_mode');
+        // Demo play never touches the ledger, but it's still labelled as coins once coin mode
+        // is on - only the balance SOURCE differs between demo and real.
+        $useLedgerBalance = !$this->demoPlay && gs('coin_mode');
+        $coinModeDisplay  = gs('coin_mode');
         $balance = $this->demoPlay
             ? @$this->user->demo_balance
-            : ($coinModeForResponse ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
+            : ($useLedgerBalance ? app(CoinLedger::class)->wallet('user', $this->user->id)->fresh()->available_balance : @$this->user->balance);
 
         $res['result']      = in_array($this->game->alias, ['keno']) ? json_decode($gameLog->result) : $gameLog->result;
         $res['user_choose'] = in_array($this->game->alias, ['keno']) ? json_decode($gameLog->user_select) : $gameLog->user_select;
         $res['win_status']  = $gameLog->win_status;
         $res['win_amount']  = $gameLog->win_status == Status::WIN ? $winBon + $investBack : 0;
         $res['invest_amount'] = $gameLog->invest;
-        $res['bal']         = $coinModeForResponse ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
+        $res['bal']         = $coinModeDisplay ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
 
         $gameLog->status = Status::GAME_FINISHED;
         $gameLog->save();

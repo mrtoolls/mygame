@@ -111,7 +111,7 @@ class Mines extends Game
             $gameLog->save();
         }
         $res['sound'] = 'win.wav';
-        $res['success'] = (!$this->demoPlay && gs('coin_mode'))
+        $res['success'] = gs('coin_mode')
             ? 'Congratulation! you won ' . number_format((float) $gameLog->win_amo, 0, '.', '') . ' Coins'
             : 'Congratulation! you won ' . getAmount($gameLog->win_amo) . ' ' . gs('cur_text');
         $this->extraResponseOnEnd = array_merge($this->extraResponseOnEnd, $res);

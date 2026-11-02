@@ -82,8 +82,11 @@ class PlayController extends Controller {
         return responseSuccess('game_data', $notify, [
             'game'               => $game,
             // Coins are always whole numbers with no currency formatting - the game client parses
-            // this as a plain number either way, so coin mode just skips decimal places.
-            'balance'            => ($isDemo !== 'demo' && gs('coin_mode')) ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false),
+            // this as a plain number either way, so coin mode just skips decimal places. Demo
+            // play keeps its own separate play-money pool either way (see above), but once coin
+            // mode is on it's still LABELLED as coins for display - gs('coin_mode') alone here,
+            // not combined with the demo check, which only decides the balance SOURCE above.
+            'balance'            => gs('coin_mode') ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false),
             'imagePath'          => $imagePath,
             'winChance'          => $winChance,
             'winPercent'         => $winPercent,

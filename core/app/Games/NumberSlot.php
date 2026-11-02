@@ -94,7 +94,10 @@ class NumberSlot extends Game {
             ? @$this->user->demo_balance
             : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : @$this->user->balance);
         $res['user_choose'] = $gameLog->user_select;
-        $res['bal']         = $coinMode ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
+        // Demo play is never credited through the ledger (see above), but coin mode still
+        // decides how this response's balance is LABELLED - gs('coin_mode') alone, not $coinMode
+        // (which is false for demo), or a demo win would keep showing a stale currency figure.
+        $res['bal']         = gs('coin_mode') ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
         $res['result']      = $gameLog->result;
         if ($winner == 1) {
             $res['message']    = 'Yahoo! You Win for ' . $gameLog->win_status . ' Time !!!';

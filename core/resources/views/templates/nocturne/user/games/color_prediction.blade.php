@@ -59,7 +59,9 @@
                                         {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
                                     </p>
                                     <h5 class="color-predict-text">
-                                        @if (!$isDemo && gs('coin_mode'))
+                                        @if ($isDemo && gs('coin_mode'))
+                                            {{ number_format((float) $balance, 0, '.', '') }} {{ __('Coins') }}
+                                        @elseif (!$isDemo && gs('coin_mode'))
                                             {!! showUserBalance() !!}
                                         @else
                                             {{ showAmount($balance, currencyFormat: false) }}

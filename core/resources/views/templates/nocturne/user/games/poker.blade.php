@@ -173,7 +173,9 @@
         <div class="col-xl-3" id="form--area">
             <div class="game--card">
                 <h4 class="game-contet-title">{{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    @if (!$isDemo && gs('coin_mode'))
+                    @if ($isDemo && gs('coin_mode'))
+                        <span class="text balance">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                    @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text balance">{!! showUserBalance() !!}</span>
                     @else
                         <span class="text balance">{{ showAmount($balance, currencyFormat: false) }}</span>

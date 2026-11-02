@@ -36,7 +36,11 @@
             <div class="game--card">
                 <h6 class="mb-5 text-center">
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    @if (!$isDemo && gs('coin_mode'))
+                    @if ($isDemo && gs('coin_mode'))
+                        <span class="text--base">
+                            <span class="bal text-white">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                        </span>
+                    @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text--base">
                             <span class="bal text-white">{!! showUserBalance() !!}</span>
                         </span>

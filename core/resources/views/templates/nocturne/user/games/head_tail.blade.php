@@ -44,7 +44,9 @@
             <div class="headtail-wrapper">
                 <h4 class="game-contet-title">
                     {{ $isDemo ? trans('Demo Balance:') : trans('Current Balance:') }}
-                    @if (!$isDemo && gs('coin_mode'))
+                    @if ($isDemo && gs('coin_mode'))
+                        <span class="text bal">{{ number_format((float) $balance, 0, '.', '') }}</span> {{ __('Coins') }}
+                    @elseif (!$isDemo && gs('coin_mode'))
                         <span class="text bal">{!! showUserBalance() !!}</span>
                     @else
                         <span class="text bal">{{ showAmount($balance, currencyFormat: false) }}</span>
