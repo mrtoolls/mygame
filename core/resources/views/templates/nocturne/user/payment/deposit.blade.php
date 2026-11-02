@@ -37,7 +37,7 @@
         @else
             <div class="nocturne-wallet-coin-notice" id="coin-preview-box" data-coin-buy-price="{{ $coinBuyPrice }}">
                 <i class="ph-fill ph-coins"></i>
-                <span>@lang('Current rate'): <strong>1 {{ __('Coin') }} = {{ gs('cur_sym') }}{{ showAmount($coinBuyPrice, currencyFormat: false) }}</strong> &middot; @lang("You'll receive"): <strong id="coin-preview-amount">0 @lang('Coins')</strong></span>
+                <span>@lang('Current rate'): <strong>1 {{ __('Coin') }} = {{ gs('cur_sym') }}{{ showAmount($coinBuyPrice, currencyFormat: false) }}</strong></span>
             </div>
         @endif
     @endif
@@ -122,11 +122,25 @@
                 </div>
             </div>
 
-            <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>2</span> @lang('Enter deposit amount')</h3>
-            <div class="nocturne-wallet-amount">
-                <span class="nocturne-wallet-amount__prefix">{{ gs('cur_sym') }}</span>
-                <input type="number" inputmode="decimal" min="0" step="any" class="amount" name="amount" placeholder="0.00" value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Deposit amount')">
-            </div>
+            @if($coinMode ?? false)
+                <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>2</span> @lang('Enter coin amount')</h3>
+                <div class="nocturne-wallet-amount">
+                    <span class="nocturne-wallet-amount__prefix"><i class="ph-fill ph-coin"></i></span>
+                    <input type="number" inputmode="numeric" min="0" step="1" class="coin-amount" placeholder="0" autocomplete="off" aria-label="@lang('Coin amount')">
+                    <span class="nocturne-wallet-amount__suffix">@lang('Coins')</span>
+                </div>
+                <input type="hidden" class="amount" name="amount" value="{{ old('amount') }}">
+                <details class="nocturne-wallet-approx">
+                    <summary class="nocturne-wallet-approx__toggle" aria-label="@lang("See what you'll pay")" title="@lang("See what you'll pay")"><i class="ph-bold ph-currency-circle-dollar"></i></summary>
+                    <span class="nocturne-wallet-approx__value">@lang('You pay'): <strong id="coin-approx-amount">{{ gs('cur_sym') }}0.00</strong></span>
+                </details>
+            @else
+                <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>2</span> @lang('Enter deposit amount')</h3>
+                <div class="nocturne-wallet-amount">
+                    <span class="nocturne-wallet-amount__prefix">{{ gs('cur_sym') }}</span>
+                    <input type="number" inputmode="decimal" min="0" step="any" class="amount" name="amount" placeholder="0.00" value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Deposit amount')">
+                </div>
+            @endif
 
             <div class="nocturne-wallet-charges d-none">
                 <div><span>@lang('Processing charge')</span><strong><span class="processing-fee">0.00</span> {{ __(gs('cur_text')) }}</strong></div>
@@ -277,8 +291,17 @@
 
 .nocturne-wallet-amount{display:flex;align-items:center;min-height:62px;border:1px solid var(--wallet-line);border-radius:16px;background:var(--wallet-bg);overflow:hidden}
 .nocturne-wallet-amount__prefix{display:grid;place-items:center;flex:0 0 auto;min-width:52px;height:100%;color:var(--wallet-accent);font-size:19px;font-weight:800;border-right:1px solid var(--wallet-line)}
-.nocturne-wallet-amount .amount{flex:1;min-width:0;height:60px;padding:0 16px;border:0;background:transparent;color:#fff;font-size:22px;font-weight:800;outline:0}
-.nocturne-wallet-amount .amount::placeholder{color:#606986}
+.nocturne-wallet-amount .amount,.nocturne-wallet-amount .coin-amount{flex:1;min-width:0;height:60px;padding:0 16px;border:0;background:transparent;color:#fff;font-size:22px;font-weight:800;outline:0}
+.nocturne-wallet-amount .amount::placeholder,.nocturne-wallet-amount .coin-amount::placeholder{color:#606986}
+.nocturne-wallet-amount__suffix{flex:0 0 auto;padding-right:18px;color:var(--wallet-muted);font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+
+.nocturne-wallet-approx{position:relative;display:inline-flex;margin:12px 0 0}
+.nocturne-wallet-approx__toggle{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(133,142,175,.12);color:var(--wallet-muted);font-size:13px;font-weight:700;cursor:pointer;list-style:none}
+.nocturne-wallet-approx__toggle::-webkit-details-marker{display:none}
+.nocturne-wallet-approx__toggle:hover,.nocturne-wallet-approx[open] .nocturne-wallet-approx__toggle{background:rgba(0,231,138,.14);color:var(--wallet-accent)}
+.nocturne-wallet-approx__value{position:absolute;top:calc(100% + 6px);left:0;z-index:5;padding:8px 13px;border-radius:11px;background:var(--wallet-raised);color:var(--wallet-text);font-size:12.5px;font-weight:650;white-space:nowrap;box-shadow:0 14px 30px rgba(0,0,0,.3);animation:walletApproxIn .15s ease}
+.nocturne-wallet-approx__value strong{color:var(--wallet-accent)}
+@keyframes walletApproxIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 
 .nocturne-wallet-charges{display:grid;gap:8px;margin-top:14px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.03)}
 .nocturne-wallet-charges>div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--wallet-muted)}
@@ -367,19 +390,29 @@
     var coinPricingBlocked = {{ (($coinMode ?? false) && $coinPricingError) ? 'true' : 'false' }};
     var coinBuyPrice = parseFloat($('#coin-preview-box').data('coin-buy-price')) || 0;
 
-    function updateCoinPreview() {
-        if (!coinMode || !coinBuyPrice) return;
-        // Matches PaymentController::userDataUpdate()'s bcdiv($lockedDeposit->amount, $buyPrice, 0)
-        // - a plain truncating integer division, same as Math.floor for non-negative numbers.
-        var coins = amount > 0 ? Math.floor(amount / coinBuyPrice) : 0;
-        $('#coin-preview-amount').text(coins.toLocaleString() + ' {{ __('Coins') }}');
+    function syncCoinAmount() {
+        // Coins are what's actually being bought, so they're the primary input; the currency
+        // figure is derived from them (coins * locked buy price) and submitted as the real
+        // "amount" field, so every existing currency-based check downstream - gateway min/max,
+        // processing charge, crypto rate conversion - keeps working completely unchanged.
+        if (!coinMode) return;
+        var coins = parseFloat($('.coin-amount').val()) || 0;
+        amount = coinBuyPrice ? coins * coinBuyPrice : 0;
+        $('input[name=amount]').val(amount.toFixed(8));
+        $('#coin-approx-amount').text('{{ gs('cur_sym') }}' + amount.toFixed(2));
     }
 
-    $('.amount').on('input', function() {
-        amount = parseFloat($(this).val()) || 0;
-        calculation();
-        updateCoinPreview();
-    });
+    if (coinMode) {
+        $('.coin-amount').on('input', function() {
+            syncCoinAmount();
+            calculation();
+        });
+    } else {
+        $('.amount').on('input', function() {
+            amount = parseFloat($(this).val()) || 0;
+            calculation();
+        });
+    }
 
     $('.gateway-input').on('change', gatewayChange);
 
@@ -426,8 +459,8 @@
         }
 
         renderWallet();
+        syncCoinAmount();
         calculation();
-        updateCoinPreview();
     }
 
     gatewayChange();

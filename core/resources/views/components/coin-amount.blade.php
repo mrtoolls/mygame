@@ -24,6 +24,9 @@
         <span class="coin-chip__held">+{{ number_format((float) $held, 0) }} @lang('held')</span>
     @endif
     @if($approxText)
-        <span class="coin-chip__approx">@lang('approx.') {{ $approxText }}</span>
+        <details class="coin-chip__approx">
+            <summary class="coin-chip__approx-toggle" aria-label="@lang('Show approximate value')" title="@lang('Show approximate value')"><i class="ph-bold ph-currency-circle-dollar" aria-hidden="true"></i></summary>
+            <span class="coin-chip__approx-value">@lang('approx.') {{ $approxText }}</span>
+        </details>
     @endif
 </span>
