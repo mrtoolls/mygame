@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Rules\FileTypeValidate;
+use App\Services\CoinLedger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -259,6 +260,36 @@ class ManageUsersController extends Controller {
         $trx    = getTrx();
         $act    = $request->act;
         $remark = $request->remark;
+
+        // Coin mode: $user->balance is frozen once coin mode is on - the real, live balance
+        // everyone (player and admin alike) actually looks at lives in the CoinLedger wallet
+        // instead. A manual admin adjustment has to move through the same ledger, or it would
+        // silently change a number nobody sees any more while the real wallet never moves.
+        if (gs('coin_mode')) {
+            $user = User::findOrFail($id);
+            try {
+                if ($act == 'add') {
+                    app(CoinLedger::class)->mint('user', $user->id, (string) $amount, $remark, 'admin_balance_add:' . $trx, null, null, 'admin', auth('admin')->id());
+                } else {
+                    app(CoinLedger::class)->burn('user', $user->id, (string) $amount, $remark, 'admin_balance_sub:' . $trx, null, null, 'admin', auth('admin')->id());
+                }
+            } catch (\InvalidArgumentException $e) {
+                $notify[] = ['error', $user->username . ' doesn\'t have sufficient coins.'];
+                return back()->withNotify($notify);
+            }
+
+            $postBalance = app(CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance;
+            $notify[] = ['success', $act == 'add' ? 'Coins added successfully' : 'Coins subtracted successfully'];
+
+            notify($user, $act == 'add' ? 'BAL_ADD' : 'BAL_SUB', [
+                'trx'          => $trx,
+                'amount'       => coinAmountText($amount),
+                'remark'       => $remark,
+                'post_balance' => coinAmountText($postBalance),
+            ]);
+
+            return back()->withNotify($notify);
+        }
 
         // Locked and re-checked under the lock (not the unlocked $user fetched above the
         // validation, which an overlapping admin edit could already have moved on from) so two
