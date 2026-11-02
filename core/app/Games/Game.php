@@ -354,22 +354,20 @@ abstract class Game {
     }
 
     /**
-     * users.demo_balance is a literal real-currency figure - it meant dollars before coin mode
-     * existed and it still means dollars in the column today. Once coin mode is on, every demo
-     * stake/win the player types or sees is in coins (same bet field, same min/max hints as real
-     * play), so it has to be peg-converted at every read/write boundary - the same convention
-     * already used for other legacy USD-denominated admin settings (VIP tier bonuses, game bet
-     * limits) - rather than treating the stored number as if it were already a coin count, which
-     * would silently revalue a demo balance configured in dollars down to 1/peg of its worth.
+     * The coins-per-dollar peg used to convert every legacy real-currency-denominated figure
+     * (users.demo_balance, $game->min_limit/max_limit, VIP tier bonuses) to/from the coin amount
+     * the player actually types and sees once coin mode is on - none of those columns were ever
+     * rewritten to natively mean coins, so each one is converted at its own read/write boundary
+     * rather than reinterpreted in place, which would silently revalue it to 1/peg of its worth.
      */
-    protected function demoCoinPeg(): string {
+    protected function coinPeg(): string {
         return (string) (gs('coin_peg_usd') ?: '0.01');
     }
 
     /** The player's demo balance in whatever unit is currently on screen (coins or currency). */
     protected function demoBalanceDisplay(): string {
         if (!gs('coin_mode')) return (string) $this->user->demo_balance;
-        return bcdiv((string) $this->user->demo_balance, $this->demoCoinPeg(), 8);
+        return bcdiv((string) $this->user->demo_balance, $this->coinPeg(), 8);
     }
 
     /**
@@ -378,7 +376,7 @@ abstract class Game {
      * delta debits, a positive delta credits.
      */
     protected function adjustDemoBalance(string $deltaInCurrentUnit): void {
-        $delta = gs('coin_mode') ? bcmul($deltaInCurrentUnit, $this->demoCoinPeg(), 8) : $deltaInCurrentUnit;
+        $delta = gs('coin_mode') ? bcmul($deltaInCurrentUnit, $this->coinPeg(), 8) : $deltaInCurrentUnit;
         $this->user->demo_balance = bcadd((string) $this->user->demo_balance, $delta, 8);
         $this->user->save();
     }
@@ -401,10 +399,19 @@ abstract class Game {
         if ($running) {
             return ['error' => '1 game is in-complete. Please wait'];
         }
-        if ($this->request->invest > $this->game->max_limit) {
+        // $game->min_limit/max_limit are stored as a real-currency figure (admin edits them in
+        // currency), the same convention as VIP tier bonuses - the frontend already shows and
+        // submits them peg-converted to coins once coin mode is on (every game template divides
+        // them by coin_peg_usd for its own min/max hint and bet-field validation), so the
+        // submitted $this->request->invest has to be compared against the SAME peg-converted
+        // figure here, or a coin bet would be checked against a far smaller/larger raw dollar
+        // number than what the player was actually shown.
+        $maxLimit = gs('coin_mode') ? bcdiv((string) $this->game->max_limit, $this->coinPeg(), 8) : $this->game->max_limit;
+        $minLimit = gs('coin_mode') ? bcdiv((string) $this->game->min_limit, $this->coinPeg(), 8) : $this->game->min_limit;
+        if ($this->request->invest > $maxLimit) {
             return ['error' => 'Please follow the maximum limit of invest'];
         }
-        if ($this->request->invest < $this->game->min_limit) {
+        if ($this->request->invest < $minLimit) {
             return ['error' => 'Please follow the minimum limit of invest'];
         }
         return ['success'];
