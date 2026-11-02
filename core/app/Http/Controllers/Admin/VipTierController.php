@@ -23,6 +23,23 @@ class VipTierController extends Controller
         return view('admin.vip.create', compact('pageTitle'));
     }
 
+    /**
+     * bonus_amount/max_bet/daily_reward_amount/birthday_bonus_amount are stored as a literal
+     * real-currency figure (formatCoinOrUsd() divides them by the peg for display) - NOT
+     * min_wagered, which User::totalWagered()/vipTier() deliberately compare as a literal coin
+     * amount with no conversion once coin mode is on. The admin form shows/accepts whichever
+     * unit is on screen (coins once coin mode is on, matching the peg-divided display), so a
+     * submitted coin figure has to be multiplied back up before it's saved, or the stored USD
+     * equivalent would silently flip to the raw coin number - the same number
+     * formatCoinOrUsd() would then divide AGAIN on the very next display.
+     */
+    private function toUsdEquivalent($amount)
+    {
+        if ($amount === null || $amount === '') return $amount;
+        if (!gs('coin_mode')) return $amount;
+        return bcmul((string) $amount, (string) (gs('coin_peg_usd') ?: '0.01'), 8);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -47,11 +64,11 @@ class VipTierController extends Controller
         $tier->name                        = $request->name;
         $tier->badge                       = $request->badge;
         $tier->min_wagered                 = $request->min_wagered;
-        $tier->bonus_amount                = $request->bonus_amount;
+        $tier->bonus_amount                = $this->toUsdEquivalent($request->bonus_amount);
         $tier->rakeback_percent            = $request->rakeback_percent;
-        $tier->max_bet                     = $request->max_bet ?: null;
-        $tier->daily_reward_amount         = $request->daily_reward_amount ?: 0;
-        $tier->birthday_bonus_amount       = $request->birthday_bonus_amount ?: 0;
+        $tier->max_bet                     = $request->max_bet ? $this->toUsdEquivalent($request->max_bet) : null;
+        $tier->daily_reward_amount         = $request->daily_reward_amount ? $this->toUsdEquivalent($request->daily_reward_amount) : 0;
+        $tier->birthday_bonus_amount       = $request->birthday_bonus_amount ? $this->toUsdEquivalent($request->birthday_bonus_amount) : 0;
         $tier->withdrawal_processing_hours = $request->withdrawal_processing_hours ?: null;
         $tier->monthly_withdrawal_limit    = $request->monthly_withdrawal_limit ?: null;
         $tier->support_level               = $request->support_level ?: null;
@@ -100,11 +117,11 @@ class VipTierController extends Controller
         $tier->name                         = $request->name;
         $tier->badge                        = $request->badge;
         $tier->min_wagered                  = $request->min_wagered;
-        $tier->bonus_amount                 = $request->bonus_amount;
+        $tier->bonus_amount                 = $this->toUsdEquivalent($request->bonus_amount);
         $tier->rakeback_percent             = $request->rakeback_percent;
-        $tier->max_bet                      = $request->max_bet ?: null;
-        $tier->daily_reward_amount          = $request->daily_reward_amount ?: 0;
-        $tier->birthday_bonus_amount        = $request->birthday_bonus_amount ?: 0;
+        $tier->max_bet                      = $request->max_bet ? $this->toUsdEquivalent($request->max_bet) : null;
+        $tier->daily_reward_amount          = $request->daily_reward_amount ? $this->toUsdEquivalent($request->daily_reward_amount) : 0;
+        $tier->birthday_bonus_amount        = $request->birthday_bonus_amount ? $this->toUsdEquivalent($request->birthday_bonus_amount) : 0;
         $tier->withdrawal_processing_hours  = $request->withdrawal_processing_hours ?: null;
         $tier->monthly_withdrawal_limit     = $request->monthly_withdrawal_limit ?: null;
         $tier->support_level                = $request->support_level ?: null;

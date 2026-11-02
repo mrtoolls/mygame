@@ -58,7 +58,14 @@ class GeneralSettingController extends Controller
         $general->secondary_color                 = str_replace('#', '', $request->secondary_color);
         $general->currency_format                 = $request->currency_format;
         $general->register_bonus                  = $request->register_bonus;
-        $general->demo_balance                    = $request->demo_balance;
+        // demo_balance is always stored as a real-currency figure (see Game::demoBalanceDisplay())
+        // - the admin form shows/accepts coins once coin mode is on, so a submitted coin amount
+        // has to be converted back to its USD equivalent before it's saved, the same as the VIP
+        // tier form's bonus/limit fields (VipTierController::toUsdEquivalent()). register_bonus
+        // above is intentionally different (decision 9: a flat coin amount with no conversion).
+        $general->demo_balance                    = gs('coin_mode')
+            ? bcmul((string) $request->demo_balance, (string) (gs('coin_peg_usd') ?: '0.01'), 8)
+            : $request->demo_balance;
         $general->min_balance                     = $request->min_balance;
         $general->balance_transfer_fixed_charge   = $request->balance_transfer_fixed_charge;
         $general->balance_transfer_percent_charge = $request->balance_transfer_percent_charge;

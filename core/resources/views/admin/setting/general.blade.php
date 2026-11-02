@@ -94,7 +94,7 @@
                                     <div class="input-group">
                                         <input class="form-control" name="register_bonus" type="number"
                                             value="{{ getAmount(gs('register_bonus')) }}" step="any" required>
-                                        <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                        <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : gs('cur_text') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -103,8 +103,8 @@
                                     <label>@lang('User Demo Balance')</label>
                                     <div class="input-group">
                                         <input class="form-control" name="demo_balance" type="number"
-                                            value="{{ getAmount(gs('demo_balance')) }}" step="any" required>
-                                        <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                            value="{{ gs('coin_mode') ? bcdiv((string) gs('demo_balance'), (string) (gs('coin_peg_usd') ?: '0.01'), 0) : getAmount(gs('demo_balance')) }}" step="any" required>
+                                        <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : gs('cur_text') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -155,7 +155,7 @@
                                         <input class="form-control" name="gameplay_bonus" type="number"
                                             value="{{ getAmount(gs('gameplay_bonus')) }}" step="any"
                                             required>
-                                        <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                        <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : gs('cur_text') }}</span>
                                     </div>
                                 </div>
                             </div>

@@ -110,7 +110,7 @@
                             <label>@lang('Demo Balance')</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" name="demo_balance" value="{{ old('demo_balance') }}" required>
-                                <span class="input-group-text">{{ gs('cur_text') }}</span>
+                                <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : gs('cur_text') }}</span>
                             </div>
                         </div>
                     </div>

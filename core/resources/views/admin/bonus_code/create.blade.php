@@ -22,7 +22,7 @@
                                     <label>@lang('Bonus Amount')</label>
                                     <div class="input-group">
                                         <input type="number" step="any" min="0" class="form-control" name="amount" value="{{ old('amount') }}" required>
-                                        <div class="input-group-text">{{ __(gs('cur_text')) }}</div>
+                                        <div class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</div>
                                     </div>
                                 </div>
                             </div>

@@ -508,7 +508,14 @@ class ManageUsersController extends Controller {
         $request->validate([
             'demo_balance' => 'required|numeric|gt:0',
         ]);
-        User::query()->update(['demo_balance' => $request->demo_balance]);
+        // users.demo_balance is always stored as a real-currency figure (see
+        // Game::demoBalanceDisplay()) - the admin form shows/accepts coins once coin mode is on,
+        // so a submitted coin amount has to be converted back to its USD equivalent before this
+        // bulk update, or every user's demo balance would be set to the raw coin number instead.
+        $demoBalance = gs('coin_mode')
+            ? bcmul((string) $request->demo_balance, (string) (gs('coin_peg_usd') ?: '0.01'), 8)
+            : $request->demo_balance;
+        User::query()->update(['demo_balance' => $demoBalance]);
         $notify[] = ['success', 'Demo balance updated successfully'];
         return back()->withNotify($notify);
     }
