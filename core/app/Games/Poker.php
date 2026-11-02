@@ -52,7 +52,10 @@ class Poker extends Game {
         $winLossData['win_status'] = $win;
         $winLossData['result']     = Crypt::encrypt($hand);
 
-        $this->extraResponseOnStart = array_merge($this->extraResponseOnStart, ['message' => getAmount($this->request->invest) . ' ' . gs('cur_text') . ' ' . 'betted successfully']);
+        $betMessageAmount = (!$this->demoPlay && gs('coin_mode'))
+            ? number_format((float) $this->request->invest, 0, '.', '') . ' Coins'
+            : getAmount($this->request->invest) . ' ' . gs('cur_text');
+        $this->extraResponseOnStart = array_merge($this->extraResponseOnStart, ['message' => $betMessageAmount . ' ' . 'betted successfully']);
 
         return $winLossData;
     }
@@ -114,14 +117,34 @@ class Poker extends Game {
             $gameLog->save();
 
             $user = $gameLog->user;
+            // Coin mode: pokerCall() bypasses Game::end()'s own (already coin-aware) win
+            // crediting entirely via should_return=true below, so it needs the exact same
+            // mint()-vs-balance branch, or a win while coin_mode is on would silently credit the
+            // frozen real-currency balance instead of the coin wallet.
+            $coinMode = !$this->demoPlay && gs('coin_mode');
             if ($this->demoPlay) {
                 $user->demo_balance += $winAmount;
+                $user->save();
+            } elseif ($coinMode) {
+                if (bccomp((string) $winAmount, '0', 8) > 0) {
+                    app(\App\Services\CoinLedger::class)->mint(
+                        'user',
+                        $user->id,
+                        (string) $winAmount,
+                        'Win bonus of ' . $game->name,
+                        'game_win_bonus:' . $gameLog->id,
+                        'GameLog',
+                        $gameLog->id,
+                        'user',
+                        $user->id
+                    );
+                }
             } else {
                 $user->balance += $winAmount;
+                $user->save();
             }
-            $user->save();
 
-            if (!$this->demoPlay) {
+            if (!$this->demoPlay && !$coinMode) {
                 $transaction               = new Transaction();
                 $transaction->user_id      = $user->id;
                 $transaction->amount       = $winAmount;
@@ -133,10 +156,12 @@ class Poker extends Game {
                 $transaction->post_balance = $user->balance;
                 $transaction->save();
             }
-            $balance        = $this->demoPlay ? $user->demo_balance : $user->balance;
+            $balance        = $this->demoPlay
+                ? $user->demo_balance
+                : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : $user->balance);
             $res['message'] = 'Yahoo! You Win!!!';
             $res['type']    = 'success';
-            $res['balance'] = showAmount($balance, currencyFormat: false);
+            $res['balance'] = $coinMode ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
             $res['sound']   = 'win.wav';
         }
         $res['rank']   = str_replace("_", " ", $rank);

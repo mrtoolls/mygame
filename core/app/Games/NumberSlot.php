@@ -38,6 +38,11 @@ class NumberSlot extends Game {
         $user   = $this->user;
         $trx    = getTrx();
         $winner = 0;
+        // Coin mode: this game's win bonus bypasses Game::end()'s own (already coin-aware) win
+        // crediting entirely via should_return=true below, so it needs the exact same mint()-vs-
+        // balance branch here, or a win while coin_mode is on would silently credit the frozen
+        // real-currency balance instead of the coin wallet - the player would never see it.
+        $coinMode = !$this->demoPlay && gs('coin_mode');
         foreach ($game->level as $key => $data) {
             if ($gameLog->win_status == $key + 1) {
                 $winBon = $gameLog->invest * $game->level[$key] / 100;
@@ -45,10 +50,25 @@ class NumberSlot extends Game {
 
                 if ($this->demoPlay) {
                     $this->user->demo_balance += $amount;
+                    $this->user->save();
+                } elseif ($coinMode) {
+                    if (bccomp((string) $amount, '0', 8) > 0) {
+                        app(\App\Services\CoinLedger::class)->mint(
+                            'user',
+                            $user->id,
+                            (string) $amount,
+                            $game->level[$key] . '% Win bonus of Number Slot Game ' . ($key + 1) . ' Time',
+                            'game_win_bonus:' . $gameLog->id,
+                            'GameLog',
+                            $gameLog->id,
+                            'user',
+                            $user->id
+                        );
+                    }
                 } else {
                     $this->user->balance += $amount;
+                    $this->user->save();
                 }
-                $this->user->save();
 
                 $gameLog->win_amo = $amount;
                 $gameLog->save();
@@ -56,7 +76,7 @@ class NumberSlot extends Game {
                 $winner = 1;
                 $lev    = $key + 1;
 
-                if (!$this->demoPlay) {
+                if (!$this->demoPlay && !$coinMode) {
                     $transaction               = new Transaction();
                     $transaction->user_id      = $user->id;
                     $transaction->amount       = $winBon;
@@ -70,9 +90,11 @@ class NumberSlot extends Game {
                 }
             }
         }
-        $balance            = $this->demoPlay ? @$this->user->demo_balance : @$this->user->balance;
+        $balance            = $this->demoPlay
+            ? @$this->user->demo_balance
+            : ($coinMode ? app(\App\Services\CoinLedger::class)->wallet('user', $user->id)->fresh()->available_balance : @$this->user->balance);
         $res['user_choose'] = $gameLog->user_select;
-        $res['bal']         = showAmount($balance, currencyFormat: false);
+        $res['bal']         = $coinMode ? number_format((float) $balance, 0, '.', '') : showAmount($balance, currencyFormat: false);
         $res['result']      = $gameLog->result;
         if ($winner == 1) {
             $res['message']    = 'Yahoo! You Win for ' . $gameLog->win_status . ' Time !!!';
