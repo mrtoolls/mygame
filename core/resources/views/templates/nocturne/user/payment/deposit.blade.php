@@ -19,7 +19,7 @@
         @else
             <div class="nocturne-wallet-hero__balance">
                 <span>@lang('Available balance')</span>
-                <strong>{{ gs('cur_sym') }}{{ showAmount(auth()->user()->balance, currencyFormat: false) }} <small>{{ __(gs('cur_text')) }}</small></strong>
+                <strong>{!! showUserBalance() !!}</strong>
                 <i class="ph-fill ph-wallet"></i>
             </div>
         @endif
@@ -99,8 +99,8 @@
                                 <input class="gateway-input" id="{{ titleToKey($data->name) }}" hidden
                                     data-gateway='@json($data)' type="radio" name="gateway" value="{{ $data->method_code }}"
                                     @checked(old('gateway', $preselectGateway ? $preselectGateway->method_code : ($loop->first ? $data->method_code : null)) == $data->method_code)
-                                    data-min-amount="{{ showAmount($data->min_amount) }}"
-                                    data-max-amount="{{ showAmount($data->max_amount) }}">
+                                    data-min-amount="{{ showBaseAmount($data->min_amount) }}"
+                                    data-max-amount="{{ showBaseAmount($data->max_amount) }}">
                             </label>
                         @empty
                             <div class="nocturne-wallet-empty"><i class="ph-fill ph-wallet"></i><strong>@lang('No deposit methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>

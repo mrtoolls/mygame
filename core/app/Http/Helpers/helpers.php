@@ -146,6 +146,38 @@ function showAmount($amount, $decimal = 2, $separate = true, $exceptZeros = fals
     return $printAmount;
 }
 
+/**
+ * Formats an amount that is always denominated in the site's own default currency
+ * (gs('cur_text')/gs('cur_sym')) - never the viewer's personal wallet currency, unlike
+ * showAmount(). Several real-money figures are admin-entered and compared/credited in the site
+ * default currency specifically regardless of the viewer's wallet currency (confirmed directly
+ * against the admin forms that set them): GatewayCurrency min_amount/max_amount/fixed_charge
+ * (resources/views/admin/gateways/{automatic,manual}/*.blade.php literally label these fields
+ * "... {{ gs('cur_text') }}"), and Game min_limit/max_limit (resources/views/admin/game/
+ * game_edit.blade.php, same pattern) - the bet amount field on every game page shows gs('cur_sym')
+ * next to it too, so the submitted invest is in the same unit. showAmount()'s wallet-currency
+ * override wrongly relabeled these with the viewer's own currency symbol/code without converting
+ * the number - e.g. an admin-set "$10 minimum" rendering as "10" next to a Naira viewer's own
+ * currency symbol, wildly misrepresenting the real minimum. Use this instead of showAmount() for
+ * any value confirmed to live in the site default currency rather than the viewer's wallet.
+ */
+function showBaseAmount($amount, $decimal = 2, $separate = true, $exceptZeros = false) {
+    $separator = $separate ? ',' : '';
+    $printAmount = number_format($amount, $decimal, '.', $separator);
+    if ($exceptZeros) {
+        $exp = explode('.', $printAmount);
+        $printAmount = ($exp[1] * 1 == 0) ? $exp[0] : rtrim($printAmount, '0');
+    }
+    $currencySymbol = gs('cur_sym');
+    $currencyText = gs('cur_text');
+    if (gs('currency_format') == Status::CUR_BOTH) {
+        return $currencySymbol . $printAmount . ' ' . __($currencyText);
+    } elseif (gs('currency_format') == Status::CUR_TEXT) {
+        return $printAmount . ' ' . __($currencyText);
+    }
+    return $currencySymbol . $printAmount;
+}
+
 /** Format a legacy major-unit amount or an integer minor-unit amount using a wallet currency. */
 function formatCurrencyAmount($amount, $currency = null, bool $amountIsMinor = false, bool $includeCode = true): string {
     if (!$currency && auth()->check()) {

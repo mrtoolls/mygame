@@ -122,7 +122,7 @@
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i> @lang('Invest Limit'):
-                            @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} - {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->min_limit) }} - {{ showAmount($game->max_limit) }} @endif
+                            @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} - {{ formatCoinOrUsd($game->max_limit) }} @else {{ showBaseAmount($game->min_limit) }} - {{ showBaseAmount($game->max_limit) }} @endif
                         </small>
                         <small class="fw-light mt-1 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i> @lang('Select 2 cards from your High Hand for the Low Hand')

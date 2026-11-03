@@ -63,9 +63,9 @@
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i>
-                            @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showAmount($game->min_limit) }} @endif
+                            @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showBaseAmount($game->min_limit) }} @endif
                             |
-                            @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->max_limit) }} @endif
+                            @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showBaseAmount($game->max_limit) }} @endif
                             |
                             <span class="text--warning">
                                 @lang('Win Amount')

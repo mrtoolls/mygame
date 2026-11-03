@@ -143,9 +143,9 @@
                                 </div>
                                 <small class="form-text text-muted">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showAmount($game->min_limit) }} @endif
+                                    @lang('Minimum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showBaseAmount($game->min_limit) }} @endif
                                     |
-                                    @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showAmount($game->max_limit) }} @endif
+                                    @lang('Maximum'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showBaseAmount($game->max_limit) }} @endif
                                 </small>
                             </div>
                             <button class="btn btn--gradient w-100" id="playBtn"
