@@ -1,112 +1,134 @@
 @extends('admin.layouts.app')
 
 @section('panel')
-    <div class="row g-4">
-        <div class="col-12">
-            <a href="{{ route('admin.coin.settings') }}" class="btn btn-sm btn-outline--primary"><i class="las la-arrow-left"></i> Coin Settings</a>
-        </div>
+<div class="cc-admin">
+    <header class="cc-hero">
+        <a href="{{ route('admin.coin.settings') }}" class="cc-back"><i class="las la-arrow-left"></i> Coin Settings</a>
+        <span class="cc-kicker">Coin economy · one-time migration</span>
+        <h1 class="cc-title">Coin Cutover</h1>
+        <p class="cc-intro">Converts every user's real-currency balance to coins (or resets test balances to a flat amount), settles in-progress games, force-closes open table-game tables, and cancels any pending deposit or withdrawal.</p>
+    </header>
 
-        <div class="col-12">
-            <div class="alert alert--warning d-flex align-items-start gap-2">
-                <i class="las la-exclamation-triangle fs-4"></i>
-                <div>This converts every user's real-currency balance to coins (or resets test balances to a flat amount), settles in-progress games, force-closes open table-game tables, and cancels any pending deposit/withdrawal. <strong>Always run a dry-run preview first. There is no undo.</strong></div>
+    <div class="cc-warning"><i class="las la-exclamation-triangle"></i><div><strong>Always run a dry-run preview first.</strong> There is no undo once you execute.</div></div>
+
+    <section class="cc-panel">
+        <div class="cc-panel-head"><span class="cc-step">1</span><div><h2 class="cc-panel-title">Dry-run preview</h2><p class="cc-panel-copy">Computes exactly what execute would do, without changing any data.</p></div></div>
+
+        <form method="post" action="{{ route('admin.coin.cutover.preview') }}" class="cc-form">
+            @csrf
+            <div class="cc-field"><label>Mode</label><select name="mode" class="form-control"><option value="convert">Convert real balances to coins</option><option value="reset_test">Reset every account to a flat test amount</option></select></div>
+            <div class="cc-field"><label>Reset amount (coins)</label><input type="number" name="reset_amount" class="form-control" placeholder="Only used by reset mode"></div>
+            <button type="submit" class="btn btn-outline--primary"><i class="las la-search"></i> Preview (no changes)</button>
+        </form>
+
+        @if(session('preview'))
+            @php($p = session('preview'))
+            <div class="cc-stats">
+                <div class="cc-stat"><span>Users affected</span><strong>{{ number_format($p['users_affected']) }}</strong></div>
+                <div class="cc-stat"><span>Real balance total</span><strong>{{ number_format($p['total_real_balance'], 0) }}</strong></div>
+                <div class="cc-stat cc-stat--accent"><span>Coins to mint</span><strong>{{ number_format($p['total_coins_to_mint'], 0) }}</strong></div>
+                <div class="cc-stat {{ count($p['pricing_errors']) ? 'cc-stat--danger' : '' }}"><span>Pricing errors</span><strong>{{ count($p['pricing_errors']) }}</strong></div>
             </div>
-        </div>
-
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0"><i class="las la-search me-2"></i>1. Dry-Run Preview</h5></div>
-                <div class="card-body">
-                    <form method="post" action="{{ route('admin.coin.cutover.preview') }}" class="row g-2 align-items-end mb-3">
-                        @csrf
-                        <div class="col-auto">
-                            <select name="mode" class="form-control">
-                                <option value="convert">Convert real balances to coins</option>
-                                <option value="reset_test">Reset every account to a flat test amount</option>
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <input type="number" name="reset_amount" class="form-control" placeholder="Reset amount (coins)">
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn-outline--primary"><i class="las la-search"></i> Preview (no changes)</button>
-                        </div>
-                    </form>
-
-                    @if(session('preview'))
-                        @php($p = session('preview'))
-                        <div class="row g-3">
-                            <div class="col-xxl-3 col-sm-6"><x-widget style="6" link="javascript:void(0)" icon="las la-users" title="Users Affected" value="{{ $p['users_affected'] }}" bg="primary" outline="true" /></div>
-                            <div class="col-xxl-3 col-sm-6"><x-widget style="6" link="javascript:void(0)" icon="las la-money-bill" title="Real Balance Total" value="{{ number_format($p['total_real_balance'], 0) }}" bg="19" outline="true" /></div>
-                            <div class="col-xxl-3 col-sm-6"><x-widget style="6" link="javascript:void(0)" icon="las la-coins" title="Coins to Mint" value="{{ number_format($p['total_coins_to_mint'], 0) }}" bg="success" outline="true" /></div>
-                            <div class="col-xxl-3 col-sm-6"><x-widget style="6" link="javascript:void(0)" icon="las la-exclamation-circle" title="Pricing Errors" value="{{ count($p['pricing_errors']) }}" bg="{{ count($p['pricing_errors']) ? 'danger' : 'success' }}" outline="true" /></div>
-                        </div>
-                        <table class="table table--light mt-3 mb-0">
-                            <tbody>
-                                <tr><th><i class="las la-gamepad"></i> Running games to refund</th><td>{{ $p['running_games_to_refund'] }}</td></tr>
-                                <tr><th><i class="las la-chess-board"></i> Open tables to force-close</th><td>{{ $p['open_tables_to_force_close'] }}</td></tr>
-                                <tr><th><i class="las la-wallet"></i> Pending deposits to cancel</th><td>{{ $p['pending_deposits_to_cancel'] }}</td></tr>
-                                <tr><th><i class="las la-hand-holding-usd"></i> Pending withdrawals to cancel</th><td>{{ $p['pending_withdrawals_to_cancel'] }}</td></tr>
-                            </tbody>
-                        </table>
-                    @endif
+            <div class="cc-checklist">
+                <div class="cc-check"><i class="las la-gamepad"></i><span>Running games to refund</span><b>{{ $p['running_games_to_refund'] }}</b></div>
+                <div class="cc-check"><i class="las la-chess-board"></i><span>Open tables to force-close</span><b>{{ $p['open_tables_to_force_close'] }}</b></div>
+                <div class="cc-check"><i class="las la-wallet"></i><span>Pending deposits to cancel</span><b>{{ $p['pending_deposits_to_cancel'] }}</b></div>
+                <div class="cc-check"><i class="las la-hand-holding-usd"></i><span>Pending withdrawals to cancel</span><b>{{ $p['pending_withdrawals_to_cancel'] }}</b></div>
+            </div>
+            @if(count($p['pricing_errors']))
+                <div class="cc-errors">
+                    <h3><i class="las la-exclamation-circle"></i> Pricing errors ({{ count($p['pricing_errors']) }})</h3>
+                    <p class="cc-panel-copy">These users were skipped from the coin total above - fix their currency pricing before executing, or they'll be skipped during execute too.</p>
+                    <ul>
+                        @foreach($p['pricing_errors'] as $userId => $message)
+                            <li><a href="{{ route('admin.users.detail', $userId) }}">User #{{ $userId }}</a> — {{ $message }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-            </div>
-        </div>
+            @endif
+        @endif
+    </section>
 
-        <div class="col-12">
-            <div class="card border-danger">
-                <div class="card-header bg--danger bg-opacity-10"><h5 class="mb-0"><i class="las la-bolt me-2"></i>2. Execute (irreversible)</h5></div>
-                <div class="card-body">
-                    <form method="post" action="{{ route('admin.coin.cutover.execute') }}" class="row g-2 align-items-end confirmationBtn" data-question="This cannot be undone. Are you sure?">
-                        @csrf
-                        <div class="col-auto">
-                            <select name="mode" class="form-control">
-                                <option value="convert">Convert real balances to coins</option>
-                                <option value="reset_test">Reset every account to a flat test amount</option>
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <input type="number" name="reset_amount" class="form-control" placeholder="Reset amount (coins)">
-                        </div>
-                        <div class="col-auto form-check">
-                            <input type="checkbox" name="confirm" value="1" class="form-check-input" id="cutoverConfirm">
-                            <label class="form-check-label" for="cutoverConfirm">I have reviewed the preview and want to run this now</label>
-                        </div>
-                        <div class="col-auto">
-                            <button type="submit" class="btn btn--danger"><i class="las la-bolt"></i> Run Cutover</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <section class="cc-panel cc-panel--danger">
+        <div class="cc-panel-head"><span class="cc-step cc-step--danger">2</span><div><h2 class="cc-panel-title">Execute <small>(irreversible)</small></h2><p class="cc-panel-copy">Only run this after reviewing the preview above.</p></div></div>
 
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0"><i class="las la-history me-2"></i>Cutover History</h5></div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table--light mb-0">
-                            <thead><tr><th>#</th><th>Mode</th><th>Admin</th><th>Started</th><th>Finished</th><th>Summary</th></tr></thead>
-                            <tbody>
-                                @forelse($logs as $log)
-                                    <tr>
-                                        <td>{{ $log->id }}</td>
-                                        <td><span class="badge badge--{{ $log->mode === 'convert' ? 'primary' : 'warning' }}">{{ $log->mode }}</span></td>
-                                        <td>{{ $log->admin_id }}</td>
-                                        <td>{{ $log->started_at }}</td>
-                                        <td>{{ $log->finished_at }}</td>
-                                        <td><pre class="mb-0 small">{{ json_encode($log->summary, JSON_PRETTY_PRINT) }}</pre></td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="6" class="text-center text-muted py-4">No cutover has been run yet.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+        <form method="post" action="{{ route('admin.coin.cutover.execute') }}" class="cc-form confirmationBtn" data-question="This cannot be undone. Are you sure?">
+            @csrf
+            <div class="cc-field"><label>Mode</label><select name="mode" class="form-control"><option value="convert">Convert real balances to coins</option><option value="reset_test">Reset every account to a flat test amount</option></select></div>
+            <div class="cc-field"><label>Reset amount (coins)</label><input type="number" name="reset_amount" class="form-control" placeholder="Only used by reset mode"></div>
+            <label class="cc-confirm"><input type="checkbox" name="confirm" value="1"><span>I have reviewed the preview and want to run this now</span></label>
+            <button type="submit" class="btn btn--danger"><i class="las la-bolt"></i> Run cutover</button>
+        </form>
+    </section>
+
+    <section class="cc-panel">
+        <div class="cc-panel-head"><div><h2 class="cc-panel-title">Cutover history</h2></div></div>
+
+        @forelse($logs as $log)
+            <div class="cc-log">
+                <div class="cc-log__head">
+                    <span class="badge badge--{{ $log->mode === 'convert' ? 'primary' : 'warning' }}">{{ $log->mode === 'convert' ? 'Convert' : 'Reset test' }}</span>
+                    <span class="cc-log__meta">#{{ $log->id }} · {{ optional(\App\Models\Admin::find($log->admin_id))->username ?? 'Admin #' . $log->admin_id }} · started {{ $log->started_at }} · finished {{ $log->finished_at ?? '—' }}</span>
                 </div>
+                <pre class="cc-log__summary">{{ json_encode($log->summary, JSON_PRETTY_PRINT) }}</pre>
             </div>
-            <div class="mt-3">{{ $logs->links() }}</div>
-        </div>
-    </div>
+        @empty
+            <div class="cc-empty"><i class="las la-history"></i><p>No cutover has been run yet.</p></div>
+        @endforelse
+        <div class="cc-pagination">{{ $logs->links() }}</div>
+    </section>
+</div>
+
+<style>
+.cc-admin{--cc-bg:#101629;--cc-card:#151d33;--cc-card-2:#11192e;--cc-line:rgba(157,174,220,.16);--cc-muted:#8f9bbc;--cc-text:#f4f6ff;--cc-green:#00d987;--cc-danger:#ff718c;--cc-warn:#ffc454;color:var(--cc-text)}
+.cc-admin *{box-sizing:border-box}
+.cc-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;color:#b8c2df;font-size:12px;font-weight:700;text-decoration:none}
+.cc-back:hover{color:var(--cc-green)}
+.cc-hero{margin-bottom:16px;padding:22px 24px;border:1px solid var(--cc-line);border-radius:18px;background:linear-gradient(135deg,#18213a,#12192d)}
+.cc-kicker{display:block;margin-bottom:6px;color:var(--cc-green);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.cc-title{margin:0;color:var(--cc-text);font-size:clamp(20px,2.4vw,27px);font-weight:700;letter-spacing:-.025em}
+.cc-intro{max-width:760px;margin:8px 0 0;color:var(--cc-muted);font-size:13px;line-height:1.55}
+.cc-warning{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px;padding:14px 16px;border:1px solid rgba(255,196,84,.25);border-radius:14px;background:rgba(255,196,84,.07);color:#ffe0a3;font-size:13px;line-height:1.55}
+.cc-warning i{margin-top:1px;color:var(--cc-warn);font-size:18px}
+.cc-warning strong{color:#fff}
+.cc-panel{min-width:0;margin-bottom:18px;padding:20px;border:1px solid var(--cc-line);border-radius:16px;background:linear-gradient(145deg,var(--cc-card),var(--cc-card-2));box-shadow:0 10px 28px rgba(0,0,0,.1)}
+.cc-panel--danger{border-color:rgba(255,113,140,.28)}
+.cc-panel-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.cc-step{display:grid;flex:0 0 32px;place-items:center;width:32px;height:32px;border-radius:10px;background:rgba(0,217,135,.12);color:var(--cc-green);font-size:13px;font-weight:800}
+.cc-step--danger{background:rgba(255,113,140,.14);color:var(--cc-danger)}
+.cc-panel-title{margin:0;color:var(--cc-text);font-size:16px;font-weight:700;letter-spacing:-.01em}
+.cc-panel-title small{color:var(--cc-danger);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.cc-panel-copy{margin:4px 0 0;color:var(--cc-muted);font-size:12px;line-height:1.5}
+.cc-form{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-bottom:4px}
+.cc-field{display:flex;flex-direction:column;gap:6px;min-width:200px;flex:1 1 220px}
+.cc-field label{color:#c6cde3;font-size:11px;font-weight:700}
+.cc-field .form-control{min-height:42px;border:1px solid var(--cc-line);border-radius:10px;background:#0e1528;color:var(--cc-text)}
+.cc-confirm{display:flex;align-items:center;gap:8px;margin:0;color:#c7cfe3;font-size:12px;font-weight:600}
+.cc-confirm input{width:16px;height:16px;accent-color:var(--cc-green)}
+.cc-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px}
+.cc-stat{min-width:0;padding:14px;border:1px solid var(--cc-line);border-radius:14px;background:#0d1428}
+.cc-stat span{display:block;color:var(--cc-muted);font-size:11px;font-weight:700}
+.cc-stat strong{display:block;margin-top:6px;overflow-wrap:anywhere;color:var(--cc-text);font-size:19px;font-weight:700}
+.cc-stat--accent strong{color:var(--cc-green)}
+.cc-stat--danger strong{color:var(--cc-danger)}
+.cc-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+.cc-check{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--cc-line);border-radius:12px;background:rgba(255,255,255,.015)}
+.cc-check i{flex:0 0 auto;color:var(--cc-green);font-size:15px}
+.cc-check span{flex:1;min-width:0;color:var(--cc-muted);font-size:12px}
+.cc-check b{flex:0 0 auto;color:var(--cc-text);font-size:14px;font-weight:700}
+.cc-errors{margin-top:14px;padding:14px 16px;border:1px solid rgba(255,113,140,.25);border-radius:14px;background:rgba(255,113,140,.06)}
+.cc-errors h3{display:flex;align-items:center;gap:7px;margin:0;color:#ffb4c2;font-size:13px;font-weight:700}
+.cc-errors ul{margin:10px 0 0;padding:0 0 0 18px;color:#e9ccd2;font-size:12px;line-height:1.7}
+.cc-errors a{color:var(--cc-green);font-weight:700;text-decoration:none}
+.cc-errors a:hover{text-decoration:underline}
+.cc-log{padding:14px 16px;border:1px solid var(--cc-line);border-radius:14px;background:#0d1428}
+.cc-log+.cc-log{margin-top:10px}
+.cc-log__head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
+.cc-log__meta{color:var(--cc-muted);font-size:11.5px}
+.cc-log__summary{margin:0;padding:10px 12px;overflow:auto;border-radius:10px;background:#070b17;color:#b7c0e0;font-size:11.5px;line-height:1.6}
+.cc-empty{display:grid;place-items:center;gap:8px;padding:34px 16px;color:var(--cc-muted);text-align:center}
+.cc-empty i{font-size:26px;color:var(--cc-green)}
+.cc-pagination{padding-top:12px}
+@media(max-width:700px){.cc-hero{padding:16px}.cc-panel{padding:15px}.cc-form{flex-direction:column;align-items:stretch}.cc-field{min-width:0}}
+</style>
 @endsection
