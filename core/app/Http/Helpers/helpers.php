@@ -190,10 +190,19 @@ function formatCurrencyAmount($amount, $currency = null, bool $amountIsMinor = f
         return showAmount($amount);
     }
 
-    $money = app(\App\Support\Money::class);
-    $minor = $amountIsMinor
-        ? (string) $amount
-        : $money->toMinor((string) $amount, (int) $currency->decimals);
+    $money    = app(\App\Support\Money::class);
+    $decimals = (int) $currency->decimals;
+    if ($amountIsMinor) {
+        $minor = (string) $amount;
+    } else {
+        // A caller-supplied major-unit amount (e.g. a bcdiv conversion result) routinely carries
+        // more decimal places than this currency actually supports - toMinor() rejects that
+        // outright rather than silently truncating real money, so round to the currency's own
+        // decimals first, the same half-unit rounding formatUsdInWalletCurrency() already uses.
+        $rounded = bcadd((string) $amount, '0.' . str_repeat('0', $decimals) . '5', $decimals + 1);
+        $rounded = bcadd($rounded, '0', $decimals);
+        $minor   = $money->toMinor($rounded, $decimals);
+    }
     $formatted = $currency->formatMinor($minor, false);
     return $includeCode ? $formatted . ' ' . $currency->code : $formatted;
 }

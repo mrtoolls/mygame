@@ -57,6 +57,10 @@ DB::table('currencies')->insert(['code' => 'USD', 'symbol' => '$', 'rate_to_usd'
 // truncation noise in the round-trip assertion below.
 $ngnId = DB::table('currencies')->insertGetId(['code' => 'NGN', 'symbol' => '₦', 'rate_to_usd' => '0.0005', 'created_at' => now(), 'updated_at' => now()]);
 $disabledId = DB::table('currencies')->insertGetId(['code' => 'ZZZ', 'symbol' => 'Z', 'enabled' => false, 'rate_to_usd' => '0.1', 'created_at' => now(), 'updated_at' => now()]);
+// The real, live production rate for NGN - deliberately NOT a clean/reversible one (10 / this
+// rate does not terminate at 2 decimal places), to reproduce the "more decimal places than this
+// currency supports" InvalidArgumentException that convertFromSiteDefault() threw in production.
+$messyNgnId = DB::table('currencies')->insertGetId(['code' => 'NGM', 'symbol' => '₦', 'rate_to_usd' => '0.000750966924', 'created_at' => now(), 'updated_at' => now()]);
 
 Schema::create('users', function (Blueprint $table) {
     $table->id();
@@ -103,6 +107,13 @@ $fallbackFormatted = convertFromSiteDefault('10');
 check(str_contains($fallbackFormatted, '$'), "The formatted fallback for a disabled currency shows the site default's own \$ symbol - got '$fallbackFormatted'.");
 Auth::logout();
 fwrite(STDOUT, "A disabled/unusable wallet currency degrades to the plain site-default figure instead of converting against a bad rate.\n");
+
+// --- A real-world rate whose bcdiv result doesn't terminate within the target currency's own
+// decimals must round to that currency's decimals, not throw - this is the exact production bug
+// (Money::toMinor() rejecting an 8-decimal-place conversion result for a 2-decimal currency). ---
+$formattedMessy = convertFromSiteDefault('10', 'NGM');
+check($formattedMessy === '₦13,316.17', "A non-terminating conversion (10 / 0.000750966924 = 13316.16570638...) rounds to the currency's own 2 decimals instead of throwing - got '$formattedMessy'.");
+fwrite(STDOUT, "A conversion result with more decimal places than the target currency supports rounds correctly instead of throwing (regression check for the live Money::toMinor() crash).\n");
 
 fwrite(STDOUT, "Passed: $passed\n");
 fwrite(STDOUT, "Currency conversion helpers integration checks passed.\n");
