@@ -76,14 +76,14 @@
                     @csrf
                     <div class="form-group">
                         <div class="input-group">
-                            <span class="input-group-text">@if (gs('coin_mode'))<i class="ph-fill ph-coin"></i>@else{{ gs('cur_sym') }}@endif</span>
+                            <span class="input-group-text">@if (gs('coin_mode'))<i class="ph-fill ph-coin"></i>@else{{ ($isDemo ? gs('cur_sym') : (auth()->user()?->currency?->symbol ?? gs('cur_sym'))) }}@endif</span>
                             <input type="number" step="any" class="form-control form--control" placeholder="@lang('Enter amount')" name="invest" value="{{ old('invest') }}">
                             <button type="button" class="input-group-text minmax-btn minBtn">@lang('Min')</button>
                             <button type="button" class="input-group-text minmax-btn maxBtn">@lang('Max')</button>
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i>
-                            @lang('Limit'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} - {{ formatCoinOrUsd($game->max_limit) }} @else {{ showBaseAmount($game->min_limit) }} - {{ showBaseAmount($game->max_limit) }} @endif
+                            @lang('Limit'): @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} - {{ formatCoinOrUsd($game->max_limit) }} @else {{ ($isDemo ? showBaseAmount($game->min_limit) : convertFromSiteDefault($game->min_limit)) }} - {{ ($isDemo ? showBaseAmount($game->max_limit) : convertFromSiteDefault($game->max_limit)) }} @endif
                         </small>
                         <small class="win-bonus text--base"></small>
                     </div>
@@ -251,9 +251,9 @@
         'use strict';
 
         let investField = $("[name=invest]");
-        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif");
-        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif");
-        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif";
+        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
+        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->max_limit : convertAmountFromSiteDefault((string) $game->max_limit)) }}@endif");
+        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ $isDemo ? gs('cur_text') : (auth()->user()?->currency?->code ?? gs('cur_text')) }}@endif";
         investUrl = "{{ route('user.play.invest', ['roulette', @$isDemo]) }}";
         gameEndUrl = "{{ route('user.play.end', ['roulette', @$isDemo]) }}";
         audioAssetPath = `{{ asset('assets/audio') }}`;
@@ -323,7 +323,7 @@
                     $('.play-btn').html(`@lang('Play')`);
                     $('.play-btn').attr('disabled', false);
                     $("td").removeClass("selected");
-                    $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->min_limit) }}@endif");
+                    $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
                     return false;
                 }
 
@@ -333,7 +333,7 @@
                     $('.play-btn').html(`@lang('Play')`);
                     $('.play-btn').attr('disabled', false);
                     $("td").removeClass("selected");
-                    $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ getAmount($game->min_limit) }}@endif");
+                    $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
                     return false;
                 }
 
@@ -395,7 +395,7 @@
                             $('.play-btn').html(`@lang('Play')`);
                             $('.play-btn').attr('disabled', false);
                             $("td").removeClass("selected");
-                            $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ showAmount($game->min_limit, currencyFormat: false) }}@endif");
+                            $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
                             return false;
                         }
                         if (response.errors) {
@@ -405,7 +405,7 @@
                             $('.play-btn').html(`@lang('Play')`);
                             $('.play-btn').attr('disabled', false);
                             $("td").removeClass("selected");
-                            $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ showAmount($game->min_limit, currencyFormat: false) }}@endif");
+                            $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
                             return false;
                         }
                         response.result = randomNumber;
@@ -413,7 +413,7 @@
                         $('.user-balance').text(response.bal);
                         $('.roulette-game-spin').removeClass('spin-active');
                         $("td").removeClass("selected");
-                        $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ showAmount($game->min_limit, currencyFormat: false) }}@endif");
+                        $('input[name=invest]').val("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
 
                     })
                     $('.play-btn').html(`@lang('Play')`);

@@ -139,14 +139,18 @@ class Poker extends Game {
                     );
                 }
             } else {
-                $user->balance += $winAmount;
+                // $winAmount is derived entirely from $gameLog->invest, which is always
+                // site-default currency - convert at the one point it crosses into balance,
+                // same as Game::complete()'s own win-crediting fix.
+                $walletWinAmount = convertAmountFromSiteDefault((string) $winAmount, $user->currency);
+                $user->balance += $walletWinAmount;
                 $user->save();
             }
 
             if (!$this->demoPlay && !$coinMode) {
                 $transaction               = new Transaction();
                 $transaction->user_id      = $user->id;
-                $transaction->amount       = $winAmount;
+                $transaction->amount       = $walletWinAmount ?? 0;
                 $transaction->charge       = 0;
                 $transaction->trx_type     = '+';
                 $transaction->details      = 'Win bonus of ' . $game->name;

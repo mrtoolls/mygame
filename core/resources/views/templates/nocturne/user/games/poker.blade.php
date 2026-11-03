@@ -179,7 +179,7 @@
                         <span class="text balance">{!! showUserBalance() !!}</span>
                     @else
                         <span class="text balance">{{ showAmount($balance, currencyFormat: false) }}</span>
-                        {{ __(gs('cur_text')) }}
+                        {{ __(($isDemo ? gs('cur_text') : (auth()->user()?->currency?->code ?? gs('cur_text')))) }}
                     @endif
                 </h4>
                 <form id="game" method="post">
@@ -188,12 +188,12 @@
                         <div class="input-group">
                             <input class="form-control form--control" name="invest" type="number" step="any"
                                 value="{{ old('invest') }}" placeholder="@lang('Enter amount')" autocomplete="off">
-                            <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(gs('cur_text')) }}</span>
+                            <span class="input-group-text">{{ gs('coin_mode') ? __('Coins') : __(($isDemo ? gs('cur_text') : (auth()->user()?->currency?->code ?? gs('cur_text')))) }}</span>
                         </div>
                         <small class="fw-light mt-3 d-inline-block input-inner-note">
                             <i class="fas fa-info-circle mr-2"></i> @lang('Invest Limit')
-                            : @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ showBaseAmount($game->min_limit) }} @endif -
-                            @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ showBaseAmount($game->max_limit) }} @endif
+                            : @if (gs('coin_mode')) {{ formatCoinOrUsd($game->min_limit) }} @else {{ ($isDemo ? showBaseAmount($game->min_limit) : convertFromSiteDefault($game->min_limit)) }} @endif -
+                            @if (gs('coin_mode')) {{ formatCoinOrUsd($game->max_limit) }} @else {{ ($isDemo ? showBaseAmount($game->max_limit) : convertFromSiteDefault($game->max_limit)) }} @endif
                         </small>
                     </div>
                     <div class="form-submit game-playbtn">
@@ -238,9 +238,9 @@
         "use strict";
 
         let userBalance = Number("@if ($isDemo && gs('coin_mode')){{ bcdiv((string) $balance, (string) (gs('coin_peg_usd') ?: '0.01'), 8) }}@elseif (!$isDemo && gs('coin_mode')){{ app(\App\Services\CoinLedger::class)->wallet('user', auth()->id())->available_balance }}@else{{ $balance }}@endif");
-        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->min_limit }}@endif");
-        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ $game->max_limit }}@endif");
-        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ gs('cur_text') }}@endif";
+        let minLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->min_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->min_limit : convertAmountFromSiteDefault((string) $game->min_limit)) }}@endif");
+        let maxLimit = Number("@if (gs('coin_mode')){{ bcdiv((string) $game->max_limit, (string) (gs('coin_peg_usd') ?: '0.01'), 0) }}@else{{ ($isDemo ? (string) $game->max_limit : convertAmountFromSiteDefault((string) $game->max_limit)) }}@endif");
+        let currency = "@if (gs('coin_mode')){{ __('Coins') }}@else{{ ($isDemo ? gs('cur_text') : (auth()->user()?->currency?->code ?? gs('cur_text'))) }}@endif";
         audioAssetPath = `{{ asset('assets/audio') }}`;
 
 

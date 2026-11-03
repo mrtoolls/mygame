@@ -65,7 +65,10 @@ class NumberSlot extends Game {
                         );
                     }
                 } else {
-                    $this->user->balance += $amount;
+                    // $amount is derived entirely from $gameLog->invest, which is always
+                    // site-default currency - convert at the one point it crosses into balance,
+                    // same as Game::complete()'s own win-crediting fix.
+                    $this->user->balance += convertAmountFromSiteDefault((string) $amount, $this->user->currency);
                     $this->user->save();
                 }
 

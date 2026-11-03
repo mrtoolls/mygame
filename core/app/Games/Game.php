@@ -214,12 +214,16 @@ abstract class Game {
                 if ($this->demoPlay) {
                     $this->adjustDemoBalance((string) $gameLog->invest);
                 } elseif (!$coinMode) {
-                    $this->user->balance += $gameLog->invest;
+                    // $gameLog->invest is always site-default currency; $this->user->balance is
+                    // the player's own wallet currency - convert at the one point this value
+                    // actually crosses into balance, same as the deposit crediting fix.
+                    $investBackWallet = convertAmountFromSiteDefault((string) $gameLog->invest, $this->user->currency);
+                    $this->user->balance += $investBackWallet;
                     $this->user->save();
 
                     $transaction               = new Transaction();
                     $transaction->user_id      = $this->user->id;
-                    $transaction->amount       = $investBack;
+                    $transaction->amount       = $investBackWallet;
                     $transaction->charge       = 0;
                     $transaction->trx_type     = '+';
                     $transaction->details      = 'Invest Back For ' . $this->game->name;
@@ -250,10 +254,16 @@ abstract class Game {
 
             }
 
+            $walletWinAmount = 0;
             if ($this->demoPlay) {
                 $this->adjustDemoBalance((string) $amount);
             } elseif (!$coinMode) {
-                $this->user->balance += $amount;
+                // Same site-default -> wallet-currency conversion as the invest-back credit
+                // above - $amount is derived entirely from $gameLog->invest. Kept outside this
+                // branch's scope so the Transaction record below (and post_balance) agree with
+                // what actually hit balance, not the unconverted site-default figure.
+                $walletWinAmount = convertAmountFromSiteDefault((string) $amount, $this->user->currency);
+                $this->user->balance += $walletWinAmount;
                 $this->user->save();
             } elseif (bccomp((string) $amount, '0', 8) > 0) {
                 // Coin mode: the win bonus is the house paying the player from the platform
@@ -279,7 +289,7 @@ abstract class Game {
             if (!$this->demoPlay && !$coinMode) {
                 $transaction               = new Transaction();
                 $transaction->user_id      = $this->user->id;
-                $transaction->amount       = $winBon;
+                $transaction->amount       = $walletWinAmount;
                 $transaction->charge       = 0;
                 $transaction->trx_type     = '+';
                 $transaction->details      = 'Win bonus of ' . $this->game->name;
@@ -399,15 +409,25 @@ abstract class Game {
         if ($running) {
             return ['error' => '1 game is in-complete. Please wait'];
         }
-        // $game->min_limit/max_limit are stored as a real-currency figure (admin edits them in
-        // currency), the same convention as VIP tier bonuses - the frontend already shows and
+        // $game->min_limit/max_limit are stored as a real-currency figure in the SITE'S OWN
+        // DEFAULT currency (confirmed against the admin form's own "{{ gs('cur_text') }}"
+        // label), the same convention as VIP tier bonuses - the frontend already shows and
         // submits them peg-converted to coins once coin mode is on (every game template divides
         // them by coin_peg_usd for its own min/max hint and bet-field validation), so the
         // submitted $this->request->invest has to be compared against the SAME peg-converted
         // figure here, or a coin bet would be checked against a far smaller/larger raw dollar
-        // number than what the player was actually shown.
-        $maxLimit = gs('coin_mode') ? bcdiv((string) $this->game->max_limit, $this->coinPeg(), 8) : $this->game->max_limit;
-        $minLimit = gs('coin_mode') ? bcdiv((string) $this->game->min_limit, $this->coinPeg(), 8) : $this->game->min_limit;
+        // number than what the player was actually shown. Outside coin mode and for REAL play
+        // only, the bet field and its min/max hint are now shown converted into the player's own
+        // wallet currency too - mirror that same conversion here so what's actually enforced
+        // matches what the player was shown. Demo play's balance is explicitly documented
+        // (adjustDemoBalance()) as staying in the site's own default currency throughout, never
+        // converted to the player's wallet currency, so its min/max check is untouched.
+        $maxLimit = gs('coin_mode')
+            ? bcdiv((string) $this->game->max_limit, $this->coinPeg(), 8)
+            : (($this->demoPlay) ? $this->game->max_limit : convertAmountFromSiteDefault((string) $this->game->max_limit, $this->user?->currency));
+        $minLimit = gs('coin_mode')
+            ? bcdiv((string) $this->game->min_limit, $this->coinPeg(), 8)
+            : (($this->demoPlay) ? $this->game->min_limit : convertAmountFromSiteDefault((string) $this->game->min_limit, $this->user?->currency));
         if ($this->request->invest > $maxLimit) {
             return ['error' => 'Please follow the maximum limit of invest'];
         }
@@ -462,7 +482,15 @@ abstract class Game {
 
         $gameLog->status         = 0;
         $gameLog->win_status     = @$gameResult['win_status'] ?? 0;
-        $gameLog->invest         = $this->request->invest;
+        // GameLog.invest is always in the site's own default currency - coin mode aside, where
+        // $request->invest is already a coin amount, not a currency figure at all - so VIP
+        // min_wagered (compared directly against a sum of this column, see User::
+        // totalWagered()'s own comment) and anything else that assumes a consistent unit across
+        // every row keeps working. $request->invest itself is now the player's own wallet
+        // currency (the bet field is shown/validated converted into it, same as the deposit
+        // page), so it's converted once here for storage - the stake debit/credit touches below
+        // use the original wallet-currency figure directly, since it already matches balance.
+        $gameLog->invest         = (gs('coin_mode') || $this->demoPlay) ? $this->request->invest : convertAmountToSiteDefault((string) $this->request->invest, $user?->currency);
         $gameLog->win_amo        = @$gameResult['win_amount'] ?? 0;
         $gameLog->mines          = @$this->request->mines ?? 0;
         $gameLog->mine_available = @$this->request->mines ?? 0;
