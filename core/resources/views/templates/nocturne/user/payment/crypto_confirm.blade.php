@@ -14,7 +14,7 @@
                             </div>
                         </div>
 
-                        <p class="text-center mt-2 mb-3">@lang('You are requesting') <b>{{ showAmount($data->amount) }}</b> @lang('to deposit.') @lang('Please pay') <b>{{ showAmount($data->final_amount, currencyFormat: false) . ' ' . $data->method_currency }}</b> @lang('to the address below.')</p>
+                        <p class="text-center mt-2 mb-3">@lang('You are requesting') <b>{{ convertFromSiteDefault($data->amount) }}</b> @lang('to deposit.') @lang('Please pay') <b>{{ showAmount($data->final_amount, currencyFormat: false) . ' ' . $data->method_currency }}</b> @lang('to the address below.')</p>
 
                         <div class="nocturne-crypto-pay__panel">
                             <div class="nocturne-crypto-pay__qr"><canvas id="crypto-qr"></canvas></div>
@@ -32,7 +32,7 @@
                         @endif
 
                         <div class="nocturne-crypto-pay__footrow">
-                            <div><span>@lang('Minimum Deposit')</span><strong>{{ showAmount($method->min_amount) }}</strong></div>
+                            <div><span>@lang('Minimum Deposit')</span><strong>{{ convertFromSiteDefault($method->min_amount) }}</strong></div>
                             <div><span>@lang('Network')</span><strong>{{ $method->network_label ?: __($method->currency) }}</strong></div>
                         </div>
 

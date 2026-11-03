@@ -104,14 +104,23 @@ class PaymentController extends Controller {
         }
         app(\App\Support\CountryPaymentLimits::class)->assertMethodAllowed($user, [$gate->currency, $gate->method_code, $gate->method?->alias, $gate->name]);
 
-        if ($gate->min_amount > $request->amount || $gate->max_amount < $request->amount) {
+        // GatewayCurrency.min_amount/max_amount/fixed_charge/percent_charge are always
+        // admin-entered in the site's own default currency (confirmed against the admin forms
+        // that set them, which are literally labeled "... {{ gs('cur_text') }}"), but the amount
+        // the player just typed is in their OWN wallet currency (the deposit page now shows and
+        // validates against converted limits to match). Convert once here into the site-default
+        // unit everything below already assumes, so this block's own math - charge, rate,
+        // final_amount - stays completely unchanged; only the figure it receives is now correct.
+        $siteDefaultAmount = convertAmountToSiteDefault((string) $request->amount, $user->currency);
+
+        if ($gate->min_amount > $siteDefaultAmount || $gate->max_amount < $siteDefaultAmount) {
             if ($request->wantsJson()) return response()->json(['message' => 'Please follow deposit limit'], 422);
             $notify[] = ['error', 'Please follow deposit limit'];
             return back()->withNotify($notify);
         }
 
-        $charge      = $gate->fixed_charge + ($request->amount * $gate->percent_charge / 100);
-        $payable     = $request->amount + $charge;
+        $charge      = $gate->fixed_charge + ($siteDefaultAmount * $gate->percent_charge / 100);
+        $payable     = $siteDefaultAmount + $charge;
         $finalAmount = $payable * $gate->rate;
 
         $data                  = new Deposit();
@@ -133,7 +142,7 @@ class PaymentController extends Controller {
             if (Schema::hasColumn('deposits', 'support_agent_id')) $data->support_agent_id = $agent->id;
         }
         $data->method_currency = strtoupper($gate->currency);
-        $data->amount          = $request->amount;
+        $data->amount          = $siteDefaultAmount;
         $data->charge          = $charge;
         $data->rate            = $gate->rate;
         $data->final_amount    = $finalAmount;
@@ -267,13 +276,20 @@ class PaymentController extends Controller {
                     app(\App\Services\CoinReferral::class)->creditOnCoinPurchase($user->id, $coinAmount, 'Deposit Commission', 'deposit_mint:' . $lockedDeposit->id);
                 }
             } else {
-                $user->balance += $lockedDeposit->amount;
+                // Deposit.amount is always in the site's default currency (see depositInsert());
+                // $user->balance is tracked in the user's own wallet currency (switching it
+                // genuinely converts the stored balance, not just a display label - see
+                // ProfileController::updateCurrency()). Convert once here, at the one point this
+                // value actually crosses into balance, instead of crediting the raw site-default
+                // figure directly into a wallet-currency balance.
+                $walletAmount = convertAmountFromSiteDefault((string) $lockedDeposit->amount, $user->currency);
+                $user->balance += $walletAmount;
                 $user->save();
                 $lockedDeposit->save();
 
                 $transaction = new Transaction();
                 $transaction->user_id = $user->id;
-                $transaction->amount = $lockedDeposit->amount;
+                $transaction->amount = $walletAmount;
                 $transaction->post_balance = $user->balance;
                 $transaction->charge = $lockedDeposit->charge;
                 $transaction->trx_type = '+';

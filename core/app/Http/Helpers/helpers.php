@@ -227,6 +227,71 @@ function formatUsdInWalletCurrency($usdAmount, $currency = null, bool $includeCo
     return $includeCode ? $formatted . ' ' . $currency->code : $formatted;
 }
 
+/**
+ * Resolves a usable target Currency for the conversion helpers below (explicit model/code, or
+ * the authenticated viewer's own wallet currency) - null when none is usable, so callers can
+ * fall back to the site-default-only behavior instead of converting against a bad currency.
+ */
+function resolveConversionCurrency($currency = null): ?\App\Models\Currency {
+    if (!$currency && auth()->check()) {
+        $currency = auth()->user()->currency;
+    }
+    if (is_string($currency)) {
+        $currency = \App\Models\Currency::where('code', strtoupper($currency))->first();
+    }
+    return ($currency instanceof \App\Models\Currency && $currency->enabled && $currency->rate_to_usd) ? $currency : null;
+}
+
+/**
+ * The site's own default currency (gs('cur_text')) as a Currency row's rate_to_usd, so a
+ * site-default amount can be bridged through USD the same way formatUsdInWalletCurrency()
+ * already bridges a USD amount to a wallet currency. Falls back to an implicit rate of 1
+ * (treat the site default as USD-equivalent) if that row is ever missing/disabled/unrated,
+ * rather than dividing by zero or throwing - degrades to showBaseAmount()'s plain-number
+ * behavior for the conversion helpers below.
+ */
+function siteDefaultRateToUsd(): string {
+    $currency = \App\Models\Currency::where('code', strtoupper((string) gs('cur_text')))->first();
+    return ($currency && $currency->enabled && $currency->rate_to_usd) ? (string) $currency->rate_to_usd : '1';
+}
+
+/**
+ * Raw (unformatted) conversion of a site-default-currency amount - the unit GatewayCurrency
+ * min_amount/max_amount and Game min_limit/max_limit are always admin-entered in, confirmed
+ * directly against their own admin form labels - into a target wallet currency. Returns the
+ * amount unchanged (as a string) when no usable target currency is resolved, or when the
+ * target IS the site default (skips the USD bridge entirely to avoid any rounding drift for
+ * the common case where a user's wallet currency already matches the site default).
+ */
+function convertAmountFromSiteDefault($amount, $toCurrency = null): string {
+    $target = resolveConversionCurrency($toCurrency);
+    if (!$target || strtoupper($target->code) === strtoupper((string) gs('cur_text'))) {
+        return (string) $amount;
+    }
+    $usdValue = bcmul((string) $amount, siteDefaultRateToUsd(), 12);
+    return bcdiv($usdValue, (string) $target->rate_to_usd, 8);
+}
+
+/** The inverse of convertAmountFromSiteDefault() - for interpreting an amount a user submitted in their own wallet currency, back into the site-default unit admin-configured limits are compared against. */
+function convertAmountToSiteDefault($amount, $fromCurrency = null): string {
+    $source = resolveConversionCurrency($fromCurrency);
+    if (!$source || strtoupper($source->code) === strtoupper((string) gs('cur_text'))) {
+        return (string) $amount;
+    }
+    $usdValue = bcmul((string) $amount, (string) $source->rate_to_usd, 12);
+    return bcdiv($usdValue, siteDefaultRateToUsd(), 8);
+}
+
+/** Formatted, converted display of a site-default-currency amount in the viewer's (or given) wallet currency - the "live quote" counterpart to showBaseAmount()'s "historical record" display. */
+function convertFromSiteDefault($amount, $toCurrency = null, bool $includeCode = false): string {
+    $target = resolveConversionCurrency($toCurrency);
+    if (!$target) {
+        return showBaseAmount($amount);
+    }
+    $converted = convertAmountFromSiteDefault($amount, $target);
+    return formatCurrencyAmount($converted, $target, false, $includeCode);
+}
+
 function removeElement($array, $value) {
     return array_diff($array, (is_array($value) ? $value : array($value)));
 }

@@ -16,7 +16,7 @@
                             </li>
                             <li class="list-group-item d-flex justify-content-between flex-wrap px-0">
                                 @lang('You will get '):
-                                <strong>{{ showAmount($deposit->amount) }}</strong>
+                                <strong>{{ convertFromSiteDefault($deposit->amount) }}</strong>
                             </li>
                         </ul>
                         <script src="{{ $data->src }}" class="stripe-button"

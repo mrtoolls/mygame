@@ -17,7 +17,7 @@
                             </li>
                             <li class="list-group-item d-flex justify-content-between flex-wrap px-0">
                                 @lang('You will get '):
-                                <strong>{{ showAmount($deposit->amount) }}</strong>
+                                <strong>{{ convertFromSiteDefault($deposit->amount) }}</strong>
                             </li>
                         </ul>
                         <button type="button" class="btn btn--base w-100 mt-3" id="btn-confirm">@lang('Pay Now')</button>

@@ -48,6 +48,14 @@
         $hasCrypto = $cryptoCount > 0;
         $preselectAgentId = request()->integer('agent') ?: null;
         $preselectGateway = $preselectAgentId ? $gatewayCurrency->firstWhere('support_agent_id', $preselectAgentId) : null;
+        // Real-money mode (coin mode off): every amount on this form - what you type, the
+        // minimum/maximum, the charge/total - represents your OWN wallet currency, not the
+        // site's default. GatewayCurrency.min_amount/max_amount are admin-entered in the site
+        // default, converted here for display/validation; converted back server-side before
+        // depositInsert()'s own charge/rate math, which still runs in the site default as before.
+        $walletCurrency = !($coinMode ?? false) ? auth()->user()?->currency : null;
+        $walletCurSym = ($walletCurrency && $walletCurrency->enabled) ? $walletCurrency->symbol : gs('cur_sym');
+        $walletCurText = ($walletCurrency && $walletCurrency->enabled) ? $walletCurrency->code : gs('cur_text');
     @endphp
 
     <form action="{{ route('user.deposit.insert') }}" method="post" class="deposit-form" id="deposit-form" enctype="multipart/form-data">
@@ -99,8 +107,11 @@
                                 <input class="gateway-input" id="{{ titleToKey($data->name) }}" hidden
                                     data-gateway='@json($data)' type="radio" name="gateway" value="{{ $data->method_code }}"
                                     @checked(old('gateway', $preselectGateway ? $preselectGateway->method_code : ($loop->first ? $data->method_code : null)) == $data->method_code)
-                                    data-min-amount="{{ showBaseAmount($data->min_amount) }}"
-                                    data-max-amount="{{ showBaseAmount($data->max_amount) }}">
+                                    data-min-amount="{{ convertFromSiteDefault($data->min_amount) }}"
+                                    data-max-amount="{{ convertFromSiteDefault($data->max_amount) }}"
+                                    data-min-threshold="{{ convertAmountFromSiteDefault($data->min_amount) }}"
+                                    data-max-threshold="{{ convertAmountFromSiteDefault($data->max_amount) }}"
+                                    data-fixed-charge-threshold="{{ convertAmountFromSiteDefault($data->fixed_charge) }}">
                             </label>
                         @empty
                             <div class="nocturne-wallet-empty"><i class="ph-fill ph-wallet"></i><strong>@lang('No deposit methods available')</strong><span>@lang('Please contact support or try again later.')</span></div>
@@ -137,14 +148,14 @@
             @else
                 <h3 class="nocturne-wallet-card__heading nocturne-wallet-card__heading--amount"><span>2</span> @lang('Enter deposit amount')</h3>
                 <div class="nocturne-wallet-amount">
-                    <span class="nocturne-wallet-amount__prefix">{{ gs('cur_sym') }}</span>
+                    <span class="nocturne-wallet-amount__prefix">{{ $walletCurSym }}</span>
                     <input type="number" inputmode="decimal" min="0" step="any" class="amount" name="amount" placeholder="0.00" value="{{ old('amount') }}" autocomplete="off" aria-label="@lang('Deposit amount')">
                 </div>
             @endif
 
             <div class="nocturne-wallet-charges d-none">
-                <div><span>@lang('Processing charge')</span><strong><span class="processing-fee">0.00</span> {{ __(gs('cur_text')) }}</strong></div>
-                <div><span>@lang('Total')</span><strong><span class="final-amount">0.00</span> {{ __(gs('cur_text')) }}</strong></div>
+                <div><span>@lang('Processing charge')</span><strong><span class="processing-fee">0.00</span> {{ __($walletCurText) }}</strong></div>
+                <div><span>@lang('Total')</span><strong><span class="final-amount">0.00</span> {{ __($walletCurText) }}</strong></div>
             </div>
             <div class="nocturne-wallet-conversion d-none gateway-conversion"></div>
             <div class="nocturne-wallet-conversion d-none conversion-currency"><span>@lang('In')</span> <span class="gateway-currency"></span>: <span class="in-currency"></span></div>
@@ -196,7 +207,7 @@
                     <span class="nocturne-wallet-history__icon"><i class="ph-fill ph-wallet"></i></span>
                     <div class="nocturne-wallet-history__mid"><strong>{{ __($deposit->gateway->name ?? 'Payment') }}</strong><small>{{ $deposit->trx }} · {{ showDateTime($deposit->created_at, 'M d, Y') }}</small></div>
                     <div class="nocturne-wallet-history__end">
-                        <strong class="nocturne-wallet-history__amount">{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showAmount($deposit->amount) }}</strong>
+                        <strong class="nocturne-wallet-history__amount">{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showBaseAmount($deposit->amount) }}</strong>
                         <span class="nocturne-wallet-history__chip nocturne-wallet-history__chip--{{ $meta['cls'] }}"><i class="ph-fill {{ $meta['icon'] }}"></i> {{ __($meta['label']) }}</span>
                         <span class="nocturne-wallet-history__time"><i class="ph-bold ph-clock"></i> {{ diffForHumans($deposit->created_at) }}</span>
                     </div>
@@ -385,7 +396,7 @@
 "use strict";
 (function($) {
     var amount = parseFloat($('.amount').val() || 0);
-    var gateway, minAmount, maxAmount;
+    var gateway, minAmount, maxAmount, minThreshold, maxThreshold, fixedChargeThreshold;
     var coinMode = {{ ($coinMode ?? false) ? 'true' : 'false' }};
     var coinPricingBlocked = {{ (($coinMode ?? false) && $coinPricingError) ? 'true' : 'false' }};
     var coinBuyPrice = parseFloat($('#coin-preview-box').data('coin-buy-price')) || 0;
@@ -444,6 +455,9 @@
         gateway = el.data('gateway');
         minAmount = el.data('min-amount');
         maxAmount = el.data('max-amount');
+        minThreshold = el.data('min-threshold');
+        maxThreshold = el.data('max-threshold');
+        fixedChargeThreshold = el.data('fixed-charge-threshold');
 
         let selectedImage = el.closest('.nocturne-wallet-option').find('img').attr('src');
         let selectedName = el.closest('.nocturne-wallet-option').find('.nocturne-wallet-option__name').clone().children().remove().end().text().trim();
@@ -504,8 +518,13 @@
         $('.gateway-limit').text(minAmount);
         $('.gateway-network').text(gateway.currency || '{{ __(gs("cur_text")) }}');
 
+        // gateway.percent_charge is a plain percentage (currency-agnostic, applies correctly to
+        // the wallet-currency amount directly), but gateway.fixed_charge and min/max_amount are
+        // raw site-default-currency figures straight from the model JSON - fixedChargeThreshold/
+        // minThreshold/maxThreshold are the same figures already converted server-side into the
+        // viewer's own wallet currency, matching what they're actually typing here.
         let percentCharge = parseFloat(gateway.percent_charge) || 0;
-        let fixedCharge = parseFloat(gateway.fixed_charge) || 0;
+        let fixedCharge = parseFloat(fixedChargeThreshold) || 0;
         let totalPercentCharge = amount ? (amount / 100 * percentCharge) : 0;
         let totalCharge = totalPercentCharge + fixedCharge;
         let totalAmount = (amount || 0) + totalPercentCharge + fixedCharge;
@@ -516,7 +535,7 @@
         $('.gateway-currency').text(gateway.currency);
         $('.nocturne-wallet-charges').toggleClass('d-none', !(percentCharge > 0 || fixedCharge > 0));
 
-        $('#deposit-cta').prop('disabled', coinPricingBlocked || !(amount >= Number(gateway.min_amount) && amount <= Number(gateway.max_amount)));
+        $('#deposit-cta').prop('disabled', coinPricingBlocked || !(amount >= Number(minThreshold) && amount <= Number(maxThreshold)));
 
         if (gateway.currency != "{{ gs('cur_text') }}" && gateway.method.crypto != 1) {
             $('.gateway-conversion, .conversion-currency').removeClass('d-none');

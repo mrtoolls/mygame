@@ -11,7 +11,7 @@
                     <h2>@lang('Payment in progress')</h2>
                     <p>@lang('Send the exact amount shown to the address on this page. Your balance is credited after the network confirms the payment.')</p>
                     <div class="crypto-overview-row"><span>@lang('Payment method')</span><strong>{{ $deposit->methodName() ?: $data->currency }}</strong></div>
-                    <div class="crypto-overview-row"><span>@lang('Deposit amount')</span><strong>{{ showAmount($deposit->amount) }}</strong></div>
+                    <div class="crypto-overview-row"><span>@lang('Deposit amount')</span><strong>{{ convertFromSiteDefault($deposit->amount) }}</strong></div>
                     <div class="crypto-overview-row"><span>@lang('Amount to send')</span><strong class="crypto-highlight">{{ $data->amount }} {{ $data->currency }}</strong></div>
                     <div class="crypto-overview-status"><i class="las la-shield-alt"></i><span><strong>@lang('Address reserved for this payment')</strong><small>@lang('Only send the selected asset using the matching network.')</small></span></div>
                     <a class="crypto-history-link" href="{{ route('user.deposit.history') }}"><i class="las la-receipt"></i>@lang('View deposit history')<i class="las la-arrow-right"></i></a>
@@ -28,7 +28,7 @@
                         <div class="crypto-address-row"><code id="deposit-address">{{ $data->sendto }}</code><button type="button" class="crypto-copy-button" data-copy-target="deposit-address" aria-label="@lang('Copy deposit address')"><i class="las la-copy"></i></button></div>
                         <div class="crypto-payment-warning"><i class="las la-info-circle"></i><p>@lang('Send only :currency using the correct network. Sending another asset or using a different network may result in permanent loss. Your deposit is credited automatically after the required confirmations.', ['currency' => $data->currency])</p></div>
                         <div class="crypto-payment-meta">
-                            <div><span>@lang('Minimum deposit')</span><strong>{{ showAmount(optional($deposit->gatewayCurrency())->min_amount ?? 0) }}</strong></div>
+                            <div><span>@lang('Minimum deposit')</span><strong>{{ convertFromSiteDefault(optional($deposit->gatewayCurrency())->min_amount ?? 0) }}</strong></div>
                             <div><span>@lang('Network / currency')</span><strong>{{ $data->currency }}</strong></div>
                         </div>
                     </div>

@@ -47,7 +47,7 @@
                         <small>{{ $deposit->trx }}</small>
                     </div>
                     <div class="nocturne-txn-card__amount">
-                        <strong>{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showAmount($deposit->amount) }}</strong>
+                        <strong>{{ $deposit->coin_mode_purchase ? coinAmountText($deposit->coin_amount) : showBaseAmount($deposit->amount) }}</strong>
                         @if($deposit->coin_mode_purchase)
                             <small class="nocturne-txn-coin-rate">@lang('Rate'): {{ showAmount($deposit->coin_buy_price_snapshot, currencyFormat: false) }}/{{ __('coin') }}</small>
                         @endif
@@ -56,7 +56,7 @@
                 </div>
                 <div class="nocturne-txn-card__bottom">
                     <div class="nocturne-txn-card__stat"><span><i class="ph-bold ph-calendar"></i> @lang('Date')</span><strong>{{ showDateTime($deposit->created_at, 'M d, Y · h:i A') }}</strong></div>
-                    <div class="nocturne-txn-card__stat"><span><i class="ph-bold ph-receipt"></i> @lang('Charge')</span><strong>{{ showAmount($deposit->charge) }}</strong></div>
+                    <div class="nocturne-txn-card__stat"><span><i class="ph-bold ph-receipt"></i> @lang('Charge')</span><strong>{{ showBaseAmount($deposit->charge) }}</strong></div>
                     <div class="nocturne-txn-card__stat"><span><i class="ph-bold ph-arrows-left-right"></i> @lang('Conversion')</span><strong>{{ showAmount($deposit->final_amount, currencyFormat: false) }} {{ __($deposit->method_currency) }}</strong></div>
                     <div class="nocturne-txn-card__stat"><span><i class="ph-bold ph-clock"></i> @lang('Time')</span><strong>{{ diffForHumans($deposit->created_at) }}</strong></div>
                     <div class="nocturne-txn-card__action">

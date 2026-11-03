@@ -13,7 +13,7 @@
                             <div class="col-md-12">
                                 <div class="pa-request-notice">
                                     <i class="ph-fill ph-info"></i>
-                                    <p>@lang('You are requesting') <b>{{ showAmount($data['amount']) }}</b> @lang('to deposit.') @lang('Please pay') <b>{{ showAmount($data['final_amount'], currencyFormat: false) . ' ' . $data['method_currency'] }}</b> @lang('for successful payment.')</p>
+                                    <p>@lang('You are requesting') <b>{{ convertFromSiteDefault($data['amount']) }}</b> @lang('to deposit.') @lang('Please pay') <b>{{ showAmount($data['final_amount'], currencyFormat: false) . ' ' . $data['method_currency'] }}</b> @lang('for successful payment.')</p>
                                 </div>
 
                                 <div class="my-4 text-center">@php echo  $data->gateway->description @endphp</div>
