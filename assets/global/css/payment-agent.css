@@ -4,10 +4,19 @@
    --nocturne-muted/--nocturne-text) defined in nocturne.css, which always loads first - this
    file only adds new component classes, it never redefines the shared tokens. */
 
-/* ---- Avatar + corner verified badge (replaces inline "Verified" text next to the name) ---- */
-.pa-avatar { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: rgba(0, 239, 135, .12); color: var(--nocturne-green); font-size: 20px; font-weight: 900; }
-.pa-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.pa-avatar__badge { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--nocturne-panel, #151a31); background: var(--nocturne-green); color: #06281c; font-size: 11px; }
+/* ---- Avatar + corner verified badge (replaces inline "Verified" text next to the name) ----
+   The wrapper itself must stay overflow:visible so the badge can sit on/outside the circle's
+   edge - only the <img> (or the fallback icon's own round background) is clipped to a circle,
+   not the wrapper, otherwise the badge gets cut off instead of overlapping the edge. */
+.pa-avatar { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: rgba(0, 239, 135, .12); color: var(--nocturne-green); font-size: 20px; font-weight: 900; }
+.pa-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.pa-avatar__badge { position: absolute; right: -2px; bottom: -2px; z-index: 1; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--nocturne-panel, #151a31); background: var(--nocturne-green); color: #06281c; font-size: 11px; }
+
+/* ---- Deposit-request notice (replaces the default white Bootstrap alert) ---- */
+.pa-request-notice { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 13px 15px; border: 1px solid rgba(0, 239, 135, .22); border-radius: 13px; background: rgba(0, 239, 135, .06); }
+.pa-request-notice i { flex: 0 0 auto; margin-top: 1px; color: var(--nocturne-green); font-size: 16px; }
+.pa-request-notice p { margin: 0; color: var(--nocturne-muted, #9ca6c7); font-size: 12.5px; line-height: 1.55; }
+.pa-request-notice b { color: var(--nocturne-text, #f4f5fd); font-weight: 700; }
 
 /* ---- Premium, compact payment-agent card ---- */
 .pa-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--nocturne-line); border-radius: 16px; background: linear-gradient(135deg, rgba(0, 239, 135, .07), rgba(20, 26, 48, .92)); }
@@ -44,4 +53,7 @@
     .pa-contact__menu { right: auto; left: 0; }
     .pa-method dl > div { flex-direction: column; align-items: flex-start; }
     .pa-method dd { text-align: left; }
+    .pa-request-notice { padding: 11px 12px; border-radius: 12px; }
+    .pa-request-notice i { font-size: 14px; }
+    .pa-request-notice p { font-size: 11.5px; }
 }

@@ -2416,3 +2416,18 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
     color: #fff !important;
     -webkit-text-fill-color: #fff !important;
 }
+
+/* File inputs (deposit receipts, KYC uploads, business promo images, etc.) inherited the base
+   theme's tall control + solid-green "Choose File" button, which read as oversized and out of
+   step with this theme's subtler, darker control styling. Smaller, flatter, outlined button. */
+.form--control[type="file"] { min-height: 44px; padding: 8px 10px; line-height: 1.3; }
+.form--control[type="file"]::file-selector-button,
+.form--control[type="file"]::-webkit-file-upload-button {
+    margin-right: 10px; padding: 7px 13px; border: 1px solid var(--nocturne-line) !important;
+    border-radius: 9px; background: rgba(255,255,255,.04) !important; color: var(--nocturne-text) !important;
+    font-size: 11.5px; font-weight: 700; line-height: 1.4; cursor: pointer; transition: border-color .15s ease, color .15s ease;
+}
+.form--control[type="file"]::file-selector-button:hover,
+.form--control[type="file"]::-webkit-file-upload-button:hover {
+    background: rgba(0,239,135,.08) !important; border-color: rgba(0,239,135,.35) !important; color: var(--nocturne-green) !important;
+}
