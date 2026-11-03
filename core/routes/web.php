@@ -60,6 +60,9 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::post('notifications/read', 'paymentNotificationsRead')->name('notifications.read');
         });
 
+        Route::get('contact-settings', 'contactSettings')->name('contact-settings');
+        Route::post('contact-settings', 'contactSettingsUpdate')->name('contact-settings.update');
+
         Route::prefix('news')->name('news.')->group(function () {
             Route::get('/', 'newsIndex')->name('index');
             Route::get('create', 'newsCreate')->name('create');

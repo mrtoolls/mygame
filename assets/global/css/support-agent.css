@@ -92,6 +92,20 @@ button { cursor:pointer; }
 .support-agent-toast { position:fixed; right:20px; bottom:20px; z-index:20; max-width:360px; padding:12px 15px; transform:translateY(12px); border:1px solid var(--agent-line); border-radius:12px; background:var(--agent-raised); color:var(--agent-text); font-size:10px; opacity:0; pointer-events:none; transition:all .2s ease; }
 .support-agent-toast.is-visible { transform:none; opacity:1; }
 .support-mobile-back { display:none; }
+.agent-channel { display:flex; align-items:center; gap:14px; padding:16px; border:1px solid var(--agent-line); border-radius:15px; background:var(--agent-panel); }
+.agent-channel+.agent-channel { margin-top:10px; }
+.agent-channel__icon { display:grid; flex:0 0 40px; place-items:center; width:40px; height:40px; border-radius:12px; background:var(--agent-raised); color:var(--agent-green); font-size:18px; }
+.agent-channel__body { flex:1; min-width:0; }
+.agent-channel__body label { display:block; margin-bottom:6px; color:var(--agent-text); font-size:13px; font-weight:800; }
+.agent-channel__body input { width:100%; height:42px; padding:0 12px; border:1px solid var(--agent-line); border-radius:10px; outline:0; background:#0d1122; color:var(--agent-text); font-size:13px; }
+.agent-channel__body input:focus { border-color:rgba(0,239,135,.5); }
+.agent-channel__body input:disabled { opacity:.45; }
+.agent-toggle { position:relative; flex:0 0 42px; width:42px; height:24px; }
+.agent-toggle input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+.agent-toggle__switch { position:absolute; inset:0; border:1px solid var(--agent-line); border-radius:999px; background:#242c48; transition:background .16s ease; pointer-events:none; }
+.agent-toggle__switch:before { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#aab3d4; transition:transform .16s ease,background .16s ease; }
+.agent-toggle input:checked+.agent-toggle__switch { background:rgba(0,239,135,.28); border-color:rgba(0,239,135,.5); }
+.agent-toggle input:checked+.agent-toggle__switch:before { transform:translateX(18px); background:var(--agent-green); }
 @media(max-width:760px) {
     .support-topbar { height:61px; padding:0 13px; }
     .support-topbar__right { gap:8px; }

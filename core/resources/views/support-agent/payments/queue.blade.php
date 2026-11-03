@@ -11,7 +11,7 @@
 </head>
 <body class="support-agent-app">
     @include('support-agent.partials.topbar', ['agent' => $agent, 'active' => 'payments'])
-    <div style="max-width:960px;margin:12px auto 0;padding:0 20px"><a href="{{ route('support-agent.payments.settings') }}" class="support-nav-link"><i class="ph-fill ph-sliders"></i> <span>Accepted payment types</span></a></div>
+    <div style="max-width:960px;margin:12px auto 0;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap"><a href="{{ route('support-agent.payments.settings') }}" class="support-nav-link"><i class="ph-fill ph-sliders"></i> <span>Accepted payment types</span></a><a href="{{ route('support-agent.contact-settings') }}" class="support-nav-link"><i class="ph-fill ph-chat-circle-dots"></i> <span>Contact methods</span></a></div>
     <main style="max-width:960px;margin:0 auto;padding:28px 20px">
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px">
             <div style="flex:1;min-width:180px;padding:18px;border:1px solid var(--agent-line);border-radius:16px;background:var(--agent-panel)">
