@@ -208,7 +208,7 @@
 .table-match__back:hover{background:rgba(0,239,135,.14);color:var(--tm-green)}
 .table-match__title{min-width:0;flex:1}
 .table-match__top small{color:var(--tm-green);font-size:9px;font-weight:950;letter-spacing:.13em}
-.table-match__top h1{margin:2px 0 0;overflow:hidden;font-size:clamp(15px,3vw,24px);font-weight:950;white-space:nowrap;text-overflow:ellipsis}
+.table-match__top h1{margin:2px 0 0;overflow:hidden;font-size:clamp(15px,3vw,24px);font-weight:700;white-space:nowrap;text-overflow:ellipsis}
 .table-match__status{flex:0 0 auto;padding:7px 12px;border:1px solid var(--tm-line);border-radius:20px;color:#bdc7e6;font-size:10px;font-weight:900;white-space:nowrap}
 .table-match__status::before{content:'';display:inline-block;width:6px;height:6px;margin-right:6px;border-radius:50%;background:var(--tm-green);box-shadow:0 0 8px var(--tm-green);vertical-align:1px}
 .table-match__toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -450,7 +450,7 @@
 .result-popup.is-win .result-popup__icon{background:radial-gradient(circle,rgba(0,239,135,.22),rgba(0,239,135,.04));color:var(--tm-green,#00ef87);box-shadow:0 0 0 1px rgba(0,239,135,.25),0 0 40px rgba(0,239,135,.25)}
 .result-popup.is-lose .result-popup__icon{background:radial-gradient(circle,rgba(255,112,135,.18),rgba(255,112,135,.03));color:#ff95a6;box-shadow:0 0 0 1px rgba(255,112,135,.22)}
 .result-popup.is-draw .result-popup__icon{background:radial-gradient(circle,rgba(145,156,205,.22),rgba(145,156,205,.04));color:#bdc7e6;box-shadow:0 0 0 1px rgba(145,156,205,.22)}
-.result-popup__title{position:relative;z-index:1;margin:0 0 6px;font-size:20px;font-weight:950}
+.result-popup__title{position:relative;z-index:1;margin:0 0 6px;font-size:20px;font-weight:700}
 .result-popup__subtitle{position:relative;z-index:1;margin:0;color:var(--tm-muted,#929abc);font-size:12.5px;line-height:1.5}
 .result-popup__amount{position:relative;z-index:1;margin:18px 0;padding:14px;border-radius:16px;background:rgba(255,255,255,.04)}
 .result-popup__amount-value{display:block;font-size:27px;font-weight:950}

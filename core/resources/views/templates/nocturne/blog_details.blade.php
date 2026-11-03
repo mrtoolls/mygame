@@ -83,7 +83,7 @@
 .nocturne-news-detail__thumb{border-radius:18px;overflow:hidden;aspect-ratio:16/8;background:#0d1225}
 .nocturne-news-detail__thumb img{width:100%;height:100%;object-fit:cover}
 .nocturne-news-detail__badge{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:7px 13px;border-radius:999px;background:rgba(0,231,138,.14);color:var(--news-accent);font-size:11.5px;font-weight:800}
-.nocturne-news-detail__title{margin:18px 0 10px;color:var(--news-text);font-size:clamp(22px,2.6vw,30px);font-weight:850;letter-spacing:-.02em;line-height:1.3}
+.nocturne-news-detail__title{margin:18px 0 10px;color:var(--news-text);font-size:clamp(22px,2.6vw,30px);font-weight:650;letter-spacing:-.02em;line-height:1.3}
 .nocturne-news-detail__meta{display:flex;align-items:center;gap:8px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px dashed var(--news-line);color:var(--news-muted);font-size:12.5px;font-weight:700}
 .nocturne-news-detail__meta i{color:var(--news-accent)}
 .nocturne-news-detail__body{color:#d7dafa;font-size:15px;line-height:1.85}

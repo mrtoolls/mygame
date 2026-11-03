@@ -56,7 +56,7 @@
 .nocturne-arena-profile-card{display:flex;align-items:center;gap:16px;margin-bottom:22px;padding:20px;border:1px solid var(--arena-line);border-radius:20px;background:linear-gradient(155deg,#151a31,#10152a 78%);box-shadow:0 14px 34px rgba(0,0,0,.16)}
 .nocturne-arena-profile-card__avatar{flex:0 0 64px;width:64px;height:64px;font-size:24px}
 .nocturne-arena-profile-card__info{flex:1;min-width:0}
-.nocturne-arena-profile-card__info h1{margin:0 0 5px;color:var(--arena-text);font-size:19px;font-weight:850}
+.nocturne-arena-profile-card__info h1{margin:0 0 5px;color:var(--arena-text);font-size:19px;font-weight:650}
 .nocturne-arena-profile-card__tier{display:inline-flex;align-items:center;gap:5px;margin-bottom:8px;padding:4px 10px;border-radius:999px;background:rgba(0,231,138,.12);color:var(--arena-accent);font-size:11px;font-weight:800}
 .nocturne-arena-profile-card__stats{display:flex;gap:16px}
 .nocturne-arena-profile-card__stats span{color:var(--arena-muted);font-size:12.5px}

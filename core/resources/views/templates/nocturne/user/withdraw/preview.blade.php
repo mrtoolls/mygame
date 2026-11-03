@@ -65,7 +65,7 @@
         .withdraw-review-hero p{margin:0;color:#858eaf;font-size:14px}
         .withdraw-review-card{padding:clamp(16px,3vw,28px);border:1px solid rgba(133,142,175,.14);border-radius:22px;background:#151a31}
         .withdraw-review-card .card-header{padding:0 0 18px;border-color:rgba(133,142,175,.15);background:transparent}
-        .withdraw-review-card .card-title{color:#f5f6ff;font-weight:800}
+        .withdraw-review-card .card-title{color:#f5f6ff;font-weight:650}
         .withdraw-review-card .alert-info{padding:17px;border:1px solid rgba(0,231,138,.18);border-radius:15px;background:rgba(0,231,138,.07);color:#dce1f5;line-height:1.65}
         .withdraw-review-card .alert-info b{color:#00e78a}
         .withdraw-review-card .form-group{margin-bottom:16px}

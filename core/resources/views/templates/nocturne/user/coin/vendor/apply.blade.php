@@ -4,8 +4,8 @@
 .vendor-shell{width:100%;max-width:1120px;min-width:0;margin-inline:auto;padding:clamp(14px,2.2vw,30px);color:#f4f6ff}
 .vendor-hero,.vendor-card{position:relative;min-width:0;overflow:hidden;margin:0 0 18px;padding:clamp(20px,2.8vw,32px);border:1px solid rgba(135,154,208,.16);border-radius:22px;background:linear-gradient(145deg,#171d36,#111629);box-shadow:0 14px 38px rgba(0,0,0,.14)}
 .vendor-hero{background:radial-gradient(ellipse at 92% 12%,rgba(0,233,138,.16),transparent 38%),linear-gradient(135deg,#171d36,#111629 72%)}
-.vendor-shell h1,.vendor-shell h2{color:#f5f6ff;font-family:inherit;font-weight:800;letter-spacing:-.025em;line-height:1.2}
-.vendor-shell h1{margin:6px 0 10px;font-size:clamp(25px,2.5vw,34px)}
+.vendor-shell h1,.vendor-shell h2{color:#f5f6ff;font-family:inherit;font-weight:650;letter-spacing:-.025em;line-height:1.2}
+.vendor-shell h1{margin:6px 0 10px;font-size:clamp(21px,2.1vw,28px)}
 .vendor-shell h2{margin:0 0 14px;font-size:clamp(19px,1.8vw,23px)}
 .vendor-shell p,.vendor-muted{color:#9aa6ce;line-height:1.6}.vendor-shell p{margin:0 0 14px;font-size:14px}
 .vendor-hero>.vendor-muted{font-size:10px;font-weight:850;letter-spacing:.13em;color:#00e98a}

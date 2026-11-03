@@ -74,7 +74,7 @@
 .nocturne-news-featured img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .nocturne-news-featured__shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(5,8,18,.88) 0%,rgba(5,8,18,.15) 55%,transparent 80%)}
 .nocturne-news-featured__badge{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;margin:20px 0 0 20px;padding:8px 14px;border-radius:999px;background:rgba(0,231,138,.16);backdrop-filter:blur(6px);color:var(--news-accent);font-size:12px;font-weight:800}
-.nocturne-news-featured__title{position:relative;z-index:1;margin:260px 24px 24px;color:#fff;font-size:clamp(18px,2.2vw,24px);font-weight:850;letter-spacing:-.02em;line-height:1.25}
+.nocturne-news-featured__title{position:relative;z-index:1;margin:260px 24px 24px;color:#fff;font-size:clamp(18px,2.2vw,24px);font-weight:650;letter-spacing:-.02em;line-height:1.25}
 
 .nocturne-news-recent{display:grid;gap:14px}
 .nocturne-news-recent__item{display:flex;gap:14px;padding:14px;border:1px solid var(--news-line);border-radius:18px;background:linear-gradient(155deg,#151a31,#10152a 78%);text-decoration:none;transition:border-color .18s,transform .18s}
@@ -86,7 +86,7 @@
 .nocturne-news-recent__body small{color:var(--news-muted);font-size:12px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nocturne-news-recent__body b{color:var(--news-accent);font-size:12px;font-weight:800}
 
-.nocturne-news-grid-heading{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:var(--news-text);font-size:18px;font-weight:850}
+.nocturne-news-grid-heading{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:var(--news-text);font-size:18px;font-weight:650}
 .nocturne-news-grid-heading i{color:var(--news-accent)}
 
 .nocturne-news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px;align-items:start}
