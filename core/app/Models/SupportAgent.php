@@ -15,6 +15,7 @@ class SupportAgent extends Authenticatable
         'is_payment_agent' => 'boolean',
         'last_seen_at' => 'datetime',
         'accepted_payment_types' => 'array',
+        'payment_details' => 'array',
         'is_verified' => 'boolean',
         'is_moderator' => 'boolean',
     ];

@@ -65,8 +65,29 @@
                                 <small>{{ $deposit->payment_agent_snapshot->email }}</small>
                             </div>
                         </div>
-                        @if (!empty($deposit->payment_agent_snapshot->payment_details))
-                            <p class="nocturne-admin-agent__details">{!! nl2br(e($deposit->payment_agent_snapshot->payment_details)) !!}</p>
+                        @php($pd = $deposit->payment_agent_snapshot->payment_details ?? null)
+                        @if (is_object($pd) && (!empty($pd->methods) || !empty($pd->instructions)))
+                            <div class="nocturne-admin-agent__details">
+                                @foreach($pd->methods ?? [] as $method)
+                                    <div class="nocturne-admin-agent__method">
+                                        <strong>{{ $method->label ?: ucfirst(str_replace('_', ' ', $method->type ?? 'method')) }}</strong>
+                                        <ul>
+                                            @if(!empty($method->bank_name))<li>@lang('Bank'): {{ $method->bank_name }}</li>@endif
+                                            @if(!empty($method->account_number))<li>@lang('Account number'): {{ $method->account_number }}</li>@endif
+                                            @if(!empty($method->account_name))<li>@lang('Account name'): {{ $method->account_name }}</li>@endif
+                                            @if(!empty($method->provider))<li>@lang('Provider'): {{ $method->provider }}</li>@endif
+                                            @if(!empty($method->phone_number))<li>@lang('Phone'): {{ $method->phone_number }}</li>@endif
+                                            @if(!empty($method->network))<li>@lang('Network'): {{ $method->network }}</li>@endif
+                                            @if(!empty($method->wallet_address))<li>@lang('Wallet'): {{ $method->wallet_address }}</li>@endif
+                                            @if(!empty($method->memo))<li>@lang('Memo'): {{ $method->memo }}</li>@endif
+                                            @if(!empty($method->details))<li>{{ $method->details }}</li>@endif
+                                        </ul>
+                                    </div>
+                                @endforeach
+                                @if(!empty($pd->instructions))<p class="nocturne-admin-agent__instructions">{{ $pd->instructions }}</p>@endif
+                            </div>
+                        @elseif (is_string($pd) && $pd !== '')
+                            <p class="nocturne-admin-agent__details">{!! nl2br(e($pd)) !!}</p>
                         @endif
                     </div>
                 @endif
@@ -274,7 +295,12 @@
 .nocturne-admin-agent{display:flex;align-items:center;gap:12px}
 .nocturne-admin-agent strong{display:block;color:var(--na-text);font-size:14.5px}
 .nocturne-admin-agent small{color:var(--na-muted);font-size:12px}
-.nocturne-admin-agent__details{margin:14px 0 0;padding-top:14px;border-top:1px dashed var(--na-line);color:var(--na-muted);font-size:13px;line-height:1.6}
+.nocturne-admin-agent__details{margin:14px 0 0;padding-top:14px;border-top:1px dashed var(--na-line);display:grid;gap:10px}
+.nocturne-admin-agent__method{padding:11px 13px;border:1px solid var(--na-line);border-radius:13px;background:rgba(255,255,255,.025)}
+.nocturne-admin-agent__method strong{display:block;margin-bottom:6px;color:var(--na-text);font-size:12.5px;font-weight:750}
+.nocturne-admin-agent__method ul{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+.nocturne-admin-agent__method li{color:var(--na-muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.nocturne-admin-agent__instructions{margin:0;color:var(--na-muted);font-size:12.5px;line-height:1.6}
 
 .nocturne-admin-alert{display:flex;gap:11px;margin-bottom:16px;padding:13px 15px;border-radius:14px}
 .nocturne-admin-alert--danger{border:1px solid rgba(255,92,122,.25);background:rgba(255,92,122,.08)}
