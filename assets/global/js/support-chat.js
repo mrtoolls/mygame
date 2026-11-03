@@ -313,6 +313,10 @@
     });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !panel.hidden) hidePanel(); });
+    // Lets any page (e.g. the manual-payment page's "Chat in app" contact option) open this
+    // widget pre-targeted at a specific agent, without needing access to this IIFE's closure -
+    // startChat() already opens the panel and shows the chat view itself.
+    document.addEventListener('winx-support-start', (event) => { startChat(event.detail && event.detail.agentId); });
 
     setUnread(unread);
     if (conversation) beginPolling();

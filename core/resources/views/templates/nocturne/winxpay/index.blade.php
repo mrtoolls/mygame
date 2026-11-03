@@ -1,5 +1,6 @@
 @extends('Template::layouts.frontend')
 @section('content')
+<link rel="stylesheet" href="{{ asset('assets/global/css/payment-agent.css') }}?v={{ @filemtime('assets/global/css/payment-agent.css') }}">
 <section class="nocturne-page-hero">
     <div class="nocturne-page-hero__text">
         <span class="nocturne-eyebrow"><i class="ph-bold ph-handshake"></i> @lang('WinxPay')</span>
@@ -17,11 +18,12 @@
                 @php($speed = $speedScores[$agent->id] ?? 0)
                 <article class="nocturne-winxpay-card">
                     <div class="nocturne-winxpay-card__head">
-                        <span class="nocturne-winxpay-card__avatar">
+                        <span class="pa-avatar">
                             @if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<i class="ph-fill ph-user-circle"></i>@endif
+                            @if($agent->is_verified)<span class="pa-avatar__badge" title="@lang('Verified')"><i class="ph-fill ph-seal-check"></i></span>@endif
                         </span>
                         <div class="nocturne-winxpay-card__identity">
-                            <strong>{{ $agent->name }} @if($agent->is_verified)<span class="nocturne-winxpay-verified" title="@lang('Verified')"><i class="ph-fill ph-seal-check"></i></span>@endif</strong>
+                            <strong>{{ $agent->name }}</strong>
                             <span>{{ $agent->title ?: __('Payment agent') }}</span>
                         </div>
                         <button type="button" class="nocturne-winxpay-card__info" data-toggle-info aria-label="@lang('Accepted payment types')"><i class="ph-bold ph-info"></i></button>
@@ -54,7 +56,7 @@
         <div class="nocturne-winxpay-grid">
             @foreach($directoryItems as $offer)
                 <article class="nocturne-winxpay-card">
-                    <div class="nocturne-winxpay-card__head"><span class="nocturne-winxpay-card__avatar">@if($offer['avatar_url'])<img src="{{ $offer['avatar_url'] }}" alt="">@else{{ strtoupper(substr($offer['name'],0,1)) }}@endif</span><div class="nocturne-winxpay-card__identity"><strong>{{ $offer['name'] }} <span class="nocturne-winxpay-verified"><i class="ph-fill ph-seal-check"></i></span></strong><span>{{ $offer['type']==='vendor'?'Verified Coin Vendor':'Payment agent' }} · {{ $offer['reliability_score'] }}/100</span></div></div>
+                    <div class="nocturne-winxpay-card__head"><span class="pa-avatar">@if($offer['avatar_url'])<img src="{{ $offer['avatar_url'] }}" alt="">@else{{ strtoupper(substr($offer['name'],0,1)) }}@endif<span class="pa-avatar__badge" title="@lang('Verified')"><i class="ph-fill ph-seal-check"></i></span></span><div class="nocturne-winxpay-card__identity"><strong>{{ $offer['name'] }}</strong><span>{{ $offer['type']==='vendor'?'Verified Coin Vendor':'Payment agent' }} · {{ $offer['reliability_score'] }}/100</span></div></div>
                     @if($coinMode ?? false)<div class="nocturne-winxpay-card__speed-label"><span>Rate per coin</span><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_coin'],4) }}</strong></div><div class="nocturne-winxpay-card__speed-label"><span>Per 100 / 1,000</span><strong>{{ $offer['currency_code'] }} {{ number_format($offer['rate_per_100'],2) }} / {{ number_format($offer['rate_per_1000'],2) }}</strong></div>@endif
                     <div class="nocturne-winxpay-card__speed-label"><span>{{ number_format($offer['completed_trades']) }} completed · {{ $offer['average_release_minutes'] ? $offer['average_release_minutes'].' min avg' : 'New offer' }}</span><strong>{{ $offer['online']?'Online':'Offline' }}</strong></div>
                     @if($offer['payment_methods'])<div class="nocturne-winxpay-card__type-tags">@foreach($offer['payment_methods'] as $method)<span>{{ $method }}</span>@endforeach</div>@endif

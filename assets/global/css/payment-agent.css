@@ -1,0 +1,47 @@
+/* Payment agent — shared across the manual-payment page, the WinxPay directory, and anywhere
+   else a payment agent's avatar/verified badge/contact options are shown. Shares the nocturne
+   design tokens (--nocturne-green/--nocturne-panel/--nocturne-raised/--nocturne-line/
+   --nocturne-muted/--nocturne-text) defined in nocturne.css, which always loads first - this
+   file only adds new component classes, it never redefines the shared tokens. */
+
+/* ---- Avatar + corner verified badge (replaces inline "Verified" text next to the name) ---- */
+.pa-avatar { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: rgba(0, 239, 135, .12); color: var(--nocturne-green); font-size: 20px; font-weight: 900; }
+.pa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pa-avatar__badge { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--nocturne-panel, #151a31); background: var(--nocturne-green); color: #06281c; font-size: 11px; }
+
+/* ---- Premium, compact payment-agent card ---- */
+.pa-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--nocturne-line); border-radius: 16px; background: linear-gradient(135deg, rgba(0, 239, 135, .07), rgba(20, 26, 48, .92)); }
+.pa-card__identity { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1 1 auto; }
+.pa-card__name { display: block; overflow: hidden; color: var(--nocturne-text, #f4f5fd); font-size: 13.5px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.pa-card__meta { display: block; margin-top: 2px; color: var(--nocturne-muted, #9ca6c7); font-size: 11px; }
+
+/* ---- Contact button + popover ---- */
+.pa-contact { position: relative; flex: 0 0 auto; }
+.pa-contact__toggle { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border: 1px solid rgba(0, 239, 135, .32); border-radius: 11px; background: rgba(0, 239, 135, .1); color: var(--nocturne-green); font-size: 12px; font-weight: 800; cursor: pointer; }
+.pa-contact__toggle:hover { background: rgba(0, 239, 135, .18); }
+.pa-contact__menu { position: absolute; z-index: 15; top: calc(100% + 8px); right: 0; width: max(220px, 100%); min-width: 220px; padding: 7px; border: 1px solid var(--nocturne-line); border-radius: 14px; background: #10152a; box-shadow: 0 18px 45px rgba(0, 0, 0, .4); }
+.pa-contact:not([open]) .pa-contact__menu { display: none; }
+.pa-contact__row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--nocturne-text, #eef1fc); font-size: 12.5px; font-weight: 700; text-decoration: none; }
+.pa-contact__row:hover { background: rgba(255, 255, 255, .05); }
+.pa-contact__row i { flex: 0 0 auto; width: 18px; color: var(--nocturne-green); font-size: 16px; text-align: center; }
+.pa-contact summary { list-style: none; cursor: pointer; }
+.pa-contact summary::-webkit-details-marker { display: none; }
+
+/* ---- Structured payment-method cards (replaces the old oversized plain block) ---- */
+.pa-methods { display: grid; gap: 10px; margin-top: 12px; }
+.pa-method { padding: 12px 14px; border: 1px solid var(--nocturne-line); border-radius: 13px; background: rgba(7, 11, 27, .42); }
+.pa-method__label { display: block; margin-bottom: 8px; color: var(--nocturne-green); font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.pa-method dl { margin: 0; display: grid; gap: 6px; }
+.pa-method dl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pa-method dt { flex: 0 0 auto; color: var(--nocturne-muted, #9ca6c7); font-size: 11px; font-weight: 700; }
+.pa-method dd { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--nocturne-text, #eef1fc); font-size: 12.5px; font-weight: 700; overflow-wrap: anywhere; text-align: right; }
+.pa-copy { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 8px; background: rgba(255, 255, 255, .04); color: var(--nocturne-muted, #9ca6c7); cursor: pointer; transition: color .15s ease, border-color .15s ease; }
+.pa-copy:hover, .pa-copy.is-copied { color: var(--nocturne-green); border-color: rgba(0, 239, 135, .4); }
+.pa-instructions { margin: 10px 0 0; padding: 11px 13px; border: 1px dashed rgba(255, 255, 255, .12); border-radius: 11px; color: #c7cedd; font-size: 12px; line-height: 1.55; }
+
+@media (max-width: 575.98px) {
+    .pa-card { padding: 13px; border-radius: 15px; }
+    .pa-contact__menu { right: auto; left: 0; }
+    .pa-method dl > div { flex-direction: column; align-items: flex-start; }
+    .pa-method dd { text-align: left; }
+}

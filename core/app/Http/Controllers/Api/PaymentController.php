@@ -91,6 +91,9 @@ class PaymentController extends Controller
                     'email' => $agent->email,
                     'photo' => $agent->photo,
                     'payment_details' => $agent->payment_details,
+                    'is_verified' => $agent->is_verified,
+                    'is_chat_agent' => $agent->is_chat_agent,
+                    'contact_methods' => $agent->contact_methods,
                 ];
             }
             $deposit->method_currency = strtoupper($gate->currency);
