@@ -119,6 +119,7 @@
         .nocturne-gender-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
         .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { border-color: var(--nocturne-green, #00ef87); }
         .nocturne-field__control .mobile-code { color: var(--nocturne-muted, #929abc); font-size: 13px; font-weight: 800; white-space: nowrap; }
+        #onboard-country.is-invalid { border-color: #ff5c7a !important; box-shadow: 0 0 0 3px rgba(255, 92, 122, .14); }
         .nocturne-field__control--select select {
             appearance: none; -webkit-appearance: none; -moz-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23929abc' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -160,21 +161,50 @@
     <script>
         "use strict";
         (function($) {
+            // Pre-select the visitor's geo-detected country by comparing values in JS, not by
+            // string-interpolating the server value into a raw CSS attribute selector - a stray
+            // character in that value (e.g. from an unreliable IP-geolocation lookup) could throw
+            // a hard jQuery selector-syntax error here and silently abort this whole script
+            // before it ever reached the change handler/initial sync below, which is exactly the
+            // failure mode that left mobile_code/country_code empty at submit even though a
+            // country was visibly selected on screen.
             @if ($mobileCode)
-                $(`option[data-code={{ $mobileCode }}]`).attr('selected', '');
+                var detectedCountryCode = @json($mobileCode);
+                $('#onboard-country option').each(function() {
+                    if ($(this).data('code') === detectedCountryCode) {
+                        $(this).prop('selected', true);
+                        return false;
+                    }
+                });
             @endif
 
             function syncMobileCode() {
-                var selected = $('#onboard-country :selected');
-                $('input[name=mobile_code]').val(selected.data('mobile_code'));
-                $('input[name=country_code]').val(selected.data('code'));
-                $('#onboard-mobile-code').text(selected.data('mobile_code') ? '+' + selected.data('mobile_code') : '');
+                var selected = $('#onboard-country option:selected');
+                var dial = selected.data('mobile_code');
+                var code = selected.data('code');
+                $('input[name=mobile_code]').val(dial || '');
+                $('input[name=country_code]').val(code || '');
+                $('#onboard-mobile-code').text(dial ? '+' + dial : '');
+                $('#onboard-country').toggleClass('is-invalid', !dial || !code);
             }
-            $('#onboard-country').on('change', function() {
+            $('#onboard-country').on('change input', function() {
                 syncMobileCode();
                 checkUser($('[name=mobile]').val(), 'mobile');
             });
             syncMobileCode();
+
+            // Final safety net right before submit: re-sync from whatever is actually selected
+            // (covers autofill/back-forward-cache restores that don't always fire a native
+            // 'change' event) and refuse to submit with a clear on-page cue instead of letting an
+            // empty mobile_code/country_code reach the server as a generic validation error.
+            $('#onboardForm').on('submit', function(e) {
+                syncMobileCode();
+                if (!$('input[name=mobile_code]').val() || !$('input[name=country_code]').val()) {
+                    e.preventDefault();
+                    $('#onboard-country').addClass('is-invalid').trigger('focus');
+                    return false;
+                }
+            });
 
             $('.checkUser').on('focusout', function(e) {
                 checkUser($(this).val(), $(this).attr('name'));
