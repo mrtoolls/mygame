@@ -16,6 +16,7 @@ class CoinAgentMarketplaceController extends Controller
     {
         $pageTitle = 'Coin Marketplace';
         $agent = auth('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $wallet = app(CoinLedger::class)->wallet('agent', $agent->id);
         $listings = CoinListing::where('status', 'on_sale')->latest()->paginate(getPaginate());
         $myTrades = CoinTrade::where(function ($query) use ($agent) {

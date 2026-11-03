@@ -42,6 +42,11 @@
                     <small>JPG, PNG, or WebP up to 3 MB.</small>
                 </div>
                 <div class="sa-field sa-field--wide"><label>Short introduction</label><textarea class="form-control" name="bio" rows="3" maxlength="500">{{ old('bio', $agent->bio) }}</textarea></div>
+                <div class="sa-field sa-field--wide">
+                    <label>Linked player account (optional)</label>
+                    <input class="form-control" name="linked_username" value="{{ old('linked_username', $agent->user?->username) }}" maxlength="60" placeholder="Exact username">
+                    <small>Lets that player jump into this agent profile from their own account nav, with no separate agent login. Leave blank for staff with no player account; clear it to unlink.</small>
+                </div>
             </div>
             @if($agent->exists && $agent->photo)
                 <div class="sa-current-photo"><img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="Current profile photo"><span>Current photo</span></div>
@@ -56,9 +61,24 @@
                 <span class="sa-toggle__text"><strong>Allow sign-in</strong><small>Agent can log in and appears in the support launcher.</small></span>
             </label>
             <label class="sa-toggle">
+                <input type="checkbox" name="is_chat_agent" value="1" @checked(old('is_chat_agent', $agent->exists ? $agent->is_chat_agent : true))>
+                <span class="sa-toggle__switch"></span>
+                <span class="sa-toggle__text"><strong>Live chat</strong><small>Can claim and reply to live support chats.</small></span>
+            </label>
+            <label class="sa-toggle">
                 <input type="checkbox" name="is_moderator" value="1" @checked(old('is_moderator', $agent->exists ? $agent->is_moderator : false))>
                 <span class="sa-toggle__switch"></span>
                 <span class="sa-toggle__text"><strong>Arena moderator</strong><small>Can approve or reject Arena community posts.</small></span>
+            </label>
+            <label class="sa-toggle">
+                <input type="checkbox" name="is_news_editor" value="1" @checked(old('is_news_editor', $agent->exists ? $agent->is_news_editor : false))>
+                <span class="sa-toggle__switch"></span>
+                <span class="sa-toggle__text"><strong>News editor</strong><small>Can publish, edit, and remove site news posts.</small></span>
+            </label>
+            <label class="sa-toggle">
+                <input type="checkbox" name="is_marketplace_supervisor" value="1" @checked(old('is_marketplace_supervisor', $agent->exists ? $agent->is_marketplace_supervisor : false))>
+                <span class="sa-toggle__switch"></span>
+                <span class="sa-toggle__text"><strong>Marketplace supervisor</strong><small>Can resolve coin-trade disputes and issue penalties.</small></span>
             </label>
         </section>
 

@@ -44,6 +44,21 @@ class UserController extends Controller {
         return view('Template::user.dashboard', compact('pageTitle', 'games', 'widget', 'user', 'claimable', 'activeBonuses'));
     }
 
+    // One-click bridge from a player's own account into a support-agent profile an admin has
+    // linked to it - entirely derived from the authenticated player (no client-supplied agent
+    // id), so there's no IDOR surface. The player's own `web` guard session is untouched
+    // throughout (SessionGuard::logout() only ever clears its own guard's session keys, same as
+    // the admin "login as user" impersonation elsewhere in this app), so they stay logged in as
+    // themselves while also being logged into the agent app in the same browser session.
+    public function agentDashboard() {
+        $agent = \App\Models\SupportAgent::where('user_id', auth()->id())->where('is_active', true)->first();
+        abort_if(!$agent, 404);
+
+        \Illuminate\Support\Facades\Auth::guard('support_agent')->loginUsingId($agent->id);
+
+        return to_route('support-agent.dashboard');
+    }
+
     public function depositHistory(Request $request) {
         $pageTitle = gs('coin_mode') ? 'Buy Coins History' : 'Deposit History';
         $deposits  = auth()->user()->deposits()->searchable(['trx'])->with(['gateway'])->orderBy('id', 'desc')->paginate(getPaginate());

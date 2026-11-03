@@ -37,7 +37,7 @@ class SupportAgentController extends Controller
     {
         $data = $this->validatePaymentMethods($request, $this->baseRules($request, null));
 
-        $agent = new SupportAgent(collect($data)->except(['payment_methods', 'payment_instructions'])->all());
+        $agent = new SupportAgent(collect($data)->except(['payment_methods', 'payment_instructions', 'linked_username'])->all());
         $agent->password = Hash::make($data['password']);
         $agent->is_active = $request->boolean('is_active', true);
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
@@ -45,6 +45,10 @@ class SupportAgentController extends Controller
         $agent->is_verified = $request->boolean('is_verified');
         $agent->speed_override = $request->filled('speed_override') ? $request->integer('speed_override') : null;
         $agent->is_moderator = $request->boolean('is_moderator');
+        $agent->is_marketplace_supervisor = $request->boolean('is_marketplace_supervisor');
+        $agent->is_chat_agent = $request->boolean('is_chat_agent', true);
+        $agent->is_news_editor = $request->boolean('is_news_editor');
+        $agent->user_id = $this->resolveLinkedUserId($data);
         if (!empty($data['country_id']) && Schema::hasTable('countries')) {
             $country = Country::with('currency')->findOrFail($data['country_id']);
             if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
@@ -76,13 +80,17 @@ class SupportAgentController extends Controller
         $agent = SupportAgent::findOrFail($id);
         $data = $this->validatePaymentMethods($request, $this->baseRules($request, $agent->id));
 
-        $agent->fill(collect($data)->except(['password', 'photo', 'is_verified', 'speed_override', 'is_moderator', 'payment_methods', 'payment_instructions'])->all());
+        $agent->fill(collect($data)->except(['password', 'photo', 'is_verified', 'speed_override', 'is_moderator', 'payment_methods', 'payment_instructions', 'linked_username', 'is_marketplace_supervisor', 'is_chat_agent', 'is_news_editor'])->all());
         $agent->is_active = $request->boolean('is_active');
         $agent->is_payment_agent = $request->boolean('is_payment_agent');
         $agent->payment_details = $this->buildPaymentDetails($agent->is_payment_agent, $data);
         $agent->is_verified = $request->boolean('is_verified');
         $agent->speed_override = $request->filled('speed_override') ? $request->integer('speed_override') : null;
         $agent->is_moderator = $request->boolean('is_moderator');
+        $agent->is_marketplace_supervisor = $request->boolean('is_marketplace_supervisor');
+        $agent->is_chat_agent = $request->boolean('is_chat_agent');
+        $agent->is_news_editor = $request->boolean('is_news_editor');
+        $agent->user_id = $this->resolveLinkedUserId($data);
         if (!empty($data['country_id']) && Schema::hasTable('countries')) {
             $country = Country::with('currency')->findOrFail($data['country_id']);
             if (!$country->currency?->enabled) return back()->withErrors(['country_id' => 'Choose a country with an enabled wallet currency.'])->withInput();
@@ -145,7 +153,23 @@ class SupportAgentController extends Controller
             'is_verified' => ['nullable', 'boolean'],
             'speed_override' => ['nullable', 'integer', 'between:0,100'],
             'is_moderator' => ['nullable', 'boolean'],
+            'is_marketplace_supervisor' => ['nullable', 'boolean'],
+            'is_chat_agent' => ['nullable', 'boolean'],
+            'is_news_editor' => ['nullable', 'boolean'],
+            'linked_username' => ['nullable', 'string', 'max:60', Rule::exists('users', 'username')],
         ];
+    }
+
+    // Resolves the admin-typed username of an optional linked player account into that user's
+    // id - letting a player reach this agent profile from their own account nav instead of a
+    // separate agent login (see UserController::agentDashboard()). Left blank clears the link.
+    private function resolveLinkedUserId(array $data): ?int
+    {
+        if (empty($data['linked_username'])) {
+            return null;
+        }
+
+        return \App\Models\User::where('username', $data['linked_username'])->value('id');
     }
 
     // Payment methods are a repeatable, typed list (bank/mobile money/crypto/other) instead of a

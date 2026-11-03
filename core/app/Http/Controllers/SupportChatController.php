@@ -46,7 +46,7 @@ class SupportChatController extends Controller
 
     public function agents()
     {
-        $agents = SupportAgent::where('is_active', true)
+        $agents = SupportAgent::where('is_active', true)->where('is_chat_agent', true)
             ->orderByDesc('last_seen_at')->orderBy('name')->limit(12)
             ->get(['id', 'name', 'photo', 'title', 'last_seen_at']);
 
@@ -67,7 +67,7 @@ class SupportChatController extends Controller
             'email' => ['nullable', 'email', 'max:190'],
         ]);
         $agent = isset($data['agent_id'])
-            ? SupportAgent::where('is_active', true)->findOrFail($data['agent_id'])
+            ? SupportAgent::where('is_active', true)->where('is_chat_agent', true)->findOrFail($data['agent_id'])
             : null;
         $user = $request->user();
 

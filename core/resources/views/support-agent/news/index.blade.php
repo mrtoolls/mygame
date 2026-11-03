@@ -5,17 +5,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>News · Winxpot Care</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="stylesheet" href="{{ asset('assets/global/css/support-agent.css') }}?v={{ @filemtime(public_path('assets/global/css/support-agent.css')) }}">
 </head>
 <body class="support-agent-app">
-    <header class="support-topbar">
-        <a class="support-agent-brand" href="{{ route('support-agent.dashboard') }}"><span class="support-agent-brand__mark">W</span><span>Winxpot <b>Care</b></span></a>
-        <div class="support-topbar__right">
-            <a href="{{ route('support-agent.news.create') }}" style="color:#063b29;background:var(--agent-green);text-decoration:none;font-size:12px;font-weight:800;padding:7px 14px;border-radius:9px">+ New post</a>
-            <a href="{{ route('support-agent.dashboard') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">Back to inbox</a>
-            <div class="support-agent-profile">@if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<span>{{ strtoupper(substr($agent->name,0,1)) }}</span>@endif<strong>{{ $agent->name }}<small>{{ $agent->title ?: 'Support agent' }}</small></strong></div>
-        </div>
-    </header>
+    @include('support-agent.partials.topbar', ['agent' => $agent, 'active' => 'news'])
+    <div style="max-width:960px;margin:12px auto 0;padding:0 20px"><a href="{{ route('support-agent.news.create') }}" style="color:#063b29;background:var(--agent-green);text-decoration:none;font-size:12px;font-weight:800;padding:7px 14px;border-radius:9px;display:inline-flex;align-items:center;gap:6px"><i class="ph-bold ph-plus"></i> New post</a></div>
     <main style="max-width:960px;margin:0 auto;padding:28px 20px">
         @if(session('status'))
             <div style="margin-bottom:18px;padding:12px 16px;border:1px solid rgba(0,239,135,.3);border-radius:12px;background:rgba(0,239,135,.08);color:#b3f9da">{{ session('status') }}</div>

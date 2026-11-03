@@ -51,6 +51,7 @@ Route::middleware('auth')->name('user.')->group(function () {
         Route::namespace('User')->group(function () {
             Route::controller('UserController')->group(function () {
                 Route::get('dashboard', 'home')->name('home');
+                Route::get('agent-dashboard', 'agentDashboard')->name('agent-dashboard');
                 Route::get('download-attachments/{file_hash}', 'downloadAttachment')->name('download.attachment');
 
                 //2FA

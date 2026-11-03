@@ -6,7 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class SupportAgent extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'payment_details', 'is_active', 'is_payment_agent', 'last_seen_at', 'accepted_payment_types', 'is_verified', 'speed_override', 'is_moderator'];
+    protected $fillable = ['name', 'email', 'username', 'password', 'photo', 'title', 'bio', 'payment_details', 'contact_methods', 'is_active', 'is_payment_agent', 'last_seen_at', 'accepted_payment_types', 'is_verified', 'speed_override', 'is_moderator', 'is_marketplace_supervisor', 'is_selling_coins', 'is_chat_agent', 'is_news_editor', 'user_id'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -16,8 +16,13 @@ class SupportAgent extends Authenticatable
         'last_seen_at' => 'datetime',
         'accepted_payment_types' => 'array',
         'payment_details' => 'array',
+        'contact_methods' => 'array',
         'is_verified' => 'boolean',
         'is_moderator' => 'boolean',
+        'is_marketplace_supervisor' => 'boolean',
+        'is_selling_coins' => 'boolean',
+        'is_chat_agent' => 'boolean',
+        'is_news_editor' => 'boolean',
     ];
 
     public function scopeModerators($query)
@@ -33,6 +38,11 @@ class SupportAgent extends Authenticatable
     public function country()
     {
         return $this->belongsTo(Country::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function speedLogs()

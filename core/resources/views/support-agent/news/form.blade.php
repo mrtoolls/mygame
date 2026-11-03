@@ -5,16 +5,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $post ? 'Edit post' : 'New post' }} · Winxpot Care</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="stylesheet" href="{{ asset('assets/global/css/support-agent.css') }}?v={{ @filemtime(public_path('assets/global/css/support-agent.css')) }}">
 </head>
 <body class="support-agent-app">
-    <header class="support-topbar">
-        <a class="support-agent-brand" href="{{ route('support-agent.dashboard') }}"><span class="support-agent-brand__mark">W</span><span>Winxpot <b>Care</b></span></a>
-        <div class="support-topbar__right">
-            <a href="{{ route('support-agent.news.index') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">← Back to news</a>
-            <div class="support-agent-profile">@if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<span>{{ strtoupper(substr($agent->name,0,1)) }}</span>@endif<strong>{{ $agent->name }}<small>{{ $agent->title ?: 'Support agent' }}</small></strong></div>
-        </div>
-    </header>
+    @include('support-agent.partials.topbar', ['agent' => $agent, 'active' => 'news'])
+    <div style="max-width:720px;margin:12px auto 0;padding:0 20px"><a href="{{ route('support-agent.news.index') }}" class="support-nav-link"><i class="ph-bold ph-arrow-left"></i> <span>Back to news</span></a></div>
     <main style="max-width:720px;margin:0 auto;padding:28px 20px">
         <h1 style="font-size:20px;margin-bottom:20px">{{ $post ? 'Edit post' : 'New post' }}</h1>
 

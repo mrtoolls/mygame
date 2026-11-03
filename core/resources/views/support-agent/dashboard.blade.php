@@ -5,23 +5,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Agent Inbox · Winxpot Care</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
     <link rel="stylesheet" href="{{ asset('assets/global/css/support-agent.css') }}?v={{ @filemtime(public_path('assets/global/css/support-agent.css')) }}">
 </head>
 <body class="support-agent-app"
     data-list-url="{{ route('support-agent.conversations') }}"
     data-api-base="{{ url('/support-agent/conversations') }}">
-    <header class="support-topbar">
-        <a class="support-agent-brand" href="{{ route('support-agent.dashboard') }}"><span class="support-agent-brand__mark">W</span><span>Winxpot <b>Care</b></span></a>
-        <div class="support-topbar__right">
-            @if($agent->is_payment_agent)
-                <a href="{{ route('support-agent.payments.queue') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">💳 Payments</a>
-            @endif
-            @if($agent->is_moderator)
-                <a href="{{ route('support-agent.arena.queue') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">🛡️ Arena moderation</a>
-            @endif
-            <a href="{{ route('support-agent.news.index') }}" style="color:var(--agent-muted);text-decoration:none;font-size:12px;font-weight:800;padding:7px 11px;border:1px solid var(--agent-line);border-radius:9px">📰 News</a>
-            <span class="support-online-pill"><i></i> On shift</span><button class="support-notify-toggle" type="button" title="Enable desktop alerts">Enable alerts</button><div class="support-agent-profile">@if($agent->photo)<img src="{{ asset('assets/images/support-agents/' . $agent->photo) }}" alt="">@else<span>{{ strtoupper(substr($agent->name,0,1)) }}</span>@endif<strong>{{ $agent->name }}<small>{{ $agent->title ?: 'Support agent' }}</small></strong></div><form method="post" action="{{ route('support-agent.logout') }}">@csrf<button class="support-logout" type="submit" aria-label="Sign out"><i>↗</i></button></form></div>
-    </header>
+    @include('support-agent.partials.topbar', ['agent' => $agent, 'active' => 'inbox'])
     <main class="support-workspace">
         <aside class="support-inbox">
             <div class="support-inbox__heading"><div><span class="support-agent-eyebrow">CUSTOMER CARE</span><h1>Inbox</h1></div><span class="support-inbox-count" aria-label="Open conversations">0</span></div>

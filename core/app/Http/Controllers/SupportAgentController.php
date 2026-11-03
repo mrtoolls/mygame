@@ -57,14 +57,25 @@ class SupportAgentController extends Controller
         return redirect()->route('support-agent.login');
     }
 
+    // Lands an agent on the first section they're actually granted, in a fixed priority order -
+    // not every agent has chat enabled, so always landing on the chat inbox would show a broken/
+    // empty workspace to e.g. a payments-only or news-only agent.
     public function dashboard()
     {
-        return view('support-agent.dashboard', ['agent' => Auth::guard('support_agent')->user()]);
+        $agent = Auth::guard('support_agent')->user();
+        if ($agent->is_chat_agent) return view('support-agent.dashboard', compact('agent'));
+        if ($agent->is_payment_agent) return redirect()->route('support-agent.payments.queue');
+        if ($agent->is_moderator) return redirect()->route('support-agent.arena.queue');
+        if ($agent->is_marketplace_supervisor) return redirect()->route('support-agent.coin.disputes.index');
+        if ($agent->is_news_editor) return redirect()->route('support-agent.news.index');
+
+        return view('support-agent.no-access', compact('agent'));
     }
 
     public function conversations()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_chat_agent, 403);
         $agent->forceFill(['last_seen_at' => now()])->save();
         $conversations = SupportTicket::with(['user:id,username,email'])
             ->withCount(['supportMessage as unread_count' => fn ($query) => $query->where('sender_type', 'user')->where('is_read', false)])
@@ -96,6 +107,7 @@ class SupportAgentController extends Controller
     public function claim(string $uuid)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_chat_agent, 403);
         $conversation = SupportTicket::where('chat_uuid', $uuid)->where('status', '!=', Status::TICKET_CLOSE)->firstOrFail();
 
         if ($conversation->support_agent_id && (int) $conversation->support_agent_id !== (int) $agent->id) {
@@ -112,6 +124,7 @@ class SupportAgentController extends Controller
     public function messages(string $uuid)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_chat_agent, 403);
         $conversation = SupportTicket::where('chat_uuid', $uuid)
             ->where(function ($query) use ($agent) {
                 $query->where('support_agent_id', $agent->id)->orWhereNull('support_agent_id');
@@ -146,6 +159,7 @@ class SupportAgentController extends Controller
         $body = trim($data['message']);
         abort_if($body === '', 422, 'Please enter a message.');
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_chat_agent, 403);
         $conversation = SupportTicket::where('chat_uuid', $uuid)
             ->where('support_agent_id', $agent->id)->where('status', '!=', Status::TICKET_CLOSE)->firstOrFail();
 
@@ -189,6 +203,7 @@ class SupportAgentController extends Controller
     public function close(string $uuid)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_chat_agent, 403);
         $conversation = SupportTicket::where('chat_uuid', $uuid)->where('support_agent_id', $agent->id)->firstOrFail();
         $conversation->status = Status::TICKET_CLOSE;
         $conversation->save();
@@ -199,6 +214,7 @@ class SupportAgentController extends Controller
     public function paymentQueue()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $deposits = Deposit::where('support_agent_id', $agent->id)
             ->where('status', Status::PAYMENT_PENDING)
             ->with('user:id,username,email')
@@ -214,6 +230,7 @@ class SupportAgentController extends Controller
     public function paymentNotificationsRead()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         \App\Models\AgentNotification::unreadFor('agent', $agent->id)->update(['read_at' => now()]);
 
         return redirect()->route('support-agent.payments.queue');
@@ -222,6 +239,7 @@ class SupportAgentController extends Controller
     public function paymentShow($id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->with('user:id,username,email')->firstOrFail();
 
         return view('support-agent.payments.show', compact('agent', 'deposit'));
@@ -230,6 +248,7 @@ class SupportAgentController extends Controller
     public function paymentConfirm($id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
 
         try {
@@ -281,6 +300,7 @@ class SupportAgentController extends Controller
     public function paymentReject(Request $request, $id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $deposit = Deposit::where('id', $id)->where('support_agent_id', $agent->id)->where('status', Status::PAYMENT_PENDING)->firstOrFail();
 
         $data = $request->validate(['message' => 'required|string|max:255']);
@@ -306,6 +326,7 @@ class SupportAgentController extends Controller
     public function paymentSettings()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $speedService = app(AgentSpeed::class);
         $speedScore = $speedService->scoreFor($agent);
         $fastStreakCount = $speedService->fastStreakCountThisMonth($agent);
@@ -316,6 +337,7 @@ class SupportAgentController extends Controller
     public function paymentSettingsUpdate(Request $request)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_payment_agent, 403);
         $data = $request->validate([
             'accepted_payment_types'   => 'nullable|array',
             'accepted_payment_types.*' => 'string|max:40',
@@ -330,6 +352,7 @@ class SupportAgentController extends Controller
     public function newsIndex()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         $posts = NewsPost::orderBy('id', 'desc')->paginate(15);
         return view('support-agent.news.index', compact('agent', 'posts'));
     }
@@ -337,12 +360,14 @@ class SupportAgentController extends Controller
     public function newsCreate()
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         return view('support-agent.news.form', ['agent' => $agent, 'post' => null]);
     }
 
     public function newsStore(Request $request)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         $request->validate([
             'title'       => 'required|string|max:160',
             'badge_label' => 'nullable|string|max:40',
@@ -372,6 +397,7 @@ class SupportAgentController extends Controller
     public function newsEdit($id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
         return view('support-agent.news.form', compact('agent', 'post'));
     }
@@ -379,6 +405,7 @@ class SupportAgentController extends Controller
     public function newsUpdate(Request $request, $id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
 
         $request->validate([
@@ -407,6 +434,7 @@ class SupportAgentController extends Controller
     public function newsDestroy($id)
     {
         $agent = Auth::guard('support_agent')->user();
+        abort_unless($agent->is_news_editor, 403);
         $post  = NewsPost::where('posted_by_type', 'agent')->where('posted_by_id', $agent->id)->findOrFail($id);
         if ($post->image) {
             @unlink('assets/images/news/' . $post->image);

@@ -10,6 +10,9 @@
         </div>
         <nav class="nocturne-account-links">
             <a href="{{ route('user.home') }}" class="{{ request()->routeIs('user.home') ? 'is-active' : '' }}"><i class="ph-fill ph-user"></i>@lang('Profile')</a>
+            @if(\Illuminate\Support\Facades\Schema::hasColumn('support_agents', 'user_id') && \App\Models\SupportAgent::where('user_id', auth()->id())->where('is_active', true)->exists())
+                <a href="{{ route('user.agent-dashboard') }}"><i class="ph-fill ph-headset"></i>@lang('Agent Dashboard')</a>
+            @endif
             @if(\Illuminate\Support\Facades\Schema::hasTable('coin_vendors') && \App\Models\CoinVendor::where('user_id', auth()->id())->where('status', 'active')->exists())
                 <a href="{{ route('user.coin-vendor.desk') }}" class="{{ request()->routeIs('user.coin-vendor.desk') ? 'is-active' : '' }}"><i class="ph-fill ph-storefront"></i>@lang('Vendor Desk')</a>
             @elseif(gs('coin_mode') && gs('coin_vendor_enabled'))
