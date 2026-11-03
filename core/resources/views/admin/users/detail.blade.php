@@ -95,6 +95,17 @@
                     </form>
                 </div>
 
+                @if(\Illuminate\Support\Facades\Schema::hasTable('coin_vendors') && !\App\Models\CoinVendor::where('user_id', $user->id)->exists())
+                    <div class="flex-fill">
+                        <form action="{{ route('admin.coin.vendors.promote', $user->id) }}" method="post" onsubmit="return confirm('Grant Coin Vendor status to this user directly, skipping the identity-verification application? Only do this for a user you already trust.');">
+                            @csrf
+                            <button type="submit" class="btn btn--dark btn--shadow w-100 btn-lg">
+                                <i class="las la-store"></i>@lang('Make Vendor')
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
                 <div class="flex-fill">
                     @if ($user->status == Status::USER_ACTIVE)
                         <button type="button" class="btn btn--warning btn--shadow w-100 btn-lg userStatus" data-bs-toggle="modal" data-bs-target="#userStatusModal">

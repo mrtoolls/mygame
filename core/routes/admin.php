@@ -91,6 +91,7 @@ Route::middleware('admin')->group(function () {
         Route::post('applications/{id}/reject', 'reject')->name('applications.reject')->whereNumber('id');
         Route::post('applications/{id}/request-information', 'requestInformation')->name('applications.request-information')->whereNumber('id');
         Route::get('/', 'vendors')->name('index');
+        Route::post('promote/{id}', 'promoteUser')->name('promote')->whereNumber('id');
         Route::post('{id}/{action}', 'vendorAction')->name('action')->whereNumber('id');
         Route::get('settings', 'settings')->name('settings');
         Route::post('settings', 'saveSettings')->name('settings.save');

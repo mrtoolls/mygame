@@ -174,6 +174,57 @@ class CoinVendorController extends Controller
         return back()->withNotify([['success', 'The applicant has been notified.']]);
     }
 
+    /**
+     * Lets an admin grant vendor status to any user directly, skipping the identity-verification
+     * application entirely - for a trusted user (staff, a liquidity partner) the admin is
+     * personally vouching for. A synthetic, already-"approved" CoinVendorApplication row is still
+     * created so every CoinVendor keeps the same required application_id it would have from the
+     * normal flow, and so this grant shows up in the same audit trail as a real application would.
+     * No security bond is held here (unlike a normal approval) - requiring one would make this
+     * fail for exactly the users it exists to help (a freshly admin-promoted vendor who has no
+     * coins yet); the admin can hold one later from the vendor's own management panel if desired.
+     */
+    public function promoteUser(Request $request, int $id)
+    {
+        $this->ready(); $this->mayReviewIdentity();
+        $user = \App\Models\User::findOrFail($id);
+        if (CoinVendor::where('user_id', $user->id)->exists()) {
+            return back()->withNotify([['error', $user->username . ' already has a vendor profile - manage it from the Coin Vendors list instead.']]);
+        }
+
+        $vendor = DB::transaction(function () use ($user) {
+            $application = CoinVendorApplication::create([
+                'user_id' => $user->id,
+                'status' => 'approved',
+                'reviewer_notes' => 'Vendor status granted directly by an admin - no application was submitted.',
+                'reviewed_by' => auth('admin')->id(),
+                'reviewed_at' => now(),
+                'submitted_at' => now(),
+            ]);
+
+            $rate = $user->currency_id ? CoinRate::where('currency_id', $user->currency_id)->first() : null;
+            $vendor = new CoinVendor();
+            $vendor->user_id = $user->id;
+            $vendor->application_id = $application->id;
+            $vendor->status = 'active';
+            $vendor->is_selling = false;
+            $vendor->currency_id = $user->currency_id;
+            $vendor->sell_rate = $rate?->buy_price;
+            $vendor->per_trade_limit = gs('coin_vendor_new_per_trade_limit') ?? 1000;
+            $vendor->daily_limit = gs('coin_vendor_new_daily_limit') ?? 5000;
+            $vendor->bond_amount = 0;
+            $vendor->save();
+
+            CoinVendorAudit::record('vendor_admin_granted', $application->id, $vendor->id, auth('admin')->id(), null, 'Vendor status granted directly, without an application.');
+            return $vendor;
+        });
+
+        $this->notifyAdmins('Vendor status granted', $user->username . ' was made a vendor directly by an admin.', route('admin.coin.vendors.index'));
+        $this->sendVendorNotice($user, 'You are now a Coin Vendor', 'An admin has granted you Coin Vendor status. Visit the Vendor Desk in your account to set your rate and start selling.');
+        $notify[] = ['success', $user->username . ' is now a vendor. Set their rate and limits from the Coin Vendors list.'];
+        return to_route('admin.coin.vendors.index', ['search' => $user->username])->withNotify($notify);
+    }
+
     public function vendors(Request $request)
     {
         $this->ready(); $this->mayReviewIdentity();
