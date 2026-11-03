@@ -193,6 +193,15 @@
             });
             syncMobileCode();
 
+            // A browser restoring this form from bfcache (back/forward navigation) or a plain
+            // reload can repopulate the <select>'s value without firing 'change'/'input' at all -
+            // the sync above already ran once, against whatever was selected at that earlier
+            // moment, and nothing re-triggers it afterward even though the dropdown now visibly
+            // shows a different country. 'pageshow' fires on every such restore (including the
+            // normal first load), so re-running the sync there keeps the dial code in step with
+            // whatever the select actually shows, not just with what happened at parse time.
+            window.addEventListener('pageshow', syncMobileCode);
+
             // Final safety net right before submit: re-sync from whatever is actually selected
             // (covers autofill/back-forward-cache restores that don't always fire a native
             // 'change' event) and refuse to submit with a clear on-page cue instead of letting an
