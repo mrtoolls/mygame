@@ -198,3 +198,20 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 @media (min-width: 576px) {
     .coin-trade-sticky-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 }
+
+/* ---- Stat tile grid (vendor desk, and anywhere a row of small metrics is needed) ---- */
+.coin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.coin-stat { min-width: 0; padding: 14px; border: 1px solid var(--nocturne-line); border-radius: 14px; background: var(--nocturne-raised); }
+.coin-stat span { display: block; color: var(--nocturne-muted); font-size: 11px; font-weight: 700; letter-spacing: .01em; }
+.coin-stat strong { display: block; margin-top: 6px; overflow-wrap: anywhere; color: var(--nocturne-text); font-size: 18px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+
+/* ---- Repeatable payment-method row (vendor desk) ---- */
+.coin-pm-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 0; border-top: 1px solid var(--nocturne-line); }
+.coin-pm-row:first-of-type { padding-top: 0; border-top: 0; }
+.coin-pm-row .coin-field { min-width: 150px; }
+
+@media (max-width: 575.98px) {
+    .coin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .coin-stat { padding: 12px; border-radius: 12px; }
+    .coin-stat strong { font-size: 16px; }
+}
