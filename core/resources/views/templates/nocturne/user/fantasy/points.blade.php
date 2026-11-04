@@ -1,6 +1,7 @@
 @extends('Template::layouts.master')
 @section('content')
 <div class="nocturne-account ff-page">
+    @include('Template::user.fantasy.partials.nav')
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><a href="{{ route('user.fantasy.team') }}">@lang('My Team')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Points')</span></div>
         <div class="ff-header"><div><h1>@lang('Points')</h1><p class="ff-sub">{{ $team->name }} &middot; {{ number_format($team->total_points) }} @lang('total points')</p></div></div>

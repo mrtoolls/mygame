@@ -7,6 +7,7 @@
 @extends('Template::layouts.master')
 @section('content')
 <div class="nocturne-account ff-page">
+    @include('Template::user.fantasy.partials.nav')
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Fantasy Football')</span></div>
 

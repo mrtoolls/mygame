@@ -4,6 +4,7 @@
     data-snapshot="{{ route('user.fantasy.fixtures.snapshot', $fixture->id) }}"
     data-verify="{{ route('user.fantasy.fixtures.verify', $fixture->id) }}"
     data-my-players="{{ implode(',', $myTeamPlayerIds) }}">
+    @include('Template::user.fantasy.partials.nav')
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><a href="{{ route('user.fantasy.fixtures.index') }}">@lang('Fixtures')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Live Match')</span></div>
 

@@ -1,6 +1,7 @@
 @extends('Template::layouts.master')
 @section('content')
 <div class="nocturne-account ff-page">
+    @include('Template::user.fantasy.partials.nav')
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><a href="{{ route('user.fantasy.leagues.index') }}">@lang('Leagues')</a><i class="ph-bold ph-caret-right"></i><span>{{ $league->name }}</span></div>
         <div class="ff-header"><div><h1>{{ $league->name }}</h1><p class="ff-sub">{{ ucfirst($league->type) }} @if ($league->join_code) &middot; @lang('Code'): <code>{{ $league->join_code }}</code> @endif</p></div></div>

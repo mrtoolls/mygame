@@ -1,6 +1,7 @@
 @extends('Template::layouts.master')
 @section('content')
 <div class="nocturne-account ff-page">
+    @include('Template::user.fantasy.partials.nav')
     <div class="nocturne-account-content">
         <div class="nocturne-vip-crumb"><a href="{{ route('home') }}">@lang('Home')</a><i class="ph-bold ph-caret-right"></i><a href="{{ route('user.fantasy.team') }}">@lang('My Team')</a><i class="ph-bold ph-caret-right"></i><span>@lang('Transfers')</span></div>
         <div class="ff-header"><div><h1>@lang('Transfers')</h1><p class="ff-sub">@lang('Budget'): {{ number_format($team->budget_remaining, 1) }} &middot; {{ $team->free_transfers_banked }} @lang('free transfers banked')</p></div></div>
