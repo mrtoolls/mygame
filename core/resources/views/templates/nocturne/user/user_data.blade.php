@@ -122,6 +122,14 @@
         .nocturne-field__control--phone { gap: 6px; }
         .nocturne-field__control--phone .mobile-code-prefix { color: var(--nocturne-muted, #929abc); font-size: 14px; font-weight: 800; }
         .nocturne-field__control--phone #onboard-mobile-code { flex: 0 0 48px; width: 48px; text-align: center; padding-right: 0; border-right: 1px solid #2c3453; margin-right: 2px; }
+        /* The mobile-hardening rule below (width:100% on every .nocturne-field__control input)
+           was written back when this row only ever held one input - now that the dial code and
+           the phone number are two separate inputs sharing the same row, that width:100% makes
+           the phone number input fight the dial code input for the full row width instead of
+           taking only the space left over, squeezing it down to nothing. This restores it to a
+           normal flexible sibling, with enough specificity (a name attribute selector) to beat
+           that later, same-specificity-otherwise rule regardless of source order. */
+        .nocturne-field__control--phone input[name="mobile"] { width: auto; flex: 1; min-width: 0; }
         #onboard-country.is-invalid { border-color: #ff5c7a !important; box-shadow: 0 0 0 3px rgba(255, 92, 122, .14); }
         .nocturne-field__control--select select {
             appearance: none; -webkit-appearance: none; -moz-appearance: none;
