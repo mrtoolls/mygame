@@ -4,7 +4,9 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\FantasyClub;
+use App\Models\FantasyFixture;
 use App\Models\FantasyPlayer;
+use App\Models\FantasyPlayerFixtureStat;
 use App\Models\FantasySeason;
 use App\Models\FantasyTeam;
 use App\Models\FantasyTeamPlayer;
@@ -42,11 +44,70 @@ class FantasyTeamController extends Controller
         if (FantasyTeam::where('user_id', auth()->id())->where('season_id', $season->id)->exists()) {
             return redirect()->route('user.fantasy.team');
         }
+        if ($season->currentGameweek && $season->currentGameweek->isDeadlinePassed()) {
+            return redirect()->route('user.fantasy.team')->withNotify([['error', 'Squad building is closed for this season - the first gameweek has already locked.']]);
+        }
 
-        $players = FantasyPlayer::active()->with('club')->orderBy('position')->orderByDesc('rating')->get();
+        $players = $this->enrichedPlayers($season, FantasyPlayer::active()->with('club')->orderBy('position')->orderByDesc('rating')->get());
         $clubs = FantasyClub::where('is_active', true)->orderBy('name')->get();
 
         return view('Template::user.fantasy.build-squad', compact('pageTitle', 'season', 'players', 'clubs'));
+    }
+
+    /**
+     * Attaches real, computed stats to each player for the builder/transfer filter+sort UI:
+     * season-to-date points and recent form (from actual simulated fixtures, empty/null before
+     * any have been played - never fabricated), ownership % among this season's existing squads,
+     * a simple points-per-credit value score, and each club's next up to 3 fixtures with a
+     * difficulty bucket derived from the opponent's admin-set strength_rating.
+     */
+    private function enrichedPlayers(FantasySeason $season, \Illuminate\Support\Collection $players): \Illuminate\Support\Collection
+    {
+        $playerIds = $players->pluck('id');
+
+        $statsByPlayer = FantasyPlayerFixtureStat::whereIn('player_id', $playerIds)
+            ->join('ff_fixtures', 'ff_fixtures.id', '=', 'ff_player_fixture_stats.fixture_id')
+            ->where('ff_fixtures.status', 'final')
+            ->orderBy('ff_fixtures.kickoff_at')
+            ->get(['ff_player_fixture_stats.player_id as player_id', 'ff_player_fixture_stats.total_points as total_points', 'ff_fixtures.kickoff_at as kickoff_at'])
+            ->groupBy('player_id');
+
+        $ownedCounts = FantasyTeamPlayer::whereIn('player_id', $playerIds)
+            ->whereHas('team', fn ($q) => $q->where('season_id', $season->id))
+            ->selectRaw('player_id, count(*) as c')->groupBy('player_id')->pluck('c', 'player_id');
+        $totalTeams = max(1, FantasyTeam::where('season_id', $season->id)->count());
+
+        $nextFixturesByClub = $this->nextFixtureDifficultyByClub($season);
+
+        return $players->map(function ($player) use ($statsByPlayer, $ownedCounts, $totalTeams, $nextFixturesByClub) {
+            $stats = $statsByPlayer->get($player->id, collect());
+            $points = (int) $stats->sum('total_points');
+            $form = $stats->count() ? round((float) $stats->sortByDesc('kickoff_at')->take(4)->avg('total_points'), 1) : null;
+            $ownership = round((($ownedCounts[$player->id] ?? 0) / $totalTeams) * 100, 1);
+            $basis = $stats->count() ? $points : (float) $player->rating;
+            $player->setAttribute('points_total', $points);
+            $player->setAttribute('form', $form);
+            $player->setAttribute('ownership_pct', $ownership);
+            $player->setAttribute('value_score', (float) $player->price > 0 ? round($basis / (float) $player->price, 2) : 0);
+            $player->setAttribute('next_fixtures', $nextFixturesByClub[$player->club_id] ?? []);
+            return $player;
+        });
+    }
+
+    private function nextFixtureDifficultyByClub(FantasySeason $season): array
+    {
+        $upcoming = FantasyFixture::whereHas('gameweek', fn ($q) => $q->where('season_id', $season->id))
+            ->where('status', 'scheduled')->orderBy('kickoff_at')->with(['homeClub', 'awayClub'])->limit(200)->get();
+        $byClub = [];
+        foreach ($upcoming as $fixture) {
+            foreach ([[$fixture->home_club_id, $fixture->away_club_id], [$fixture->away_club_id, $fixture->home_club_id]] as [$clubId, $oppId]) {
+                if (count($byClub[$clubId] ?? []) >= 3) continue;
+                $opponent = (int) $oppId === (int) $fixture->home_club_id ? $fixture->homeClub : $fixture->awayClub;
+                $rating = (float) ($opponent->strength_rating ?? 70);
+                $byClub[$clubId][] = ['opponent' => $opponent->short_code ?? '?', 'difficulty' => $rating >= 78 ? 'hard' : ($rating >= 68 ? 'medium' : 'easy')];
+            }
+        }
+        return $byClub;
     }
 
     public function store(Request $request, FantasyTeamService $service)
@@ -77,7 +138,7 @@ class FantasyTeamController extends Controller
         if (!$team) return redirect()->route('user.fantasy.team');
 
         $owned = $team->players->pluck('player_id')->all();
-        $available = FantasyPlayer::active()->with('club')->whereNotIn('id', $owned)->orderByDesc('rating')->get();
+        $available = $this->enrichedPlayers($season, FantasyPlayer::active()->with('club')->whereNotIn('id', $owned)->orderByDesc('rating')->get());
         $clubs = FantasyClub::where('is_active', true)->orderBy('name')->get();
 
         return view('Template::user.fantasy.transfers', compact('pageTitle', 'team', 'available', 'clubs'));

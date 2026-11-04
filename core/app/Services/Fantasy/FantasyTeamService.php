@@ -37,6 +37,10 @@ class FantasyTeamService
             if (FantasyTeam::where('user_id', $user->id)->where('season_id', $season->id)->exists()) {
                 throw new InvalidArgumentException('You already have a team for this season.');
             }
+            $gameweek = $season->currentGameweek;
+            if ($gameweek && $gameweek->isDeadlinePassed()) {
+                throw new InvalidArgumentException('Squad building is closed - the first gameweek has already locked.');
+            }
             $players = FantasyPlayer::whereIn('id', $playerIds)->lockForUpdate()->get()->keyBy('id');
             if ($players->count() !== 15) throw new InvalidArgumentException('One or more selected players could not be found.');
 
