@@ -17,6 +17,21 @@
 <div class="row">
     <div class="col-lg-6">
         <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">@lang('Card Thumbnail')</h5></div>
+            <form action="{{ route('admin.fantasy.thumbnail.update') }}" method="POST" enctype="multipart/form-data" class="disableSubmission">
+                @csrf
+                <div class="card-body">
+                    <x-image-uploader type="game" image="{{ gs('ff_card_image') }}" :required="false" />
+                    <small class="text-muted d-block mt-2">@lang('Shown on the games catalog, the homepage carousels, and the Arena trending widget - wherever the other games are listed.')</small>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn--primary w-100">@lang('Upload')</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
             <div class="card-header"><h5 class="card-title mb-0">@lang('Generate League')</h5></div>
             <form action="{{ route('admin.fantasy.generate') }}" method="POST" class="disableSubmission">
                 @csrf

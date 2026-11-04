@@ -512,6 +512,19 @@ function fileManager() {
     return new FileManager();
 }
 
+/**
+ * Fantasy Football's card thumbnail - uploaded through the admin panel the same way as any other
+ * game's image (see FantasyAdminController::thumbnailUpdate()), but with nothing to fall back to
+ * on the games table (it isn't one), so this falls back to the bundled placeholder asset instead
+ * of a broken image whenever an admin hasn't uploaded one yet.
+ */
+function fantasyThumbnailUrl(): string {
+    $uploaded = gs('ff_card_image');
+    return $uploaded
+        ? getImage(getFilePath('game') . '/' . $uploaded, getFileSize('game'))
+        : asset('assets/images/frontend/fantasy-football/thumbnail.jpg');
+}
+
 function getFilePath($key) {
     return fileManager()->$key()->path;
 }

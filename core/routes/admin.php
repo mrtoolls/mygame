@@ -181,6 +181,7 @@ Route::middleware('admin')->group(function () {
     // Fantasy Football League
     Route::controller('FantasyAdminController')->name('fantasy.')->prefix('fantasy')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::post('thumbnail', 'thumbnailUpdate')->name('thumbnail.update');
         Route::post('generate', 'generate')->name('generate');
         Route::get('clubs', 'clubs')->name('clubs');
         Route::get('players', 'players')->name('players');

@@ -12,7 +12,7 @@ conditional on $trendingGames being non-empty. --}}
     <div class="nocturne-game-scroller">
         <div class="game-item nocturne-game-scroller__item">
             <div class="game-item__image">
-                <img src="{{ asset('assets/images/frontend/fantasy-football/thumbnail.jpg') }}" alt="{{ __('Fantasy Football') }}" loading="lazy" decoding="async">
+                <img src="{{ fantasyThumbnailUrl() }}" alt="{{ __('Fantasy Football') }}" loading="lazy" decoding="async">
                 <div class="game-item__play">
                     <a href="{{ route('user.fantasy.team') }}" class="nocturne-play-btn nocturne-play-btn--play" aria-label="@lang('Play')"><i class="ph-bold ph-play" aria-hidden="true"></i><span>@lang('Play')</span></a>
                     <a href="{{ route('user.fantasy.team') }}" class="nocturne-play-btn nocturne-play-btn--demo" aria-label="@lang('Demo')"><i class="ph-bold ph-eye" aria-hidden="true"></i><span>@lang('Demo')</span></a>

@@ -13,6 +13,7 @@ use App\Models\FantasyPlayerFixtureStat;
 use App\Models\FantasyScoringRule;
 use App\Models\FantasySeason;
 use App\Models\FantasyStatCorrection;
+use App\Rules\FileTypeValidate;
 use App\Services\Fantasy\FantasyContestService;
 use App\Services\Fantasy\FantasyLeagueGenerator;
 use App\Services\Fantasy\FantasyScoring;
@@ -31,6 +32,29 @@ class FantasyAdminController extends Controller
             'open_contests' => FantasyContest::whereIn('status', ['open', 'locked'])->count(),
         ];
         return view('admin.fantasy.index', compact('pageTitle', 'season', 'stats'));
+    }
+
+    /**
+     * Fantasy Football has no row in the games table to hang <x-image-uploader type="game">
+     * off of (every other game's card image is a column on its own Game model row) - its
+     * thumbnail is a single uploaded file referenced by every card (partials/game.blade.php,
+     * sections/trending_games.blade.php, sections/featured_games.blade.php), stored the exact
+     * same way (fileUploader() into the 'game' file path/size, replacing the previous upload)
+     * and resolved the exact same way (getImage(getFilePath('game') . '/' . ..., getFileSize('game'))).
+     */
+    public function thumbnailUpdate(Request $request)
+    {
+        $request->validate(['image' => ['required', new FileTypeValidate(['jpg', 'jpeg', 'png'])]]);
+
+        $general = gs();
+        $general->ff_card_image = fileUploader($request->image, getFilePath('game'), getFileSize('game'), $general->ff_card_image);
+        $general->save();
+        \Illuminate\Support\Facades\Cache::forget('GeneralSetting');
+
+        FantasyAuditLog::record('thumbnail_updated', auth('admin')->id());
+
+        $notify[] = ['success', 'Fantasy Football thumbnail updated.'];
+        return back()->withNotify($notify);
     }
 
     public function generate(Request $request, FantasyLeagueGenerator $generator)
