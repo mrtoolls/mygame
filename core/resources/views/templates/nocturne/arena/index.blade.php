@@ -256,6 +256,10 @@
 
                 <div class="nocturne-arena-widget">
                     <h3><i class="ph-fill ph-flame"></i>@lang('Trending')</h3>
+                    <a href="{{ route('user.fantasy.team') }}" class="nocturne-arena-widget-row">
+                        <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-soccer-ball"></i></span>
+                        <strong>@lang('Fantasy Football')</strong>
+                    </a>
                     @forelse($trendingGames as $game)
                         <div class="nocturne-arena-widget-row">
                             <span class="nocturne-arena-widget-row__icon"><i class="ph-fill ph-dice-five"></i></span>
