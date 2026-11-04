@@ -223,11 +223,24 @@ class FantasyTeamController extends Controller
 
         $history = \App\Models\FantasyTeamGameweekHistory::with('gameweek')->where('team_id', $team->id)->orderByDesc('gameweek_id')->get();
         $latestGameweekId = $history->first()?->gameweek_id;
+        $teamPlayers = FantasyTeamPlayer::with('player')->where('team_id', $team->id)->get();
+        $statsByPlayer = $latestGameweekId && $teamPlayers->isNotEmpty()
+            ? FantasyPlayerFixtureStat::whereIn('player_id', $teamPlayers->pluck('player_id'))
+                ->whereHas('fixture', fn ($q) => $q->where('gameweek_id', $latestGameweekId))
+                ->get(['player_id', 'total_points', 'minutes'])
+                ->groupBy('player_id')
+            : collect();
         $breakdown = $latestGameweekId
-            ? FantasyTeamPlayer::with('player')->where('team_id', $team->id)->get()->map(function ($tp) use ($latestGameweekId) {
-                $stat = \App\Models\FantasyPlayerFixtureStat::where('player_id', $tp->player_id)
-                    ->whereHas('fixture', fn ($q) => $q->where('gameweek_id', $latestGameweekId))->first();
-                return ['player' => $tp->player, 'role' => $tp->squad_role, 'captain' => $tp->is_captain, 'vice' => $tp->is_vice_captain, 'points' => $stat->total_points ?? 0, 'minutes' => $stat->minutes ?? 0];
+            ? $teamPlayers->map(function ($tp) use ($statsByPlayer) {
+                $stats = $statsByPlayer->get($tp->player_id, collect());
+                return [
+                    'player' => $tp->player,
+                    'role' => $tp->squad_role,
+                    'captain' => $tp->is_captain,
+                    'vice' => $tp->is_vice_captain,
+                    'points' => (int) $stats->sum('total_points'),
+                    'minutes' => (int) $stats->sum('minutes'),
+                ];
             })
             : collect();
 
