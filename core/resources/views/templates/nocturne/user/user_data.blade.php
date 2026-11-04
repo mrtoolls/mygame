@@ -83,12 +83,13 @@
 
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Mobile')</label>
-                        <div class="nocturne-field__control">
-                            <span class="mobile-code" id="onboard-mobile-code"></span>
-                            <input name="mobile_code" type="hidden">
-                            <input name="country_code" type="hidden">
+                        <div class="nocturne-field__control nocturne-field__control--phone">
+                            <span class="mobile-code-prefix">+</span>
+                            <input name="mobile_code" id="onboard-mobile-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1" value="{{ old('mobile_code') }}" required aria-label="@lang('Country calling code')">
+                            <input name="country_code" id="onboard-country-code" type="hidden" value="{{ old('country_code') }}">
                             <input name="mobile" class="checkUser" type="number" value="{{ old('mobile') }}" required>
                         </div>
+                        <small class="text-muted">@lang('Auto-filled from your country - edit it if it looks wrong.')</small>
                         <small class="text--danger mobileExist"></small>
                     </div>
 
@@ -118,7 +119,9 @@
         .nocturne-gender-card__label { color: var(--nocturne-text, #f5f6ff); font-size: 13px; font-weight: 800; }
         .nocturne-gender-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
         .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { border-color: var(--nocturne-green, #00ef87); }
-        .nocturne-field__control .mobile-code { color: var(--nocturne-muted, #929abc); font-size: 13px; font-weight: 800; white-space: nowrap; }
+        .nocturne-field__control--phone { gap: 6px; }
+        .nocturne-field__control--phone .mobile-code-prefix { color: var(--nocturne-muted, #929abc); font-size: 14px; font-weight: 800; }
+        .nocturne-field__control--phone #onboard-mobile-code { flex: 0 0 48px; width: 48px; text-align: center; padding-right: 0; border-right: 1px solid #2c3453; margin-right: 2px; }
         #onboard-country.is-invalid { border-color: #ff5c7a !important; box-shadow: 0 0 0 3px rgba(255, 92, 122, .14); }
         .nocturne-field__control--select select {
             appearance: none; -webkit-appearance: none; -moz-appearance: none;
@@ -178,14 +181,20 @@
                 });
             @endif
 
+            // The dial code field is a real, directly-editable input now (not a read-only
+            // display) - this auto-fill is a convenience, never a requirement. If it silently
+            // fails to run in some browser, the user can still just type their own code, and the
+            // field's own 'required' attribute (plus the server-side country_code fallback
+            // below) means the form is never blocked on this auto-detection working.
+            var mobileCodeTouched = $('#onboard-mobile-code').val() !== '';
+            $('#onboard-mobile-code').on('input', function() { mobileCodeTouched = true; });
+
             function syncMobileCode() {
                 var selected = $('#onboard-country option:selected');
                 var dial = selected.data('mobile_code');
                 var code = selected.data('code');
-                $('input[name=mobile_code]').val(dial || '');
-                $('input[name=country_code]').val(code || '');
-                $('#onboard-mobile-code').text(dial ? '+' + dial : '');
-                $('#onboard-country').toggleClass('is-invalid', !dial || !code);
+                if (dial && !mobileCodeTouched) $('#onboard-mobile-code').val(dial);
+                $('#onboard-country-code').val(code || '');
             }
             $('#onboard-country').on('change input', function() {
                 syncMobileCode();
@@ -195,24 +204,19 @@
 
             // A browser restoring this form from bfcache (back/forward navigation) or a plain
             // reload can repopulate the <select>'s value without firing 'change'/'input' at all -
-            // the sync above already ran once, against whatever was selected at that earlier
-            // moment, and nothing re-triggers it afterward even though the dropdown now visibly
-            // shows a different country. 'pageshow' fires on every such restore (including the
-            // normal first load), so re-running the sync there keeps the dial code in step with
-            // whatever the select actually shows, not just with what happened at parse time.
+            // 'pageshow' fires on every such restore (including the normal first load), so
+            // re-running the sync there keeps country_code in step with whatever the select
+            // actually shows, and still respects anything the user already typed into the dial
+            // code field themselves.
             window.addEventListener('pageshow', syncMobileCode);
 
-            // Final safety net right before submit: re-sync from whatever is actually selected
-            // (covers autofill/back-forward-cache restores that don't always fire a native
-            // 'change' event) and refuse to submit with a clear on-page cue instead of letting an
-            // empty mobile_code/country_code reach the server as a generic validation error.
-            $('#onboardForm').on('submit', function(e) {
+            // A last-chance convenience sync right before submit (covers autofill/bfcache
+            // restores that don't always fire a native 'change' event) - this no longer blocks
+            // submission on its own: country_code has a server-side fallback (derived from the
+            // selected country's name) if this sync never ran, and the mobile_code field's own
+            // 'required' attribute handles an empty dial code with the browser's native prompt.
+            $('#onboardForm').on('submit', function() {
                 syncMobileCode();
-                if (!$('input[name=mobile_code]').val() || !$('input[name=country_code]').val()) {
-                    e.preventDefault();
-                    $('#onboard-country').addClass('is-invalid').trigger('focus');
-                    return false;
-                }
             });
 
             $('.checkUser').on('focusout', function(e) {
@@ -224,7 +228,7 @@
                 var token = '{{ csrf_token() }}';
                 var data;
                 if (name == 'mobile') {
-                    data = { mobile: value, mobile_code: $('#onboard-mobile-code').text().substr(1), _token: token };
+                    data = { mobile: value, mobile_code: $('#onboard-mobile-code').val(), _token: token };
                 }
                 if (name == 'username') {
                     data = { username: value, _token: token };

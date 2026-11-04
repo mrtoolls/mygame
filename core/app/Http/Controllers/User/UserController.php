@@ -270,6 +270,25 @@ class UserController extends Controller {
         $mobileCodes  = implode(',', array_column($countryData, 'dial_code'));
         $countries    = implode(',', array_column($countryData, 'country'));
 
+        // country_code/mobile_code are normally filled in by the page's own JS as the user picks
+        // a country - but that JS can silently fail to run in a given browser (a blocked/slow
+        // script, an extension, etc.), which used to leave the user stuck with no visible error:
+        // the submit handler just refused to submit. Derive both server-side from the country
+        // NAME the native <select> always submits correctly, so a real request never depends on
+        // that JS having worked - this is a fallback behind the user's own typed-in values, not a
+        // replacement for them.
+        if (!$request->filled('country_code') && $request->filled('country')) {
+            foreach ($countryData as $code => $row) {
+                if (($row->country ?? null) === $request->country) {
+                    $request->merge(['country_code' => $code]);
+                    if (!$request->filled('mobile_code')) {
+                        $request->merge(['mobile_code' => $row->dial_code ?? null]);
+                    }
+                    break;
+                }
+            }
+        }
+
         $request->validate([
             'country_code' => 'required|in:' . $countryCodes,
             'country'      => 'required|in:' . $countries,
