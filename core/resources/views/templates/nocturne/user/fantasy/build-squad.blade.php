@@ -33,21 +33,42 @@
                 </div>
             </div>
 
-            <div class="ff-summary-bar" id="ff-summary-bar">
-                <div class="ff-summary-budget">
-                    <span class="ff-summary-label">@lang('Budget Left')</span>
-                    <strong id="ff-budget-left">100.0</strong>
-                    <div class="ff-budget-track"><div class="ff-budget-fill" id="ff-budget-fill"></div></div>
+            <div class="ff-status-panel" id="ff-summary-bar">
+                <div class="ff-status-gauge">
+                    <div class="ff-gauge" id="ff-budget-gauge" style="--pct:0">
+                        <div class="ff-gauge__inner">
+                            <span class="ff-gauge__value" id="ff-budget-left">100.0</span>
+                            <span class="ff-gauge__label">@lang('left')</span>
+                        </div>
+                    </div>
+                    <span class="ff-status-gauge__caption">@lang('BUDGET')</span>
                 </div>
-                <div class="ff-summary-positions" id="ff-shape">
-                    <span class="ff-pos-chip ff-pos-chip--gk" data-pos="GK"><b>0</b>/2 <small>GK</small></span>
-                    <span class="ff-pos-chip ff-pos-chip--def" data-pos="DEF"><b>0</b>/5 <small>DEF</small></span>
-                    <span class="ff-pos-chip ff-pos-chip--mid" data-pos="MID"><b>0</b>/5 <small>MID</small></span>
-                    <span class="ff-pos-chip ff-pos-chip--fwd" data-pos="FWD"><b>0</b>/3 <small>FWD</small></span>
+
+                <div class="ff-status-positions">
+                    <div class="ff-pos-track" data-pos="GK">
+                        <div class="ff-pos-track__head"><span>GK</span><b><span class="ff-pos-track__count">0</span>/2</b></div>
+                        <div class="ff-pos-track__bar"><div class="ff-pos-track__fill"></div></div>
+                    </div>
+                    <div class="ff-pos-track" data-pos="DEF">
+                        <div class="ff-pos-track__head"><span>DEF</span><b><span class="ff-pos-track__count">0</span>/5</b></div>
+                        <div class="ff-pos-track__bar"><div class="ff-pos-track__fill"></div></div>
+                    </div>
+                    <div class="ff-pos-track" data-pos="MID">
+                        <div class="ff-pos-track__head"><span>MID</span><b><span class="ff-pos-track__count">0</span>/5</b></div>
+                        <div class="ff-pos-track__bar"><div class="ff-pos-track__fill"></div></div>
+                    </div>
+                    <div class="ff-pos-track" data-pos="FWD">
+                        <div class="ff-pos-track__head"><span>FWD</span><b><span class="ff-pos-track__count">0</span>/3</b></div>
+                        <div class="ff-pos-track__bar"><div class="ff-pos-track__fill"></div></div>
+                    </div>
                 </div>
-                <div class="ff-summary-count">
-                    <span class="ff-summary-label">@lang('Selected')</span>
-                    <strong><span id="ff-count">0</span>/15</strong>
+
+                <div class="ff-status-side">
+                    <div class="ff-status-total">
+                        <span class="ff-summary-label">@lang('Squad')</span>
+                        <strong><span id="ff-count">0</span><small>/15</small></strong>
+                    </div>
+                    <p class="ff-status-hint" id="ff-status-hint"><i class="ph-fill ph-info"></i><span>@lang('Pick 15 players to complete your squad.')</span></p>
                 </div>
             </div>
 
@@ -98,7 +119,10 @@
                     <strong><span id="ff-count-2">0</span>/15</strong>
                     <span>@lang('Budget'): <b id="ff-budget-left-2">100.0</b></span>
                 </div>
-                <button type="submit" class="btn btn--gradient" id="ff-build-submit" disabled>@lang('Confirm Squad')</button>
+                <div class="ff-confirm-bar__action">
+                    <small class="ff-confirm-bar__reason" id="ff-confirm-reason"></small>
+                    <button type="submit" class="btn btn--gradient" id="ff-build-submit" disabled>@lang('Confirm Squad')</button>
+                </div>
             </div>
         </form>
     </div>
@@ -141,27 +165,58 @@
 .ff-team-name-control i { color: var(--nocturne-muted, #929abc); font-size: 17px; }
 .ff-team-name-control input { flex: 1; background: transparent; border: 0; color: #fff; font-size: 14px; height: 48px; outline: 0; min-width: 0; }
 
-.ff-summary-bar {
-    position: sticky; top: 8px; z-index: 5; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-    background: linear-gradient(180deg, #11162e, #0d1023); border: 1px solid #242b4a; border-radius: 16px;
-    padding: 14px 18px; margin-bottom: 16px; box-shadow: 0 10px 30px -14px rgba(0,0,0,.6);
+.ff-status-panel {
+    position: sticky; top: 8px; z-index: 5; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px;
+    background: linear-gradient(145deg, #121732, #0b0e1f); border: 1px solid #242b4a; border-radius: 18px;
+    padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 14px 34px -16px rgba(0,0,0,.65);
     backdrop-filter: blur(6px);
 }
 .ff-summary-label { display: block; font-size: 10.5px; color: var(--nocturne-muted, #929abc); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
-.ff-summary-budget { min-width: 130px; }
-.ff-summary-budget strong { font-size: 19px; color: var(--nocturne-green, #00ef87); font-variant-numeric: tabular-nums; }
-.ff-budget-track { width: 100%; max-width: 140px; height: 5px; border-radius: 999px; background: #1c2240; margin-top: 6px; overflow: hidden; }
-.ff-budget-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00ef87, #00c2ff); border-radius: 999px; transition: width .25s ease; }
-.ff-summary-positions { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: center; }
-.ff-pos-chip {
-    display: inline-flex; align-items: baseline; gap: 3px; font-size: 12px; font-weight: 700; color: #fff;
-    background: #171c38; border: 1px solid #2c3453; border-radius: 999px; padding: 5px 10px; transition: border-color .15s ease, background .15s ease;
+
+/* Circular budget gauge: a conic-gradient ring whose fill angle tracks --pct (0-100, or beyond
+   100 shown in red once over budget), with the numeric value centered inside via a masked inner
+   circle - no SVG needed. */
+.ff-status-gauge { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ff-gauge {
+    --pct: 0; width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; position: relative;
+    background: conic-gradient(var(--nocturne-green, #00ef87) calc(var(--pct) * 1%), #1c2240 0);
+    transition: background .3s ease;
 }
-.ff-pos-chip small { color: var(--nocturne-muted, #929abc); font-weight: 800; font-size: 10px; margin-left: 2px; }
-.ff-pos-chip.is-complete { border-color: var(--nocturne-green, #00ef87); background: rgba(0,239,135,.1); }
-.ff-pos-chip.is-complete b { color: var(--nocturne-green, #00ef87); }
-.ff-summary-count { text-align: right; min-width: 70px; }
-.ff-summary-count strong { font-size: 19px; color: #fff; font-variant-numeric: tabular-nums; }
+.ff-gauge.is-warning { background: conic-gradient(#ffd166 calc(var(--pct) * 1%), #1c2240 0); }
+.ff-gauge.is-over { background: conic-gradient(#ff5c7a 100%, #1c2240 0); }
+.ff-gauge__inner {
+    width: 66px; height: 66px; border-radius: 50%; background: #0d1023; display: grid; place-items: center;
+    text-align: center; line-height: 1.1;
+}
+.ff-gauge__value { display: block; font-size: 15px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.ff-gauge.is-warning .ff-gauge__value { color: #ffd166; }
+.ff-gauge.is-over .ff-gauge__value { color: #ff5c7a; }
+.ff-gauge__label { display: block; font-size: 9px; color: var(--nocturne-muted, #929abc); text-transform: uppercase; letter-spacing: .05em; }
+.ff-status-gauge__caption { font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--nocturne-muted, #929abc); }
+
+.ff-status-positions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.ff-pos-track__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; font-size: 11px; font-weight: 800; color: var(--nocturne-muted, #929abc); letter-spacing: .03em; }
+.ff-pos-track__head b { color: #fff; font-size: 12px; }
+.ff-pos-track__bar { height: 6px; border-radius: 999px; background: #1c2240; overflow: hidden; }
+.ff-pos-track__fill { height: 100%; width: 0%; border-radius: 999px; transition: width .25s ease, background .25s ease; background: #3a4374; }
+.ff-pos-track[data-pos="GK"] .ff-pos-track__fill { background: linear-gradient(90deg, #a8761c, #ffd166); }
+.ff-pos-track[data-pos="DEF"] .ff-pos-track__fill { background: linear-gradient(90deg, #1b7fa8, #38bdf8); }
+.ff-pos-track[data-pos="MID"] .ff-pos-track__fill { background: linear-gradient(90deg, #0a9e5c, #00ef87); }
+.ff-pos-track[data-pos="FWD"] .ff-pos-track__fill { background: linear-gradient(90deg, #c76a2e, #ff9a4d); }
+.ff-pos-track.is-complete .ff-pos-track__head b { color: var(--nocturne-green, #00ef87); }
+
+.ff-status-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; text-align: right; }
+.ff-status-total strong { font-size: 22px; color: #fff; font-variant-numeric: tabular-nums; }
+.ff-status-total strong small { font-size: 13px; color: var(--nocturne-muted, #929abc); font-weight: 700; }
+.ff-status-hint {
+    display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11.5px; color: var(--nocturne-muted, #929abc);
+    max-width: 220px; line-height: 1.3;
+}
+.ff-status-hint i { color: #ffd166; flex: 0 0 auto; }
+.ff-status-hint.is-ready { color: var(--nocturne-green, #00ef87); }
+.ff-status-hint.is-ready i { color: var(--nocturne-green, #00ef87); }
+.ff-status-hint.is-over { color: #ff5c7a; }
+.ff-status-hint.is-over i { color: #ff5c7a; }
 
 .ff-build-filters { margin-bottom: 16px; }
 .ff-position-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
@@ -213,26 +268,45 @@
 .ff-player-card__price { color: var(--nocturne-green, #00ef87); font-weight: 800; }
 .ff-no-results { grid-column: 1 / -1; text-align: center; color: var(--nocturne-muted, #929abc); padding: 30px 0; }
 
+/* The site's own fixed bottom mobile nav (.nocturne-mobile-nav, 96px tall + safe-area, z-index
+   1040) only appears below the 1199.98px breakpoint - below it, this bar must sit ABOVE that nav
+   instead of underneath it (z-index alone can't fix this: they'd just stack, with the site nav
+   still covering this bar's lower portion), and the spacer must reserve room for both bars
+   stacked, or the last row of player cards ends up hidden behind them. */
 .ff-confirm-spacer { height: 78px; }
 .ff-confirm-bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; background: rgba(13,16,35,.92); backdrop-filter: blur(10px); border-top: 1px solid #242b4a;
+    gap: 14px; background: rgba(13,16,35,.95); backdrop-filter: blur(10px); border-top: 1px solid #242b4a;
     padding: 12px max(16px, calc(env(safe-area-inset-left) + 16px)) calc(12px + env(safe-area-inset-bottom)) max(16px, calc(env(safe-area-inset-right) + 16px));
 }
 .ff-confirm-bar__info { display: flex; flex-direction: column; font-size: 12px; color: var(--nocturne-muted, #929abc); }
 .ff-confirm-bar__info strong { font-size: 16px; color: #fff; }
+.ff-confirm-bar__action { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.ff-confirm-bar__reason { color: #ffd166; font-size: 10.5px; max-width: 220px; text-align: right; }
 .ff-confirm-bar .btn--gradient { padding: 12px 28px; border-radius: 13px; font-size: 14.5px; min-height: 48px; }
 .ff-confirm-bar .btn--gradient:disabled { opacity: .4; }
 
 @media (prefers-reduced-motion: reduce) {
-    .ff-player-card, .ff-player-card__check, .ff-budget-fill, .ff-pos-pill { transition: none !important; }
+    .ff-player-card, .ff-player-card__check, .ff-pos-track__fill, .ff-gauge, .ff-pos-pill { transition: none !important; }
     .ff-player-card:hover { transform: none; }
+}
+@media (max-width: 1199.98px) {
+    .ff-confirm-bar { bottom: calc(96px + env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; }
+    .ff-confirm-spacer { height: calc(78px + 96px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 767.98px) {
+    .ff-status-panel { grid-template-columns: auto 1fr; }
+    .ff-status-side { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; }
+    .ff-status-hint { max-width: none; text-align: right; }
 }
 @media (max-width: 575.98px) {
     .ff-build-hero { padding: 20px 16px; border-radius: 16px; }
     .ff-build-hero__copy h1 { font-size: 21px; }
-    .ff-summary-bar { top: 0; border-radius: 0 0 16px 16px; gap: 10px; padding: 12px 14px; }
-    .ff-summary-positions { order: 3; width: 100%; justify-content: flex-start; }
+    .ff-status-panel { padding: 16px; gap: 14px; border-radius: 16px; }
+    .ff-status-positions { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
+    .ff-gauge { width: 72px; height: 72px; }
+    .ff-gauge__inner { width: 56px; height: 56px; }
+    .ff-gauge__value { font-size: 13px; }
     .ff-player-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 9px; }
     .ff-player-card { padding: 12px 6px 10px; }
 }
@@ -247,9 +321,12 @@
     var cards = Array.from(form.querySelectorAll('.ff-player-card'));
     var budgetEls = [document.getElementById('ff-budget-left'), document.getElementById('ff-budget-left-2')];
     var countEls = [document.getElementById('ff-count'), document.getElementById('ff-count-2')];
-    var budgetFill = document.getElementById('ff-budget-fill');
+    var gauge = document.getElementById('ff-budget-gauge');
     var submitBtn = document.getElementById('ff-build-submit');
+    var statusHint = document.getElementById('ff-status-hint');
+    var confirmReason = document.getElementById('ff-confirm-reason');
     var required = { GK: 2, DEF: 5, MID: 5, FWD: 3 };
+    var labels = { GK: 'goalkeeper', DEF: 'defender', MID: 'midfielder', FWD: 'forward' };
 
     function recompute() {
         var selected = cards.filter(function(c) { return c.querySelector('input').checked; });
@@ -261,25 +338,64 @@
         var budgetLeft = (100 - spent);
         budgetEls.forEach(function(el) { el.textContent = budgetLeft.toFixed(1); });
         countEls.forEach(function(el) { el.textContent = selected.length; });
-        budgetFill.style.width = Math.min(100, (spent / 100) * 100) + '%';
-        budgetFill.style.background = budgetLeft < 0 ? '#ff5c7a' : '';
 
-        document.querySelectorAll('.ff-pos-chip').forEach(function(chip) {
-            var pos = chip.dataset.pos;
-            chip.querySelector('b').textContent = counts[pos];
-            chip.classList.toggle('is-complete', counts[pos] === required[pos]);
+        // The gauge fills clockwise with how much of the 100.0 budget is SPENT, not what's left -
+        // an empty ring reads as "nothing spent yet", a full one as "every credit committed".
+        var spentPct = Math.max(0, Math.min(100, (spent / 100) * 100));
+        gauge.style.setProperty('--pct', spentPct);
+        gauge.classList.toggle('is-warning', budgetLeft >= 0 && budgetLeft < 10);
+        gauge.classList.toggle('is-over', budgetLeft < 0);
+
+        document.querySelectorAll('.ff-pos-track').forEach(function(track) {
+            var pos = track.dataset.pos;
+            var pct = Math.min(100, (counts[pos] / required[pos]) * 100);
+            track.querySelector('.ff-pos-track__count').textContent = counts[pos];
+            track.querySelector('.ff-pos-track__fill').style.width = pct + '%';
+            track.classList.toggle('is-complete', counts[pos] === required[pos]);
         });
 
         var shapeOk = Object.keys(required).every(function(p) { return counts[p] <= required[p]; });
         var clubOk = Object.values(clubCounts).every(function(c) { return c <= 3; });
         var exact = Object.keys(required).every(function(p) { return counts[p] === required[p]; });
-        submitBtn.disabled = !(exact && clubOk && spent <= 100 && selected.length === 15);
+        var canConfirm = exact && clubOk && budgetLeft >= 0 && selected.length === 15;
+        submitBtn.disabled = !canConfirm;
+
+        // A clear, specific reason instead of a silently-disabled button - this is what was
+        // actually missing before: the button being disabled was correct, but nothing on screen
+        // explained why.
+        var reason = '';
+        if (budgetLeft < 0) {
+            reason = 'You are ' + Math.abs(budgetLeft).toFixed(1) + ' credits over budget - remove a player.';
+        } else {
+            var missing = Object.keys(required).filter(function(p) { return counts[p] < required[p]; });
+            if (missing.length) {
+                reason = 'Pick ' + missing.map(function(p) { return (required[p] - counts[p]) + ' more ' + labels[p] + (required[p] - counts[p] > 1 ? 's' : ''); }).join(', ') + '.';
+            }
+        }
+        if (statusHint) {
+            var hintText = statusHint.querySelector('span') || statusHint;
+            if (canConfirm) {
+                hintText.textContent = 'Squad complete - ready to confirm!';
+                statusHint.classList.add('is-ready');
+                statusHint.classList.remove('is-over');
+            } else if (budgetLeft < 0) {
+                hintText.textContent = reason;
+                statusHint.classList.add('is-over');
+                statusHint.classList.remove('is-ready');
+            } else {
+                hintText.textContent = reason || 'Pick 15 players to complete your squad.';
+                statusHint.classList.remove('is-ready', 'is-over');
+            }
+        }
+        if (confirmReason) confirmReason.textContent = canConfirm ? '' : reason;
 
         cards.forEach(function(c) {
             var input = c.querySelector('input');
             if (!input.checked) {
-                var wouldExceed = counts[c.dataset.position] >= required[c.dataset.position] || (clubCounts[c.dataset.club] || 0) >= 3;
-                input.disabled = wouldExceed;
+                var price = parseFloat(c.dataset.price);
+                var wouldExceedShape = counts[c.dataset.position] >= required[c.dataset.position] || (clubCounts[c.dataset.club] || 0) >= 3;
+                var wouldExceedBudget = price > budgetLeft + 0.001; // float-safe comparison
+                input.disabled = wouldExceedShape || wouldExceedBudget;
             }
         });
     }
