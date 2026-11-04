@@ -79,6 +79,91 @@
             }
         ]
     },
+    "fantasy": {
+        "title": "Fantasy Football",
+        "icon": "las la-futbol",
+        "menu_active": "admin.fantasy*",
+        "submenu": [
+            {
+                "keyword": [
+                    "Fantasy Football",
+                    "Generate League",
+                    "Virtual League",
+                    "Seasons",
+                    "Gameweeks"
+                ],
+                "title": "Overview",
+                "route_name": "admin.fantasy.index",
+                "menu_active": "admin.fantasy.index"
+            },
+            {
+                "keyword": [
+                    "Fantasy Clubs",
+                    "Virtual Clubs"
+                ],
+                "title": "Clubs",
+                "route_name": "admin.fantasy.clubs",
+                "menu_active": "admin.fantasy.clubs"
+            },
+            {
+                "keyword": [
+                    "Fantasy Players",
+                    "Player Prices",
+                    "Player Injuries"
+                ],
+                "title": "Players",
+                "route_name": "admin.fantasy.players",
+                "menu_active": "admin.fantasy.players"
+            },
+            {
+                "keyword": [
+                    "Fantasy Scoring",
+                    "Scoring Rules",
+                    "Points Values"
+                ],
+                "title": "Scoring Rules",
+                "route_name": "admin.fantasy.scoring",
+                "menu_active": "admin.fantasy.scoring"
+            },
+            {
+                "keyword": [
+                    "Fantasy Contests",
+                    "Coin Contests",
+                    "Head to Head",
+                    "Gameweek Pool"
+                ],
+                "title": "Contests",
+                "route_name": "admin.fantasy.contests",
+                "menu_active": "admin.fantasy.contests"
+            },
+            {
+                "keyword": [
+                    "Stat Corrections",
+                    "Match Corrections"
+                ],
+                "title": "Stat Corrections",
+                "route_name": "admin.fantasy.stat-corrections",
+                "menu_active": "admin.fantasy.stat-corrections"
+            },
+            {
+                "keyword": [
+                    "Fantasy Settings",
+                    "Kill Switch"
+                ],
+                "title": "Settings",
+                "route_name": "admin.fantasy.settings",
+                "menu_active": "admin.fantasy.settings"
+            },
+            {
+                "keyword": [
+                    "Fantasy Audit Log"
+                ],
+                "title": "Audit Log",
+                "route_name": "admin.fantasy.audit-log",
+                "menu_active": "admin.fantasy.audit-log"
+            }
+        ]
+    },
     "gifts": {
         "keyword": [
             "Gifts",

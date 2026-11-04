@@ -178,6 +178,25 @@ Route::middleware('admin')->group(function () {
         Route::post('user-limit', 'userLimit')->name('user-limit');
     });
 
+    // Fantasy Football League
+    Route::controller('FantasyAdminController')->name('fantasy.')->prefix('fantasy')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('generate', 'generate')->name('generate');
+        Route::get('clubs', 'clubs')->name('clubs');
+        Route::get('players', 'players')->name('players');
+        Route::post('players/{player}', 'playerUpdate')->whereNumber('player')->name('players.update');
+        Route::get('scoring', 'scoring')->name('scoring');
+        Route::post('scoring', 'scoringUpdate')->name('scoring.update');
+        Route::get('settings', 'settings')->name('settings');
+        Route::post('settings', 'settingsUpdate')->name('settings.update');
+        Route::post('kill-switch', 'killSwitch')->name('kill-switch');
+        Route::get('contests', 'contests')->name('contests');
+        Route::post('contests', 'contestStore')->name('contests.store');
+        Route::get('stat-corrections', 'statCorrections')->name('stat-corrections');
+        Route::post('stat-corrections', 'statCorrectionStore')->name('stat-corrections.store');
+        Route::get('audit-log', 'auditLog')->name('audit-log');
+    });
+
     // VIP Tiers
     Route::controller('VipTierController')->name('vip.')->prefix('vip')->group(function () {
         Route::get('/', 'index')->name('index');

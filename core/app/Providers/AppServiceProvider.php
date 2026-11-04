@@ -10,6 +10,8 @@ use App\Models\Frontend;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\Fantasy\FootballDataProvider;
+use App\Services\Fantasy\VirtualFootballProvider;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -25,6 +27,9 @@ class AppServiceProvider extends ServiceProvider {
      */
     public function register(): void {
         Builder::mixin(new Searchable);
+        // The virtual league is the only FootballDataProvider implementation today - a later
+        // licensed real-data provider swaps in here, not at any of its call sites.
+        $this->app->bind(FootballDataProvider::class, VirtualFootballProvider::class);
     }
 
     /**

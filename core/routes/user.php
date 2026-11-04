@@ -219,6 +219,37 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('{gift}/buy', 'buy')->whereNumber('gift')->middleware('throttle:20,1')->name('buy');
                 Route::post('{gift}/cashout', 'cashOut')->whereNumber('gift')->middleware('throttle:20,1')->name('cashout');
             });
+
+            // Fantasy Football League
+            Route::prefix('fantasy')->name('fantasy.')->group(function () {
+                Route::controller('FantasyTeamController')->group(function () {
+                    Route::get('/', 'index')->name('team');
+                    Route::get('create', 'create')->name('create');
+                    Route::post('create', 'store')->middleware('throttle:10,1')->name('create.store');
+                    Route::get('transfers', 'transfersPage')->name('transfers');
+                    Route::post('transfers', 'transferStore')->middleware('throttle:20,1')->name('transfers.store');
+                    Route::post('lineup', 'lineupStore')->middleware('throttle:20,1')->name('lineup.store');
+                    Route::post('chip', 'chipActivate')->middleware('throttle:10,1')->name('chip.activate');
+                    Route::get('points', 'points')->name('points');
+                });
+                Route::controller('FantasyFixtureController')->prefix('fixtures')->name('fixtures.')->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('{fixture}', 'show')->whereNumber('fixture')->name('show');
+                    Route::get('{fixture}/snapshot', 'snapshot')->whereNumber('fixture')->middleware('throttle:60,1')->name('snapshot');
+                    Route::get('{fixture}/verify', 'verify')->whereNumber('fixture')->name('verify');
+                });
+                Route::controller('FantasyLeagueController')->prefix('leagues')->name('leagues.')->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('{league}', 'show')->whereNumber('league')->name('show');
+                    Route::post('create', 'create')->middleware('throttle:10,1')->name('create');
+                    Route::post('join', 'join')->middleware('throttle:10,1')->name('join');
+                });
+                Route::controller('FantasyContestController')->prefix('contests')->name('contests.')->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('{contest}/enter', 'enter')->whereNumber('contest')->middleware('throttle:15,1')->name('enter');
+                });
+                Route::get('rules', 'FantasyRulesController@index')->name('rules');
+            });
         });
 
         // Payment
