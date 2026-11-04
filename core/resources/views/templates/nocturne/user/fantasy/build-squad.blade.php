@@ -277,6 +277,8 @@
 .ff-player-card:hover { transform: translateY(-2px); border-color: #3a4374; }
 .ff-player-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0,239,135,.14), 0 10px 24px -12px rgba(0,239,135,.4); }
 .ff-player-card:has(input:disabled):not(:has(input:checked)) { opacity: .35; cursor: not-allowed; pointer-events: none; }
+.ff-player-card--budget-locked:has(input:disabled):not(:has(input:checked)) { opacity: .55; }
+.ff-player-card--budget-locked .ff-player-card__price { color: #ff5c7a; }
 .ff-player-card__check {
     position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
     background: var(--nocturne-green, #00ef87); color: #073c2a; font-size: 11px; opacity: 0; transform: scale(.6); transition: all .15s ease;
@@ -415,6 +417,24 @@
         var canConfirm = exact && clubOk && budgetLeft >= 0 && selected.length === 15;
         submitBtn.disabled = !canConfirm;
 
+        // Disable cards first and track, per position, whether budget (not shape/club caps) is the
+        // only thing blocking it - that's the case that leaves a position stuck with no visible
+        // explanation, so it needs its own callout below.
+        var affordableLeft = { GK: false, DEF: false, MID: false, FWD: false };
+        cards.forEach(function(c) {
+            var input = c.querySelector('input');
+            if (!input.checked) {
+                var price = parseFloat(c.dataset.price);
+                var pos = c.dataset.position;
+                var wouldExceedShape = counts[pos] >= required[pos] || (clubCounts[c.dataset.club] || 0) >= 3;
+                var wouldExceedBudget = price > budgetLeft + 0.001; // float-safe comparison
+                input.disabled = wouldExceedShape || wouldExceedBudget;
+                var budgetLocked = !wouldExceedShape && wouldExceedBudget;
+                c.classList.toggle('ff-player-card--budget-locked', budgetLocked);
+                if (!wouldExceedShape && !wouldExceedBudget) affordableLeft[pos] = true;
+            }
+        });
+
         // A single, click-to-reveal explanation (the info icon's popover) instead of a permanent
         // sentence repeated in multiple places - this text now lives in exactly one spot.
         var reason = '';
@@ -424,6 +444,10 @@
             var missing = Object.keys(required).filter(function(p) { return counts[p] < required[p]; });
             if (missing.length) {
                 reason = 'Pick ' + missing.map(function(p) { return (required[p] - counts[p]) + ' more ' + labels[p] + (required[p] - counts[p] > 1 ? 's' : ''); }).join(', ') + '.';
+                var blocked = missing.filter(function(p) { return !affordableLeft[p]; });
+                if (blocked.length) {
+                    reason += ' No affordable ' + blocked.map(function(p) { return labels[p] + 's'; }).join('/') + ' left with ' + budgetLeft.toFixed(1) + ' credits - remove a pick to free up budget.';
+                }
             }
         }
         var state = canConfirm ? 'ready' : (budgetLeft < 0 ? 'over' : 'pending');
@@ -434,16 +458,6 @@
             el.classList.toggle('is-over', state === 'over');
         });
         if (!popover.hidden) positionPopover();
-
-        cards.forEach(function(c) {
-            var input = c.querySelector('input');
-            if (!input.checked) {
-                var price = parseFloat(c.dataset.price);
-                var wouldExceedShape = counts[c.dataset.position] >= required[c.dataset.position] || (clubCounts[c.dataset.club] || 0) >= 3;
-                var wouldExceedBudget = price > budgetLeft + 0.001; // float-safe comparison
-                input.disabled = wouldExceedShape || wouldExceedBudget;
-            }
-        });
     }
     form.addEventListener('change', function(e) { if (e.target.matches('input[type=checkbox]')) recompute(); });
 
