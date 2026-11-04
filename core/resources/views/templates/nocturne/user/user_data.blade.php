@@ -83,12 +83,16 @@
 
                     <div class="nocturne-field">
                         <label class="form--label">@lang('Mobile')</label>
-                        <div class="nocturne-field__control nocturne-field__control--phone">
-                            <span class="mobile-code-prefix">+</span>
-                            <input name="mobile_code" id="onboard-mobile-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1" value="{{ old('mobile_code') }}" required aria-label="@lang('Country calling code')">
-                            <input name="country_code" id="onboard-country-code" type="hidden" value="{{ old('country_code') }}">
-                            <input name="mobile" class="checkUser" type="number" value="{{ old('mobile') }}" required>
+                        <div class="nocturne-phone-row">
+                            <div class="nocturne-field__control nocturne-field__control--code">
+                                <span class="mobile-code-prefix">+</span>
+                                <input name="mobile_code" id="onboard-mobile-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1" value="{{ old('mobile_code') }}" required aria-label="@lang('Country calling code')">
+                            </div>
+                            <div class="nocturne-field__control nocturne-field__control--number">
+                                <input name="mobile" class="checkUser" type="number" value="{{ old('mobile') }}" required>
+                            </div>
                         </div>
+                        <input name="country_code" id="onboard-country-code" type="hidden" value="{{ old('country_code') }}">
                         <small class="text-muted">@lang('Auto-filled from your country - edit it if it looks wrong.')</small>
                         <small class="text--danger mobileExist"></small>
                     </div>
@@ -119,17 +123,19 @@
         .nocturne-gender-card__label { color: var(--nocturne-text, #f5f6ff); font-size: 13px; font-weight: 800; }
         .nocturne-gender-card:has(input:checked) { border-color: var(--nocturne-green, #00ef87); box-shadow: 0 0 0 3px rgba(0, 239, 135, .12); }
         .nocturne-gender-card:has(input:checked) .nocturne-gender-card__preview { border-color: var(--nocturne-green, #00ef87); }
-        .nocturne-field__control--phone { gap: 6px; }
-        .nocturne-field__control--phone .mobile-code-prefix { color: var(--nocturne-muted, #929abc); font-size: 14px; font-weight: 800; }
-        .nocturne-field__control--phone #onboard-mobile-code { flex: 0 0 48px; width: 48px; text-align: center; padding-right: 0; border-right: 1px solid #2c3453; margin-right: 2px; }
-        /* The mobile-hardening rule below (width:100% on every .nocturne-field__control input)
-           was written back when this row only ever held one input - now that the dial code and
-           the phone number are two separate inputs sharing the same row, that width:100% makes
-           the phone number input fight the dial code input for the full row width instead of
-           taking only the space left over, squeezing it down to nothing. This restores it to a
-           normal flexible sibling, with enough specificity (a name attribute selector) to beat
-           that later, same-specificity-otherwise rule regardless of source order. */
-        .nocturne-field__control--phone input[name="mobile"] { width: auto; flex: 1; min-width: 0; }
+        /* Two separate .nocturne-field__control boxes side by side (a small one for the dial
+           code, a flexible one for the number) instead of two <input>s crammed into one box -
+           every existing .nocturne-field__control/input rule (including the page-wide "mobile
+           hardening" width:100% below) already assumes exactly one input per control box, so
+           fighting that assumption with ever-more-specific selectors on the <input>s themselves
+           kept losing to some other rule in the cascade. Sizing the two BOXES instead (a layer
+           those rules don't touch) sidesteps the conflict entirely - each box's own input still
+           gets a clean, unmolested width:100% of ITS OWN box, same as every other field on this
+           page. */
+        .nocturne-phone-row { display: flex; align-items: center; gap: 8px; }
+        .nocturne-phone-row .nocturne-field__control--code { width: 76px; flex: 0 0 76px; gap: 4px; padding: 0 10px; }
+        .nocturne-phone-row .nocturne-field__control--number { flex: 1 1 0%; width: auto; min-width: 0; }
+        .mobile-code-prefix { color: var(--nocturne-muted, #929abc); font-size: 14px; font-weight: 800; }
         #onboard-country.is-invalid { border-color: #ff5c7a !important; box-shadow: 0 0 0 3px rgba(255, 92, 122, .14); }
         .nocturne-field__control--select select {
             appearance: none; -webkit-appearance: none; -moz-appearance: none;
