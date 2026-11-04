@@ -64,12 +64,25 @@
                 </div>
 
                 <div class="ff-status-side">
-                    <div class="ff-status-total">
-                        <span class="ff-summary-label">@lang('Squad')</span>
-                        <strong><span id="ff-count">0</span><small>/15</small></strong>
+                    <div class="ff-status-gauge ff-status-gauge--squad">
+                        <div class="ff-gauge-wrap">
+                            <div class="ff-gauge ff-gauge--squad" id="ff-squad-gauge" style="--pct:0">
+                                <div class="ff-gauge__inner">
+                                    <span class="ff-gauge__value"><span id="ff-count">0</span><small>/15</small></span>
+                                </div>
+                            </div>
+                            <button type="button" class="ff-status-info-btn" id="ff-status-info-btn" aria-expanded="false" aria-label="@lang('Squad requirements')">
+                                <i class="ph-fill ph-info"></i>
+                            </button>
+                        </div>
+                        <span class="ff-status-gauge__caption">@lang('SQUAD')</span>
                     </div>
-                    <p class="ff-status-hint" id="ff-status-hint"><i class="ph-fill ph-info"></i><span>@lang('Pick 15 players to complete your squad.')</span></p>
                 </div>
+            </div>
+
+            <div class="ff-status-popover" id="ff-status-popover" role="status" hidden>
+                <i class="ph-fill ph-info"></i>
+                <span id="ff-status-popover-text"></span>
             </div>
 
             <div class="ff-build-filters">
@@ -119,10 +132,7 @@
                     <strong><span id="ff-count-2">0</span>/15</strong>
                     <span>@lang('Budget'): <b id="ff-budget-left-2">100.0</b></span>
                 </div>
-                <div class="ff-confirm-bar__action">
-                    <small class="ff-confirm-bar__reason" id="ff-confirm-reason"></small>
-                    <button type="submit" class="btn btn--gradient" id="ff-build-submit" disabled>@lang('Confirm Squad')</button>
-                </div>
+                <button type="submit" class="btn btn--gradient" id="ff-build-submit" disabled title="@lang('See the info icon above for what is still needed.')">@lang('Confirm Squad')</button>
             </div>
         </form>
     </div>
@@ -205,18 +215,37 @@
 .ff-pos-track[data-pos="FWD"] .ff-pos-track__fill { background: linear-gradient(90deg, #c76a2e, #ff9a4d); }
 .ff-pos-track.is-complete .ff-pos-track__head b { color: var(--nocturne-green, #00ef87); }
 
-.ff-status-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; text-align: right; }
-.ff-status-total strong { font-size: 22px; color: #fff; font-variant-numeric: tabular-nums; }
-.ff-status-total strong small { font-size: 13px; color: var(--nocturne-muted, #929abc); font-weight: 700; }
-.ff-status-hint {
-    display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11.5px; color: var(--nocturne-muted, #929abc);
-    max-width: 220px; line-height: 1.3;
+/* The squad counter mirrors the budget gauge exactly (same ring component, same caption style)
+   instead of being plain stacked text - visually pairs the two "how am I doing" numbers as twin
+   gauges, and a single-word caption in a generously-wide, centered column never wraps the way
+   "Squad" did crammed into a squeezed flex column on narrow screens. */
+.ff-status-side { display: flex; align-items: center; }
+.ff-status-gauge--squad { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ff-gauge-wrap { position: relative; }
+.ff-gauge--squad { background: conic-gradient(var(--nocturne-green, #00ef87) calc(var(--pct) * 1%), #1c2240 0); }
+.ff-gauge--squad .ff-gauge__value { font-size: 14px; }
+.ff-gauge--squad .ff-gauge__value small { font-size: 10px; color: var(--nocturne-muted, #929abc); font-weight: 700; }
+
+/* A single, click-to-reveal explanation instead of a permanent sentence wherever the squad count
+   appears - the info icon is the one place this text ever lives. */
+.ff-status-info-btn {
+    position: absolute; bottom: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center; background: #1c2240; border: 2px solid #0b0e1f; color: #ffd166;
+    font-size: 12px; cursor: pointer; transition: transform .15s ease, background .15s ease;
 }
-.ff-status-hint i { color: #ffd166; flex: 0 0 auto; }
-.ff-status-hint.is-ready { color: var(--nocturne-green, #00ef87); }
-.ff-status-hint.is-ready i { color: var(--nocturne-green, #00ef87); }
-.ff-status-hint.is-over { color: #ff5c7a; }
-.ff-status-hint.is-over i { color: #ff5c7a; }
+.ff-status-info-btn:hover, .ff-status-info-btn[aria-expanded="true"] { background: #2c3453; transform: scale(1.08); }
+.ff-status-info-btn.is-ready { color: var(--nocturne-green, #00ef87); }
+.ff-status-info-btn.is-over { color: #ff5c7a; }
+.ff-status-popover {
+    position: fixed; z-index: 30; display: flex; align-items: flex-start; gap: 8px;
+    width: 270px; max-width: calc(100vw - 24px); box-sizing: border-box;
+    background: #171c38; border: 1px solid #2c3453; border-radius: 13px; padding: 12px 14px; font-size: 12.5px;
+    line-height: 1.4; color: var(--nocturne-text, #f5f6ff); box-shadow: 0 14px 30px -10px rgba(0,0,0,.6);
+}
+.ff-status-popover[hidden] { display: none; }
+.ff-status-popover i { color: #ffd166; flex: 0 0 auto; margin-top: 1px; }
+.ff-status-popover.is-ready i { color: var(--nocturne-green, #00ef87); }
+.ff-status-popover.is-over i { color: #ff5c7a; }
 
 .ff-build-filters { margin-bottom: 16px; }
 .ff-position-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
@@ -281,8 +310,6 @@
 }
 .ff-confirm-bar__info { display: flex; flex-direction: column; font-size: 12px; color: var(--nocturne-muted, #929abc); }
 .ff-confirm-bar__info strong { font-size: 16px; color: #fff; }
-.ff-confirm-bar__action { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.ff-confirm-bar__reason { color: #ffd166; font-size: 10.5px; max-width: 220px; text-align: right; }
 .ff-confirm-bar .btn--gradient { padding: 12px 28px; border-radius: 13px; font-size: 14.5px; min-height: 48px; }
 .ff-confirm-bar .btn--gradient:disabled { opacity: .4; }
 
@@ -295,9 +322,7 @@
     .ff-confirm-spacer { height: calc(78px + 96px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 767.98px) {
-    .ff-status-panel { grid-template-columns: auto 1fr; }
-    .ff-status-side { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; }
-    .ff-status-hint { max-width: none; text-align: right; }
+    .ff-status-panel { grid-template-columns: auto 1fr auto; gap: 14px; }
 }
 @media (max-width: 575.98px) {
     .ff-build-hero { padding: 20px 16px; border-radius: 16px; }
@@ -322,11 +347,40 @@
     var budgetEls = [document.getElementById('ff-budget-left'), document.getElementById('ff-budget-left-2')];
     var countEls = [document.getElementById('ff-count'), document.getElementById('ff-count-2')];
     var gauge = document.getElementById('ff-budget-gauge');
+    var squadGauge = document.getElementById('ff-squad-gauge');
     var submitBtn = document.getElementById('ff-build-submit');
-    var statusHint = document.getElementById('ff-status-hint');
-    var confirmReason = document.getElementById('ff-confirm-reason');
+    var infoBtn = document.getElementById('ff-status-info-btn');
+    var popover = document.getElementById('ff-status-popover');
+    var popoverText = document.getElementById('ff-status-popover-text');
     var required = { GK: 2, DEF: 5, MID: 5, FWD: 3 };
     var labels = { GK: 'goalkeeper', DEF: 'defender', MID: 'midfielder', FWD: 'forward' };
+
+    function positionPopover() {
+        var btnRect = infoBtn.getBoundingClientRect();
+        var popWidth = popover.offsetWidth || 270;
+        var top = btnRect.bottom + 8;
+        var left = Math.min(btnRect.left, window.innerWidth - popWidth - 12);
+        popover.style.top = Math.max(8, top) + 'px';
+        popover.style.left = Math.max(8, left) + 'px';
+    }
+    function openPopover() {
+        popover.hidden = false;
+        infoBtn.setAttribute('aria-expanded', 'true');
+        positionPopover();
+    }
+    function closePopover() {
+        popover.hidden = true;
+        infoBtn.setAttribute('aria-expanded', 'false');
+    }
+    infoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (popover.hidden) openPopover(); else closePopover();
+    });
+    document.addEventListener('click', function(e) {
+        if (!popover.hidden && !popover.contains(e.target) && e.target !== infoBtn) closePopover();
+    });
+    window.addEventListener('scroll', function() { if (!popover.hidden) positionPopover(); }, true);
+    window.addEventListener('resize', function() { if (!popover.hidden) positionPopover(); });
 
     function recompute() {
         var selected = cards.filter(function(c) { return c.querySelector('input').checked; });
@@ -353,6 +407,7 @@
             track.querySelector('.ff-pos-track__fill').style.width = pct + '%';
             track.classList.toggle('is-complete', counts[pos] === required[pos]);
         });
+        squadGauge.style.setProperty('--pct', Math.min(100, (selected.length / 15) * 100));
 
         var shapeOk = Object.keys(required).every(function(p) { return counts[p] <= required[p]; });
         var clubOk = Object.values(clubCounts).every(function(c) { return c <= 3; });
@@ -360,34 +415,25 @@
         var canConfirm = exact && clubOk && budgetLeft >= 0 && selected.length === 15;
         submitBtn.disabled = !canConfirm;
 
-        // A clear, specific reason instead of a silently-disabled button - this is what was
-        // actually missing before: the button being disabled was correct, but nothing on screen
-        // explained why.
+        // A single, click-to-reveal explanation (the info icon's popover) instead of a permanent
+        // sentence repeated in multiple places - this text now lives in exactly one spot.
         var reason = '';
         if (budgetLeft < 0) {
-            reason = 'You are ' + Math.abs(budgetLeft).toFixed(1) + ' credits over budget - remove a player.';
+            reason = 'You are ' + Math.abs(budgetLeft).toFixed(1) + ' credits over budget - remove a player to continue.';
         } else {
             var missing = Object.keys(required).filter(function(p) { return counts[p] < required[p]; });
             if (missing.length) {
                 reason = 'Pick ' + missing.map(function(p) { return (required[p] - counts[p]) + ' more ' + labels[p] + (required[p] - counts[p] > 1 ? 's' : ''); }).join(', ') + '.';
             }
         }
-        if (statusHint) {
-            var hintText = statusHint.querySelector('span') || statusHint;
-            if (canConfirm) {
-                hintText.textContent = 'Squad complete - ready to confirm!';
-                statusHint.classList.add('is-ready');
-                statusHint.classList.remove('is-over');
-            } else if (budgetLeft < 0) {
-                hintText.textContent = reason;
-                statusHint.classList.add('is-over');
-                statusHint.classList.remove('is-ready');
-            } else {
-                hintText.textContent = reason || 'Pick 15 players to complete your squad.';
-                statusHint.classList.remove('is-ready', 'is-over');
-            }
-        }
-        if (confirmReason) confirmReason.textContent = canConfirm ? '' : reason;
+        var state = canConfirm ? 'ready' : (budgetLeft < 0 ? 'over' : 'pending');
+        var displayText = canConfirm ? 'Squad complete - ready to confirm!' : (reason || 'Pick 15 players to complete your squad.');
+        popoverText.textContent = displayText;
+        [infoBtn, popover].forEach(function(el) {
+            el.classList.toggle('is-ready', state === 'ready');
+            el.classList.toggle('is-over', state === 'over');
+        });
+        if (!popover.hidden) positionPopover();
 
         cards.forEach(function(c) {
             var input = c.querySelector('input');
