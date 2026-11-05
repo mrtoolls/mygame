@@ -84,11 +84,7 @@
                                 @if($seller && $listingRate?->sell_price)
                                     <article class="coin-vendor-card">
                                         <div class="coin-vendor-card__top">
-                                            @if($seller->avatarUrl())
-                                                <img class="coin-vendor-card__avatar" src="{{ $seller->avatarUrl() }}" alt="">
-                                            @else
-                                                <span class="coin-vendor-card__avatar coin-vendor-card__avatar--initial">{{ strtoupper(substr($seller->username, 0, 1)) }}</span>
-                                            @endif
+                                            <span class="coin-vendor-card__avatar coin-vendor-card__avatar--listing" aria-hidden="true"><i class="ph-fill {{ $isVendorListing ? 'ph-storefront' : 'ph-tag' }}"></i></span>
                                             <div class="coin-vendor-card__identity">
                                                 <strong>{{ $seller->username }}</strong>
                                                 <span><i class="ph-fill {{ $isVendorListing ? 'ph-seal-check' : 'ph-user-circle' }}"></i> {{ $isVendorListing ? __('Verified vendor listing') : __('Member listing') }}</span>
