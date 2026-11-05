@@ -53,6 +53,10 @@ Schema::create('support_agents', function (Blueprint $table) {
     $table->boolean('is_verified')->default(false);
     $table->unsignedTinyInteger('speed_override')->nullable();
     $table->boolean('is_moderator')->default(false);
+    $table->boolean('is_marketplace_supervisor')->default(false);
+    $table->boolean('is_chat_agent')->default(true);
+    $table->boolean('is_news_editor')->default(false);
+    $table->unsignedBigInteger('user_id')->nullable();
     $table->unsignedBigInteger('country_id')->nullable();
     $table->unsignedBigInteger('currency_id')->nullable();
     $table->timestamp('last_seen_at')->nullable();
@@ -66,6 +70,12 @@ function check(bool $cond, string $message): void
     if (!$cond) throw new RuntimeException("FAILED: $message");
     $passed++;
 }
+
+$paymentRowTemplate = file_get_contents(dirname(__DIR__) . '/resources/views/admin/support/agents/partials/payment_method_row.blade.php');
+$adminFormTemplate = file_get_contents(dirname(__DIR__) . '/resources/views/admin/support/agents/form.blade.php');
+check(str_contains($paymentRowTemplate, "@disabled(\$type !== 'bank')") && str_contains($paymentRowTemplate, "@disabled(\$type !== 'mobile_money')"), 'Only the selected payment type has enabled inputs, so its account_name cannot be overwritten by a hidden duplicate field.');
+check(str_contains($adminFormTemplate, 'field.disabled = !active;'), 'Changing payment method type enables only that type\'s fields before submit.');
+fwrite(STDOUT, "Inactive payment method fields are disabled, preventing duplicate account_name inputs from overwriting the visible value.\n");
 
 $controller = new SupportAgentController();
 

@@ -236,15 +236,27 @@
     const template = document.getElementById('sa-method-template');
     let nextIndex = methodsBox ? methodsBox.children.length : 0;
 
+    const syncMethodFields = (row) => {
+        const selectedType = row.querySelector('.sa-method__type')?.value || '';
+        row.dataset.type = selectedType;
+        row.querySelectorAll('.sa-method__fields').forEach((group) => {
+            const active = group.dataset.fields === selectedType;
+            group.querySelectorAll('input, select, textarea').forEach((field) => {
+                field.disabled = !active;
+            });
+        });
+    };
+
     const wireRow = (row) => {
         const typeSelect = row.querySelector('.sa-method__type');
         if (typeSelect) {
-            typeSelect.addEventListener('change', () => { row.dataset.type = typeSelect.value; });
+            typeSelect.addEventListener('change', () => syncMethodFields(row));
         }
         const removeBtn = row.querySelector('.sa-method__remove');
         if (removeBtn) {
             removeBtn.addEventListener('click', () => row.remove());
         }
+        syncMethodFields(row);
     };
 
     methodsBox?.querySelectorAll('.sa-method').forEach(wireRow);
