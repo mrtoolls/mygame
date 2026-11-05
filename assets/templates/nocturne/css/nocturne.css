@@ -142,16 +142,24 @@ body {
 }
 body, button, input, select, textarea { font-family: var(--body-font); }
 a { color: inherit; }
-/* :where() zeroes this selector's own specificity, so it only ever acts as a low-priority
-   DEFAULT (plain text links turn green on hover) and can never outrank any button/CTA class's
-   own color, no matter how simple that class's selector is. Before this, "a:hover" carried
-   real specificity (0,1,1) - higher than a single class like .cookies-card__allow {color:...}
-   (0,1,0) - so on hover it silently overrode the text color of any <a>-tag button that didn't
-   separately restate its own hover color, turning the label the same green as a green
-   background = invisible text. That had been patched class-by-class in a few places (search
-   "generic anchor hover color" below) instead of fixed here, so any button not on that list -
-   confirmed for .cookies-card__allow - was still broken. */
-:where(a:hover) { color: var(--nocturne-green); }
+/* Bootstrap's own a:hover{color:var(--bs-link-hover-color)} (loaded before this file, but with
+   real specificity 0,1,1) was winning the color of ANY hovered <a> whose own styling didn't
+   separately restate a hover color at >=0,1,1 - which a single class alone (.some-btn{color:...},
+   0,1,0) never does. :where() was tried here before to give plain links a themed hover color
+   without outranking component classes, but :where() always carries ZERO specificity, so it lost
+   to Bootstrap's real 0,1,1 just the same - it only ever stopped THIS rule from fighting
+   well-specified buttons, it never actually beat Bootstrap. That's why Bootstrap's blue kept
+   leaking through on hover for any <a> relying on a single class for its color (confirmed on
+   .nocturne-play-btn's Play/Demo game-card buttons, and on text inherited from an unstyled child
+   of a plain <a> button/card, e.g. a <strong> title with no color of its own - see the Live Duel
+   feature card). Real specificity (a:hover, not :where(a:hover)) ties Bootstrap's own rule and
+   wins because this file loads after bootstrap.min.css, which actually fixes the leak; anything
+   still too specific for this fallback (two-plus classes, a dedicated :hover rule, etc.) is
+   unaffected either way. Components with a SINGLE class needing a specific hover-safe color of
+   their own (not this green default) still need that one extra rule - see .nocturne-play-btn
+   below and any future case like it; give any unstyled text run inside a button/card its own
+   explicit color too, so it can never inherit a hover-corrupted ancestor color. */
+a:hover { color: var(--nocturne-green); }
 /* Removes the gray tap-flash on touch and the ~300ms double-tap-to-zoom delay on interactive
    elements - both read as "slow website" rather than "responsive app" on a real device. */
 a, button, .btn, .btn--base, .btn--gradient, [role="button"], input[type="submit"], input[type="button"] {
@@ -1010,6 +1018,11 @@ body.has-impersonation-bar .nocturne-topbar { top: 36px; }
 .nocturne-play-btn i { font-size: 13px; }
 .nocturne-play-btn--play { background: var(--nocturne-green); color: #073c2a; box-shadow: 0 8px 18px rgba(0,239,135,.3); }
 .nocturne-play-btn--demo { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.22); backdrop-filter: blur(4px); }
+/* A single class's own color (0,1,0) loses to the generic a:hover fallback above (0,1,1) on
+   hover, which would otherwise turn this dark-on-green/white-on-glass text the fallback's green -
+   illegible on the already-green Play button, and wrong on Demo. Restate each one's own color. */
+.nocturne-play-btn--play:hover { color: #073c2a; }
+.nocturne-play-btn--demo:hover { color: #fff; }
 .game-item__title { margin: 0; padding: 11px 12px; color: var(--nocturne-text); font-size: 13.5px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Touch cards reveal their actions only after the user taps the card. */
 @media (hover: none), (pointer: coarse) {

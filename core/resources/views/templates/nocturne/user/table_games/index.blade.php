@@ -188,14 +188,14 @@
            margin-inline-start expects it to be once the description text's own line count
            changes. Stacking removes the whole class of bug instead of patching one viewport. */
         .duel-promo{position:relative;overflow:hidden;display:grid;gap:14px;margin:0 0 16px;padding:18px 20px;border:1px solid rgba(0,239,135,.26);border-radius:19px;background:linear-gradient(120deg,#171d37,#0f2a2c 150%);color:var(--tg-text);text-decoration:none;isolation:isolate}
-        .duel-promo:hover{border-color:rgba(0,239,135,.5)}
+        .duel-promo:hover{border-color:rgba(0,239,135,.5);color:var(--tg-text)}
         .duel-promo:active{transform:scale(.995)}
         .duel-promo__glow{position:absolute;top:-70%;right:-10%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(0,239,135,.22),transparent 70%);pointer-events:none;z-index:-1}
         .duel-promo__top{display:flex;align-items:flex-start;gap:14px}
         .duel-promo__icon{display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;border-radius:14px;background:rgba(0,239,135,.14);color:var(--tg-green);font-size:21px}
         .duel-promo__copy{display:grid;gap:4px;min-width:0;flex:1}
         .duel-promo__kicker{color:var(--tg-green);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
-        .duel-promo__copy strong{font-size:17px;font-weight:750;line-height:1.2}
+        .duel-promo__copy strong{color:var(--tg-text);font-size:17px;font-weight:750;line-height:1.2}
         .duel-promo__copy p{margin:0;color:var(--tg-muted);font-size:12px;line-height:1.5}
         .duel-promo__new{flex:0 0 auto;padding:4px 10px;border-radius:999px;background:rgba(255,181,71,.16);color:#ffb547;font-size:9.5px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
         .duel-promo__bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
