@@ -14,7 +14,7 @@
                     <span class="cm-avatar" aria-hidden="true">
                         @if($offer['avatar'])<img src="{{ $offer['avatar'] }}" alt="" loading="lazy" decoding="async">@endif
                         <span class="cm-avatar__fallback">{{ strtoupper(substr($offer['name'], 0, 1)) }}</span>
-                        @if($offer['verified'])<i class="cm-avatar__verified" aria-label="@lang('Verified')"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 8 2.5 2.5L12 5"/></svg></i>@endif
+                        @if($offer['verified'])<i class="cm-avatar__verified" aria-label="@lang('Verified')"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="cm-verified-seal" d="M12 1.5L14.23 3.69L17.25 2.91L18.08 5.92L21.09 6.75L20.31 9.77L22.5 12L20.31 14.23L21.09 17.25L18.08 18.08L17.25 21.09L14.23 20.31L12 22.5L9.77 20.31L6.75 21.09L5.92 18.08L2.91 17.25L3.69 14.23L1.5 12L3.69 9.77L2.91 6.75L5.92 5.92L6.75 2.91L9.77 3.69Z"/><path class="cm-verified-check" d="m7.2 12.3 3.1 3.1 6.5-6.9"/></svg></i>@endif
                     </span>
                     <span class="cm-card__identity"><strong title="{{ $offer['name'] }}">{{ $offer['name'] }}</strong><span class="cm-card__role"><i></i>{{ __(ucfirst($offer['role'])) }}</span></span>
                 </div>

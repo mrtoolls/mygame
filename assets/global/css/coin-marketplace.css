@@ -229,8 +229,8 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 }
 .cm-market.cm-open { z-index: 1200; }
 .cm-market * { box-sizing: border-box; }
-.cm-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-.cm-header h2 { margin: 0; font-size: clamp(1.45rem, 2.2vw, 2rem); font-weight: 750; letter-spacing: -.035em; color: #f7f8ff; }
+.cm-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.cm-header h2 { margin: 0; font-size: clamp(1.05rem, 1.3vw, 1.3rem); font-weight: 700; letter-spacing: -.02em; color: #f7f8ff; }
 
 .cm-filter-open {
     position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
@@ -244,10 +244,10 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 }
 .cm-filter-count[hidden] { display: none; }
 
-.cm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.cm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .cm-card {
-    position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0;
-    padding: 20px 18px 17px; border: 1px solid rgba(106, 128, 182, .44); border-radius: 20px;
+    position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    padding: 16px 15px 13px; border: 1px solid rgba(106, 128, 182, .44); border-radius: 18px;
     background: linear-gradient(145deg, rgba(31, 39, 65, .97), rgba(16, 20, 37, .99));
     transition: transform .2s ease, border-color .2s ease, opacity .2s ease; animation: cm-rise .24s ease both;
 }
@@ -256,59 +256,63 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 .cm-card.is-best { border-color: rgba(255, 191, 37, .78); box-shadow: inset 0 0 0 1px rgba(255, 191, 37, .08); }
 
 .cm-best {
-    position: absolute; top: -13px; left: 50%; display: none; align-items: center; gap: 5px;
-    transform: translateX(-50%); padding: 5px 13px; border-radius: 99px; background: var(--cm-gold);
-    color: #382800; font-size: .76rem; font-weight: 800; white-space: nowrap;
+    position: absolute; top: -11px; left: 50%; display: none; align-items: center; gap: 4px;
+    transform: translateX(-50%); padding: 4px 11px; border-radius: 99px; background: var(--cm-gold);
+    color: #382800; font-size: .7rem; font-weight: 800; white-space: nowrap;
 }
-.cm-best svg { width: 13px; height: 13px; fill: currentColor; }
+.cm-best svg { width: 11px; height: 11px; fill: currentColor; }
 .cm-card.is-best .cm-best { display: inline-flex; }
 .cm-card.is-best { margin-top: 0; }
 
-.cm-card__seller { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cm-card__seller { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .cm-avatar {
-    position: relative; display: grid; place-items: center; flex: 0 0 50px; width: 50px; height: 50px;
-    border: 3px solid #5794ef; border-radius: 50%; background: #2a3452; box-shadow: 0 0 0 3px #12172a; overflow: visible;
+    position: relative; display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px;
+    border: 2px solid #5794ef; border-radius: 50%; background: #2a3452; box-shadow: 0 0 0 3px #12172a; overflow: visible;
 }
 .cm-card[data-role="vendor"] .cm-avatar { border-color: var(--cm-green); }
 .cm-card[data-role="agent"] .cm-avatar { border-color: #a77aff; }
 .cm-avatar img, .cm-avatar__fallback { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.cm-avatar__fallback { display: grid; place-items: center; background: linear-gradient(140deg, #344366, #202945); color: #dce7ff; font-size: 1.08rem; font-weight: 750; }
+.cm-avatar__fallback { display: grid; place-items: center; background: linear-gradient(140deg, #344366, #202945); color: #dce7ff; font-size: .96rem; font-weight: 750; }
 .cm-avatar img { z-index: 1; }
-.cm-avatar__verified {
-    position: absolute; z-index: 2; right: -7px; bottom: -5px; display: grid; place-items: center;
-    width: 22px; height: 22px; border: 2px solid #111629; border-radius: 50%; background: var(--cm-green); color: #061b13;
-}
-.cm-avatar__verified svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+/* A real scalloped "seal" badge (12-point burst, mathematically generated - see the commit that
+   added this) instead of a plain checkmarked circle, matching a Twitter/Instagram-style verified
+   mark. The SVG path itself is the whole badge (fill + its own thin dark outline for separation
+   from whatever avatar colour sits behind it), so this wrapper no longer needs its own
+   circular background/border. */
+.cm-avatar__verified { position: absolute; z-index: 2; right: -4px; bottom: -4px; width: 18px; height: 18px; }
+.cm-avatar__verified svg { width: 100%; height: 100%; }
+.cm-verified-seal { fill: var(--cm-green); stroke: #111629; stroke-width: 1.1; stroke-linejoin: round; }
+.cm-verified-check { fill: none; stroke: #052117; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 
-.cm-card__identity { display: grid; gap: 3px; min-width: 0; }
-.cm-card__identity strong { overflow: hidden; color: #f8f9ff; font-size: 1.02rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
-.cm-card__role { display: flex; align-items: center; gap: 6px; min-width: 0; color: #6ea9ff; font-size: .82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-card__identity { display: grid; gap: 2px; min-width: 0; }
+.cm-card__identity strong { overflow: hidden; color: #f8f9ff; font-size: .94rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.cm-card__role { display: flex; align-items: center; gap: 6px; min-width: 0; color: #6ea9ff; font-size: .76rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cm-card[data-role="vendor"] .cm-card__role { color: var(--cm-green); }
 .cm-card[data-role="agent"] .cm-card__role { color: #b690ff; }
 .cm-card__role i, .cm-pills i { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #69718f; }
 .cm-card[data-online="1"] .cm-card__role i { background: var(--cm-green); box-shadow: 0 0 10px rgba(0, 239, 135, .6); }
 
-.cm-card__amount { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; row-gap: 0; }
-.cm-card__amount svg { flex: 0 0 22px; width: 22px; height: 22px; fill: none; stroke: var(--cm-gold); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cm-card__amount { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cm-card__amount svg { flex: 0 0 17px; width: 17px; height: 17px; fill: none; stroke: var(--cm-gold); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* The coin amount and price are the two numbers a buyer actually compares offers on - they must
-   never lose digits to an ellipsis the way a username safely can. The number itself never
-   breaks mid-digit (white-space: nowrap); if a card is too narrow for the number AND its
-   "coins"/"per 1,000" label on one line, the label wraps onto its own line instead (flex-wrap on
-   the parent), which in practice only happens at the very narrowest phone widths. */
-.cm-card__amount strong { color: #f7f8ff; font-size: clamp(1.12rem, 1.45vw, 1.48rem); font-weight: 800; letter-spacing: -.03em; white-space: nowrap; }
-.cm-card__amount span, .cm-card__price span { color: var(--cm-muted); font-size: .84rem; font-weight: 600; white-space: nowrap; }
-.cm-card__price { display: flex; align-items: baseline; gap: 9px; min-width: 0; flex-wrap: wrap; row-gap: 0; }
-.cm-card__price strong { color: var(--cm-green); font-size: clamp(1.1rem, 1.5vw, 1.5rem); font-weight: 800; letter-spacing: -.025em; white-space: nowrap; }
+   never lose digits to an ellipsis the way a username safely can, so the number itself never
+   wraps or truncates (white-space: nowrap, no ellipsis). Its "coins"/"per 1,000" unit label is
+   secondary text, so THAT is what gives way first on a very narrow card (shrinks/ellipses)
+   rather than ever touching the number. */
+.cm-card__amount strong { flex: 0 0 auto; color: #f7f8ff; font-size: clamp(.96rem, 1.1vw, 1.14rem); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.cm-card__amount span, .cm-card__price span { min-width: 0; overflow: hidden; color: var(--cm-muted); font-size: .76rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.cm-card__price { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.cm-card__price strong { flex: 0 0 auto; color: var(--cm-green); font-size: clamp(.98rem, 1.15vw, 1.18rem); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
 .cm-card.is-best .cm-card__price strong { color: var(--cm-gold); }
-.cm-card__stats { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--cm-muted); font-size: .78rem; line-height: 1.25; }
+.cm-card__stats { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--cm-muted); font-size: .73rem; line-height: 1.25; }
 .cm-card__stats strong { color: #f5f7ff; font-weight: 750; }
-.cm-card__stats > i { flex: 0 0 1px; height: 16px; background: var(--cm-line); }
+.cm-card__stats > i { flex: 0 0 1px; height: 14px; background: var(--cm-line); }
 .cm-release { white-space: nowrap; }
 
 .cm-card__buy { display: flex; flex-direction: column; align-items: stretch; gap: 7px; margin-top: auto; padding-top: 1px; }
 .cm-buy {
-    width: 100%; min-width: 0; min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px;
-    background: linear-gradient(110deg, #00ef87, #00c878); color: #042217; font: inherit; font-size: .9rem;
+    width: 100%; min-width: 0; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
+    background: linear-gradient(110deg, #00ef87, #00c878); color: #042217; font: inherit; font-size: .85rem;
     font-weight: 800; cursor: pointer; transition: filter .18s ease, transform .18s ease;
 }
 .cm-buy:hover { filter: brightness(1.07); transform: translateY(-1px); }
@@ -415,38 +419,38 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 
 @media (min-width: 768px) {
     .cm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .cm-card { min-height: 190px; }
-    .cm-buy { min-height: 40px; }
+    .cm-buy { min-height: 36px; }
 }
 @media (min-width: 1100px) {
     .cm-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .cm-card { padding: 20px 18px 17px; }
+    .cm-card { padding: 17px 16px 14px; }
 }
 @media (max-width: 767px) {
     .cm-market { padding: 18px 15px; border-radius: 24px; }
-    .cm-header { margin-bottom: 21px; }
-    .cm-filter-open { width: 46px; height: 46px; min-height: 46px; padding: 0; }
+    .cm-header { margin-bottom: 18px; }
+    .cm-filter-open { width: 44px; height: 44px; min-height: 44px; padding: 0; }
     .cm-filter-open span { display: none; }
-    .cm-filter-open svg { width: 21px; height: 21px; }
-    .cm-grid { gap: 13px; }
-    .cm-card { gap: 11px; padding: 18px 13px 13px; border-radius: 18px; }
-    .cm-card__seller { gap: 9px; }
-    .cm-avatar { flex-basis: 44px; width: 44px; height: 44px; }
-    .cm-card__identity strong { font-size: .92rem; }
-    .cm-card__role { font-size: .74rem; }
-    .cm-card__amount { gap: 6px; }
-    .cm-card__amount svg { flex-basis: 19px; width: 19px; height: 19px; }
-    .cm-card__amount strong { font-size: 1.03rem; }
-    .cm-card__amount span { font-size: .72rem; }
-    .cm-card__price { gap: 6px; }
-    .cm-card__price strong { font-size: 1.04rem; }
-    .cm-card__price span { font-size: .72rem; }
-    .cm-card__stats { flex-wrap: wrap; gap: 5px; font-size: .68rem; }
+    .cm-filter-open svg { width: 20px; height: 20px; }
+    .cm-grid { gap: 11px; }
+    .cm-card { gap: 7px; padding: 14px 12px 11px; border-radius: 16px; }
+    .cm-card__seller { gap: 8px; }
+    .cm-avatar { flex-basis: 38px; width: 38px; height: 38px; }
+    .cm-avatar__verified { width: 15px; height: 15px; right: -3px; bottom: -3px; }
+    .cm-card__identity strong { font-size: .86rem; }
+    .cm-card__role { font-size: .7rem; }
+    .cm-card__amount { gap: 5px; }
+    .cm-card__amount svg { flex-basis: 15px; width: 15px; height: 15px; }
+    .cm-card__amount strong { font-size: .88rem; }
+    .cm-card__amount span { font-size: .68rem; }
+    .cm-card__price { gap: 5px; }
+    .cm-card__price strong { font-size: .9rem; }
+    .cm-card__price span { font-size: .68rem; }
+    .cm-card__stats { flex-wrap: wrap; gap: 5px; font-size: .66rem; }
     .cm-card__buy { gap: 5px; }
     .cm-amount-input { flex-basis: 72px; min-width: 64px; }
-    .cm-amount-input input { height: 40px; padding: 0 5px; font-size: .72rem; }
-    .cm-buy { min-height: 42px; padding: 0 7px; font-size: .8rem; }
-    .cm-best { font-size: .68rem; padding: 4px 10px; }
+    .cm-amount-input input { height: 36px; padding: 0 5px; font-size: .72rem; }
+    .cm-buy { min-height: 38px; padding: 0 7px; font-size: .78rem; }
+    .cm-best { font-size: .66rem; padding: 4px 10px; }
     .cm-more { margin-top: 20px; }
     .cm-filter {
         top: auto; right: 0; bottom: 0; width: 100%; height: min(88dvh, 840px);
@@ -464,9 +468,9 @@ a.coin-list__row:hover { border-color: rgba(0, 239, 135, .3); transform: transla
 }
 @media (max-width: 380px) {
     .cm-card { padding-inline: 10px; }
-    .cm-card__identity strong { font-size: .86rem; }
-    .cm-card__amount strong, .cm-card__price strong { font-size: .95rem; }
-    .cm-card__stats { font-size: .64rem; }
+    .cm-card__identity strong { font-size: .82rem; }
+    .cm-card__amount strong, .cm-card__price strong { font-size: .84rem; }
+    .cm-card__stats { font-size: .62rem; }
     .cm-amount-input { flex-basis: 62px; min-width: 58px; }
     .cm-buy { font-size: .73rem; }
     .cm-pills { gap: 6px; }
