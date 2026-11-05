@@ -118,7 +118,10 @@ class FantasyAdminController extends Controller
     public function settings()
     {
         $pageTitle = 'Fantasy Settings';
-        return view('admin.fantasy.settings', compact('pageTitle'));
+        $tierSettings = app(\App\Services\Fantasy\FantasyContestTierSettings::class);
+        $budgetTiers = $tierSettings->tiers();
+        $minimumFees = $tierSettings->minimumFees();
+        return view('admin.fantasy.settings', compact('pageTitle', 'budgetTiers', 'minimumFees'));
     }
 
     public function settingsUpdate(Request $request)
@@ -130,7 +133,19 @@ class FantasyAdminController extends Controller
             'ff_price_change_enabled' => 'nullable|boolean', 'ff_price_change_step' => 'required|numeric|min:0.1|max:5',
             'ff_price_min' => 'required|numeric|min:0.1', 'ff_price_max' => 'required|numeric|min:0.1',
             'ff_max_entry_stake' => 'required|numeric|min:0', 'ff_daily_stake_cap' => 'required|numeric|min:0',
+            'ff_budget_tiers' => 'required|string|max:100', 'ff_tier_min_fees' => 'required|string|max:500',
+            'ff_duel_build_minutes' => 'required|integer|min:1|max:15', 'ff_duel_live_minutes' => 'required|integer|min:1|max:60',
+            'ff_duel_fixture_count' => 'required|integer|min:4|max:6', 'ff_duel_ready_seconds' => 'required|integer|min:15|max:600',
+            'ff_duel_lobby_minutes' => 'required|integer|min:1|max:60', 'ff_duel_fee_percent' => 'required|numeric|min:0|max:20',
         ]);
+
+        try {
+            $tierSettings = app(\App\Services\Fantasy\FantasyContestTierSettings::class);
+            $tiers = $tierSettings->parseTiers($request->ff_budget_tiers);
+            $minimumFees = $tierSettings->parseMinimumFees($request->ff_tier_min_fees, $tiers);
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['ff_budget_tiers' => $e->getMessage()])->withInput();
+        }
 
         $general = gs();
         $general->ff_enabled = $request->boolean('ff_enabled');
@@ -144,6 +159,14 @@ class FantasyAdminController extends Controller
         $general->ff_price_max = $request->ff_price_max;
         $general->ff_max_entry_stake = $request->ff_max_entry_stake;
         $general->ff_daily_stake_cap = $request->ff_daily_stake_cap;
+        $general->ff_budget_tiers = json_encode($tiers);
+        $general->ff_tier_min_fees = json_encode($minimumFees);
+        $general->ff_duel_build_minutes = $request->ff_duel_build_minutes;
+        $general->ff_duel_live_minutes = $request->ff_duel_live_minutes;
+        $general->ff_duel_fixture_count = $request->ff_duel_fixture_count;
+        $general->ff_duel_ready_seconds = $request->ff_duel_ready_seconds;
+        $general->ff_duel_lobby_minutes = $request->ff_duel_lobby_minutes;
+        $general->ff_duel_fee_percent = $request->ff_duel_fee_percent;
         $general->save();
         \Illuminate\Support\Facades\Cache::forget('GeneralSetting');
 
@@ -166,17 +189,29 @@ class FantasyAdminController extends Controller
         $pageTitle = 'Contests';
         $contests = FantasyContest::with('gameweek')->orderByDesc('id')->paginate(30);
         $openGameweeks = FantasyGameweek::whereIn('status', ['upcoming', 'active'])->orderBy('number')->get();
-        return view('admin.fantasy.contests', compact('pageTitle', 'contests', 'openGameweeks'));
+        $budgetTiers = app(\App\Services\Fantasy\FantasyContestTierSettings::class)->tiers();
+        $minimumFees = app(\App\Services\Fantasy\FantasyContestTierSettings::class)->minimumFees();
+        return view('admin.fantasy.contests', compact('pageTitle', 'contests', 'openGameweeks', 'budgetTiers', 'minimumFees'));
     }
 
     public function contestStore(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:h2h,gameweek,sponsored', 'gameweek_id' => 'required|exists:ff_gameweeks,id',
+            'type' => 'required|in:h2h,gameweek,sponsored,quick', 'gameweek_id' => 'required|exists:ff_gameweeks,id',
             'name' => 'required|string|max:100', 'entry_fee' => 'required_unless:type,sponsored|numeric|min:0',
             'sponsored_pool' => 'required_if:type,sponsored|nullable|numeric|min:0',
             'min_entrants' => 'required|integer|min:2', 'max_entrants' => 'nullable|integer|min:2',
+            'budget_tier' => 'required_if:type,quick|nullable|numeric|min:1|max:999.9',
         ]);
+        if ($request->type === 'quick') {
+            $tierSettings = app(\App\Services\Fantasy\FantasyContestTierSettings::class);
+            if (!$tierSettings->isConfiguredTier($request->budget_tier)) {
+                return back()->withErrors(['budget_tier' => 'Choose one of the configured budget tiers.'])->withInput();
+            }
+            if ((float) $request->entry_fee < $tierSettings->minimumFee($request->budget_tier)) {
+                return back()->withErrors(['entry_fee' => 'Entry fee is below the minimum for this budget tier.'])->withInput();
+            }
+        }
         $gameweek = FantasyGameweek::findOrFail($request->gameweek_id);
 
         $tiers = $request->type === 'h2h'
@@ -184,7 +219,8 @@ class FantasyAdminController extends Controller
             : ($request->tiers ?: [['top_percent' => 100, 'share_percent' => 100]]);
 
         $contest = FantasyContest::create([
-            'type' => $request->type, 'gameweek_id' => $gameweek->id, 'name' => $request->name,
+            'type' => $request->type, 'budget_tier' => $request->type === 'quick' ? $request->budget_tier : null,
+            'gameweek_id' => $gameweek->id, 'name' => $request->name,
             'entry_fee' => $request->type === 'sponsored' ? 0 : $request->entry_fee,
             'sponsored_pool' => $request->type === 'sponsored' ? $request->sponsored_pool : null,
             'min_entrants' => $request->min_entrants, 'max_entrants' => $request->type === 'h2h' ? 2 : $request->max_entrants,

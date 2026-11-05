@@ -23,12 +23,21 @@
                         <select name="type" class="form-control" required>
                             <option value="h2h">@lang('Head-to-Head')</option>
                             <option value="gameweek">@lang('Gameweek Pool')</option>
+                            <option value="quick">@lang('Quick Contest (separate squad)')</option>
                             <option value="sponsored">@lang('Sponsored (free)')</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="quickBudgetTier">
+                        <label>@lang('Quick Contest Budget Tier (fantasy credits)')</label>
+                        <select name="budget_tier" class="form-control">
+                            @foreach ($budgetTiers as $tier)@php($tierKey = rtrim(rtrim(number_format($tier, 1, '.', ''), '0'), '.'))<option value="{{ $tier }}">{{ number_format($tier, 1) }} @lang('credits') — @lang('minimum entry') {{ number_format($minimumFees[$tierKey] ?? 0, 2) }} @lang('coins')</option>@endforeach
+                        </select>
+                        <small class="text-muted">@lang('Every entrant gets the same squad budget at this tier. No budget can be purchased with coins.')</small>
                     </div>
                     <div class="form-group">
                         <label>@lang('Entry Fee (coins, ignored for sponsored)')</label>
                         <input type="number" step="0.00000001" class="form-control" name="entry_fee" value="0">
+                        <small class="text-muted">@lang('Quick contests must meet the selected tier minimum.')</small>
                     </div>
                     <div class="form-group">
                         <label>@lang('Sponsored Pool (sponsored only)')</label>
@@ -53,12 +62,12 @@
         <div class="card">
             <div class="card-body table-responsive">
                 <table class="table">
-                    <thead><tr><th>@lang('Name')</th><th>@lang('Type')</th><th>@lang('GW')</th><th>@lang('Status')</th><th>@lang('Pool')</th><th>@lang('Fee')</th></tr></thead>
+                    <thead><tr><th>@lang('Name')</th><th>@lang('Type / Budget')</th><th>@lang('GW')</th><th>@lang('Status')</th><th>@lang('Pool')</th><th>@lang('Fee')</th></tr></thead>
                     <tbody>
                         @foreach ($contests as $contest)
                             <tr>
                                 <td>{{ $contest->name }}</td>
-                                <td>{{ $contest->type }}</td>
+                                <td>{{ $contest->type }}@if($contest->type === 'quick')<br><small>{{ number_format($contest->budget_tier, 1) }} @lang('credits')</small>@endif</td>
                                 <td>{{ $contest->gameweek->number ?? '-' }}</td>
                                 <td><span class="badge bg-secondary">{{ $contest->status }}</span></td>
                                 <td>{{ $contest->final_pool !== null ? number_format($contest->final_pool, 2) : '-' }}</td>

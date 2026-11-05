@@ -33,7 +33,7 @@ class TableGameService
 
     public function catalog(): array
     {
-        return collect(TableGameRules::GAMES)->map(function ($definition, $key) {
+        return collect(TableGameRules::GAMES)->reject(fn ($definition, $key) => $key === 'fantasy_duel')->map(function ($definition, $key) {
             $setting = $this->setting($key);
             return [
                 'key' => $key,
@@ -810,6 +810,18 @@ class TableGameService
         $table->turn_deadline_at = now()->addSeconds((int) data_get($table->settings, 'turn_seconds', 60));
         $table->version++;
         $table->save();
+        if ($table->game_type === 'fantasy_duel' && \Illuminate\Support\Facades\Schema::hasTable('ff_duels')) {
+            $duel = \App\Models\FantasyDuel::where('table_game_id', $table->id)->lockForUpdate()->first();
+            if ($duel && $duel->phase === 'lobby') {
+                $duel->phase = 'ready';
+                $duel->ready_started_at = now();
+                $duel->ready_deadline_at = now()->addSeconds(max(15, (int) (gs('ff_duel_ready_seconds') ?: 60)));
+                $duel->save();
+                $table->turn_deadline_at = null;
+                $table->save();
+                \Illuminate\Support\Facades\DB::table('ff_duel_audits')->insert(['table_game_id' => $table->id, 'event' => 'ready_check_started', 'payload' => json_encode(['players' => $players->count()]), 'created_at' => now()]);
+            }
+        }
     }
 
     private function debit(User $user, TableGame $table, string $reason, ?string $amount = null): void

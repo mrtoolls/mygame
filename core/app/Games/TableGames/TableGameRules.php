@@ -25,9 +25,10 @@ class TableGameRules
         'spades' => ['name' => 'Spades', 'min' => 4, 'max' => 4],
         'hearts' => ['name' => 'Hearts', 'min' => 4, 'max' => 4],
         'crazy_eights' => ['name' => 'Crazy Eights', 'min' => 2, 'max' => 4],
+        'fantasy_duel' => ['name' => 'Live Duel', 'min' => 2, 'max' => 4],
     ];
 
-    public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts'];
+    public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts', 'fantasy_duel'];
 
     // Default icon glyph shown until an admin uploads a real card_image for that game
     // (Admin > Table Games). Every class here is confirmed present in line-awesome.min.css.
@@ -49,6 +50,7 @@ class TableGameRules
         'spades' => 'la-id-card-alt',
         'hearts' => 'la-heart',
         'crazy_eights' => 'la-clone',
+        'fantasy_duel' => 'la-futbol',
     ];
 
     // Each seat's own start square (0,13,26,39 - see 'starts' in start()) plus the classic star
@@ -94,6 +96,7 @@ class TableGameRules
                 : ['pits' => array_fill(0, 12, 4), 'scores' => [0, 0], 'turn' => 0, 'moves' => 0],
             'dominoes' => $this->dominoesStartingState($playerCount),
             'crazy_eights' => $this->crazyEightsStartingState($playerCount),
+            'fantasy_duel' => ['turn' => 0, 'moves' => 0, 'mode' => 'fantasy_duel'],
             default => throw new InvalidArgumentException('This game ruleset is not available yet.'),
         };
     }

@@ -190,10 +190,16 @@ Route::middleware('auth')->name('user.')->group(function () {
 
             Route::controller('TableGameController')->prefix('tables')->name('tables.')->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('duels', 'duels')->name('duels.index');
+                Route::post('duels', 'createDuel')->middleware('throttle:10,1')->name('duels.create');
                 Route::post('/', 'create')->middleware('throttle:10,1')->name('create');
                 Route::get('leaderboard', 'leaderboard')->middleware('throttle:60,1')->name('leaderboard');
                 Route::get('{id}', 'show')->whereUuid('id')->name('show');
                 Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');
+                Route::get('{id}/duel/snapshot', 'duelSnapshot')->whereUuid('id')->middleware('throttle:30,1')->name('duel.snapshot');
+                Route::post('{id}/duel/ready', 'duelReady')->whereUuid('id')->middleware('throttle:20,1')->name('duel.ready');
+                Route::post('{id}/duel/squad', 'duelSquad')->whereUuid('id')->middleware('throttle:20,1')->name('duel.squad');
+                Route::get('{id}/duel/verify', 'duelVerify')->whereUuid('id')->middleware('throttle:10,1')->name('duel.verify');
                   Route::get('{id}/chat', 'messages')->whereUuid('id')->middleware('throttle:120,1')->name('chat');
                   Route::post('{id}/chat', 'sendMessage')->whereUuid('id')->middleware('throttle:60,1')->name('chat.send');
                   Route::post('{id}/chat/{message}/reaction', 'react')->whereUuid('id')->whereNumber('message')->middleware('throttle:60,1')->name('chat.react');
@@ -246,6 +252,8 @@ Route::middleware('auth')->name('user.')->group(function () {
                 });
                 Route::controller('FantasyContestController')->prefix('contests')->name('contests.')->group(function () {
                     Route::get('/', 'index')->name('index');
+                    Route::get('{contest}/squad', 'squad')->whereNumber('contest')->name('squad');
+                    Route::post('{contest}/squad', 'saveSquad')->whereNumber('contest')->middleware('throttle:10,1')->name('squad.save');
                     Route::post('{contest}/enter', 'enter')->whereNumber('contest')->middleware('throttle:15,1')->name('enter');
                 });
                 Route::get('rules', 'FantasyRulesController@index')->name('rules');

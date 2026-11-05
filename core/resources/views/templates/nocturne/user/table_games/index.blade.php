@@ -44,6 +44,8 @@
             </div></section>
         @endif
 
+        <a class="table-duel-feature" href="{{ route('user.tables.duels.index') }}"><span><i class="las la-futbol"></i></span><div><small>FANTASY · HEAD TO HEAD</small><strong>Live Duel</strong><em>Pick a budget tier, build a squad and follow the sealed match slate.</em></div><b>Explore duels <i class="las la-arrow-right"></i></b></a>
+
         <div class="table-lobby__layout">
             <form class="table-card" id="create-table-form">
                 <div class="table-card__heading"><span class="table-card__icon"><i class="las la-plus"></i></span><div><h2>@lang('Create a Table')</h2><p>@lang('Set the game and stake for your table.')</p></div></div>
@@ -160,6 +162,8 @@
         @media(max-width:575.98px){.table-card--live{scroll-margin-top:84px}}
         .table-card--wins{grid-area:wins}
         .table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
+        .table-duel-feature{display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:15px;border:1px solid rgba(0,239,135,.24);border-radius:17px;background:radial-gradient(ellipse at 95% 0,rgba(0,239,135,.13),transparent 42%),linear-gradient(105deg,#171d37,#102528);color:var(--tg-text);text-decoration:none}.table-duel-feature>span{display:grid;place-items:center;flex:0 0 44px;height:44px;border-radius:14px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:20px}.table-duel-feature>div{display:grid;gap:3px;min-width:0}.table-duel-feature small{color:var(--tg-green);font-size:9px;font-weight:850;letter-spacing:.11em}.table-duel-feature strong{font-size:15px;font-weight:750}.table-duel-feature em{color:var(--tg-muted);font-size:11px;font-style:normal;line-height:1.45}.table-duel-feature>b{display:inline-flex;align-items:center;gap:7px;margin-inline-start:auto;padding:10px 12px;border-radius:11px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:11px;white-space:nowrap}.table-duel-feature:hover{border-color:rgba(0,239,135,.45);color:var(--tg-text)}
+        @media(max-width:575.98px){.table-duel-feature{align-items:flex-start;flex-wrap:wrap}.table-duel-feature>b{margin-inline-start:58px;margin-top:-4px}.table-duel-feature em{font-size:10.5px}}
         .recent-wins__head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--tg-text);font-size:13px;font-weight:900}.recent-wins__head i{color:#ffb547}.recent-wins__head small{margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(122,151,255,.12);color:#a7bbff;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
         /* Fixed to exactly 5 rows' worth of height and auto-scrolling (see the keyframe) rather
            than growing with however many wins exist - that unbounded growth was what pushed

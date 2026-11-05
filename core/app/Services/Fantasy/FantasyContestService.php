@@ -4,6 +4,9 @@ namespace App\Services\Fantasy;
 
 use App\Models\FantasyContest;
 use App\Models\FantasyContestEntry;
+use App\Models\FantasyContestSquad;
+use App\Models\FantasyContestSquadPlayer;
+use App\Models\FantasyPlayerFixtureStat;
 use App\Models\FantasyTeam;
 use App\Models\FantasyTeamGameweekHistory;
 use App\Models\User;
@@ -24,9 +27,9 @@ use InvalidArgumentException;
  */
 class FantasyContestService
 {
-    public function enter(User $user, FantasyContest $contest, FantasyTeam $team): FantasyContestEntry
+    public function enter(User $user, FantasyContest $contest, FantasyTeam $team, ?FantasyContestSquad $contestSquad = null): FantasyContestEntry
     {
-        return DB::transaction(function () use ($user, $contest, $team) {
+        return DB::transaction(function () use ($user, $contest, $team, $contestSquad) {
             $contest = FantasyContest::whereKey($contest->id)->lockForUpdate()->firstOrFail();
 
             if (!gs('ff_enabled')) throw new InvalidArgumentException('Fantasy contests are currently unavailable.');
@@ -34,6 +37,16 @@ class FantasyContestService
             if ($contest->isDeadlinePassed()) throw new InvalidArgumentException('Entries have closed for this contest.');
             if ((int) $team->user_id !== (int) $user->id) throw new InvalidArgumentException('That is not your team.');
             if ((int) $team->season_id !== (int) $contest->gameweek->season_id) throw new InvalidArgumentException('That team does not belong to this contest\'s season.');
+            if ($contest->type === 'quick') {
+                if (!$contestSquad || (int) $contestSquad->contest_id !== (int) $contest->id || (int) $contestSquad->user_id !== (int) $user->id) {
+                    throw new InvalidArgumentException('Build your squad for this contest before entering.');
+                }
+                if (abs((float) $contestSquad->budget_tier - (float) $contest->budget_tier) >= 0.001 || $contestSquad->players()->count() !== 15) {
+                    throw new InvalidArgumentException('Your contest squad does not match this budget tier. Rebuild it before entering.');
+                }
+            } elseif ($contestSquad) {
+                throw new InvalidArgumentException('This contest uses your season squad.');
+            }
             if ($contest->max_entrants && FantasyContestEntry::where('contest_id', $contest->id)->count() >= $contest->max_entrants) {
                 throw new InvalidArgumentException('This contest is full.');
             }
@@ -56,7 +69,7 @@ class FantasyContestService
             return FantasyContestEntry::create([
                 'contest_id' => $contest->id, 'user_id' => $user->id, 'team_id' => $team->id,
                 'stake' => $stake, 'hold_idempotency_key' => $idempotencyKey, 'status' => 'held',
-                'entry_ip' => $ip, 'entered_at' => now(),
+                'entry_ip' => $ip, 'entered_at' => now(), 'contest_squad_id' => $contestSquad?->id,
             ]);
         }, 3);
     }
@@ -97,7 +110,8 @@ class FantasyContestService
                 return;
             }
 
-            foreach ($entries as $entry) {
+            if ($contest->type === 'quick') $this->scoreQuickEntries($contest, $entries);
+            else foreach ($entries as $entry) {
                 $history = FantasyTeamGameweekHistory::where('team_id', $entry->team_id)->where('gameweek_id', $contest->gameweek_id)->first();
                 $entry->score = $history->points ?? 0;
                 $entry->save();
@@ -115,6 +129,38 @@ class FantasyContestService
             $contest->settled_at = now();
             $contest->save();
         }, 3);
+    }
+
+    private function scoreQuickEntries(FantasyContest $contest, $entries): void
+    {
+        $squads = FantasyContestSquad::with('players.player')
+            ->whereIn('id', $entries->pluck('contest_squad_id')->filter())
+            ->where('contest_id', $contest->id)->get()->keyBy('id');
+        $playerIds = $squads->flatMap(fn ($squad) => $squad->players->pluck('player_id'))->unique()->values();
+        $stats = FantasyPlayerFixtureStat::whereIn('player_id', $playerIds)
+            ->whereHas('fixture', fn ($query) => $query->where('gameweek_id', $contest->gameweek_id))
+            ->get(['player_id', 'total_points', 'minutes'])->groupBy('player_id')->map(fn ($rows) => [
+                'points' => (int) $rows->sum('total_points'), 'minutes' => (int) $rows->sum('minutes'),
+            ]);
+        $scorer = app(FantasyLineupScorer::class);
+
+        foreach ($entries as $entry) {
+            $squad = $squads->get($entry->contest_squad_id);
+            if (!$squad || (int) $squad->user_id !== (int) $entry->user_id || abs((float) $squad->budget_tier - (float) $contest->budget_tier) >= 0.001 || $squad->players->count() !== 15) {
+                throw new InvalidArgumentException('A Quick Contest entry has no valid locked squad.');
+            }
+            $rows = $squad->players->map(function ($row) use ($stats) {
+                $stat = $stats->get($row->player_id, ['points' => 0, 'minutes' => 0]);
+                return [
+                    'player_id' => (int) $row->player_id, 'position' => $row->player->position,
+                    'squad_role' => $row->squad_role, 'bench_order' => $row->bench_order,
+                    'is_captain' => $row->is_captain, 'is_vice_captain' => $row->is_vice_captain,
+                    'points' => $stat['points'], 'minutes' => $stat['minutes'],
+                ];
+            })->all();
+            $entry->score = $scorer->score($rows)['total'];
+            $entry->save();
+        }
     }
 
     private function refundAll(FantasyContest $contest, $entries): void

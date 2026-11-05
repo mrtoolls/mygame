@@ -12,6 +12,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use App\Models\Currency;
 use App\Models\FantasyContest;
 use App\Models\FantasyContestEntry;
+use App\Models\FantasyContestSquad;
 use App\Models\FantasyFixture;
 use App\Models\FantasyGameweek;
 use App\Models\FantasyPlayer;
@@ -22,6 +23,8 @@ use App\Models\FantasyTeamPlayer;
 use App\Models\User;
 use App\Services\CoinLedger;
 use App\Services\Fantasy\FantasyContestService;
+use App\Services\Fantasy\FantasyContestSquadService;
+use App\Services\Fantasy\FantasyContestTierSettings;
 use App\Services\Fantasy\FantasyGameweekFinalizer;
 use App\Services\Fantasy\FantasyLeagueGenerator;
 use App\Services\Fantasy\FantasyTeamService;
@@ -83,6 +86,8 @@ Schema::create('users', function (Blueprint $table) {
 (require dirname(__DIR__) . '/database/migrations/2026_11_04_000003_create_fantasy_league_tables.php')->up();
 (require dirname(__DIR__) . '/database/migrations/2026_11_04_000004_create_fantasy_contest_tables.php')->up();
 (require dirname(__DIR__) . '/database/migrations/2026_11_04_000005_create_fantasy_admin_tables.php')->up();
+(require dirname(__DIR__) . '/database/migrations/2026_11_04_000008_add_budget_tiers_and_contest_squads.php')->up();
+(require dirname(__DIR__) . '/database/migrations/2026_11_04_000008_add_budget_tiers_and_contest_squads.php')->up(); // safe rerun, including a second pass over every added column/table
 
 $passed = 0;
 function check(bool $cond, string $message): void {
@@ -92,6 +97,7 @@ function check(bool $cond, string $message): void {
 }
 
 $ledger = app(CoinLedger::class);
+check(Schema::hasColumn('ff_contest_entries', 'contest_squad_id') && Schema::hasTable('ff_contest_squads') && Schema::hasTable('ff_contest_squad_players'), 'Budget tier and contest squad migration safely re-runs and leaves its schema complete.');
 
 // --- Generate a full virtual league: 20 clubs, ~500 players, 380 fixtures across 38 gameweeks. ---
 $generator = app(FantasyLeagueGenerator::class);
@@ -169,10 +175,42 @@ $gwContest = FantasyContest::create([
     'status' => 'open', 'deadline_at' => $firstGameweek->deadline_at,
     'prize_structure' => [['top_percent' => 100, 'share_percent' => 100]],
 ]);
+$quickContest = FantasyContest::create([
+    'type' => 'quick', 'budget_tier' => '100.0', 'gameweek_id' => $firstGameweek->id, 'name' => 'Test Quick 100',
+    'entry_fee' => '25', 'min_entrants' => 2, 'max_entrants' => 10,
+    'status' => 'open', 'deadline_at' => $firstGameweek->deadline_at,
+    'prize_structure' => [['top_percent' => 100, 'share_percent' => 100]],
+]);
+$quickSquadService = app(FantasyContestSquadService::class);
+$tierSettings = app(FantasyContestTierSettings::class);
+check($tierSettings->parseTiers('100, 120, 150') === [100.0, 120.0, 150.0], 'Budget tier settings parse into a sorted shared tier list.');
+check($tierSettings->parseMinimumFees('100:10, 120:15, 150:20', [100.0, 120.0, 150.0]) === ['100' => 10.0, '120' => 15.0, '150' => 20.0], 'Budget tier minimums preserve increasing coin entry fees.');
+try {
+    $tierSettings->parseMinimumFees('100:15, 120:10', [100.0, 120.0]);
+    check(false, 'Tier configuration rejects decreasing higher-tier fees.');
+} catch (\InvalidArgumentException $e) { check(true, 'Tier configuration rejects decreasing higher-tier fees.'); }
+$quickSquadA = $quickSquadService->createOrReplace($user, $quickContest, 'Quick A', assembleSquad($squadIds));
+$quickSquadB = $quickSquadService->createOrReplace($user2, $quickContest, 'Quick B', assembleSquad($squadIds2));
+check($quickSquadA->players()->count() === 15 && $quickSquadB->players()->count() === 15, 'Quick Contest stores each entrant\'s own separate 15-player squad.');
+check(FantasyContestSquad::where('contest_id', $quickContest->id)->count() === 2, 'Quick squads are scoped to contest and user, independently of season teams.');
+$quickIdsA = $quickSquadA->players->pluck('player_id')->all();
+check(!array_intersect($quickIdsA, $squadIds), 'The Quick Contest squad can differ from the season squad.');
+try {
+    $quickSquadService->createOrReplace($user, $quickContest, 'Invalid', array_slice($quickIdsA, 0, 14));
+    check(false, 'Quick squad rejects a roster with fewer than 15 players.');
+} catch (\InvalidArgumentException $e) { check(true, 'Quick squad rejects a roster with fewer than 15 players.'); }
 
 // Distinct per-user IPs throughout, so the linked-entry guard (same IP twice in one contest)
 // never fires for these two genuinely different managers.
 request()->server->set('REMOTE_ADDR', '10.0.0.1');
+try {
+    $contestService->enter($user, $quickContest, $team, null);
+    check(false, 'Quick entry without a contest squad is rejected.');
+} catch (\InvalidArgumentException $e) { check(true, 'Quick entry without a contest squad is rejected.'); }
+try {
+    $contestService->enter($user2, $quickContest, $team2, $quickSquadA);
+    check(false, 'Quick entry cannot use another user\'s contest squad.');
+} catch (\InvalidArgumentException $e) { check(true, 'Quick entry cannot use another user\'s contest squad.'); }
 $entryA1 = $contestService->enter($user, $h2h, $team);
 request()->server->set('REMOTE_ADDR', '10.0.0.2');
 $entryB1 = $contestService->enter($user2, $h2h, $team2);
@@ -183,6 +221,16 @@ $entryA2 = $contestService->enter($user, $gwContest, $team);
 request()->server->set('REMOTE_ADDR', '10.0.0.2');
 $entryB2 = $contestService->enter($user2, $gwContest, $team2);
 check($entryA2->status === 'held' && $entryB2->status === 'held', 'Both gameweek-contest entries were accepted.');
+
+request()->server->set('REMOTE_ADDR', '10.0.0.1');
+$quickEntryA = $contestService->enter($user, $quickContest, $team, $quickSquadA);
+request()->server->set('REMOTE_ADDR', '10.0.0.2');
+$quickEntryB = $contestService->enter($user2, $quickContest, $team2, $quickSquadB);
+check($quickEntryA->contest_squad_id === $quickSquadA->id && $quickEntryB->contest_squad_id === $quickSquadB->id, 'Quick entries reference the per-contest squad and not the season squad for scoring.');
+try {
+    $quickSquadService->createOrReplace($user, $quickContest, 'Changed after entry', $quickIdsA);
+    check(false, 'A contest squad cannot change after its entry is held.');
+} catch (\InvalidArgumentException $e) { check(true, 'A contest squad cannot change after its entry is held.'); }
 
 $reconcileAfterEntries = $ledger->reconcile();
 check($reconcileAfterEntries['ok'], 'Ledger reconciles after entry holds: ' . json_encode($reconcileAfterEntries));
@@ -215,12 +263,24 @@ $team->refresh();
 check(\App\Models\FantasyTeamGameweekHistory::where('team_id', $team->id)->where('gameweek_id', $firstGameweek->id)->exists(), 'A gameweek history row was written for the team.');
 fwrite(STDOUT, "Team total points after gameweek 1: {$team->total_points}.\n");
 
+// Give a player who exists only in Quick A's contest squad a distinctive completed performance.
+// The season history is already finalized, so a score of at least 123 below proves Quick scoring
+// reads its own roster fixture stats instead of the season-team history.
+$quickOnlyStartingIds = $quickSquadA->players->where('squad_role', 'starting')->pluck('player_id');
+$quickOnlyStat = FantasyPlayerFixtureStat::whereIn('player_id', $quickOnlyStartingIds)
+    ->whereHas('fixture', fn ($query) => $query->where('gameweek_id', $firstGameweek->id))->firstOrFail();
+$quickOnlyStat->minutes = 90;
+$quickOnlyStat->total_points = 123;
+$quickOnlyStat->save();
+
 // --- Contests should now be locked, with a review window still open 5 minutes out - settling
 // too early (before an admin's correction window closes) would be the actual bug here. ---
 $h2h->refresh();
 $gwContest->refresh();
+$quickContest->refresh();
 check($h2h->status === 'locked', 'The H2H contest locked once the gameweek finalized.');
 check($gwContest->status === 'locked', 'The gameweek contest locked once the gameweek finalized.');
+check($quickContest->status === 'locked', 'The Quick Contest locked once the gameweek finalized.');
 check($h2h->review_until_at->isFuture(), 'The H2H contest\'s review window has not yet closed.');
 
 $finalizer->tick();
@@ -233,8 +293,10 @@ $finalizer->tick();
 
 $h2h->refresh();
 $gwContest->refresh();
+$quickContest->refresh();
 check($h2h->status === 'settled', 'The H2H contest settled automatically via the cron tick.');
 check($gwContest->status === 'settled', 'The gameweek contest settled automatically via the cron tick.');
+check($quickContest->status === 'settled', 'The Quick Contest settles through the normal fee and CoinLedger payout path.');
 fwrite(STDOUT, "Both contests settled via the same clock-driven finalizer tick, no manual intervention.\n");
 
 $entryA1->refresh();
@@ -250,6 +312,8 @@ if ($entryA1->score === $entryB1->score) {
 
 $entryA2->refresh();
 $entryB2->refresh();
+$quickEntryA->refresh();
+$quickEntryB->refresh();
 $gwTotal = bcadd((string) $entryA2->payout, (string) $entryB2->payout, 8);
 if ($entryA2->score === $entryB2->score) {
     check(bccomp($gwTotal, '95', 8) === 0, 'A tied gameweek contest still splits the fee-reduced pot (95), not a full refund (that rule is H2H-only) - got ' . $gwTotal);
@@ -257,6 +321,11 @@ if ($entryA2->score === $entryB2->score) {
     check(bccomp($gwTotal, '95', 8) === 0, 'The gameweek contest pays out the full fee-reduced pot (100 - 5% = 95) to its single-tier winner - got ' . $gwTotal);
 }
 fwrite(STDOUT, "H2H payout total: $h2hTotal (pot 200). Gameweek contest payout total: $gwTotal (pot 100).\n");
+$quickTotal = bcadd((string) $quickEntryA->payout, (string) $quickEntryB->payout, 8);
+check(bccomp($quickTotal, '47.5', 8) === 0, 'Quick Contest payout preserves the existing 5% fee math on its 50 coin pool.');
+check($quickEntryA->score !== null && $quickEntryB->score !== null, 'Quick Contest entries are scored from their saved contest squads.');
+check($quickEntryA->score >= 123, 'Quick Contest scoring uses the contest squad stats, not the season-team gameweek score.');
+fwrite(STDOUT, "Quick Contest payout total: $quickTotal (pool 50).\n");
 
 $finalReconcile = $ledger->reconcile();
 check($finalReconcile['ok'], 'Ledger reconciles after both contest settlements: ' . json_encode($finalReconcile));

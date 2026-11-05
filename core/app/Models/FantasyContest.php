@@ -10,6 +10,7 @@ class FantasyContest extends Model
     protected $guarded = ['id'];
     protected $casts = [
         'entry_fee' => 'decimal:8',
+        'budget_tier' => 'decimal:1',
         'fee_percent' => 'decimal:4',
         'sponsored_pool' => 'decimal:8',
         'final_pool' => 'decimal:8',
@@ -28,6 +29,11 @@ class FantasyContest extends Model
     public function entries()
     {
         return $this->hasMany(FantasyContestEntry::class, 'contest_id');
+    }
+
+    public function squads()
+    {
+        return $this->hasMany(FantasyContestSquad::class, 'contest_id');
     }
 
     public function isDeadlinePassed(): bool

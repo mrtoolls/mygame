@@ -14,6 +14,8 @@ $views = [
     'resources/views/templates/nocturne/games.blade.php',
     'resources/views/templates/nocturne/home.blade.php',
     'resources/views/templates/nocturne/user/table_games/index.blade.php',
+    'resources/views/templates/nocturne/user/table_games/duels.blade.php',
+    'resources/views/templates/nocturne/user/table_games/duel.blade.php',
     'resources/views/templates/nocturne/user/table_games/pending.blade.php',
     'resources/views/templates/nocturne/user/table_games/show.blade.php',
 ];

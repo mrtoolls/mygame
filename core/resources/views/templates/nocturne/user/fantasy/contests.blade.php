@@ -11,9 +11,12 @@
                 <div class="ff-contest-card ff-contest-card--{{ $contest->type }}">
                     <div class="ff-contest-card__head">
                         <strong>{{ $contest->name }}</strong>
-                        <span class="ff-contest-tag">{{ $contest->type === 'h2h' ? __('Head-to-Head') : ($contest->type === 'sponsored' ? __('Sponsored') : __('Gameweek Pool')) }}</span>
+                        <span class="ff-contest-tag">{{ $contest->type === 'h2h' ? __('Head-to-Head') : ($contest->type === 'sponsored' ? __('Sponsored') : ($contest->type === 'quick' ? __('Quick Contest') : __('Gameweek Pool'))) }}</span>
                     </div>
                     <div class="ff-contest-card__body">
+                        @if ($contest->type === 'quick')
+                            <span><small>@lang('Squad budget')</small><strong><i class="ph-fill ph-strategy"></i>{{ number_format($contest->budget_tier, 1) }} @lang('credits')</strong></span>
+                        @endif
                         @if ($contest->type === 'sponsored')
                             <span><small>@lang('Prize pool')</small><strong><i class="ph-fill ph-coin"></i>{{ number_format($contest->sponsored_pool, 0) }} @lang('coins')</strong></span>
                         @else
@@ -24,10 +27,15 @@
                     @if (isset($myEntries[$contest->id]))
                         <span class="ff-contest-entered"><i class="ph-fill ph-check-circle"></i>@lang('Entered')</span>
                     @elseif ($contest->status === 'open')
-                        <form action="{{ route('user.fantasy.contests.enter', $contest->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="btn btn--gradient w-100">@lang('Enter')</button>
-                        </form>
+                        @if ($contest->type === 'quick' && !isset($mySquads[$contest->id]))
+                            <a href="{{ route('user.fantasy.contests.squad', $contest->id) }}" class="btn btn--gradient w-100">@lang('Build contest squad')</a>
+                        @else
+                            @if ($contest->type === 'quick')<a href="{{ route('user.fantasy.contests.squad', $contest->id) }}" class="ff-contest-edit-squad">@lang('Review squad')</a>@endif
+                            <form action="{{ route('user.fantasy.contests.enter', $contest->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn--gradient w-100">@lang('Enter contest')</button>
+                            </form>
+                        @endif
                     @else
                         <span class="ff-contest-closed">@lang('Entries closed')</span>
                     @endif
@@ -79,6 +87,7 @@
 .ff-contest-card .btn--gradient { min-height:43px; border-radius:11px; font-size:12px; font-weight:700; }
 .ff-contest-entered,.ff-contest-closed { display:flex; align-items:center; gap:6px; min-height:38px; color:#00ef87; font-size:11px; font-weight:650; }
 .ff-contest-closed { color:#929cbd; }
+.ff-contest-edit-squad { display:block; margin:0 0 7px; color:#9ba6c9; text-align:center; font-size:10px; }
 .ff-section-title { color:#f5f6ff; font-size:16px; font-weight:700; margin:22px 0 10px; }
 .ff-standings { display:grid; gap:6px; }
 .ff-standing-row { display:flex; align-items:center; gap:10px; min-height:46px; padding:9px 12px; border:1px solid #252d4b; border-radius:12px; color:#eff1fa; background:linear-gradient(110deg,#151b34,#101529); font-size:11px; }

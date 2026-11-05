@@ -15,6 +15,8 @@ use App\Models\UserBlock;
 use App\Models\Gift;
 use App\Models\UserGiftInventory;
 use App\Services\GiftService;
+use App\Services\Fantasy\FantasyDuelService;
+use App\Services\Fantasy\FantasyContestTierSettings;
 use App\Constants\Status;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -40,6 +42,26 @@ class TableGameController extends Controller
         ]);
     }
 
+    public function duels(Request $request, FantasyContestTierSettings $tiers)
+    {
+        $tables = TableGame::with('players.user')->where('game_type', 'fantasy_duel')->whereIn('status', ['waiting', 'active'])->orderByDesc('created_at')->paginate(12);
+        return view('Template::user.table_games.duels', ['pageTitle' => 'Live Duels', 'tables' => $tables, 'duels' => \App\Models\FantasyDuel::whereIn('table_game_id', $tables->getCollection()->pluck('id'))->get()->keyBy('table_game_id'), 'tiers' => $tiers->tiers(), 'minimumFees' => $tiers->minimumFees()]);
+    }
+
+    public function createDuel(Request $request, FantasyDuelService $duels)
+    {
+        $data = $request->validate([
+            'player_limit' => 'required|integer|min:2|max:4', 'stake' => 'required|integer|min:1|max:1000000',
+            'budget_tier' => 'required|numeric|min:1|max:999.9', 'idempotency_key' => 'required|string|alpha_dash|min:12|max:64',
+        ]);
+        try {
+            $table = $duels->create($request->user(), (int) $data['player_limit'], (string) $data['stake'], (float) $data['budget_tier'], $data['idempotency_key'], $request->ip());
+            return response()->json(['success' => true, 'redirect' => route('user.tables.show', $table->id), 'table' => ['id' => $table->id, 'status' => $table->status]]);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
     public function leaderboard(Request $request, TableGameService $service)
     {
         $gameType = (string) $request->query('game', 'ludo');
@@ -54,6 +76,10 @@ class TableGameController extends Controller
 
     public function show(Request $request, string $id, TableGameService $service)
     {
+        if (Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()) {
+            $duels = app(FantasyDuelService::class);
+            return view('Template::user.table_games.duel', ['pageTitle' => 'Live Duel', 'table' => TableGame::with('players.user')->findOrFail($id), 'snapshot' => $duels->snapshot($request->user(), $id)]);
+        }
         $table = TableGame::with(['players.user', 'currency'])->findOrFail($id);
         $isSpectator = !$table->players->contains('user_id', $request->user()->id);
         $walletCurrency = $request->user()->walletCurrency;
@@ -88,6 +114,9 @@ class TableGameController extends Controller
 
     public function create(Request $request, TableGameService $service)
     {
+        if ($request->input('game_type') === 'fantasy_duel') {
+            return response()->json(['success' => false, 'message' => 'Create a Live Duel from the Live Duels lobby so its shared budget tier can be locked correctly.'], 422);
+        }
         $rules = [
             'game_type' => 'required|string|max:40',
             'player_limit' => 'required|integer|min:2|max:4',
@@ -106,20 +135,26 @@ class TableGameController extends Controller
     {
         if (!$request->expectsJson()) {
             try {
-                $table = $service->join($request->user(), $id);
+                $table = Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()
+                    ? app(FantasyDuelService::class)->join($request->user(), $id, $request->ip())
+                    : $service->join($request->user(), $id);
                 return redirect()->route('user.tables.show', $table->id);
             } catch (InvalidArgumentException $exception) {
                 return back()->withErrors(['table' => $exception->getMessage()]);
             }
         }
-        return $this->run(fn () => $service->join($request->user(), $id));
+        return $this->run(fn () => Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()
+            ? app(FantasyDuelService::class)->join($request->user(), $id, $request->ip())
+            : $service->join($request->user(), $id));
     }
 
     public function invite(Request $request, string $id, TableGameService $service)
     {
         $data = $request->validate(['username' => 'required|string|min:2|max:40']);
         try {
-            $invite = $service->invite($request->user(), $id, $data['username']);
+            $invite = Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()
+                ? app(FantasyDuelService::class)->invite($request->user(), $id, $data['username'])
+                : $service->invite($request->user(), $id, $data['username']);
             return response()->json(['success' => true, 'message' => 'Invitation sent.', 'expires_at' => $invite->expires_at?->toIso8601String()]);
         } catch (InvalidArgumentException $exception) {
             return response()->json(['success' => false, 'message' => $exception->getMessage()], 422);
@@ -153,16 +188,50 @@ class TableGameController extends Controller
 
     public function acceptInvite(Request $request, int $invite, TableGameService $service)
     {
-        return $this->run(fn () => $service->acceptInvite($request->user(), $invite));
+        return $this->run(fn () => Schema::hasTable('ff_duels') && (function () use ($invite) { $id = \App\Models\TableGameInvite::whereKey($invite)->value('table_game_id'); return $id && \App\Models\FantasyDuel::where('table_game_id', $id)->exists(); })()
+            ? app(FantasyDuelService::class)->acceptInvite($request->user(), $invite, $request->ip())
+            : $service->acceptInvite($request->user(), $invite));
+    }
+
+    public function duelSnapshot(Request $request, string $id)
+    {
+        abort_unless(\App\Models\FantasyDuel::where('table_game_id', $id)->exists(), 404);
+        $cursor = max(0, min(10000, (int) $request->query('event_cursor', 0)));
+        return response()->json(app(FantasyDuelService::class)->snapshot($request->user(), $id, $cursor));
+    }
+
+    public function duelReady(Request $request, string $id)
+    {
+        try { return response()->json(app(FantasyDuelService::class)->ready($request->user(), $id)); }
+        catch (InvalidArgumentException $e) { return response()->json(['message' => $e->getMessage()], 422); }
+    }
+
+    public function duelSquad(Request $request, string $id)
+    {
+        $data = $request->validate(['player_ids' => 'required|array|size:11', 'player_ids.*' => 'required|integer|min:1', 'captain_id' => 'required|integer|min:1']);
+        try { return response()->json(app(FantasyDuelService::class)->submitSquad($request->user(), $id, $data['player_ids'], (int) $data['captain_id'])); }
+        catch (InvalidArgumentException $e) { return response()->json(['message' => $e->getMessage()], 422); }
+    }
+
+    public function duelVerify(Request $request, string $id)
+    {
+        try { return response()->json(app(FantasyDuelService::class)->verify($id)); }
+        catch (InvalidArgumentException $e) { return response()->json(['message' => $e->getMessage()], 422); }
     }
 
     public function start(Request $request, string $id, TableGameService $service)
     {
+        if (Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Live Duels start only when every selected seat is filled.'], 422);
+        }
         return $this->run(fn () => $service->start($request->user(), $id));
     }
 
     public function requestRematch(Request $request, string $id, TableGameService $service)
     {
+        if (Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Create a new Live Duel to get a fresh committed fixture slate.'], 422);
+        }
         try {
             $rematch = $service->requestRematch($request->user(), $id);
             return response()->json([
@@ -213,6 +282,9 @@ class TableGameController extends Controller
 
     public function leave(Request $request, string $id, TableGameService $service)
     {
+        if (Schema::hasTable('ff_duels') && \App\Models\FantasyDuel::where('table_game_id', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'You can reconnect at any time; leaving does not affect duel scoring. Contact an admin if this table needs a refund.'], 422);
+        }
         return $this->run(fn () => $service->standUp($request->user(), $id));
     }
 

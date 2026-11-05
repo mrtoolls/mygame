@@ -28,4 +28,9 @@ class FantasyContestEntry extends Model
     {
         return $this->belongsTo(FantasyTeam::class, 'team_id');
     }
+
+    public function contestSquad()
+    {
+        return $this->belongsTo(FantasyContestSquad::class, 'contest_squad_id');
+    }
 }

@@ -50,6 +50,23 @@
                     <label>@lang('Daily Stake Cap Per User')</label>
                     <input type="number" step="0.01" class="form-control" name="ff_daily_stake_cap" value="{{ gs('ff_daily_stake_cap') }}">
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label>@lang('Quick Contest Budget Tiers')</label>
+                    <input type="text" class="form-control" name="ff_budget_tiers" value="{{ implode(', ', $budgetTiers) }}" required>
+                    <small class="text-muted">@lang('Comma-separated shared squad budgets, e.g. 100, 120, 150. These are fantasy credits, not coins.')</small>
+                </div>
+                <div class="col-12 mt-2"><h6>@lang('Live Duel timing &amp; fees')</h6><hr></div>
+                <div class="col-md-4 mb-3"><label>@lang('Lobby timeout (minutes)')</label><input type="number" class="form-control" name="ff_duel_lobby_minutes" value="{{ gs('ff_duel_lobby_minutes') ?: 10 }}" min="1" max="60"></div>
+                <div class="col-md-4 mb-3"><label>@lang('Ready check (seconds)')</label><input type="number" class="form-control" name="ff_duel_ready_seconds" value="{{ gs('ff_duel_ready_seconds') ?: 60 }}" min="15" max="600"></div>
+                <div class="col-md-4 mb-3"><label>@lang('Team build window (minutes)')</label><input type="number" class="form-control" name="ff_duel_build_minutes" value="{{ gs('ff_duel_build_minutes') ?: 3 }}" min="1" max="15"></div>
+                <div class="col-md-4 mb-3"><label>@lang('Live match window (minutes)')</label><input type="number" class="form-control" name="ff_duel_live_minutes" value="{{ gs('ff_duel_live_minutes') ?: 10 }}" min="1" max="60"></div>
+                <div class="col-md-4 mb-3"><label>@lang('Fresh fixtures (4–6)')</label><input type="number" class="form-control" name="ff_duel_fixture_count" value="{{ gs('ff_duel_fixture_count') ?: 4 }}" min="4" max="6"></div>
+                <div class="col-md-4 mb-3"><label>@lang('Duel fee (%)')</label><input type="number" step="0.01" class="form-control" name="ff_duel_fee_percent" value="{{ gs('ff_duel_fee_percent') ?? 5 }}" min="0" max="20"></div>
+                <div class="col-md-6 mb-3">
+                    <label>@lang('Minimum Entry Fee by Tier (coins)')</label>
+                    <input type="text" class="form-control" name="ff_tier_min_fees" value="{{ collect($minimumFees)->map(fn($fee, $tier) => $tier.':'.$fee)->implode(', ') }}" required>
+                    <small class="text-muted">@lang('Use tier:fee pairs. Every configured tier needs a fee, and higher tiers need higher fees.')</small>
+                </div>
             </div>
         </div>
         <div class="card-footer">
