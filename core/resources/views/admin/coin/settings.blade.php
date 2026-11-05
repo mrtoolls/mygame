@@ -132,6 +132,54 @@
 
         <div class="col-12">
             <div class="coin-admin-panel">
+                <div class="coin-admin-panel__head">
+                    <h2><i class="las la-sliders-h"></i> Marketplace Amount Limits</h2>
+                    <p class="mb-0">Set the whole-coin range accepted for member listings and direct agent trades. These limits are separate from each vendor’s own caps.</p>
+                </div>
+                <form method="post" action="{{ route('admin.coin.marketplace-limits.save') }}">
+                    @csrf
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <h3 class="h6 mb-3">Member listings</h3>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label" for="min_listing_amount">Minimum coins</label>
+                                    <input id="min_listing_amount" name="min_listing_amount" type="number" min="1" max="1000000000" step="1" class="form-control @error('min_listing_amount') is-invalid @enderror" value="{{ old('min_listing_amount', $general->coin_min_listing_amount ?? 10) }}" required>
+                                    @error('min_listing_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="max_listing_amount">Maximum coins</label>
+                                    <input id="max_listing_amount" name="max_listing_amount" type="number" min="1" max="1000000000" step="1" class="form-control @error('max_listing_amount') is-invalid @enderror" value="{{ old('max_listing_amount', $general->coin_max_listing_amount ?? 100000) }}" required>
+                                    @error('max_listing_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <h3 class="h6 mb-3">Direct trades</h3>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label" for="min_trade_amount">Minimum coins</label>
+                                    <input id="min_trade_amount" name="min_trade_amount" type="number" min="1" max="1000000000" step="1" class="form-control @error('min_trade_amount') is-invalid @enderror" value="{{ old('min_trade_amount', $general->coin_min_trade_amount ?? 10) }}" required>
+                                    @error('min_trade_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="max_trade_amount">Maximum coins</label>
+                                    <input id="max_trade_amount" name="max_trade_amount" type="number" min="1" max="1000000000" step="1" class="form-control @error('max_trade_amount') is-invalid @enderror" value="{{ old('max_trade_amount', $general->coin_max_trade_amount ?? 100000) }}" required>
+                                    @error('max_trade_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-3">
+                        <small class="text-muted">Whole coins only. Maximum supported limit: 1,000,000,000.</small>
+                        <button type="submit" class="btn btn--primary"><i class="las la-save"></i> Save marketplace limits</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="coin-admin-panel">
                 <div class="coin-admin-panel__head"><h2><i class="las la-compass"></i> Quick Links</h2></div>
                 <div class="coin-admin-quicklinks">
                     <a href="{{ route('admin.coin.float.index') }}" class="coin-admin-quicklink"><i class="las la-hand-holding-usd"></i><span><strong>Float Grants</strong><span>Agent coin top-ups</span></span></a>

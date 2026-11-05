@@ -110,6 +110,31 @@ class CoinSettingsController extends Controller
         return back()->withNotify([['success', $request->boolean('enable') ? 'Marketplace test kit enabled.' : 'Marketplace test kit disabled.']]);
     }
 
+    public function saveMarketplaceLimits(Request $request)
+    {
+        $data = $request->validate([
+            'min_listing_amount' => 'required|integer|min:1|max:1000000000',
+            'max_listing_amount' => 'required|integer|min:1|max:1000000000',
+            'min_trade_amount' => 'required|integer|min:1|max:1000000000',
+            'max_trade_amount' => 'required|integer|min:1|max:1000000000',
+        ]);
+
+        foreach ([['min_listing_amount', 'max_listing_amount'], ['min_trade_amount', 'max_trade_amount']] as [$minimum, $maximum]) {
+            if ($data[$minimum] > $data[$maximum]) {
+                return back()->withErrors([$minimum => 'The minimum amount cannot be greater than the maximum amount.'])->withInput();
+            }
+        }
+
+        $general = gs();
+        $general->coin_min_listing_amount = $data['min_listing_amount'];
+        $general->coin_max_listing_amount = $data['max_listing_amount'];
+        $general->coin_min_trade_amount = $data['min_trade_amount'];
+        $general->coin_max_trade_amount = $data['max_trade_amount'];
+        $general->save();
+
+        return back()->withNotify([['success', 'Coin marketplace amount limits updated.']]);
+    }
+
     public function toggleSingleApprover(Request $request)
     {
         $request->validate(['enable' => 'required|boolean']);

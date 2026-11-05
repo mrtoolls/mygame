@@ -79,6 +79,7 @@ Route::middleware('admin')->group(function () {
         Route::post('mode', 'toggleCoinMode')->name('mode.toggle');
         Route::post('single-approver', 'toggleSingleApprover')->name('single-approver.toggle');
         Route::post('test-kit', 'toggleTestKit')->name('test-kit.toggle');
+        Route::post('marketplace-limits', 'saveMarketplaceLimits')->name('marketplace-limits.save');
         Route::post('margins/{currencyId}', 'saveMargins')->name('margins.save');
         Route::post('recompute', 'recomputeAll')->name('recompute');
     });
