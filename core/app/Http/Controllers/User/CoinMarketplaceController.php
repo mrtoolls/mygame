@@ -11,6 +11,7 @@ use App\Models\SupportAgent;
 use App\Services\CoinLedger;
 use App\Services\CoinMarketplace;
 use App\Support\WinxPayDirectory;
+use App\Models\UserPresence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -43,13 +44,83 @@ class CoinMarketplaceController extends Controller
             && (!$sellerVendorProfiles->has($listing->seller_user_id) || $sellerVendorProfiles->get($listing->seller_user_id)->status === 'active'));
         $listingVendorIds = $listings->filter(fn (CoinListing $listing) => $sellerVendorProfiles->has($listing->seller_user_id))
             ->pluck('seller_user_id')->map(fn ($id) => (int) $id)->all();
+
+        // Prepare one comparable, buyer-currency offer list for the marketplace UI.
+        $buyerCurrency = $user->currency;
+        $buyerUsdRate = (float) ($buyerCurrency?->rate_to_usd ?? 0);
+        $marketplaceOffers = collect();
+        foreach ($vendors as $vendor) {
+            $marketplaceOffers->push([
+                'key' => 'vendor-' . $vendor['id'], 'kind' => 'vendor', 'id' => $vendor['id'],
+                'name' => $vendor['name'], 'avatar' => $vendor['avatar_url'], 'role' => 'vendor',
+                'verified' => (bool) $vendor['verified'], 'online' => (bool) $vendor['online'],
+                'amount' => (float) $vendor['available_coins'], 'price' => (float) $vendor['rate_per_1000'],
+                'display_price' => (float) $vendor['rate_per_1000'], 'display_currency' => $buyerCurrency?->symbol ?: $vendor['currency_code'],
+                'trade_limit' => (float) $vendor['per_trade_limit'],
+                'currency' => $buyerCurrency?->code, 'currency_symbol' => $buyerCurrency?->symbol,
+                'trades' => (int) $vendor['completed_trades'], 'release_minutes' => (int) $vendor['average_release_minutes'],
+                'reliability' => (float) $vendor['reliability_score'], 'created' => now()->timestamp,
+                'buy_url' => route('user.coin-vendor.buy'), 'buy_mode' => 'vendor',
+            ]);
+        }
+        $agentIds = collect($agents)->pluck('id')->unique()->values();
+        $agentTradeStats = $agentIds->isEmpty() ? collect() : CoinTrade::where('coin_seller_type', 'agent')
+            ->where('status', 'completed')->whereIn('coin_seller_id', $agentIds)
+            ->selectRaw('coin_seller_id, COUNT(*) as completed_count')->groupBy('coin_seller_id')->get()->keyBy('coin_seller_id');
+        foreach ($agents as $agent) {
+            $marketplaceOffers->push([
+                'key' => 'agent-' . $agent['id'], 'kind' => 'agent', 'id' => $agent['id'],
+                'name' => $agent['name'], 'avatar' => $agent['avatar_url'], 'role' => 'agent',
+                'verified' => (bool) $agent['verified'], 'online' => (bool) $agent['online'],
+                'amount' => (float) $agent['available_coins'], 'price' => (float) $agent['rate_per_1000'],
+                'display_price' => (float) $agent['rate_per_1000'], 'display_currency' => $buyerCurrency?->symbol ?: $agent['currency_code'],
+                'trade_limit' => (float) $agent['per_trade_limit'],
+                'currency' => $agent['currency_code'], 'currency_symbol' => $buyerCurrency?->symbol,
+                'trades' => (int) ($agentTradeStats->get($agent['id'])?->completed_count ?? 0), 'release_minutes' => null,
+                'reliability' => (float) $agent['reliability_score'], 'created' => now()->timestamp,
+                'buy_url' => route('user.coin.buy'), 'buy_mode' => 'agent',
+            ]);
+        }
+        $memberIds = $listings->pluck('seller_user_id')->unique()->values();
+        $memberTradeStats = CoinTrade::where('coin_seller_type', 'user')->where('status', 'completed')
+            ->whereIn('coin_seller_id', $memberIds)->selectRaw('coin_seller_id, COUNT(*) as completed_count')
+            ->groupBy('coin_seller_id')->get()->keyBy('coin_seller_id');
+        try {
+            $onlineMembers = UserPresence::whereIn('user_id', $memberIds)->where('last_seen_at', '>=', now()->subMinutes(5))->pluck('user_id')->flip();
+        } catch (\Throwable) {
+            $onlineMembers = collect();
+        }
+        foreach ($listings as $listing) {
+            $seller = $listing->seller;
+            $listingRate = $seller ? $listingRates->get($seller->currency_id) : null;
+            $sellerUsdRate = (float) ($seller?->currency?->rate_to_usd ?? 0);
+            $pricePerThousand = $listingRate?->sell_price && $sellerUsdRate > 0 && $buyerUsdRate > 0
+                ? (float) $listingRate->sell_price * $sellerUsdRate / $buyerUsdRate * 1000 : 0;
+            if (!$seller || $pricePerThousand <= 0) continue;
+            $isVendor = in_array((int) $seller->id, $listingVendorIds, true);
+            $marketplaceOffers->push([
+                'key' => 'listing-' . $listing->id, 'kind' => 'listing', 'id' => $listing->id,
+                'name' => $seller->username, 'avatar' => $seller->avatarUrl(), 'role' => $isVendor ? 'vendor' : 'member',
+                'verified' => $isVendor, 'online' => $onlineMembers->has($seller->id),
+                'amount' => (float) $listing->amount, 'price' => $pricePerThousand,
+                'display_price' => (float) $listingRate->sell_price * 1000,
+                'display_currency' => $seller->currency?->symbol ?: $seller->currency?->code,
+                'trade_limit' => (float) $listing->amount,
+                'currency' => $buyerCurrency?->code, 'currency_symbol' => $buyerCurrency?->symbol,
+                'trades' => (int) ($memberTradeStats->get($seller->id)?->completed_count ?? 0), 'release_minutes' => null,
+                'reliability' => null, 'created' => $listing->created_at?->timestamp ?? now()->timestamp,
+                'buy_url' => route('user.coin.listings.buy', $listing->id), 'buy_mode' => 'listing',
+                'listing_id' => $listing->id,
+            ]);
+        }
+        $maxOfferPrice = (float) ($marketplaceOffers->max('price') ?? 0);
         $myListings = CoinListing::where('seller_user_id', $user->id)->whereIn('status', ['on_sale', 'pending'])->latest()->get();
         $myTrades = CoinTrade::where(function ($query) use ($user) {
             $query->where(['coin_seller_type' => 'user', 'coin_seller_id' => $user->id])
                 ->orWhere(['coin_buyer_type' => 'user', 'coin_buyer_id' => $user->id]);
         })->latest()->paginate(getPaginate());
 
-        return view('Template::user.coin.marketplace', compact('pageTitle', 'wallet', 'agents', 'vendors', 'minimumTradeAmount', 'maximumTradeAmount', 'listings', 'listingVendorIds', 'listingRates', 'myListings', 'myTrades'));
+        return view('Template::user.coin.marketplace', compact('pageTitle', 'user', 'wallet', 'agents', 'vendors', 'minimumTradeAmount', 'maximumTradeAmount', 'listings', 'listingVendorIds', 'listingRates', 'myListings', 'myTrades', 'marketplaceOffers', 'maxOfferPrice'));
     }
 
     public function listingStore(Request $request)
