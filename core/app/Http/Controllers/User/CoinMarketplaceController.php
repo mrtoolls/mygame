@@ -9,6 +9,7 @@ use App\Models\CoinVendor;
 use App\Models\SupportAgent;
 use App\Services\CoinLedger;
 use App\Services\CoinMarketplace;
+use App\Support\WinxPayDirectory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -21,13 +22,15 @@ class CoinMarketplaceController extends Controller
         $user = auth()->user();
         $wallet = app(CoinLedger::class)->wallet('user', $user->id);
         $agents = SupportAgent::where('is_selling_coins', true)->where('is_active', true)->orderBy('name')->get();
+        $vendors = app(WinxPayDirectory::class)->forBuyer($user);
+        $minimumTradeAmount = (int) (gs('coin_min_trade_amount') ?? 10);
         $myListings = CoinListing::where('seller_user_id', $user->id)->whereIn('status', ['on_sale', 'pending'])->latest()->get();
         $myTrades = CoinTrade::where(function ($query) use ($user) {
             $query->where(['coin_seller_type' => 'user', 'coin_seller_id' => $user->id])
                 ->orWhere(['coin_buyer_type' => 'user', 'coin_buyer_id' => $user->id]);
         })->latest()->paginate(getPaginate());
 
-        return view('Template::user.coin.marketplace', compact('pageTitle', 'wallet', 'agents', 'myListings', 'myTrades'));
+        return view('Template::user.coin.marketplace', compact('pageTitle', 'wallet', 'agents', 'vendors', 'minimumTradeAmount', 'myListings', 'myTrades'));
     }
 
     public function listingStore(Request $request)

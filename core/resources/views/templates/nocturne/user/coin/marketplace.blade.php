@@ -63,6 +63,70 @@
                     </div>
                 @endif
 
+                <div class="coin-section coin-vendor-market">
+                    <div class="coin-section__head">
+                        <div>
+                            <span class="coin-market-kicker"><i class="ph-fill ph-seal-check"></i> @lang('Verified sellers')</span>
+                            <h2>@lang('Buy from coin vendors')</h2>
+                            <p>@lang('Compare live vendor rates and start a protected trade directly from their available coin balance.')</p>
+                        </div>
+                        <span class="coin-section__icon"><i class="ph-fill ph-storefront"></i></span>
+                    </div>
+
+                    @if(count($vendors))
+                        <div class="coin-vendor-grid">
+                            @foreach($vendors as $vendor)
+                                @php
+                                    $vendorMax = (int) min($vendor['available_coins'], $vendor['per_trade_limit']);
+                                    $paymentLabels = collect($vendor['payment_methods'] ?? [])->map(fn ($method) => ucwords(str_replace('_', ' ', $method)))->take(3);
+                                @endphp
+                                <article class="coin-vendor-card">
+                                    <div class="coin-vendor-card__top">
+                                        @if(!empty($vendor['avatar_url']))
+                                            <img class="coin-vendor-card__avatar" src="{{ $vendor['avatar_url'] }}" alt="">
+                                        @else
+                                            <span class="coin-vendor-card__avatar coin-vendor-card__avatar--initial">{{ strtoupper(substr($vendor['name'], 0, 1)) }}</span>
+                                        @endif
+                                        <div class="coin-vendor-card__identity">
+                                            <strong>{{ $vendor['name'] }}</strong>
+                                            <span><i class="ph-fill ph-seal-check"></i> @lang('Verified coin vendor')</span>
+                                        </div>
+                                        <span class="coin-vendor-online"><i></i> @lang('Online')</span>
+                                    </div>
+                                    <div class="coin-vendor-card__rate">
+                                        <span>@lang('Vendor rate')</span>
+                                        <strong>{{ number_format($vendor['rate_per_100'], 2) }} <small>{{ $vendor['currency_code'] }}</small></strong>
+                                        <span>@lang('per 100 coins')</span>
+                                    </div>
+                                    <div class="coin-vendor-card__meta">
+                                        <span><i class="ph-fill ph-coins"></i> {{ number_format($vendor['available_coins'], 0) }} @lang('coins available')</span>
+                                        <span><i class="ph-fill ph-lightning"></i> @lang('Up to') {{ number_format($vendorMax, 0) }} @lang('per trade')</span>
+                                    </div>
+                                    @if($paymentLabels->isNotEmpty())
+                                        <div class="coin-vendor-card__methods">
+                                            @foreach($paymentLabels as $label)<span>{{ $label }}</span>@endforeach
+                                        </div>
+                                    @endif
+                                    <form method="post" action="{{ route('user.coin-vendor.buy') }}" class="coin-vendor-card__form">
+                                        @csrf
+                                        <input type="hidden" name="vendor_id" value="{{ $vendor['id'] }}">
+                                        <label class="coin-field">
+                                            <span>@lang('Coins to buy')</span>
+                                            <input type="number" name="amount" min="{{ $minimumTradeAmount }}" max="{{ $vendorMax }}" step="1" placeholder="{{ number_format($minimumTradeAmount) }}" required>
+                                        </label>
+                                        <button type="submit" class="coin-btn coin-btn--primary"><i class="ph-bold ph-arrow-up-right"></i> @lang('Start trade')</button>
+                                    </form>
+                                </article>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="coin-empty coin-empty--vendor">
+                            <span><i class="ph-fill ph-storefront"></i></span>
+                            <div><strong>@lang('No vendors are available right now')</strong><p>@lang('Verified vendors appear here while they are online and have coins available to sell.')</p></div>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="coin-section">
                     <div class="coin-section__head">
                         <div>
