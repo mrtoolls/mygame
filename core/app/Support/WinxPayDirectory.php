@@ -34,7 +34,6 @@ class WinxPayDirectory
         });
         $seen = [];
         try { $seen = UserPresence::whereIn('user_id', $vendors->pluck('user_id'))->where('last_seen_at', '>=', now()->subMinutes(5))->pluck('user_id')->flip()->all(); } catch (\Throwable) {}
-        $vendors = $vendors->filter(fn (CoinVendor $vendor) => isset($seen[$vendor->user_id]));
         $minimum = (float) (gs('coin_min_trade_amount') ?? 10);
         $vendors = $vendors->filter(function (CoinVendor $vendor) use ($minimum, $wallets) {
             $balance = (float) $wallets->get($vendor->user_id)?->available_balance;
@@ -70,6 +69,8 @@ class WinxPayDirectory
         $agents = SupportAgent::paymentAgents()->where('is_selling_coins', true)->with('country.currency')->get();
         $scores = app(AgentSpeed::class)->scoresFor($agents);
         $wallets = CoinWallet::where('owner_type', 'agent')->whereIn('owner_id', $agents->pluck('id'))->get()->keyBy('owner_id');
+        $minimum = (float) (gs('coin_min_trade_amount') ?? 10);
+        $agents = $agents->filter(fn (SupportAgent $agent) => (float) ($wallets->get($agent->id)?->available_balance ?? 0) >= $minimum);
         return $agents->map(function (SupportAgent $agent) use ($scores, $coinRate, $currency, $wallets) {
             return [
                 'type' => 'agent', 'id' => $agent->id, 'user_id' => null,
@@ -83,7 +84,7 @@ class WinxPayDirectory
                 'online' => $agent->last_seen_at?->gt(now()->subMinutes(5)) ?? false,
                 'is_selling' => true, 'payment_methods' => $agent->accepted_payment_types ?? [],
                 'available_coins' => (float) ($wallets->get($agent->id)?->available_balance ?? 0),
-                'per_trade_limit' => (float) (gs('coin_max_trade_amount') ?? 100000),
+                'per_trade_limit' => min((float) ($wallets->get($agent->id)?->available_balance ?? 0), (float) (gs('coin_max_trade_amount') ?? 100000)),
             ];
         })->values()->all();
     }

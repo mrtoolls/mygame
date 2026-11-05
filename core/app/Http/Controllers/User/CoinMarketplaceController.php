@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\CoinListing;
 use App\Models\CoinTrade;
+use App\Models\CoinRate;
 use App\Models\CoinVendor;
 use App\Models\SupportAgent;
 use App\Services\CoinLedger;
@@ -21,16 +22,34 @@ class CoinMarketplaceController extends Controller
         $pageTitle = 'Coin Marketplace';
         $user = auth()->user();
         $wallet = app(CoinLedger::class)->wallet('user', $user->id);
-        $agents = SupportAgent::where('is_selling_coins', true)->where('is_active', true)->orderBy('name')->get();
-        $vendors = app(WinxPayDirectory::class)->forBuyer($user);
+        $directory = app(WinxPayDirectory::class);
+        $agents = $directory->agentsForBuyer($user);
+        $vendors = $directory->forBuyer($user);
         $minimumTradeAmount = (int) (gs('coin_min_trade_amount') ?? 10);
+        $maximumTradeAmount = (int) (gs('coin_max_trade_amount') ?? 100000);
+        $listings = CoinListing::with('seller.currency')
+            ->where('status', 'on_sale')->where('seller_user_id', '!=', $user->id)
+            ->whereHas('seller', fn ($query) => $query->where('status', 1)->where('coin_vendor_flagged', false))
+            ->whereBetween('amount', [$minimumTradeAmount, $maximumTradeAmount])
+            ->latest()->limit(24)->get();
+        $listingRates = CoinRate::whereIn('currency_id', $listings->pluck('seller.currency_id')->filter()->unique())
+            ->get()->keyBy('currency_id');
+        $sellerVendorProfiles = CoinVendor::whereIn('user_id', $listings->pluck('seller_user_id'))
+            ->get()->keyBy('user_id');
+        $listings = $listings->filter(fn (CoinListing $listing) => $listing->seller
+            && $listing->seller->currency
+            && $listing->seller->currency_id
+            && $listingRates->get($listing->seller->currency_id)?->sell_price
+            && (!$sellerVendorProfiles->has($listing->seller_user_id) || $sellerVendorProfiles->get($listing->seller_user_id)->status === 'active'));
+        $listingVendorIds = $listings->filter(fn (CoinListing $listing) => $sellerVendorProfiles->has($listing->seller_user_id))
+            ->pluck('seller_user_id')->map(fn ($id) => (int) $id)->all();
         $myListings = CoinListing::where('seller_user_id', $user->id)->whereIn('status', ['on_sale', 'pending'])->latest()->get();
         $myTrades = CoinTrade::where(function ($query) use ($user) {
             $query->where(['coin_seller_type' => 'user', 'coin_seller_id' => $user->id])
                 ->orWhere(['coin_buyer_type' => 'user', 'coin_buyer_id' => $user->id]);
         })->latest()->paginate(getPaginate());
 
-        return view('Template::user.coin.marketplace', compact('pageTitle', 'wallet', 'agents', 'vendors', 'minimumTradeAmount', 'myListings', 'myTrades'));
+        return view('Template::user.coin.marketplace', compact('pageTitle', 'wallet', 'agents', 'vendors', 'minimumTradeAmount', 'maximumTradeAmount', 'listings', 'listingVendorIds', 'listingRates', 'myListings', 'myTrades'));
     }
 
     public function listingStore(Request $request)
@@ -57,6 +76,27 @@ class CoinMarketplaceController extends Controller
         }
 
         return back()->withNotify([['success', 'Listing cancelled and your coins were released back to your available balance.']]);
+    }
+
+    public function listingBuy(int $id)
+    {
+        $this->assertCoinMode();
+        $buyer = auth()->user();
+        $listing = CoinListing::findOrFail($id);
+        $vendorProfile = CoinVendor::where('user_id', $buyer->id)->whereIn('status', ['active', 'suspended'])->first();
+
+        try {
+            if ($vendorProfile && $vendorProfile->status === 'suspended') {
+                throw new InvalidArgumentException('Your Coin Vendor account cannot start marketplace trades right now.');
+            }
+            $trade = $vendorProfile
+                ? app(CoinMarketplace::class)->claimListingForVendor($listing, $vendorProfile)
+                : app(CoinMarketplace::class)->claimListingForUser($listing, $buyer);
+        } catch (InvalidArgumentException $exception) {
+            return back()->withNotify([['error', $exception->getMessage()]]);
+        }
+
+        return to_route('user.coin.trade', $trade->id)->withNotify([['success', 'Listing claimed. Open the trade chat to arrange payment.']]);
     }
 
     public function buyFromAgent(Request $request)

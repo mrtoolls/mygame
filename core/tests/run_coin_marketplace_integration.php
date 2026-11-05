@@ -402,6 +402,33 @@ if (!collect($directoryItems)->contains(fn ($item) => $item['type'] === 'vendor'
     || collect($directoryItems)->contains(fn ($item) => $item['type'] === 'vendor' && (int) $item['user_id'] === (int) $unfundedUser->id)) {
     throw new RuntimeException('The WinxPay directory failed to combine agent/vendor entries or applied vendor funding filters incorrectly.');
 }
+
+// The user marketplace combines agent and vendor offers with one-off listings and lets a
+// regular user purchase a listed vendor balance through the same escrow-backed trade lifecycle.
+$app['view']->addNamespace('Template', dirname(__DIR__) . '/resources/views/templates/nocturne');
+$marketplacePageBuyer = $insertUser('mp_marketplace_page_buyer');
+$vendorPublicListing = $marketplace->createListing($vendorUser, '10');
+Auth::guard('web')->setUser($marketplacePageBuyer);
+$marketplaceView = (new CoinMarketplaceController())->index();
+$marketplaceData = $marketplaceView->getData();
+if (!collect($marketplaceData['agents'])->contains(fn ($item) => $item['type'] === 'agent' && (int) $item['id'] === (int) $sellingAgent->id)
+    || !collect($marketplaceData['vendors'])->contains(fn ($item) => $item['type'] === 'vendor' && (int) $item['user_id'] === (int) $vendorUser->id)
+    || !$marketplaceData['listings']->contains(fn ($item) => (int) $item->id === (int) $vendorPublicListing->id)
+    || !in_array((int) $vendorUser->id, $marketplaceData['listingVendorIds'], true)) {
+    throw new RuntimeException('The user coin marketplace did not fetch its agent offers, vendor offers, and vendor coin listings together.');
+}
+$publicListingTrade = $marketplace->claimListingForUser($vendorPublicListing, $marketplacePageBuyer);
+$publicListingRetry = $marketplace->claimListingForUser($vendorPublicListing->fresh(), $marketplacePageBuyer);
+if ($publicListingRetry->id !== $publicListingTrade->id || $publicListingTrade->coin_buyer_type !== 'user'
+    || (int) $publicListingTrade->coin_buyer_id !== (int) $marketplacePageBuyer->id || !$publicListingTrade->fiat_total) {
+    throw new RuntimeException('A regular user could not safely claim and retry a vendor coin listing.');
+}
+$publicListingTrade = $marketplace->claimPayment($publicListingTrade, 'user', $marketplacePageBuyer->id, null);
+$publicListingTrade = $marketplace->confirmReceived($publicListingTrade, 'user', $vendorUser->id);
+if ($publicListingTrade->fresh()->status !== 'completed' || !$ledger->reconcile()['ok']) {
+    throw new RuntimeException('A regular-user purchase of a vendor listing did not settle or reconcile.');
+}
+fwrite(STDOUT, "User coin marketplace: agents, vendors, and vendor listings appear together; regular-user listing checkout settles safely.\n");
 Auth::guard('web')->logout();
 
 // Serialize competing buyers on a vendor row: a retry by the same buyer returns its original

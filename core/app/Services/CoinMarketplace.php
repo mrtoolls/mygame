@@ -137,6 +137,55 @@ class CoinMarketplace
         });
     }
 
+    /** Let a regular marketplace buyer claim a member listing through the same escrow and trade lifecycle. */
+    public function claimListingForUser(CoinListing $listing, User $buyer): CoinTrade
+    {
+        app(CoinMarketplaceCountryAccess::class)->assertEnabled($buyer);
+        if ((int) $listing->seller_user_id === (int) $buyer->id) throw new InvalidArgumentException('You cannot buy your own listing.');
+
+        return DB::transaction(function () use ($listing, $buyer) {
+            $locked = CoinListing::whereKey($listing->id)->lockForUpdate()->first();
+            if (!$locked) throw new InvalidArgumentException('This listing is no longer available.');
+            if ($locked->status !== 'on_sale') {
+                if ($locked->status === 'pending' && (int) $locked->claimed_by_user_id === (int) $buyer->id) {
+                    $existingTrade = CoinTrade::where('listing_id', $locked->id)
+                        ->where('coin_buyer_type', 'user')->where('coin_buyer_id', $buyer->id)
+                        ->whereIn('status', ['pending', 'paid_claimed', 'disputed'])->first();
+                    if ($existingTrade) return $existingTrade;
+                }
+                throw new InvalidArgumentException('This listing is no longer available.');
+            }
+            $this->assertOpenTradeLimit('user', (int) $buyer->id);
+            $this->assertWithinLimits((string) $locked->amount, 'coin_min_trade_amount', 'coin_max_trade_amount');
+            $this->assertWholeCoins((string) $locked->amount);
+
+            $seller = User::with('currency')->findOrFail($locked->seller_user_id);
+            if ((int) $seller->status !== 1 || (bool) $seller->coin_vendor_flagged) {
+                throw new InvalidArgumentException('This seller is not currently eligible for marketplace trades.');
+            }
+            $sellerVendor = CoinVendor::where('user_id', $seller->id)->first();
+            if ($sellerVendor && ($sellerVendor->status !== 'active' || in_array((int) $buyer->id, array_map('intval', $sellerVendor->linked_user_ids ?: []), true))) {
+                throw new InvalidArgumentException('This vendor listing is not available to your account.');
+            }
+            $currency = $seller->currency;
+            $rate = $currency ? CoinRate::where('currency_id', $currency->id)->first() : null;
+            if (!$currency || !$rate?->sell_price) throw new InvalidArgumentException('The listing seller has no active coin sell reference.');
+
+            $locked->status = 'pending';
+            $locked->claimed_by_user_id = $buyer->id;
+            $locked->save();
+            $trade = $this->openTrade($locked->id, 'buy_from_listing', 'user', $seller->id, 'user', $buyer->id, (string) $locked->amount, [
+                'price_per_coin' => $rate->sell_price,
+                'fiat_currency' => $currency->code,
+                'fiat_total' => bcmul((string) $locked->amount, (string) $rate->sell_price, 8),
+            ]);
+            $this->logEvent($trade->id, $locked->id, 'user', $buyer->id, 'listing_claimed');
+            $this->notifyVendorParty($seller->id, 'A buyer claimed your coin listing', 'Open trade #' . $trade->id . ' to arrange payment.');
+            $this->notifyVendorParty($buyer->id, 'Coin listing trade started', 'Trade #' . $trade->id . ' is open. Use its chat to arrange payment.');
+            return $trade;
+        });
+    }
+
     // ----------------------------------------------------------------- Buy-from-agent (no listing)
 
     public function initiateBuyFromAgent(User $buyer, SupportAgent $agent, string $amount): CoinTrade

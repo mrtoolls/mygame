@@ -146,6 +146,7 @@ Route::middleware('auth')->name('user.')->group(function () {
             Route::controller('CoinMarketplaceController')->prefix('coin')->name('coin.')->middleware('country.coin-marketplace')->group(function () {
                 Route::get('/', 'index')->name('marketplace');
                 Route::post('listings', 'listingStore')->name('listings.store');
+                Route::post('listings/{id}/buy', 'listingBuy')->name('listings.buy')->whereNumber('id');
                 Route::post('listings/{id}/cancel', 'listingCancel')->name('listings.cancel')->whereNumber('id');
                 Route::post('buy', 'buyFromAgent')->name('buy');
                 Route::get('trade/{tradeId}', 'show')->name('trade')->whereNumber('tradeId');
