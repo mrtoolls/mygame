@@ -23,6 +23,7 @@ class SocialLink extends Model
             'instagram' => 'ph-fill ph-instagram-logo',
             'discord' => 'ph-fill ph-discord-logo',
             'tiktok' => 'ph-fill ph-tiktok-logo',
+            'whatsapp' => 'ph-fill ph-whatsapp-logo',
             default => null,
         };
     }
