@@ -107,10 +107,17 @@
         const remaining = page.remaining;
         root.querySelector('#cm-more').hidden = remaining === 0;
         root.querySelector('#cm-more-count').textContent = `${remaining} more`;
-        root.querySelector('#cm-result-count').textContent = String(visibleCards.length);
-        root.querySelector('#cm-show').disabled = visibleCards.length === 0;
-        if (!visibleCards.length) root.querySelector('#cm-show').textContent = 'No offers';
-        else root.querySelector('#cm-show').innerHTML = `Show <span id="cm-result-count">${visibleCards.length}</span> offers`;
+        // #cm-result-count lives INSIDE #cm-show's own markup, so it must be re-created via
+        // innerHTML on every render (not queried and written to separately) - once any render
+        // hits the zero-results branch below and replaces #cm-show's content with plain "No
+        // offers" text, the #cm-result-count span is gone from the DOM for good, and a later
+        // querySelector('#cm-result-count') would throw on the very next render, silently
+        // aborting before writeUrl()/renderChips()/updateControls() ever ran again.
+        const showButton = root.querySelector('#cm-show');
+        showButton.disabled = visibleCards.length === 0;
+        showButton.innerHTML = visibleCards.length === 0
+            ? 'No offers'
+            : `Show <span id="cm-result-count">${visibleCards.length}</span> offers`;
         renderChips(); updateControls(); writeUrl();
     }
 

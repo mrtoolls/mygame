@@ -16,11 +16,11 @@
                         <span class="cm-avatar__fallback">{{ strtoupper(substr($offer['name'], 0, 1)) }}</span>
                         @if($offer['verified'])<i class="cm-avatar__verified" aria-label="@lang('Verified')"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 8 2.5 2.5L12 5"/></svg></i>@endif
                     </span>
-                    <span class="cm-card__identity"><strong title="{{ $offer['name'] }}">{{ $offer['name'] }}</strong><span class="cm-card__role"><i></i>{{ __(ucfirst($offer['role'])) }}{{ $offer['online'] ? ' · ' . __('Online') : '' }}</span></span>
+                    <span class="cm-card__identity"><strong title="{{ $offer['name'] }}">{{ $offer['name'] }}</strong><span class="cm-card__role"><i></i>{{ __(ucfirst($offer['role'])) }}</span></span>
                 </div>
                 <div class="cm-card__amount"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg><strong>{{ number_format($offer['amount'], 0) }}</strong><span>@lang('coins')</span></div>
                 <div class="cm-card__price"><strong>{{ $offer['display_currency'] }}{{ number_format($offer['display_price'], 0) }}</strong><span>@lang('per 1,000')</span></div>
-                <div class="cm-card__stats"><span><strong>{{ number_format($offer['trades']) }}</strong> @lang('trades')</span><i></i><span class="cm-release">{{ $offer['release_minutes'] ? '~' . number_format($offer['release_minutes']) . ' min' : __('No release data') }}</span><span class="cm-reliable">{{ $offer['reliability'] !== null ? number_format($offer['reliability'], 0) . '% ' . __('reliable') : '' }}</span></div>
+                <div class="cm-card__stats"><span><strong>{{ number_format($offer['trades']) }}</strong> @lang('trades')</span><i></i><span class="cm-release">{{ $offer['release_minutes'] ? '~' . number_format($offer['release_minutes']) . ' min' : __('No release data') }}</span></div>
                 <form class="cm-card__buy" method="post" action="{{ $offer['buy_url'] }}">
                     @csrf
                     @if($offer['buy_mode'] === 'vendor')<input type="hidden" name="vendor_id" value="{{ $offer['id'] }}"><label class="cm-amount-input" hidden><span>@lang('Coins to buy')</span><input type="number" name="amount" min="{{ $minimumTradeAmount }}" max="{{ min($offer['amount'], $offer['trade_limit'], $maximumTradeAmount) }}" step="1" placeholder="{{ number_format($minimumTradeAmount) }}" required></label>
