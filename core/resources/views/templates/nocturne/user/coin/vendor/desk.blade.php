@@ -58,30 +58,27 @@
                         </div>
                         <span class="coin-section__icon"><i class="ph-fill ph-credit-card"></i></span>
                     </div>
-                    <form method="post" action="{{ route('user.coin-vendor.payment-methods') }}">
+                    <form method="post" action="{{ route('user.coin-vendor.payment-methods') }}" id="coin-payment-methods-form">
                         @csrf
-                        @foreach(($vendor->encrypted_payment_methods ?: [['type' => 'bank', 'label' => '', 'details' => '']]) as $index => $method)
-                            <div class="coin-pm-row">
-                                <div class="coin-field">
-                                    <label>@lang('Type')</label>
-                                    <select name="payment_methods[{{ $index }}][type]">
-                                        <option value="bank" @selected(($method['type'] ?? '') === 'bank')>@lang('Bank transfer')</option>
-                                        <option value="mobile_money" @selected(($method['type'] ?? '') === 'mobile_money')>@lang('Mobile money')</option>
-                                        <option value="crypto" @selected(($method['type'] ?? '') === 'crypto')>@lang('Crypto')</option>
-                                    </select>
-                                </div>
-                                <div class="coin-field coin-field--grow">
-                                    <label>@lang('Display name')</label>
-                                    <input name="payment_methods[{{ $index }}][label]" placeholder="@lang('Display name')" value="{{ $method['label'] ?? '' }}">
-                                </div>
-                                <div class="coin-field coin-field--grow">
-                                    <label>@lang('Payment instructions')</label>
-                                    <input name="payment_methods[{{ $index }}][details]" placeholder="@lang('Payment instructions')" value="{{ $method['details'] ?? '' }}">
-                                </div>
+                        @if($errors->has('payment_methods') || collect($errors->keys())->contains(fn ($key) => str_starts_with($key, 'payment_methods.')))
+                            <div class="coin-pm-errors" role="alert">
+                                <strong>@lang('Please complete each payment method')</strong>
+                                <ul>@foreach($errors->get('payment_methods') as $error)<li>{{ $error }}</li>@endforeach
+                                    @foreach($errors->getMessages() as $key => $messages)@if(str_starts_with($key, 'payment_methods.'))@foreach($messages as $error)<li>{{ $error }}</li>@endforeach @endif @endforeach
+                                </ul>
                             </div>
+                        @endif
+                        <div class="coin-pm-list" id="coin-pm-list">
+                        @foreach(old('payment_methods', $vendor->encrypted_payment_methods ?: [['type' => 'bank', 'label' => '', 'details' => '']]) as $index => $method)
+                            @include('Template::user.coin.vendor.payment_method_row', ['index' => $index, 'method' => (array) $method])
                         @endforeach
-                        <button type="submit" class="coin-btn coin-btn--primary" style="margin-top:14px">@lang('Save payment method')</button>
+                        </div>
+                        <div class="coin-pm-actions">
+                            <button type="button" class="coin-btn coin-btn--outline" id="coin-pm-add"><i class="ph-bold ph-plus"></i> @lang('Add payment method')</button>
+                            <button type="submit" class="coin-btn coin-btn--primary">@lang('Save payment methods')</button>
+                        </div>
                     </form>
+                    <template id="coin-pm-template">@include('Template::user.coin.vendor.payment_method_row', ['index' => '__INDEX__', 'method' => []])</template>
                 </div>
 
                 <div class="coin-section">
@@ -155,4 +152,60 @@
             </div>
         </div>
     </div>
+    <style>
+        .coin-pm-list{display:grid;gap:12px}
+        .coin-pm-row{min-width:0;padding:14px;border:1px solid var(--nocturne-line,rgba(150,165,210,.16));border-radius:14px;background:rgba(8,12,27,.28)}
+        .coin-pm-head{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(180px,1.5fr) 40px;align-items:end;gap:10px}
+        .coin-pm-fields{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding-top:14px;margin-top:12px;border-top:1px dashed var(--nocturne-line,rgba(150,165,210,.16))}
+        .coin-pm-row[data-type="bank"] .coin-pm-fields[data-fields="bank"],.coin-pm-row[data-type="mobile_money"] .coin-pm-fields[data-fields="mobile_money"],.coin-pm-row[data-type="crypto"] .coin-pm-fields[data-fields="crypto"],.coin-pm-row[data-type="other"] .coin-pm-fields[data-fields="other"]{display:grid}
+        .coin-pm-row .coin-field{min-width:0}
+        .coin-pm-row .coin-field small{color:var(--nocturne-muted);font-size:.82em;font-weight:500}
+        .coin-pm-row input:disabled,.coin-pm-row textarea:disabled{display:none}
+        .coin-pm-instructions{margin-top:12px}
+        .coin-pm-remove{display:grid;place-items:center;width:40px;height:42px;border:1px solid rgba(255,105,130,.25);border-radius:10px;background:rgba(255,105,130,.08);color:#ff7791;cursor:pointer}
+        .coin-pm-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+        .coin-pm-errors{margin:0 0 12px;padding:12px 14px;border:1px solid rgba(255,105,130,.3);border-radius:12px;background:rgba(255,105,130,.08);color:#ffd8df;font-size:12px}
+        .coin-pm-errors strong{display:block;margin-bottom:5px}.coin-pm-errors ul{margin:0;padding-left:18px}
+        @media(max-width:700px){.coin-pm-head{grid-template-columns:minmax(0,1fr) 40px}.coin-pm-head>.coin-field:first-child{grid-column:1/-1}.coin-pm-fields{grid-template-columns:minmax(0,1fr)}.coin-pm-actions .coin-btn{flex:1 1 100%;justify-content:center}}
+    </style>
+    <script>
+        (() => {
+            const list = document.getElementById('coin-pm-list');
+            const template = document.getElementById('coin-pm-template');
+            const addButton = document.getElementById('coin-pm-add');
+            if (!list || !template || !addButton) return;
+            let nextIndex = Math.max(-1, ...Array.from(list.querySelectorAll('.coin-pm-type'), (select) => {
+                const match = select.name.match(/\[(\d+)\]\[type\]$/);
+                return match ? Number(match[1]) : -1;
+            })) + 1;
+            const syncRow = (row) => {
+                const type = row.querySelector('.coin-pm-type')?.value || '';
+                row.dataset.type = type;
+                row.querySelectorAll('.coin-pm-fields').forEach((group) => {
+                    const active = group.dataset.fields === type;
+                    group.querySelectorAll('input,select,textarea').forEach((field) => { field.disabled = !active; });
+                });
+                const extra = row.querySelector('.coin-pm-instructions textarea');
+                if (extra) extra.disabled = type === 'other';
+            };
+            const wireRow = (row) => {
+                row.querySelector('.coin-pm-type')?.addEventListener('change', () => syncRow(row));
+                row.querySelector('.coin-pm-remove')?.addEventListener('click', () => {
+                    if (list.children.length > 1) row.remove();
+                    else row.querySelectorAll('input,textarea').forEach((field) => { field.value = ''; });
+                });
+                syncRow(row);
+            };
+            list.querySelectorAll('.coin-pm-row').forEach(wireRow);
+            addButton.addEventListener('click', () => {
+                if (list.children.length >= 6) return;
+                const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex++));
+                const holder = document.createElement('div');
+                holder.innerHTML = html.trim();
+                const row = holder.firstElementChild;
+                list.appendChild(row);
+                wireRow(row);
+            });
+        })();
+    </script>
 @endsection

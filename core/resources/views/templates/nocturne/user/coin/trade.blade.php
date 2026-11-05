@@ -63,7 +63,7 @@
                     @if(count($vendorPaymentMethods ?? []))
                         <div class="coin-chat__vendor-methods" style="display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px;border-bottom:1px solid var(--nocturne-line)">
                             @foreach($vendorPaymentMethods as $method)
-                                <button type="button" class="coin-btn coin-btn--outline" data-payment-details="{{ e(($method['label']??$method['type']).': '.($method['details']??'')) }}">Insert {{ $method['label']??ucfirst(str_replace('_',' ',$method['type']??'payment')) }}</button>
+                                <button type="button" class="coin-btn coin-btn--outline" data-payment-details="{{ e(\App\Support\CoinVendorPaymentMethod::chatSummary((array) $method)) }}">{{ __('Insert :method', ['method' => $method['label'] ?? ucfirst(str_replace('_',' ',$method['type'] ?? 'payment'))]) }}</button>
                             @endforeach
                         </div>
                     @endif

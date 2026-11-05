@@ -618,6 +618,62 @@ if ($approvedVendor->status !== 'active' || \App\Models\CoinVendorApplication::f
     || !DB::table('admin_notifications')->where('title', 'like', '%bond held%')->exists()) {
     throw new RuntimeException('Approval failed to create the active vendor, hold and notify the bond, or audit the decision.');
 }
+
+// Vendor payment methods now use the same structured account fields as payment agents, and
+// trade-chat insertion formats those fields while preserving old generic instructions.
+Auth::guard('web')->setUser($approvedUser);
+$vendorPaymentController = new \App\Http\Controllers\User\CoinVendorController();
+$bankPaymentRequest = \Illuminate\Http\Request::create('/user/coin-vendor/payment-methods', 'POST', [
+    'payment_methods' => [0 => [
+        'type' => 'bank', 'label' => 'Opay NG', 'bank_name' => 'Opay Microfinance Bank',
+        'account_number' => '9064131880', 'account_name' => 'Adekanbi Philip', 'details' => 'Use your Winxpot username as reference.',
+        'provider' => 'stale hidden value', 'phone_number' => 'stale hidden value',
+    ], 1 => [
+        'type' => 'mobile_money', 'label' => 'PalmPay', 'provider' => 'PalmPay', 'phone_number' => '+2348012345678', 'account_name' => 'Ada Vendor',
+    ], 2 => [
+        'type' => 'crypto', 'label' => 'USDT TRC20', 'network' => 'TRC20', 'wallet_address' => 'TX123wallet', 'memo' => 'PAY-42',
+    ], 3 => [
+        'type' => 'other', 'label' => 'Alternative', 'details' => 'Contact me in trade chat.',
+    ]],
+]);
+$bankPaymentRequest->headers->set('referer', '/user/coin-vendor/desk');
+$vendorPaymentController->updatePaymentMethods($bankPaymentRequest);
+$savedVendorPayment = $approvedVendor->fresh()->encrypted_payment_methods[0];
+if (($savedVendorPayment['bank_name'] ?? null) !== 'Opay Microfinance Bank'
+    || ($savedVendorPayment['account_number'] ?? null) !== '9064131880'
+    || ($savedVendorPayment['account_name'] ?? null) !== 'Adekanbi Philip'
+    || isset($savedVendorPayment['provider']) || isset($savedVendorPayment['phone_number'])) {
+    throw new RuntimeException('Vendor bank details were not saved in the structured format or stale fields from another type were not discarded.');
+}
+$savedVendorMethods = $approvedVendor->fresh()->encrypted_payment_methods;
+if (($savedVendorMethods[1]['provider'] ?? null) !== 'PalmPay' || ($savedVendorMethods[1]['phone_number'] ?? null) !== '+2348012345678'
+    || ($savedVendorMethods[1]['account_name'] ?? null) !== 'Ada Vendor'
+    || ($savedVendorMethods[2]['network'] ?? null) !== 'TRC20' || ($savedVendorMethods[2]['wallet_address'] ?? null) !== 'TX123wallet'
+    || ($savedVendorMethods[2]['memo'] ?? null) !== 'PAY-42' || ($savedVendorMethods[3]['details'] ?? null) !== 'Contact me in trade chat.') {
+    throw new RuntimeException('Vendor mobile-money, crypto, or custom payment fields were not saved correctly.');
+}
+$vendorPaymentSummary = \App\Support\CoinVendorPaymentMethod::chatSummary($savedVendorPayment);
+if (!str_contains($vendorPaymentSummary, 'Bank: Opay Microfinance Bank')
+    || !str_contains($vendorPaymentSummary, 'Account number: 9064131880')
+    || !str_contains($vendorPaymentSummary, 'Account name: Adekanbi Philip')
+    || !str_contains($vendorPaymentSummary, 'Instructions: Use your Winxpot username as reference.')) {
+    throw new RuntimeException('The structured vendor payment details are not formatted for the trade chat.');
+}
+$invalidBankPaymentRequest = \Illuminate\Http\Request::create('/user/coin-vendor/payment-methods', 'POST', [
+    'payment_methods' => [0 => ['type' => 'bank', 'bank_name' => 'Opay', 'account_number' => '9064131880']],
+]);
+try {
+    $vendorPaymentController->updatePaymentMethods($invalidBankPaymentRequest);
+    throw new RuntimeException('Vendor bank method missing account name was accepted.');
+} catch (\Illuminate\Validation\ValidationException $exception) {
+    if (!array_key_exists('payment_methods.0.account_name', $exception->errors())) throw $exception;
+}
+$legacySummary = \App\Support\CoinVendorPaymentMethod::chatSummary(['type' => 'bank', 'label' => 'Legacy bank', 'details' => 'Old free-text bank instructions']);
+if (!str_contains($legacySummary, 'Old free-text bank instructions')) throw new RuntimeException('Existing vendor payment instructions were not preserved for trade chat.');
+$tradeView = file_get_contents(dirname(__DIR__) . '/resources/views/templates/nocturne/user/coin/trade.blade.php');
+if (!str_contains($tradeView, 'CoinVendorPaymentMethod::chatSummary')) throw new RuntimeException('Trade chat does not insert the structured vendor account fields.');
+Auth::guard('web')->logout();
+
 $actionRequest = static fn (string $reason) => \Illuminate\Http\Request::create('/admin/coin/vendors/' . $approvedVendor->id, 'POST', ['reason' => $reason]);
 $reviewController->vendorAction($actionRequest('Review pause'), $approvedVendor->id, 'suspend');
 if ($approvedVendor->fresh()->status !== 'suspended' || !\App\Models\CoinVendorAudit::where('vendor_id', $approvedVendor->id)->where('action', 'vendor_suspend')->exists()) throw new RuntimeException('Vendor suspension was not audited.');

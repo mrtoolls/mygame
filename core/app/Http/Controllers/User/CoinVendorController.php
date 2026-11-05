@@ -284,8 +284,60 @@ class CoinVendorController extends Controller
     public function updatePaymentMethods(Request $request)
     {
         $vendor = $this->activeVendor();
-        $data = $request->validate(['payment_methods' => 'nullable|array|max:6', 'payment_methods.*.type' => 'required_with:payment_methods|string|max:40', 'payment_methods.*.label' => 'required_with:payment_methods|string|max:60', 'payment_methods.*.details' => 'required_with:payment_methods|string|max:1000']);
-        $vendor->encrypted_payment_methods = $data['payment_methods'] ?? [];
+        $rules = [
+            'payment_methods' => ['required', 'array', 'min:1', 'max:6'],
+            'payment_methods.*.type' => ['required', 'in:bank,mobile_money,crypto,other'],
+            'payment_methods.*.label' => ['nullable', 'string', 'max:120'],
+            'payment_methods.*.details' => ['nullable', 'string', 'max:1000'],
+            'payment_methods.*.bank_name' => ['nullable', 'string', 'max:160'],
+            'payment_methods.*.account_number' => ['nullable', 'string', 'max:60'],
+            'payment_methods.*.account_name' => ['nullable', 'string', 'max:160'],
+            'payment_methods.*.provider' => ['nullable', 'string', 'max:120'],
+            'payment_methods.*.phone_number' => ['nullable', 'string', 'max:60'],
+            'payment_methods.*.network' => ['nullable', 'string', 'max:60'],
+            'payment_methods.*.wallet_address' => ['nullable', 'string', 'max:200'],
+            'payment_methods.*.memo' => ['nullable', 'string', 'max:120'],
+        ];
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), $rules);
+        $validator->after(function ($validator) use ($request) {
+            foreach ((array) $request->input('payment_methods', []) as $index => $method) {
+                $method = (array) $method;
+                $requiredByType = [
+                    'bank' => ['bank_name' => 'Bank name', 'account_number' => 'Account number', 'account_name' => 'Account name'],
+                    'mobile_money' => ['provider' => 'Provider', 'phone_number' => 'Phone number', 'account_name' => 'Account name'],
+                    'crypto' => ['network' => 'Network', 'wallet_address' => 'Wallet address'],
+                    'other' => ['details' => 'Payment details'],
+                ];
+                foreach ($requiredByType[$method['type'] ?? ''] ?? [] as $field => $label) {
+                    if (trim((string) ($method[$field] ?? '')) === '') {
+                        $validator->errors()->add("payment_methods.$index.$field", "$label is required for this payment method.");
+                    }
+                }
+            }
+        });
+        $data = $validator->validate();
+
+        $fieldsByType = [
+            'bank' => ['bank_name', 'account_number', 'account_name'],
+            'mobile_money' => ['provider', 'phone_number', 'account_name'],
+            'crypto' => ['network', 'wallet_address', 'memo'],
+            'other' => ['details'],
+        ];
+        $methods = [];
+        foreach ($data['payment_methods'] as $method) {
+            $type = $method['type'];
+            $clean = ['type' => $type, 'label' => trim((string) ($method['label'] ?? ''))];
+            foreach ($fieldsByType[$type] as $field) {
+                if (isset($method[$field]) && trim((string) $method[$field]) !== '') {
+                    $clean[$field] = trim((string) $method[$field]);
+                }
+            }
+            if ($type !== 'other' && trim((string) ($method['details'] ?? '')) !== '') {
+                $clean['details'] = trim((string) $method['details']);
+            }
+            $methods[] = $clean;
+        }
+        $vendor->encrypted_payment_methods = $methods;
         $vendor->save();
         return back()->withNotify([['success', 'Your payment details were saved encrypted.']]);
     }
