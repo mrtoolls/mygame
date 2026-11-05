@@ -44,7 +44,26 @@
             </div></section>
         @endif
 
-        <a class="table-duel-feature" href="{{ route('user.tables.duels.index') }}"><span><i class="las la-futbol"></i></span><div><small>FANTASY · HEAD TO HEAD</small><strong>Live Duel</strong><em>Pick a budget tier, build a squad and follow the sealed match slate.</em></div><b>Explore duels <i class="las la-arrow-right"></i></b></a>
+        <a class="duel-promo" href="{{ route('user.tables.duels.index') }}">
+            <div class="duel-promo__glow"></div>
+            <div class="duel-promo__top">
+                <span class="duel-promo__icon"><i class="las la-futbol"></i></span>
+                <div class="duel-promo__copy">
+                    <span class="duel-promo__kicker">@lang('Fantasy · Head to Head')</span>
+                    <strong>@lang('Live Duel')</strong>
+                    <p>@lang('Pick a budget tier, build your side, and follow a sealed match slate live.')</p>
+                </div>
+                <span class="duel-promo__new">@lang('New')</span>
+            </div>
+            <div class="duel-promo__bottom">
+                <div class="duel-promo__stats">
+                    <span><i class="las la-users"></i>@lang('2–4 players')</span>
+                    <span><i class="las la-fingerprint"></i>@lang('Sealed fair play')</span>
+                    <span><i class="las la-stopwatch"></i>@lang('~13 min a game')</span>
+                </div>
+                <span class="duel-promo__cta">@lang('Explore Live Duels') <i class="las la-arrow-right"></i></span>
+            </div>
+        </a>
 
         <div class="table-lobby__layout">
             <form class="table-card" id="create-table-form">
@@ -162,8 +181,38 @@
         @media(max-width:575.98px){.table-card--live{scroll-margin-top:84px}}
         .table-card--wins{grid-area:wins}
         .table-card{min-width:0;padding:clamp(17px,2.5vw,24px);border:1px solid var(--tg-line);border-radius:22px;background:linear-gradient(145deg,rgba(24,30,55,.98),rgba(16,20,39,.98));box-shadow:0 16px 42px rgba(0,0,0,.15)}
-        .table-duel-feature{display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:15px;border:1px solid rgba(0,239,135,.24);border-radius:17px;background:radial-gradient(ellipse at 95% 0,rgba(0,239,135,.13),transparent 42%),linear-gradient(105deg,#171d37,#102528);color:var(--tg-text);text-decoration:none}.table-duel-feature>span{display:grid;place-items:center;flex:0 0 44px;height:44px;border-radius:14px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:20px}.table-duel-feature>div{display:grid;gap:3px;min-width:0}.table-duel-feature small{color:var(--tg-green);font-size:9px;font-weight:850;letter-spacing:.11em}.table-duel-feature strong{font-size:15px;font-weight:750}.table-duel-feature em{color:var(--tg-muted);font-size:11px;font-style:normal;line-height:1.45}.table-duel-feature>b{display:inline-flex;align-items:center;gap:7px;margin-inline-start:auto;padding:10px 12px;border-radius:11px;background:rgba(0,239,135,.12);color:var(--tg-green);font-size:11px;white-space:nowrap}.table-duel-feature:hover{border-color:rgba(0,239,135,.45);color:var(--tg-text)}
-        @media(max-width:575.98px){.table-duel-feature{align-items:flex-start;flex-wrap:wrap}.table-duel-feature>b{margin-inline-start:58px;margin-top:-4px}.table-duel-feature em{font-size:10.5px}}
+        /* A proper feature card, not a single-row banner - the icon/title/description/CTA each
+           get their own row (grid, not a row that tries to wrap and then has to shove the CTA
+           button back into place with a hand-tuned margin once it wraps). That's what made the
+           button look "off" on mobile: a wrapped flex row is never reliably where a fixed
+           margin-inline-start expects it to be once the description text's own line count
+           changes. Stacking removes the whole class of bug instead of patching one viewport. */
+        .duel-promo{position:relative;overflow:hidden;display:grid;gap:14px;margin:0 0 16px;padding:18px 20px;border:1px solid rgba(0,239,135,.26);border-radius:19px;background:linear-gradient(120deg,#171d37,#0f2a2c 150%);color:var(--tg-text);text-decoration:none;isolation:isolate}
+        .duel-promo:hover{border-color:rgba(0,239,135,.5)}
+        .duel-promo:active{transform:scale(.995)}
+        .duel-promo__glow{position:absolute;top:-70%;right:-10%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(0,239,135,.22),transparent 70%);pointer-events:none;z-index:-1}
+        .duel-promo__top{display:flex;align-items:flex-start;gap:14px}
+        .duel-promo__icon{display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;border-radius:14px;background:rgba(0,239,135,.14);color:var(--tg-green);font-size:21px}
+        .duel-promo__copy{display:grid;gap:4px;min-width:0;flex:1}
+        .duel-promo__kicker{color:var(--tg-green);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+        .duel-promo__copy strong{font-size:17px;font-weight:750;line-height:1.2}
+        .duel-promo__copy p{margin:0;color:var(--tg-muted);font-size:12px;line-height:1.5}
+        .duel-promo__new{flex:0 0 auto;padding:4px 10px;border-radius:999px;background:rgba(255,181,71,.16);color:#ffb547;font-size:9.5px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+        .duel-promo__bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+        .duel-promo__stats{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+        .duel-promo__stats span{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--tg-line);border-radius:999px;background:rgba(255,255,255,.03);color:var(--tg-muted);font-size:10.5px;font-weight:700;white-space:nowrap}
+        .duel-promo__stats i{color:var(--tg-green);font-size:11px}
+        .duel-promo__cta{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:999px;background:rgba(0,239,135,.14);color:var(--tg-green);font-size:12px;font-weight:900;white-space:nowrap;transition:background .15s ease}
+        .duel-promo:hover .duel-promo__cta{background:rgba(0,239,135,.22)}
+        @media(max-width:575.98px){
+            .duel-promo{padding:16px;border-radius:17px}
+            .duel-promo__icon{flex:0 0 40px;width:40px;height:40px;font-size:18px}
+            .duel-promo__copy strong{font-size:15.5px}
+            .duel-promo__new{display:none}
+            .duel-promo__stats{width:100%}
+            .duel-promo__stats span{font-size:10px;padding:5px 9px}
+            .duel-promo__cta{width:100%;min-height:44px}
+        }
         .recent-wins__head{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--tg-text);font-size:13px;font-weight:900}.recent-wins__head i{color:#ffb547}.recent-wins__head small{margin-left:auto;padding:3px 9px;border-radius:999px;background:rgba(122,151,255,.12);color:#a7bbff;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
         /* Fixed to exactly 5 rows' worth of height and auto-scrolling (see the keyframe) rather
            than growing with however many wins exist - that unbounded growth was what pushed
