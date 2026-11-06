@@ -333,7 +333,7 @@
 .board-cell--last-move{box-shadow:inset 0 0 0 999px rgba(255,204,112,.38)!important}
 @keyframes chess-piece-in{from{transform:scale(.4) translateY(-14px) rotateX(50deg);opacity:0}60%{transform:scale(1.12) translateY(0) rotateX(0);opacity:1}to{transform:scale(1) translateY(0) rotateX(0);opacity:1}}
 .board-cell--chess{transform-style:preserve-3d}
-.board-cell--chess:not(:empty) svg{animation:chess-piece-in .18s ease}
+.board-cell--chess svg.is-piece-new{animation:chess-piece-in .18s ease}
 .ludo-wrap{position:relative;width:min(100%,420px);aspect-ratio:1;margin:0 auto;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#fffdf6,#f2e7cc);box-shadow:0 0 0 10px #2a2140,0 2px 0 rgba(255,255,255,.08) inset,0 34px 60px rgba(0,0,0,.55),0 14px 18px rgba(0,0,0,.35);transform:rotateX(7deg);transform-origin:50% 100%;transform-style:preserve-3d;box-sizing:border-box;max-width:100%}
 .ludo-yard{position:absolute;width:40%;height:40%;box-shadow:inset 0 -10px 18px rgba(0,0,0,.2),inset 0 6px 10px rgba(255,255,255,.18)}
 .ludo-yard--red{left:0;top:0;background:radial-gradient(ellipse at 30% 25%,#ff7a7a,#d32f2f 65%,#8f1414 100%)}
@@ -413,7 +413,7 @@
 .bg-point__more{margin-top:3px;color:var(--tm-text,#f5f6ff);font-size:9px;font-weight:950;z-index:1}
 .bg-bar-slot{width:clamp(18px,4vw,28px);flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,.3);border-radius:6px}
 .bg-bar-slot .bg-checker:not(:first-child){margin-top:clamp(-11px,-2.6vw,-8px)}
-@media(prefers-reduced-motion:reduce){.board-cell--chess:not(:empty){animation:none}}.board-grid--ludo{grid-template-columns:repeat(4,minmax(45px,72px));gap:9px}.board-token-button{display:grid;aspect-ratio:1;place-items:center;border:1px solid var(--tm-line);border-radius:50%;background:var(--tm-raised);color:var(--tm-text);font-size:20px;font-weight:900}.board-token-button.is-ready{border-color:var(--tm-green);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.board-action-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}.board-action-row button{min-height:38px;padding:0 12px;border:1px solid var(--tm-line);border-radius:10px;background:var(--tm-raised);color:var(--tm-text);font-size:10px;font-weight:850}
+@media(prefers-reduced-motion:reduce){.board-cell--chess svg.is-piece-new{animation:none}}.board-grid--ludo{grid-template-columns:repeat(4,minmax(45px,72px));gap:9px}.board-token-button{display:grid;aspect-ratio:1;place-items:center;border:1px solid var(--tm-line);border-radius:50%;background:var(--tm-raised);color:var(--tm-text);font-size:20px;font-weight:900}.board-token-button.is-ready{border-color:var(--tm-green);box-shadow:0 0 0 3px rgba(0,239,135,.1)}.board-action-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}.board-action-row button{min-height:38px;padding:0 12px;border:1px solid var(--tm-line);border-radius:10px;background:var(--tm-raised);color:var(--tm-text);font-size:10px;font-weight:850}
 </style>
 @endpush
 @push('style')
@@ -674,6 +674,16 @@
 <script>
 (()=>{const root=document.querySelector('#table-match');if(!root)return;const stateUrl=root.dataset.snapshot;const api={move:root.dataset.move,start:root.dataset.start,leave:root.dataset.leave};const board=document.querySelector('#table-board');const error=document.querySelector('#match-error');const notice=document.querySelector('#match-notice');const userId=Number(root.dataset.user);const type=root.dataset.type;const turnSeconds=Number(root.dataset.turnSeconds)||60;let latest=null,clockTimer=null,polling=false,pollTimer=null,selectedSquare=null,resultShown=false,warnedDeadline=null,errorHideTimer=null,diceAnimating=false,pendingGameState=null;
 let owareAnimating=false,owarePreviousState=null,owareLastVersion=null,owareSpeed=(()=>{try{return localStorage.getItem('ayoSpeed')||'normal';}catch(e){return 'normal';}})();
+// Chess/draughts: renderBoard() wipes and rebuilds the whole 64-square grid from scratch on
+// EVERY call - including every routine poll tick (every 1s while active) and even the
+// selection-highlight re-render on a plain cell click, not just on an actual move. Every newly
+// created piece <svg> plays its "pop in" entrance animation (chess-piece-in, which starts at
+// opacity:0) regardless of whether that square's piece actually changed, so with nothing but
+// normal polling, every piece on the board was fading out and back in roughly once a second -
+// reported as the board/page "going blank and back to normal" while playing. Tracked here (not a
+// local inside renderBoard) so it persists correctly across both a genuine new-snapshot render
+// and the same-data re-render a cell click triggers for its selection highlight.
+let previousChessBoard=null;
 if(error){error.innerHTML='<i class="las la-exclamation-triangle"></i><span id="match-error-text"></span>';}
 function showError(message){if(!error||!message)return;const textEl=document.querySelector('#match-error-text');if(textEl)textEl.textContent=message;error.classList.add('is-visible');window.TableSound?.play?.('lose');clearTimeout(errorHideTimer);errorHideTimer=setTimeout(clearError,4200);}
 function clearError(){if(!error)return;error.classList.remove('is-visible');clearTimeout(errorHideTimer);}
@@ -1270,12 +1280,21 @@ function renderBoard(data) {
         const seat=latest.players.find(p=>p.id===userId)?.seat||0;const white=seat===0;const grid=document.createElement('div');grid.className='board-grid board-grid--chess';
         const chessSymbolIds={K:'p-king',Q:'p-queen',R:'p-rook',B:'p-bishop',N:'p-knight',P:'p-pawn'};
         const lastMove=data.last_move;
+        // Only a square whose piece genuinely differs from the LAST render gets the "pop in"
+        // entrance animation (see previousChessBoard above) - every other untouched piece is
+        // left alone, so routine polling or the selection-highlight re-render on a cell click no
+        // longer makes the whole board flicker.
+        const priorBoard=previousChessBoard;
+        const nextBoard=[];
         for(let viewRow=0;viewRow<8;viewRow++)for(let viewCol=0;viewCol<8;viewCol++){const row=white?viewRow:7-viewRow,col=white?viewCol:7-viewCol,piece=state.board?.[row]?.[col]??null,square=String.fromCharCode(97+col)+(8-row);const own=piece&&(type==='chess'?(seat===0?piece===piece.toUpperCase():piece===piece.toLowerCase()):(seat===0?piece.toLowerCase()==='w':piece.toLowerCase()==='b'));const isLightPiece=piece&&(type==='chess'?piece===piece.toUpperCase():piece[0].toLowerCase()==='w');const isLastMove=lastMove&&(square===lastMove.from||square===lastMove.to);const cell=document.createElement('button');cell.type='button';cell.className=`board-cell board-cell--chess${(row+col)%2?' is-dark':''}${selectedSquare===square?' board-cell--selected':''}${isLastMove?' board-cell--last-move':''}${piece&&own?' is-own-piece':''}`;
+            (nextBoard[row]??=[])[col]=piece;
             if(piece){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const use=document.createElementNS('http://www.w3.org/2000/svg','use');
                 if(type==='chess'){svg.setAttribute('viewBox','0 0 100 150');use.setAttribute('href','#'+(chessSymbolIds[piece.toUpperCase()]||'p-pawn'));use.setAttribute('fill',isLightPiece?'url(#pieceLight)':'url(#pieceDark)');}
                 else{svg.setAttribute('viewBox','0 0 100 100');use.setAttribute('href','#'+(piece==='w'?'chip-w':piece==='W'?'chip-wk':piece==='b'?'chip-b':'chip-bk'));}
+                if(priorBoard?.[row]?.[col]!==piece)svg.classList.add('is-piece-new');
                 svg.append(use);cell.append(svg);}
             cell.disabled=!active;cell.onclick=()=>{if(!selectedSquare){if(own)selectedSquare=square;}else{const from=selectedSquare;selectedSquare=null;if(from!==square)send({from,to:square,promotion:'q'});else if(own)selectedSquare=square;}renderBoard(latest);};grid.append(cell);}board.append(grid);
+        previousChessBoard=nextBoard;
         if(type==='chess'){const actions=makeActionRow();if(state.draw_offer!==null&&state.draw_offer!==seat){const accept=document.createElement('button');accept.textContent='Accept draw';accept.onclick=()=>send({type:'accept_draw'});const decline=document.createElement('button');decline.textContent='Decline draw';decline.onclick=()=>send({type:'decline_draw'});actions.append(accept,decline);}else if(active){const offer=document.createElement('button');offer.textContent='Offer draw';offer.onclick=()=>send({type:'offer_draw'});const resign=document.createElement('button');resign.textContent='Resign';resign.onclick=()=>send({type:'resign'});actions.append(offer,resign);}if(actions.childNodes.length)board.append(actions);}
     }
 }
