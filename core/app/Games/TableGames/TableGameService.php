@@ -560,11 +560,17 @@ class TableGameService
                 $netAmount = $own->settlement_type === 'payout'
                     ? bcsub((string) $own->settlement_amount, $stakeAmount, 8)
                     : ($own->settlement_type === 'loss' ? bcmul($stakeAmount, '-1', 8) : '0.00000000');
+                // This table's own charging mode, not the live gs('coin_mode') flag or just
+                // "the user has a wallet currency" (every user always does) - a coin-staked table
+                // was formatting its win/loss popup in the user's real wallet currency regardless
+                // (e.g. "1000 NGN" for a 1000-coin stake), since $walletCurrency is never null and
+                // was never actually checked against how this specific table charged its players.
+                $usedCoins = $this->tableUsedCoinStakes($table, $players);
                 $walletCurrency = $user->walletCurrency;
                 $money = new \App\Support\Money();
-                $format = fn ($value) => $walletCurrency
-                    ? $walletCurrency->formatMinor($money->toMinor($value, (int) $walletCurrency->decimals), true)
-                    : null;
+                $format = fn ($value) => $usedCoins
+                    ? coinAmountText($value)
+                    : ($walletCurrency ? $walletCurrency->formatMinor($money->toMinor($value, (int) $walletCurrency->decimals), true) : null);
                 $settlement = [
                     'type' => $own->settlement_type,
                     'amount' => (string) $own->settlement_amount,

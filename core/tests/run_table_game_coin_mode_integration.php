@@ -131,6 +131,19 @@ $assertReconciled($failures, $pass, $ledger, 'After settlement: reconciliation s
 fwrite(STDOUT, "Winner settlement: payout comes entirely from the loser's held stake via CoinLedger, commission is whole-number and lands on the platform wallet, users.balance is never touched.\n");
 
 // ---------------------------------------------------------------------------
+// 2b. Reported bug: the win/loss result popup's formatted amount must say "Coins" for a
+//     coin-staked table, never the user's real wallet currency - every real user always HAS a
+//     wallet currency, so the old code (which only checked "is $walletCurrency set", never
+//     whether THIS table actually charged in coins) formatted every coin-mode result in real
+//     currency regardless, e.g. "1000 NGN" for a 1000-coin stake.
+// ---------------------------------------------------------------------------
+$winnerSnapshot = $service->snapshot($creator, $table->id);
+$loserSnapshot = $service->snapshot($opponent, $table->id);
+check($failures, $pass, 'Winner result popup: amount_formatted says Coins, not a currency code/symbol', str_contains((string) $winnerSnapshot['settlement']['amount_formatted'], 'Coins') && !str_contains((string) $winnerSnapshot['settlement']['amount_formatted'], 'USD') && !str_contains((string) $winnerSnapshot['settlement']['amount_formatted'], '$'));
+check($failures, $pass, 'Loser result popup: stake_formatted (amount lost) says Coins, not a currency code/symbol', str_contains((string) $loserSnapshot['settlement']['stake_formatted'], 'Coins') && !str_contains((string) $loserSnapshot['settlement']['stake_formatted'], 'USD') && !str_contains((string) $loserSnapshot['settlement']['stake_formatted'], '$'));
+fwrite(STDOUT, "Result popup: a coin-staked table's win/loss amount is formatted in Coins, not the user's real wallet currency.\n");
+
+// ---------------------------------------------------------------------------
 // 3. Draw: every player's own held stake is simply released back to them - no transfer needed.
 // ---------------------------------------------------------------------------
 $drawTable = $service->create($creator, 'tic_tac_toe', 2, '20', 'ctg_draw_create01');
@@ -194,6 +207,25 @@ $service->forceClose((string) $legacyTable->id);
 check($failures, $pass, 'Mixed-mode guard: forceClose() on a legacy table still refunds real currency (not coins), based on how it was actually charged', bccomp((string) $legacyCreator->fresh()->balance, '200.00000000', 8) === 0);
 $assertReconciled($failures, $pass, $ledger, 'After the mixed-mode scenario: reconciliation still balances (the legacy table never touched the coin ledger)');
 fwrite(STDOUT, "Mixed-mode safety: a table's actual charging mode (not the live flag) decides its settlement path, and join() refuses to mix the two within one table.\n");
+
+// Regression guard for the fix above: a table that genuinely charged in real currency must still
+// show its result in that currency, not get swept into "Coins" formatting just because coin_mode
+// happens to be on globally right now.
+$general->coin_mode = false;
+$general->save();
+$realCurrencyWinner = $insertUser('real_cur_winner', '200.00000000');
+$realCurrencyLoser = $insertUser('real_cur_loser', '200.00000000');
+$realCurrencyTable = $service->create($realCurrencyWinner, 'tic_tac_toe', 2, '10', 'ctg_realcur_create01');
+$realCurrencyTable = $service->join($realCurrencyLoser, $realCurrencyTable->id);
+$realCurrencyMoves = [[$realCurrencyWinner, ['cell' => 0]], [$realCurrencyLoser, ['cell' => 3]], [$realCurrencyWinner, ['cell' => 1]], [$realCurrencyLoser, ['cell' => 4]], [$realCurrencyWinner, ['cell' => 2]]];
+foreach ($realCurrencyMoves as $index => [$user, $action]) {
+    $realCurrencyTable = $service->move($user, $realCurrencyTable->id, $action, sprintf('ctg_realcur_move_%06d', $index + 1), (int) $realCurrencyTable->version);
+}
+$general->coin_mode = true;
+$general->save();
+$realCurrencyWinnerSnapshot = $service->snapshot($realCurrencyWinner, $realCurrencyTable->id);
+check($failures, $pass, 'Regression guard: a real-currency table\'s result still formats in that currency, not Coins', str_contains((string) $realCurrencyWinnerSnapshot['settlement']['amount_formatted'], 'USD') && !str_contains((string) $realCurrencyWinnerSnapshot['settlement']['amount_formatted'], 'Coins'));
+fwrite(STDOUT, "Regression guard: a genuinely real-currency table's result popup still shows that currency, unaffected by the coin-formatting fix.\n");
 
 // ---------------------------------------------------------------------------
 // 6. Multi-winner waterfall (reflection test of the private settleCoins() method - a full
