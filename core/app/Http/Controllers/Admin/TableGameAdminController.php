@@ -72,6 +72,34 @@ class TableGameAdminController extends Controller
             return back()->withNotify([['error', 'Run the pending database update before uploading live game images.']]);
         }
         $hasGuideColumn = Schema::hasColumn('table_game_settings', 'guide_json');
+
+        // Every per-game <details> section submits its own current field values along with the
+        // form, even if the admin only opened "Global defaults" and never touched that specific
+        // game - so a per-game row that already exists (every game that has ever been configured
+        // or played) would otherwise get overwritten right back to its own stale numbers,
+        // completely absorbing the new global value and leaving "Global defaults" with no actual
+        // effect on it. For each tracked field, cascade the new global value onto a per-game row
+        // only when that field was genuinely just inheriting before this save (old per-game value
+        // equalled the old global value, or the row didn't exist yet) AND the admin didn't edit
+        // that field for this specific game in the browser (its submitted value still matches
+        // what was already stored) - a real, deliberate per-game override is left untouched.
+        $cascadeFields = ['enabled', 'commission_percent', 'min_stake', 'max_stake', 'turn_seconds', 'max_open_tables_per_user', 'max_concurrent_tables'];
+        $existing = TableGameSetting::all()->keyBy('game_type');
+        $oldGlobal = $existing->get('*');
+        if ($oldGlobal) {
+            $newGlobal = $validated['settings']['*'];
+            foreach ($validated['settings'] as $game => &$values) {
+                if ($game === '*') continue;
+                $oldRow = $existing->get($game);
+                foreach ($cascadeFields as $field) {
+                    $wasInheriting = !$oldRow || $this->sameSettingValue($oldRow->$field, $oldGlobal->$field);
+                    $untouchedInForm = $oldRow && $this->sameSettingValue($values[$field], $oldRow->$field);
+                    if ($wasInheriting && $untouchedInForm) $values[$field] = $newGlobal[$field];
+                }
+            }
+            unset($values);
+        }
+
         foreach ($validated['settings'] as $game => $values) {
             $guide = $values['guide'] ?? null;
             unset($values['guide']);
@@ -98,6 +126,13 @@ class TableGameAdminController extends Controller
             }
         }
         return back()->withNotify([['success', 'Table game settings saved.']]);
+    }
+
+    /** Numeric-safe equality for the cascade check above - avoids false "it was edited" positives from formatting differences like a DB decimal's "1000.00000000" vs a submitted "1000", or "1"/true/"on" for a boolean checkbox field. */
+    private function sameSettingValue($a, $b): bool
+    {
+        if (is_numeric($a) && is_numeric($b)) return bccomp((string) $a, (string) $b, 8) === 0;
+        return (string) $a === (string) $b || (bool) $a === (bool) $b;
     }
 
     public function forceClose(string $id, TableGameService $service)
