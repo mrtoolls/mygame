@@ -27,5 +27,14 @@
                 </div>
             </a>
         </div>
+        <div class="col-xxl-3 col-xl-4 col-md-4 col-sm-12">
+            <a href="{{ route('admin.setting.notification.template.edit',['inapp',$template->id]) }}" class="notification-via mb-4 {{ menuActive('admin.setting.notification.template.edit',param:'inapp') }} d-block">
+                <span class="active-badge"> <i class="las la-check"></i> </span>
+                <div class="send-via-method">
+                    <i class="las la-comment-dots"></i>
+                    <h5>@lang('In-App Template')</h5>
+                </div>
+            </a>
+        </div>
     </div>
 </div>

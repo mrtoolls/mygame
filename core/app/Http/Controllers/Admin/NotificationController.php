@@ -104,6 +104,11 @@ class NotificationController extends Controller {
                 'push_body' => 'required',
             ];
         }
+        if ($type == 'inapp') {
+            $validationRule = [
+                'inapp_body' => 'required',
+            ];
+        }
         $request->validate($validationRule);
         $template = NotificationTemplate::findOrFail($id);
         if ($type == 'email') {
@@ -122,6 +127,11 @@ class NotificationController extends Controller {
             $template->push_title  = $request->push_title;
             $template->push_body   = $request->push_body;
             $template->push_status = $request->push_status ? Status::ENABLE : Status::DISABLE;
+        }
+        if ($type == 'inapp') {
+            $template->inapp_title  = $request->inapp_title;
+            $template->inapp_body   = $request->inapp_body;
+            $template->inapp_status = $request->inapp_status ? Status::ENABLE : Status::DISABLE;
         }
         $template->save();
 

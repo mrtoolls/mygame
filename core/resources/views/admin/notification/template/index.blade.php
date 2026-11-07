@@ -35,6 +35,10 @@
                                             <a href="{{ route('admin.setting.notification.template.edit', ['push',$template->id]) }}" class="btn btn-outline--success">@lang('Push')</a>
                                             <span class="btn btn--success">@if($template->push_status != Status::ENABLE)<i class="las la-times"></i> @else <i class="las la-check"></i> @endif</span>
                                         </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ route('admin.setting.notification.template.edit', ['inapp',$template->id]) }}" class="btn btn-outline--warning">@lang('In-App')</a>
+                                            <span class="btn btn--warning">@if($template->inapp_status != Status::ENABLE)<i class="las la-times"></i> @else <i class="las la-check"></i> @endif</span>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
