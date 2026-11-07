@@ -67,8 +67,12 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
             Route::get('/', 'index')->name('index');
             Route::post('start', 'start')->middleware('throttle:15,1')->name('start');
             Route::get('unread-count', 'unreadCount')->middleware('throttle:60,1')->name('unread-count');
+            Route::get('alerts', 'messageAlerts')->middleware('throttle:30,1')->name('alerts');
             Route::get('{conversation}', 'show')->whereNumber('conversation')->name('show');
             Route::post('{conversation}/reply', 'reply')->whereNumber('conversation')->middleware('throttle:30,1')->name('reply');
+            Route::post('{conversation}/attachment', 'attachment')->whereNumber('conversation')->middleware('throttle:10,1')->name('attachment.upload');
+            Route::get('{conversation}/{message}/attachment', 'downloadAttachment')->whereNumber('conversation')->whereNumber('message')->name('attachment');
+            Route::post('{conversation}/ring', 'ring')->whereNumber('conversation')->middleware('throttle:3,1')->name('ring');
             Route::get('{conversation}/poll', 'poll')->whereNumber('conversation')->middleware('throttle:60,1')->name('poll');
         });
 

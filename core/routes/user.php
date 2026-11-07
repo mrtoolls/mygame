@@ -178,10 +178,14 @@ Route::middleware('auth')->name('user.')->group(function () {
             // Direct messages with Coin Vendors / support agents only - never user-to-user.
             Route::controller('MessagingController')->prefix('messages')->name('messages.')->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('list', 'list')->middleware('throttle:60,1')->name('list');
                 Route::post('start', 'start')->middleware('throttle:15,1')->name('start');
                 Route::get('{conversation}', 'show')->whereNumber('conversation')->name('show');
                 Route::post('{conversation}/reply', 'reply')->whereNumber('conversation')->middleware('throttle:30,1')->name('reply');
+                Route::post('{conversation}/attachment', 'attachment')->whereNumber('conversation')->middleware('throttle:10,1')->name('attachment.upload');
+                Route::get('{conversation}/{message}/attachment', 'downloadAttachment')->whereNumber('conversation')->whereNumber('message')->name('attachment');
                 Route::get('{conversation}/poll', 'poll')->whereNumber('conversation')->middleware('throttle:60,1')->name('poll');
+                Route::post('{conversation}/ring', 'ring')->whereNumber('conversation')->middleware('throttle:3,1')->name('ring');
             });
 
             // Withdraw

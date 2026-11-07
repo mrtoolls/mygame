@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Models\Conversation;
 use App\Models\CoinVendor;
+use App\Models\AgentNotification;
 use App\Models\Message;
 use App\Models\SupportAgent;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use InvalidArgumentException;
 
 /**
@@ -63,14 +66,86 @@ class MessagingService
             'body' => $body,
         ]);
 
-        $conversation->last_message_at = $message->created_at;
-        $conversation->last_message_preview = mb_substr($body, 0, 255);
-        $conversation->save();
-
-        [$recipientType, $recipientId] = $conversation->otherParticipant($senderType, $senderId);
-        $this->notifyRecipient($recipientType, $recipientId, $senderType, $senderId, $body, $conversation);
-
+        $this->finishMessage($conversation, $message, $senderType, $senderId, $body);
         return $message;
+    }
+
+    public function sendAttachment(Conversation $conversation, string $senderType, int $senderId, UploadedFile $file): Message
+    {
+        if (!$conversation->isParticipant($senderType, $senderId)) {
+            throw new InvalidArgumentException('You are not a participant in this conversation.');
+        }
+
+        $mime = strtolower((string) $file->getMimeType());
+        $kind = str_starts_with($mime, 'image/') ? 'image' : (str_starts_with($mime, 'video/') ? 'video' : null);
+        if (!$kind) {
+            throw new InvalidArgumentException('Attach an image or video file.');
+        }
+
+        $path = $file->store('direct-messages/' . $conversation->id, 'local');
+        try {
+            $label = $kind === 'image' ? 'Photo' : 'Video';
+            $message = Message::create([
+                'conversation_id' => $conversation->id,
+                'sender_type' => $senderType,
+                'sender_id' => $senderId,
+                'body' => $label,
+                'kind' => $kind,
+                'attachment_path' => $path,
+                'attachment_name' => mb_substr($file->getClientOriginalName(), 0, 255),
+                'attachment_mime' => $mime,
+                'attachment_size' => $file->getSize(),
+            ]);
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($path);
+            throw $exception;
+        }
+
+        $this->finishMessage($conversation, $message, $senderType, $senderId, $label);
+        return $message;
+    }
+
+    private function finishMessage(Conversation $conversation, Message $message, string $senderType, int $senderId, string $preview): void
+    {
+        $conversation->last_message_at = $message->created_at;
+        $conversation->last_message_preview = mb_substr($preview, 0, 255);
+        $conversation->save();
+        [$recipientType, $recipientId] = $conversation->otherParticipant($senderType, $senderId);
+        $this->notifyRecipient($recipientType, $recipientId, $senderType, $senderId, $preview, $conversation);
+    }
+
+    /** Send a lightweight online ping to the other participant; this is not a call. */
+    public function ring(Conversation $conversation, string $ringerType, int $ringerId): bool
+    {
+        if (!$conversation->isParticipant($ringerType, $ringerId)) {
+            throw new InvalidArgumentException('You are not a participant in this conversation.');
+        }
+        [$recipientType, $recipientId] = $conversation->otherParticipant($ringerType, $ringerId);
+        $ringerName = $this->displayNameFor($ringerType, $ringerId);
+        if ($recipientType === 'user') {
+            $user = User::find($recipientId);
+            if (!$user) return false;
+            notify($user, 'RING_ONLINE', [
+                'ringer' => $ringerName,
+                'notif_icon' => 'bell-ringing',
+                'notif_url' => route('user.messages.show', $conversation->id),
+                'notif_actor_name' => $ringerName,
+            ], ['push', 'inapp'], false);
+            return true;
+        }
+        if ($recipientType === 'agent' && SupportAgent::where('id', $recipientId)->where('is_active', true)->exists()
+            && Schema::hasTable('agent_notifications')) {
+            AgentNotification::create([
+                'recipient_type' => 'agent',
+                'recipient_id' => $recipientId,
+                'title' => 'Someone is trying to reach you',
+                'body' => $ringerName . ' is hoping to catch you online for a chat.',
+                'click_url' => route('support-agent.messages.show', $conversation->id),
+            ]);
+            return true;
+        }
+
+        return false;
     }
 
     public function markRead(Conversation $conversation, string $readerType, int $readerId): void
@@ -89,17 +164,25 @@ class MessagingService
             ->count();
     }
 
-    /** Only 'user' recipients get a real push/in-app notification - an agent has no User row to notify(), and sees new messages via their own portal's live unread count instead (same as the existing ticket system). */
+    /** Users receive app notifications; support agents receive portal notifications because they authenticate outside the User model. */
     private function notifyRecipient(string $recipientType, int $recipientId, string $senderType, int $senderId, string $body, Conversation $conversation): void
     {
-        if ($recipientType !== 'user') {
+        $senderName = $this->displayNameFor($senderType, $senderId);
+        if ($recipientType === 'agent') {
+            if (SupportAgent::where('id', $recipientId)->where('is_active', true)->exists()
+                && Schema::hasTable('agent_notifications')) {
+                AgentNotification::create([
+                    'recipient_type' => 'agent',
+                    'recipient_id' => $recipientId,
+                    'title' => 'New direct message',
+                    'body' => $senderName . ': ' . mb_substr($body, 0, 420),
+                    'click_url' => route('support-agent.messages.show', $conversation->id),
+                ]);
+            }
             return;
         }
         $user = User::find($recipientId);
-        if (!$user) {
-            return;
-        }
-        $senderName = $this->displayNameFor($senderType, $senderId);
+        if (!$user) return;
         notify($user, 'NEW_CHAT_MESSAGE', [
             'sender' => $senderName,
             'preview' => mb_substr($body, 0, 120),
