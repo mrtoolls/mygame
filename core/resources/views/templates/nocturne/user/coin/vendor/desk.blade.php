@@ -73,10 +73,10 @@
                                 <span class="coin-contact-channel__icon"><i class="ph-fill {{ $channel['icon'] }}"></i></span>
                                 <div class="coin-field coin-field--grow">
                                     <label for="vendor-{{ $channel['key'] }}-value">{{ $channel['label'] }}</label>
-                                    <input id="vendor-{{ $channel['key'] }}-value" type="text" name="{{ $channel['key'] }}_value" value="{{ $value }}" placeholder="{{ $channel['placeholder'] }}" @if(!$enabled) disabled @endif>
+                                    <input id="vendor-{{ $channel['key'] }}-value" type="text" name="{{ $channel['key'] }}_value" value="{{ $value }}" placeholder="{{ $channel['placeholder'] }}">
                                 </div>
                                 <label class="coin-contact-toggle">
-                                    <input type="checkbox" name="{{ $channel['key'] }}_enabled" value="1" class="coin-contact-toggle__input" data-target="vendor-{{ $channel['key'] }}-value" @checked($enabled)>
+                                    <input type="checkbox" name="{{ $channel['key'] }}_enabled" value="1" class="coin-contact-toggle__input" @checked($enabled)>
                                     <span class="coin-contact-toggle__switch"></span>
                                 </label>
                             </div>
@@ -214,16 +214,6 @@
         .coin-contact-toggle__input:checked + .coin-contact-toggle__switch::before{transform:translateX(18px)}
         @media(max-width:700px){.coin-contact-channel{flex-wrap:wrap}}
     </style>
-    <script>
-        (() => {
-            document.querySelectorAll('.coin-contact-toggle__input').forEach((toggle) => {
-                toggle.addEventListener('change', () => {
-                    const input = document.getElementById(toggle.dataset.target);
-                    if (input) input.disabled = !toggle.checked;
-                });
-            });
-        })();
-    </script>
     <script>
         (() => {
             const list = document.getElementById('coin-pm-list');

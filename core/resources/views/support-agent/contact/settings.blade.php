@@ -39,10 +39,10 @@
                     <span class="agent-channel__icon"><i class="ph-fill {{ $channel['icon'] }}"></i></span>
                     <div class="agent-channel__body">
                         <label for="{{ $channel['key'] }}-value">{{ $channel['label'] }}</label>
-                        <input id="{{ $channel['key'] }}-value" type="text" name="{{ $channel['key'] }}_value" value="{{ $value }}" placeholder="{{ $channel['placeholder'] }}" @if(!$enabled) disabled @endif>
+                        <input id="{{ $channel['key'] }}-value" type="text" name="{{ $channel['key'] }}_value" value="{{ $value }}" placeholder="{{ $channel['placeholder'] }}">
                     </div>
                     <label class="agent-toggle">
-                        <input type="checkbox" name="{{ $channel['key'] }}_enabled" value="1" class="channel-toggle" data-target="{{ $channel['key'] }}-value" @checked($enabled)>
+                        <input type="checkbox" name="{{ $channel['key'] }}_enabled" value="1" class="channel-toggle" @checked($enabled)>
                         <span class="agent-toggle__switch"></span>
                     </label>
                 </div>
@@ -51,13 +51,5 @@
             <button type="submit" style="margin-top:20px;display:flex;align-items:center;gap:9px;height:46px;padding:0 18px;border:0;border-radius:12px;background:var(--agent-green);color:#063b29;font-size:12.5px;font-weight:900">Save contact methods</button>
         </form>
     </main>
-    <script>
-        document.querySelectorAll('.channel-toggle').forEach(function (toggle) {
-            toggle.addEventListener('change', function () {
-                var input = document.getElementById(toggle.dataset.target);
-                if (input) input.disabled = !toggle.checked;
-            });
-        });
-    </script>
 </body>
 </html>

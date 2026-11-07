@@ -8,7 +8,6 @@
     <div class="gate__card">
         <div class="gate__brand">
             <img src="{{ siteLogo() }}" alt="{{ gs('site_name') }}">
-            <span class="gate__brand-name">{{ __(gs('site_name')) }}</span>
         </div>
 
         <div class="gate__head">
