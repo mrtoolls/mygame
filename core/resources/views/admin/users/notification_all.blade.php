@@ -3,7 +3,7 @@
     @php
         $sessionData = session('SEND_NOTIFICATION') ?? [];
         $viaName     = $sessionData['via'] ?? 'email';
-        $viaText     = @$sessionData['via'] == 'push' ? 'Push notification ' : ucfirst($viaName);
+        $viaText     = @$sessionData['via'] == 'push' ? 'Push notification ' : (@$sessionData['via'] == 'inapp' ? 'In-app notification ' : ucfirst($viaName));
     @endphp
 
     @empty(!$sessionData)
@@ -101,6 +101,15 @@
                                             </div>
                                         </div>
                                     @endif
+                                    <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-3 col-sm-12">
+                                        <div class="notification-via mb-4 @if ($viaName == 'inapp') active @endif" data-method="inapp">
+                                            <span class="active-badge"> <i class="las la-check"></i> </span>
+                                            <div class="send-via-method">
+                                                <i class="las la-comment-dots"></i>
+                                                <h5>@lang('Send In-App')</h5>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -314,7 +323,7 @@
                     $('.push-notification-file [type=file]').val('');
                 }
 
-                if ($(this).data('method') == 'push' || $(this).data('method') == 'email') {
+                if ($(this).data('method') == 'push' || $(this).data('method') == 'email' || $(this).data('method') == 'inapp') {
                     $('.subject-wrapper').removeClass('d-none');
                 } else {
                     $('.subject-wrapper').addClass('d-none')

@@ -411,10 +411,6 @@ class ManageUsersController extends Controller {
 
     public function showNotificationSingleForm($id) {
         $user = User::findOrFail($id);
-        if (!gs('en') && !gs('sn') && !gs('pn')) {
-            $notify[] = ['warning', 'Notification options are disabled currently'];
-            return to_route('admin.users.detail', $user->id)->withNotify($notify);
-        }
         $pageTitle = 'Send Notification to ' . $user->username;
         return view('admin.users.notification_single', compact('pageTitle', 'user'));
     }
@@ -422,25 +418,15 @@ class ManageUsersController extends Controller {
     public function sendNotificationSingle(Request $request, $id) {
         $request->validate([
             'message' => 'required',
-            'via'     => 'required|in:email,sms,push',
-            'subject' => 'required_if:via,email,push',
+            'via'     => 'required|in:email,sms,push,inapp',
+            'subject' => 'required_if:via,email,push,inapp',
             'image'   => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
         ]);
-
-        if (!gs('en') && !gs('sn') && !gs('pn')) {
-            $notify[] = ['warning', 'Notification options are disabled currently'];
-            return to_route('admin.dashboard')->withNotify($notify);
-        }
 
         return (new UserNotificationSender())->notificationToSingle($request, $id);
     }
 
     public function showNotificationAllForm() {
-        if (!gs('en') && !gs('sn') && !gs('pn')) {
-            $notify[] = ['warning', 'Notification options are disabled currently'];
-            return to_route('admin.dashboard')->withNotify($notify);
-        }
-
         $notifyToUser = User::notifyToUser();
         $users        = User::active()->count();
         $pageTitle    = 'Notification to Verified Users';
@@ -454,9 +440,9 @@ class ManageUsersController extends Controller {
 
     public function sendNotificationAll(Request $request) {
         $request->validate([
-            'via'                          => 'required|in:email,sms,push',
+            'via'                          => 'required|in:email,sms,push,inapp',
             'message'                      => 'required',
-            'subject'                      => 'required_if:via,email,push',
+            'subject'                      => 'required_if:via,email,push,inapp',
             'start'                        => 'required|integer|gte:1',
             'batch'                        => 'required|integer|gte:1',
             'being_sent_to'                => 'required',
@@ -468,11 +454,6 @@ class ManageUsersController extends Controller {
             'number_of_days.required_if'               => "Number of days field is required",
             'number_of_top_deposited_user.required_if' => "Number of top deposited user field is required",
         ]);
-
-        if (!gs('en') && !gs('sn') && !gs('pn')) {
-            $notify[] = ['warning', 'Notification options are disabled currently'];
-            return to_route('admin.dashboard')->withNotify($notify);
-        }
 
         return (new UserNotificationSender())->notificationToAll($request);
     }
