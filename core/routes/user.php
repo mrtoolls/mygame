@@ -175,6 +175,15 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('buy', 'buyFromVendor')->middleware('throttle:10,1')->name('buy');
             });
 
+            // Direct messages with Coin Vendors / support agents only - never user-to-user.
+            Route::controller('MessagingController')->prefix('messages')->name('messages.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('start', 'start')->middleware('throttle:15,1')->name('start');
+                Route::get('{conversation}', 'show')->whereNumber('conversation')->name('show');
+                Route::post('{conversation}/reply', 'reply')->whereNumber('conversation')->middleware('throttle:30,1')->name('reply');
+                Route::get('{conversation}/poll', 'poll')->whereNumber('conversation')->middleware('throttle:60,1')->name('poll');
+            });
+
             // Withdraw
             Route::controller('WithdrawController')->prefix('withdraw')->name('withdraw')->group(function () {
                 Route::middleware('kyc')->group(function () {

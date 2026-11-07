@@ -28,6 +28,7 @@
             @endif
             <a href="{{ route('user.referrals') }}" class="{{ request()->routeIs('user.referrals') ? 'is-active' : '' }}"><i class="ph-fill ph-gift"></i>@lang('Bonuses')</a>
             <a href="{{ route('user.gifts.index') }}" class="{{ request()->routeIs('user.gifts.*') ? 'is-active' : '' }}"><i class="ph-fill ph-package"></i>@lang('My Gifts')</a>
+            <a href="{{ route('user.messages.index') }}" class="{{ request()->routeIs('user.messages.*') ? 'is-active' : '' }}"><i class="ph-fill ph-chats-circle"></i>@lang('Messages')</a>
             <a href="{{ route('user.vip.index') }}" class="{{ request()->routeIs('user.vip.*') ? 'is-active' : '' }}"><i class="ph-fill ph-crown"></i>@lang('VIP Club')</a>
             <a href="{{ route('user.business-promotions.index') }}" class="{{ request()->routeIs('user.business-promotions.*') ? 'is-active' : '' }}"><i class="ph-fill ph-megaphone-simple"></i>@lang('Promote a Business')</a>
             <a href="{{ route('user.sponsorships.index') }}" class="{{ request()->routeIs('user.sponsorships.*') ? 'is-active' : '' }}"><i class="ph-fill ph-handshake"></i>@lang('Sponsor Winxpot')</a>

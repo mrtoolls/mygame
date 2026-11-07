@@ -63,6 +63,15 @@ Route::prefix('support-agent')->name('support-agent.')->controller('SupportAgent
         Route::get('contact-settings', 'contactSettings')->name('contact-settings');
         Route::post('contact-settings', 'contactSettingsUpdate')->name('contact-settings.update');
 
+        Route::controller('SupportAgentMessagingController')->prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('start', 'start')->middleware('throttle:15,1')->name('start');
+            Route::get('unread-count', 'unreadCount')->middleware('throttle:60,1')->name('unread-count');
+            Route::get('{conversation}', 'show')->whereNumber('conversation')->name('show');
+            Route::post('{conversation}/reply', 'reply')->whereNumber('conversation')->middleware('throttle:30,1')->name('reply');
+            Route::get('{conversation}/poll', 'poll')->whereNumber('conversation')->middleware('throttle:60,1')->name('poll');
+        });
+
         Route::prefix('news')->name('news.')->group(function () {
             Route::get('/', 'newsIndex')->name('index');
             Route::get('create', 'newsCreate')->name('create');

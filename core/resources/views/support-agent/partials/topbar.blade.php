@@ -4,6 +4,7 @@
     <div class="support-topbar__right">
         @if($agent->is_chat_agent)
             <a href="{{ route('support-agent.dashboard') }}" class="support-nav-link @if(($active ?? null) === 'inbox') is-active @endif"><i class="ph-fill ph-chats-circle"></i> <span>Inbox</span></a>
+            <a href="{{ route('support-agent.messages.index') }}" class="support-nav-link @if(($active ?? null) === 'messages') is-active @endif"><i class="ph-fill ph-paper-plane-right"></i> <span>Messages</span></a>
         @endif
         @if($agent->is_payment_agent)
             <a href="{{ route('support-agent.payments.queue') }}" class="support-nav-link @if(($active ?? null) === 'payments') is-active @endif"><i class="ph-fill ph-hand-coins"></i> <span>Payments</span></a>
