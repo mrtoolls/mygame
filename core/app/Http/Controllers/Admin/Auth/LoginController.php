@@ -20,11 +20,15 @@ class LoginController extends Controller {
     use AuthenticatesUsers;
 
     /**
-     * Where to redirect users after login / registration.
-     *
-     * @var string
+     * Where to redirect users after login / registration, and where logout() falls back to.
+     * A route-name lookup rather than a literal path string - a literal 'admin' here would have
+     * kept sending every successful login (and every logout) to the old, no-longer-routed /admin
+     * URL after the admin path moved to /backen, landing on a 404 right after a correct login.
      */
-    public $redirectTo = 'admin';
+    public function redirectTo()
+    {
+        return route('admin.dashboard');
+    }
 
     /**
      * Show the application's login form.
@@ -84,6 +88,6 @@ class LoginController extends Controller {
     public function logout(Request $request) {
         $this->guard('admin')->logout();
         $request->session()->invalidate();
-        return $this->loggedOut($request) ?: redirect($this->redirectTo);
+        return $this->loggedOut($request) ?: redirect($this->redirectTo());
     }
 }

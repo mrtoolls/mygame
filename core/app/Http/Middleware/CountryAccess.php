@@ -13,7 +13,8 @@ class CountryAccess
     public function handle(Request $request, Closure $next): Response
     {
         // Admin access must remain available for recovery if an allowlist is misconfigured.
-        if ($request->is('admin', 'admin/*') || $request->routeIs('ipn.*') || !Schema::hasTable('countries')) {
+        // Matches the admin route prefix in bootstrap/app.php - keep both in sync if that ever changes.
+        if ($request->is('backen', 'backen/*') || $request->routeIs('ipn.*') || !Schema::hasTable('countries')) {
             return $next($request);
         }
 

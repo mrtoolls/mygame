@@ -29,9 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::prefix('api')
                     ->middleware(['api','maintenance'])
                     ->group(base_path('routes/api.php'));
+                // The URL segment is deliberately "backen", not "admin" - a non-default path so
+                // the admin login isn't sitting at the first thing anyone would guess/scan for.
+                // The route NAME prefix stays "admin." on purpose: hundreds of route('admin.x')
+                // calls throughout the app reference it by name, and renaming that would be a
+                // large, purely-cosmetic, high-risk refactor for zero benefit - Laravel resolves
+                // a named route by its registered URI regardless of what the name itself says.
                 Route::middleware(['web'])
                     ->namespace('Admin')
-                    ->prefix('admin')
+                    ->prefix('backen')
                     ->name('admin.')
                     ->group(base_path('routes/admin.php'));
 
