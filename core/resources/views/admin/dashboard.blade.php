@@ -1,6 +1,19 @@
 @extends('admin.layouts.app')
 
 @section('panel')
+    <div class="admin-dashboard">
+        <header class="admin-dashboard__hero">
+            <div>
+                <span class="admin-dashboard__eyebrow"><i class="las la-chart-line"></i> Winxpot control center</span>
+                <h1>Dashboard</h1>
+                <p>Your platform at a glance. Monitor users, transactions, and activity from one place.</p>
+            </div>
+            <div class="admin-dashboard__hero-meta">
+                <span class="admin-dashboard__live"><i></i> Live overview</span>
+                <span class="admin-dashboard__date"><i class="las la-calendar-alt"></i> {{ now()->format('l, M j, Y') }}</span>
+            </div>
+        </header>
+
     <div class="row gy-4">
 
         @if($widget['coin_mode'] ?? false)
@@ -287,6 +300,7 @@
 
 
     @include('admin.partials.cron_modal')
+    </div>
 @endsection
 @push('breadcrumb-plugins')
     <button class="btn btn-outline--primary btn-sm" data-bs-toggle="modal" data-bs-target="#cronModal">
@@ -451,6 +465,153 @@
     <style>
         .apexcharts-menu {
             min-width: 120px !important;
+        }
+
+        .admin-dashboard {
+            --dash-ink: #f4f7ff;
+            --dash-muted: #909bbd;
+            --dash-line: rgba(143, 157, 202, .16);
+            --dash-panel: linear-gradient(145deg, rgba(24, 31, 57, .96), rgba(15, 20, 39, .98));
+            color: var(--dash-ink);
+        }
+        .admin-dashboard__hero {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            padding: clamp(22px, 3vw, 34px);
+            border: 1px solid rgba(0, 231, 138, .2);
+            border-radius: 22px;
+            background: radial-gradient(ellipse at 86% 0%, rgba(0, 231, 138, .16), transparent 36%), var(--dash-panel);
+            box-shadow: 0 18px 45px rgba(2, 5, 17, .18);
+        }
+        .admin-dashboard__hero::after {
+            position: absolute;
+            right: 10%;
+            bottom: -100px;
+            width: 220px;
+            height: 220px;
+            border: 1px solid rgba(0, 231, 138, .12);
+            border-radius: 50%;
+            content: "";
+            pointer-events: none;
+        }
+        .admin-dashboard__eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #00e78a;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+        .admin-dashboard__eyebrow i { font-size: 16px; }
+        .admin-dashboard__hero h1 {
+            margin: 0;
+            color: var(--dash-ink);
+            font-size: clamp(25px, 3vw, 34px);
+            font-weight: 600;
+            letter-spacing: -.04em;
+        }
+        .admin-dashboard__hero p {
+            max-width: 560px;
+            margin: 8px 0 0;
+            color: var(--dash-muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+        .admin-dashboard__hero-meta {
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .admin-dashboard__live, .admin-dashboard__date {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border: 1px solid var(--dash-line);
+            border-radius: 999px;
+            background: rgba(10, 15, 31, .48);
+            color: #c0c9e2;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .admin-dashboard__live i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #00e78a;
+            box-shadow: 0 0 12px rgba(0, 231, 138, .8);
+        }
+        .admin-dashboard .card {
+            height: 100%;
+            overflow: hidden;
+            border: 1px solid var(--dash-line);
+            border-radius: 18px;
+            background: var(--dash-panel);
+            box-shadow: 0 12px 30px rgba(2, 5, 17, .13);
+        }
+        .admin-dashboard .card-body { padding: clamp(18px, 2vw, 24px); }
+        .admin-dashboard .card-title {
+            margin-bottom: 20px;
+            color: var(--dash-ink);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+        }
+        .admin-dashboard .widget-seven {
+            min-height: 118px;
+            border: 1px solid var(--dash-line);
+            border-radius: 17px;
+            box-shadow: 0 10px 24px rgba(2, 5, 17, .12);
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+        .admin-dashboard .widget-seven:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 231, 138, .38);
+            box-shadow: 0 16px 30px rgba(2, 5, 17, .2);
+        }
+        .admin-dashboard .widget-seven__content-title {
+            color: rgba(242, 246, 255, .8);
+            font-weight: 500;
+        }
+        .admin-dashboard .widget-seven__content-amount { font-weight: 600; }
+        .admin-dashboard .widget-card-wrapper { gap: 10px; }
+        .admin-dashboard .widget-card {
+            min-height: 76px;
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px;
+            transition: transform .18s ease, filter .18s ease;
+        }
+        .admin-dashboard .widget-card:hover { transform: translateX(3px); filter: brightness(1.08); }
+        .admin-dashboard #dwDatePicker, .admin-dashboard #trxDatePicker {
+            border-color: var(--dash-line) !important;
+            border-radius: 10px !important;
+            background: rgba(9, 14, 29, .48);
+            color: #c6cde1;
+            font-size: 12px;
+        }
+        .admin-dashboard #dwChartArea, .admin-dashboard #transactionChartArea { min-height: 300px; }
+        .admin-dashboard canvas { max-height: 280px; }
+        @media (max-width: 767.98px) {
+            .admin-dashboard__hero { align-items: flex-start; flex-direction: column; border-radius: 17px; }
+            .admin-dashboard__hero-meta { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+            .admin-dashboard__date { white-space: normal; }
+            .admin-dashboard .widget-seven { min-height: 100px; }
+            .admin-dashboard #dwChartArea, .admin-dashboard #transactionChartArea { min-height: 250px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .admin-dashboard .widget-seven, .admin-dashboard .widget-card { transition: none; }
         }
     </style>
 @endpush
