@@ -342,6 +342,42 @@ class CoinVendorController extends Controller
         return back()->withNotify([['success', 'Your payment details were saved encrypted.']]);
     }
 
+    // Mirrors SupportAgentController::contactSettingsUpdate() - each channel keeps its own
+    // {enabled, value} pair, and a blank submitted value falls back to whatever was already
+    // stored, so toggling a channel off and back on later restores it instead of silently
+    // wiping it.
+    public function updateContactMethods(Request $request)
+    {
+        $vendor = $this->activeVendor();
+        $data = $request->validate([
+            'whatsapp_enabled' => ['nullable', 'boolean'],
+            'whatsapp_value' => ['required_if:whatsapp_enabled,1', 'nullable', 'string', 'max:40'],
+            'telegram_enabled' => ['nullable', 'boolean'],
+            'telegram_value' => ['required_if:telegram_enabled,1', 'nullable', 'string', 'max:60'],
+            'phone_enabled' => ['nullable', 'boolean'],
+            'phone_value' => ['required_if:phone_enabled,1', 'nullable', 'string', 'max:40'],
+            'email_enabled' => ['nullable', 'boolean'],
+            'email_value' => ['required_if:email_enabled,1', 'nullable', 'email', 'max:190'],
+        ], [], [
+            'whatsapp_value' => 'WhatsApp number', 'telegram_value' => 'Telegram handle',
+            'phone_value' => 'Phone number', 'email_value' => 'Email address',
+        ]);
+
+        $existing = $vendor->contact_methods ?? [];
+        $methods = [];
+        foreach (['whatsapp', 'telegram', 'phone', 'email'] as $channel) {
+            $newValue = trim((string) ($data[$channel . '_value'] ?? ''));
+            $methods[$channel] = [
+                'enabled' => $request->boolean($channel . '_enabled'),
+                'value' => $newValue !== '' ? $newValue : ($existing[$channel]['value'] ?? ''),
+            ];
+        }
+        $vendor->contact_methods = $methods;
+        $vendor->save();
+
+        return back()->withNotify([['success', 'Your contact methods were updated.']]);
+    }
+
     public function resign()
     {
         $vendor = $this->activeVendor();

@@ -169,6 +169,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('selling', 'updateSelling')->name('selling');
                 Route::post('rate', 'updateRate')->name('rate');
                 Route::post('payment-methods', 'updatePaymentMethods')->name('payment-methods');
+                Route::post('contact-methods', 'updateContactMethods')->name('contact-methods');
                 Route::post('resign', 'resign')->name('resign');
                 Route::post('listings/{listing}/claim', 'claimListing')->whereNumber('listing')->middleware('throttle:10,1')->name('listings.claim');
                 Route::post('buy', 'buyFromVendor')->middleware('throttle:10,1')->name('buy');

@@ -27,6 +27,30 @@
                 @endif
                 <div class="coin-warning-strip"><i class="ph-fill ph-shield-warning"></i> @lang('Never share your password, payment card number, or verification code in chat.')</div>
 
+                @if($counterparty)
+                    @php($cm = $counterparty['contact_methods'] ?? null)
+                    <section class="coin-contact-card" aria-label="@lang('Trade partner contact details')">
+                        <div class="coin-contact-card__identity">
+                            <span class="coin-contact-card__avatar">
+                                @if($counterparty['avatar'])<img src="{{ $counterparty['avatar'] }}" alt="">@else<i class="ph-fill ph-user-circle"></i>@endif
+                                @if($counterparty['verified'])<span class="coin-contact-card__badge" title="@lang('Verified')"><i class="ph-fill ph-seal-check"></i></span>@endif
+                            </span>
+                            <div>
+                                <span class="coin-contact-card__name">{{ $counterparty['name'] }}</span>
+                                <span class="coin-contact-card__role">{{ __($counterparty['role']) }}</span>
+                            </div>
+                        </div>
+                        <div class="coin-contact-card__channels">
+                            @if(is_array($cm))
+                                @if(!empty($cm['whatsapp']['enabled']) && !empty($cm['whatsapp']['value']))<a href="https://wa.me/{{ preg_replace('/\D/', '', $cm['whatsapp']['value']) }}" target="_blank" rel="noopener" class="coin-contact-card__channel"><i class="ph-fill ph-whatsapp-logo"></i> @lang('WhatsApp')</a>@endif
+                                @if(!empty($cm['telegram']['enabled']) && !empty($cm['telegram']['value']))<a href="https://t.me/{{ ltrim($cm['telegram']['value'], '@') }}" target="_blank" rel="noopener" class="coin-contact-card__channel"><i class="ph-fill ph-telegram-logo"></i> @lang('Telegram')</a>@endif
+                                @if(!empty($cm['phone']['enabled']) && !empty($cm['phone']['value']))<a href="tel:{{ $cm['phone']['value'] }}" class="coin-contact-card__channel"><i class="ph-fill ph-phone"></i> @lang('Call')</a>@endif
+                                @if(!empty($cm['email']['enabled']) && !empty($cm['email']['value']))<a href="mailto:{{ $cm['email']['value'] }}" class="coin-contact-card__channel"><i class="ph-fill ph-envelope-simple"></i> @lang('Email')</a>@endif
+                            @endif
+                        </div>
+                    </section>
+                @endif
+
                 <div class="coin-section">
                     <div class="coin-trade-actions coin-trade-sticky-actions">
                         @if($trade->status === 'pending' && $trade->coin_buyer_type === 'user' && (int)$trade->coin_buyer_id === auth()->id())
@@ -76,6 +100,20 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .coin-contact-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px;padding:14px 16px;border:1px solid var(--nocturne-line,rgba(150,165,210,.16));border-radius:16px;background:rgba(8,12,27,.28)}
+        .coin-contact-card__identity{display:flex;align-items:center;gap:12px;min-width:0}
+        .coin-contact-card__avatar{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:var(--nocturne-raised,#232a47);color:var(--nocturne-muted,#838bb4);font-size:22px;overflow:hidden}
+        .coin-contact-card__avatar img{width:100%;height:100%;object-fit:cover}
+        .coin-contact-card__badge{position:absolute;right:-2px;bottom:-2px;display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--nocturne-green,#00ef87);color:#063b29;font-size:11px}
+        .coin-contact-card__name{display:block;color:var(--nocturne-text,#f5f6ff);font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .coin-contact-card__role{display:block;margin-top:1px;color:var(--nocturne-muted,#838bb4);font-size:12px;font-weight:700}
+        .coin-contact-card__channels{display:flex;flex-wrap:wrap;gap:8px}
+        .coin-contact-card__channel{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 13px;border:1px solid var(--nocturne-line,rgba(150,165,210,.16));border-radius:11px;background:var(--nocturne-raised,#232a47);color:var(--nocturne-text,#f5f6ff);text-decoration:none;font-size:12.5px;font-weight:700}
+        .coin-contact-card__channel:hover{border-color:var(--nocturne-green,#00ef87);color:var(--nocturne-green,#00ef87)}
+        @media(max-width:560px){.coin-contact-card{flex-direction:column;align-items:flex-start}.coin-contact-card__channels{width:100%}.coin-contact-card__channel{flex:1 1 auto;justify-content:center}}
+    </style>
 
     <script>
     (function(){

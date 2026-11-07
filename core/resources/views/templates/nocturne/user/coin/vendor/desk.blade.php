@@ -53,6 +53,41 @@
                 <div class="coin-section">
                     <div class="coin-section__head">
                         <div>
+                            <h2>@lang('Contact methods')</h2>
+                            <p>@lang('Let buyers reach you directly, in addition to in-app trade chat. Turn a channel on or off any time - its value is kept even while off.')</p>
+                        </div>
+                        <span class="coin-section__icon"><i class="ph-fill ph-chats-circle"></i></span>
+                    </div>
+                    <form method="post" action="{{ route('user.coin-vendor.contact-methods') }}" class="coin-contact-form">
+                        @csrf
+                        @php($contactMethods = $vendor->contact_methods ?? [])
+                        @foreach([
+                            ['key' => 'whatsapp', 'icon' => 'ph-whatsapp-logo', 'label' => 'WhatsApp', 'placeholder' => 'e.g. +2348012345678'],
+                            ['key' => 'telegram', 'icon' => 'ph-telegram-logo', 'label' => 'Telegram', 'placeholder' => 'e.g. @yourusername'],
+                            ['key' => 'phone', 'icon' => 'ph-phone', 'label' => 'Phone (call)', 'placeholder' => 'e.g. +2348012345678'],
+                            ['key' => 'email', 'icon' => 'ph-envelope-simple', 'label' => 'Email', 'placeholder' => 'e.g. you@example.com'],
+                        ] as $channel)
+                            @php($enabled = old($channel['key'] . '_enabled', $contactMethods[$channel['key']]['enabled'] ?? false))
+                            @php($value = old($channel['key'] . '_value', $contactMethods[$channel['key']]['value'] ?? ''))
+                            <div class="coin-contact-channel">
+                                <span class="coin-contact-channel__icon"><i class="ph-fill {{ $channel['icon'] }}"></i></span>
+                                <div class="coin-field coin-field--grow">
+                                    <label for="vendor-{{ $channel['key'] }}-value">{{ $channel['label'] }}</label>
+                                    <input id="vendor-{{ $channel['key'] }}-value" type="text" name="{{ $channel['key'] }}_value" value="{{ $value }}" placeholder="{{ $channel['placeholder'] }}" @if(!$enabled) disabled @endif>
+                                </div>
+                                <label class="coin-contact-toggle">
+                                    <input type="checkbox" name="{{ $channel['key'] }}_enabled" value="1" class="coin-contact-toggle__input" data-target="vendor-{{ $channel['key'] }}-value" @checked($enabled)>
+                                    <span class="coin-contact-toggle__switch"></span>
+                                </label>
+                            </div>
+                        @endforeach
+                        <button type="submit" class="coin-btn coin-btn--primary" style="margin-top:8px">@lang('Save contact methods')</button>
+                    </form>
+                </div>
+
+                <div class="coin-section">
+                    <div class="coin-section__head">
+                        <div>
                             <h2>@lang('Payment methods')</h2>
                             <p>@lang('Details are encrypted and may be shared with your trade partner from the trade chat.')</p>
                         </div>
@@ -167,7 +202,28 @@
         .coin-pm-errors{margin:0 0 12px;padding:12px 14px;border:1px solid rgba(255,105,130,.3);border-radius:12px;background:rgba(255,105,130,.08);color:#ffd8df;font-size:12px}
         .coin-pm-errors strong{display:block;margin-bottom:5px}.coin-pm-errors ul{margin:0;padding-left:18px}
         @media(max-width:700px){.coin-pm-head{grid-template-columns:minmax(0,1fr) 40px}.coin-pm-head>.coin-field:first-child{grid-column:1/-1}.coin-pm-fields{grid-template-columns:minmax(0,1fr)}.coin-pm-actions .coin-btn{flex:1 1 100%;justify-content:center}}
+        .coin-contact-form{display:grid;gap:12px}
+        .coin-contact-channel{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--nocturne-line,rgba(150,165,210,.16));border-radius:14px;background:rgba(8,12,27,.28)}
+        .coin-contact-channel__icon{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:rgba(0,239,135,.1);color:var(--nocturne-green,#00ef87);font-size:18px}
+        .coin-contact-channel .coin-field{margin:0}
+        .coin-contact-toggle{position:relative;flex:0 0 auto;display:inline-block;width:42px;height:24px}
+        .coin-contact-toggle__input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+        .coin-contact-toggle__switch{position:absolute;inset:0;border-radius:999px;background:rgba(150,165,210,.25);transition:background .15s ease}
+        .coin-contact-toggle__switch::before{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s ease}
+        .coin-contact-toggle__input:checked + .coin-contact-toggle__switch{background:var(--nocturne-green,#00ef87)}
+        .coin-contact-toggle__input:checked + .coin-contact-toggle__switch::before{transform:translateX(18px)}
+        @media(max-width:700px){.coin-contact-channel{flex-wrap:wrap}}
     </style>
+    <script>
+        (() => {
+            document.querySelectorAll('.coin-contact-toggle__input').forEach((toggle) => {
+                toggle.addEventListener('change', () => {
+                    const input = document.getElementById(toggle.dataset.target);
+                    if (input) input.disabled = !toggle.checked;
+                });
+            });
+        })();
+    </script>
     <script>
         (() => {
             const list = document.getElementById('coin-pm-list');

@@ -18,6 +18,7 @@ class CoinVendor extends Model
         'reliability_score' => 'decimal:2',
         'encrypted_payment_methods' => 'encrypted:array',
         'linked_user_ids' => 'encrypted:array',
+        'contact_methods' => 'array',
     ];
 
     public function user() { return $this->belongsTo(User::class); }

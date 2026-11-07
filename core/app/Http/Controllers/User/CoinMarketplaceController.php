@@ -193,8 +193,58 @@ class CoinMarketplaceController extends Controller
             ? CoinVendor::where('user_id', auth()->id())->where('status', 'active')->first()
             : null;
         $vendorPaymentMethods = $myVendor?->encrypted_payment_methods ?: [];
+        $counterparty = $this->counterpartyContactCard($trade, auth()->id());
 
-        return view('Template::user.coin.trade', compact('pageTitle', 'trade', 'vendorPaymentMethods'));
+        return view('Template::user.coin.trade', compact('pageTitle', 'trade', 'vendorPaymentMethods', 'counterparty'));
+    }
+
+    /**
+     * The trade chat is always available, but a vendor/agent who also set up direct contact
+     * channels (WhatsApp/Telegram/phone/email) should be reachable that way too - this resolves
+     * the OTHER party in the trade (both sides are always type 'user'; whether that user also
+     * happens to be a CoinVendor or a SupportAgent decides whether there's a contact card to
+     * show at all) into the same display shape manual.blade.php already uses for a payment
+     * agent, so the same widget concept now also covers coin marketplace trades.
+     */
+    private function counterpartyContactCard(CoinTrade $trade, int $viewerId): ?array
+    {
+        $counterpartyId = (int) ($trade->coin_seller_id == $viewerId ? $trade->coin_buyer_id : $trade->coin_seller_id);
+        if (!$counterpartyId) return null;
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('coin_vendors')) {
+            $vendor = CoinVendor::where('user_id', $counterpartyId)->first();
+            if ($vendor && $this->hasAnyContactChannel($vendor->contact_methods)) {
+                return [
+                    'name' => $vendor->user?->username ?? 'Vendor',
+                    'role' => 'Coin Vendor',
+                    'avatar' => $vendor->user?->avatarUrl(),
+                    'verified' => true, // every active CoinVendor is considered verified - see WinxPayDirectory::forBuyer()
+                    'contact_methods' => $vendor->contact_methods,
+                ];
+            }
+        }
+
+        $agent = SupportAgent::where('user_id', $counterpartyId)->where('is_active', true)->first();
+        if ($agent && $this->hasAnyContactChannel($agent->contact_methods)) {
+            return [
+                'name' => $agent->name,
+                'role' => 'Support Agent',
+                'avatar' => $agent->photo ? asset('assets/images/support-agents/' . basename($agent->photo)) : null,
+                'verified' => (bool) $agent->is_verified,
+                'contact_methods' => $agent->contact_methods,
+            ];
+        }
+
+        return null;
+    }
+
+    private function hasAnyContactChannel($contactMethods): bool
+    {
+        if (!is_array($contactMethods)) return false;
+        foreach ($contactMethods as $method) {
+            if (!empty($method['enabled']) && !empty($method['value'])) return true;
+        }
+        return false;
     }
 
     public function claimPayment(Request $request, int $tradeId)
