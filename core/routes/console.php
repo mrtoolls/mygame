@@ -11,6 +11,7 @@ Schedule::command('coin-vendors:cleanup-application-data')->dailyAt('03:30')->wi
 Schedule::command('coin-marketplace:sweep-payment-windows')->everyMinute()->withoutOverlapping();
 Schedule::command('coin-marketplace:sweep-confirmation-windows')->everyMinute()->withoutOverlapping();
 Schedule::command('fantasy-football:tick')->everyMinute()->withoutOverlapping();
+Schedule::command('table-games:announce-new-tables')->everyMinute()->withoutOverlapping();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

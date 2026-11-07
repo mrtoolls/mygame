@@ -103,6 +103,11 @@ class TableGameService
             ];
             if ($this->hasColumn('table_game_players', 'currency_id')) $playerData['currency_id'] = $lockedUser->currency_id;
             TableGamePlayer::create($playerData);
+            if (Schema::hasTable('table_game_announcement_queue')) {
+                DB::table('table_game_announcement_queue')->insert([
+                    'table_game_id' => $table->id, 'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
             return $table->fresh(['players.user']);
         }, 3);
     }

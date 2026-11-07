@@ -26,7 +26,9 @@ $app = require dirname(__DIR__) . '/bootstrap/app.php';
 $app->make(ConsoleKernel::class)->bootstrap();
 
 Schema::create('users', function (Blueprint $table) {
-    $table->id(); $table->string('username'); $table->string('fullname')->nullable(); $table->decimal('balance', 28, 8)->default(0); $table->unsignedBigInteger('currency_id')->nullable(); $table->timestamps();
+    $table->id(); $table->string('username'); $table->string('fullname')->nullable(); $table->decimal('balance', 28, 8)->default(0); $table->unsignedBigInteger('currency_id')->nullable();
+    $table->tinyInteger('status')->default(1); $table->tinyInteger('ev')->default(1); $table->tinyInteger('sv')->default(1);
+    $table->timestamps();
 });
 Schema::create('admins', function (Blueprint $table) { $table->id(); $table->timestamps(); });
 Schema::create('transactions', function (Blueprint $table) {
@@ -67,6 +69,7 @@ Schema::create('notification_templates', function (Blueprint $table) {
     $table->text('shortcodes')->nullable(); $table->timestamps();
 });
 (require dirname(__DIR__) . '/database/migrations/2026_11_07_000001_create_in_app_notification_channel.php')->up();
+(require dirname(__DIR__) . '/database/migrations/2026_11_07_000002_create_table_game_announcement_queue.php')->up();
 
 $insertUser = static function (string $username, string $balance): User {
     $id = DB::table('users')->insertGetId(['username' => $username, 'fullname' => $username, 'balance' => $balance, 'currency_id' => 1, 'created_at' => now(), 'updated_at' => now()]);
@@ -146,6 +149,40 @@ check($failures, $pass, 'Coin-mode: winner got exactly one GAME_WIN notification
 check($failures, $pass, 'Coin-mode: loser got exactly one GAME_LOSS notification', UserNotification::where('user_id', $coinLoser->id)->where('type', 'GAME_LOSS')->count() === 1);
 check($failures, $pass, 'Coin-mode: amount formatted in Coins, not real currency', $coinWinNotif && str_contains($coinWinNotif->message, 'Coins') && !str_contains($coinWinNotif->message, 'USD'));
 fwrite(STDOUT, "Coin-mode win/loss: notifications fire the same way, formatted in Coins.\n");
+
+// ---------------------------------------------------------------------------
+// 4. New live table: creating a table queues an announcement row, and the scheduled command
+//    notifies every OTHER active user (not the creator) in-app, resuming correctly across ticks.
+// ---------------------------------------------------------------------------
+$nlCreator = $insertUser('nl_creator', '200.00000000');
+$others = [];
+for ($i = 0; $i < 5; $i++) $others[] = $insertUser('nl_bystander_' . $i, '0.00000000');
+
+$queuedBefore = DB::table('table_game_announcement_queue')->count();
+$nlTable = $service->create($nlCreator, 'tic_tac_toe', 2, '0', 'nl_create0001');
+check($failures, $pass, 'A table_game_announcement_queue row was queued on create()', DB::table('table_game_announcement_queue')->count() === $queuedBefore + 1);
+
+$reflectionBatch = new ReflectionClass(\App\Console\Commands\AnnounceNewLiveTables::class);
+$batchSize = $reflectionBatch->getConstant('BATCH_SIZE');
+check($failures, $pass, 'Sanity: test has fewer bystanders than one batch (single-tick completion expected)', count($others) < $batchSize);
+
+\Illuminate\Support\Facades\Artisan::call('table-games:announce-new-tables');
+
+// Earlier sections (win/loss, draw, coin-mode) also each created a table, which queues its own
+// announcement row too - the command just processed all of them in this one tick. Scope every
+// assertion here to nlTable's own notification specifically (by its message content), not just
+// "any NEW_LIVE_TABLE row", since every one of these bystanders now legitimately has several.
+$nlMessage = 'nl_creator just opened a Tic tac toe table.';
+check($failures, $pass, 'Every bystander got a NEW_LIVE_TABLE notification for THIS table', UserNotification::whereIn('user_id', array_map(fn ($u) => $u->id, $others))->where('type', 'NEW_LIVE_TABLE')->where('message', $nlMessage)->count() === count($others));
+check($failures, $pass, 'The creator did NOT get notified about their own table', UserNotification::where('user_id', $nlCreator->id)->where('type', 'NEW_LIVE_TABLE')->where('message', $nlMessage)->count() === 0);
+check($failures, $pass, 'Queue row marked completed after a single tick (bystander count under batch size)', DB::table('table_game_announcement_queue')->where('table_game_id', $nlTable->id)->whereNotNull('completed_at')->exists());
+check($failures, $pass, 'NEW_LIVE_TABLE notification mentions the creator and game', UserNotification::where('user_id', $others[0]->id)->where('message', $nlMessage)->exists());
+
+// Re-running the command is a no-op once every row is already completed (no duplicate notifications).
+$beforeRerun = UserNotification::where('type', 'NEW_LIVE_TABLE')->count();
+\Illuminate\Support\Facades\Artisan::call('table-games:announce-new-tables');
+check($failures, $pass, 'Re-running the announce command after completion does not duplicate notifications', UserNotification::where('type', 'NEW_LIVE_TABLE')->count() === $beforeRerun);
+fwrite(STDOUT, "New live table: queued on create(), fanned out in-app to every other active user via the scheduled command, creator excluded, idempotent on re-run.\n");
 
 // ---------------------------------------------------------------------------
 // Report

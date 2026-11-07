@@ -89,9 +89,12 @@ return new class extends Migration {
      * asked to reach email (a new live table opening) - a win/loss or a chat message firing an
      * email per event would be exactly the kind of inbox spam nobody wants, and is better left as
      * an explicit admin opt-in than a default this migration forces onto every fresh install.
-     * Admin announcements are NOT a new act here - that feature already exists (ManageUsersController
-     * ::sendNotificationAll/Single) and always targets the pre-existing 'DEFAULT' act row; see
-     * backfillDefaultTemplate() below for how that row gains in-app support instead.
+     * Admin announcements and coin marketplace events (buy requests/responses, payment claimed,
+     * trade completed, disputes) are NOT new acts here - those features already exist (respectively
+     * ManageUsersController::sendNotificationAll/Single, and CoinMarketplace's own
+     * notifyVendorParty()/notifyVendorTradeParty() calls) and always target the pre-existing
+     * 'DEFAULT' act row with a runtime subject/message; see backfillDefaultTemplate() below for how
+     * that row gains in-app support, which both features automatically inherit for free.
      */
     private function seedTemplates(): void
     {
@@ -122,24 +125,8 @@ return new class extends Migration {
                 'shortcodes' => json_encode(['sender' => 'Sender name', 'preview' => 'Message preview']),
             ],
             [
-                'name' => 'Coin Purchase Request', 'act' => 'COIN_BUY_REQUEST', 'subject' => 'New coin purchase request',
-                'email_status' => 0, 'email_body' => '{{buyer}} wants to buy {{amount}} coins from you.',
-                'sms_status' => 0, 'sms_body' => '{{buyer}} wants to buy {{amount}} coins.',
-                'push_status' => 1, 'push_title' => 'New purchase request', 'push_body' => '{{buyer}} wants to buy {{amount}} coins from you.',
-                'inapp_status' => 1, 'inapp_title' => 'New purchase request', 'inapp_body' => '{{buyer}} wants to buy {{amount}} coins from you.',
-                'shortcodes' => json_encode(['buyer' => 'Buyer username', 'amount' => 'Coin amount']),
-            ],
-            [
-                'name' => 'Coin Purchase Response', 'act' => 'COIN_BUY_RESPONSE', 'subject' => 'Update on your coin purchase',
-                'email_status' => 0, 'email_body' => '{{seller}} {{status}} your request to buy {{amount}} coins.',
-                'sms_status' => 0, 'sms_body' => '{{seller}} {{status}} your coin purchase.',
-                'push_status' => 1, 'push_title' => 'Purchase update', 'push_body' => '{{seller}} {{status}} your request to buy {{amount}} coins.',
-                'inapp_status' => 1, 'inapp_title' => 'Purchase update', 'inapp_body' => '{{seller}} {{status}} your request to buy {{amount}} coins.',
-                'shortcodes' => json_encode(['seller' => 'Seller name', 'amount' => 'Coin amount', 'status' => 'accepted/declined/completed']),
-            ],
-            [
                 'name' => 'New Live Table', 'act' => 'NEW_LIVE_TABLE', 'subject' => 'A new live table just opened',
-                'email_status' => 1, 'email_body' => '{{creator}} just opened a {{game}} table. Join now at {{site_name}}.',
+                'email_status' => 0, 'email_body' => '{{creator}} just opened a {{game}} table. Join now at {{site_name}}.',
                 'sms_status' => 0, 'sms_body' => 'A new {{game}} table just opened.',
                 'push_status' => 1, 'push_title' => 'New live table', 'push_body' => '{{creator}} just opened a {{game}} table.',
                 'inapp_status' => 1, 'inapp_title' => 'New live table', 'inapp_body' => '{{creator}} just opened a {{game}} table.',
@@ -165,6 +152,6 @@ return new class extends Migration {
                 $table->dropColumn(['inapp_status', 'inapp_title', 'inapp_body']);
             });
         }
-        DB::table('notification_templates')->whereIn('act', ['GAME_WIN', 'GAME_LOSS', 'NEW_CHAT_MESSAGE', 'COIN_BUY_REQUEST', 'COIN_BUY_RESPONSE', 'NEW_LIVE_TABLE'])->delete();
+        DB::table('notification_templates')->whereIn('act', ['GAME_WIN', 'GAME_LOSS', 'NEW_CHAT_MESSAGE', 'NEW_LIVE_TABLE'])->delete();
     }
 };

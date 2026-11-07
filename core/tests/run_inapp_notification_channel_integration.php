@@ -89,7 +89,9 @@ check('GAME_WIN inapp enabled', (bool) $gameWin->inapp_status === true);
 check('GAME_WIN push enabled', (bool) $gameWin->push_status === true);
 check('GAME_WIN email NOT enabled by default (avoid spam)', (bool) $gameWin->email_status === false);
 $newTable = NotificationTemplate::where('act', 'NEW_LIVE_TABLE')->first();
-check('NEW_LIVE_TABLE email enabled by default (explicitly requested)', (bool) $newTable->email_status === true);
+check('NEW_LIVE_TABLE inapp enabled', (bool) $newTable->inapp_status === true);
+check('NEW_LIVE_TABLE push enabled', (bool) $newTable->push_status === true);
+check('NEW_LIVE_TABLE email NOT enabled by default (admin chose in-app+push only, no mass email)', (bool) $newTable->email_status === false);
 
 // 4) Re-running the migration's seed logic is idempotent (defensive-migration convention).
 $countBefore = NotificationTemplate::count();
