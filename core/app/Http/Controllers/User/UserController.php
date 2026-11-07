@@ -16,6 +16,7 @@ use App\Models\Game;
 use App\Models\GameLog;
 use App\Models\NotificationLog;
 use App\Models\ArenaNotification;
+use App\Models\UserNotification;
 use App\Models\Referral;
 use App\Models\Transaction;
 use App\Models\User;
@@ -416,8 +417,9 @@ class UserController extends Controller {
                 $query->whereNull('user_read')->orWhere('user_read', 0);
             })->count();
         $arenaUnread = ArenaNotification::where('user_id', $userId)->unread()->count();
+        $feedUnread  = UserNotification::where('user_id', $userId)->unread()->count();
 
-        return response()->json(['count' => $pushUnread + $arenaUnread]);
+        return response()->json(['count' => $pushUnread + $arenaUnread + $feedUnread]);
     }
 
     public function notificationsReadAll()
@@ -426,8 +428,42 @@ class UserController extends Controller {
             ->where('sender', 'firebase')
             ->update(['user_read' => 1]);
         ArenaNotification::where('user_id', auth()->id())->unread()->update(['read_at' => now()]);
+        UserNotification::where('user_id', auth()->id())->unread()->update(['read_at' => now()]);
 
         return response()->json(['ok' => true, 'count' => 0]);
+    }
+
+    /** The bell dropdown's feed - the newest UserNotification rows for the logged-in user. */
+    public function notificationsList()
+    {
+        $notifications = UserNotification::where('user_id', auth()->id())
+            ->latest()
+            ->limit(20)
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id'           => $n->id,
+                    'type'         => $n->type,
+                    'title'        => $n->title,
+                    'message'      => $n->message,
+                    'icon'         => $n->icon ?: 'bell-ringing',
+                    'url'          => $n->url,
+                    'actor_name'   => $n->actor_name,
+                    'actor_avatar' => $n->actor_avatar,
+                    'is_read'      => (bool) $n->read_at,
+                    'time'         => $n->created_at->diffForHumans(),
+                ];
+            });
+
+        return response()->json(['notifications' => $notifications]);
+    }
+
+    /** Marks a single bell notification read - fired when the user clicks it, right before it navigates them to its url. */
+    public function notificationRead($id)
+    {
+        UserNotification::where('user_id', auth()->id())->where('id', $id)->update(['read_at' => now()]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function downloadAttachment($fileHash) {

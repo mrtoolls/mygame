@@ -72,7 +72,9 @@ Route::middleware('auth')->name('user.')->group(function () {
 
                 Route::post('add-device-token', 'addDeviceToken')->name('add.device.token');
                 Route::get('notifications/badge', 'notificationBadge')->name('notifications.badge');
+                Route::get('notifications/list', 'notificationsList')->name('notifications.list');
                 Route::post('notifications/read-all', 'notificationsReadAll')->name('notifications.read.all');
+                Route::post('notifications/{id}/read', 'notificationRead')->name('notifications.read.single');
 
                 Route::get('game/log', 'gameLog')->name('game.log');
                 Route::get('game/demo-log', 'demoGameLog')->name('game.log.demo');
