@@ -468,8 +468,8 @@
         }
 
         .admin-dashboard {
-            --dash-ink: #f4f7ff;
-            --dash-muted: #909bbd;
+            --dash-ink: #202c43;
+            --dash-muted: #73809a;
             --dash-line: rgba(143, 157, 202, .16);
             --dash-panel: linear-gradient(145deg, rgba(24, 31, 57, .96), rgba(15, 20, 39, .98));
             color: var(--dash-ink);
@@ -513,7 +513,7 @@
         .admin-dashboard__eyebrow i { font-size: 16px; }
         .admin-dashboard__hero h1 {
             margin: 0;
-            color: var(--dash-ink);
+            color: #f4f7ff;
             font-size: clamp(25px, 3vw, 34px);
             font-weight: 600;
             letter-spacing: -.04em;
@@ -521,7 +521,7 @@
         .admin-dashboard__hero p {
             max-width: 560px;
             margin: 8px 0 0;
-            color: var(--dash-muted);
+            color: #abb7d5;
             font-size: 14px;
             line-height: 1.65;
         }
@@ -555,11 +555,12 @@
         }
         .admin-dashboard .card {
             height: 100%;
-            overflow: hidden;
+            overflow: visible;
             border: 1px solid var(--dash-line);
             border-radius: 18px;
-            background: var(--dash-panel);
-            box-shadow: 0 12px 30px rgba(2, 5, 17, .13);
+            background: #fff;
+            color: var(--dash-ink);
+            box-shadow: 0 12px 30px rgba(27, 43, 76, .08);
         }
         .admin-dashboard .card-body { padding: clamp(18px, 2vw, 24px); }
         .admin-dashboard .card-title {
@@ -582,23 +583,39 @@
             box-shadow: 0 16px 30px rgba(2, 5, 17, .2);
         }
         .admin-dashboard .widget-seven__content-title {
-            color: rgba(242, 246, 255, .8);
+            color: #53617b;
             font-weight: 500;
         }
         .admin-dashboard .widget-seven__content-amount { font-weight: 600; }
         .admin-dashboard .widget-card-wrapper { gap: 10px; }
         .admin-dashboard .widget-card {
             min-height: 76px;
-            border: 1px solid rgba(255,255,255,.08);
+            border: 1px solid #e8edf5;
             border-radius: 14px;
+            background-color: #f8fafd !important;
             transition: transform .18s ease, filter .18s ease;
         }
-        .admin-dashboard .widget-card:hover { transform: translateX(3px); filter: brightness(1.08); }
+        .admin-dashboard .widget-card:hover { transform: translateX(3px); filter: brightness(.98); }
+        .admin-dashboard .widget-card-amount { color: #24324b; font-weight: 600; }
+        .admin-dashboard .widget-card-title { color: #73809a; }
+        .admin-dashboard .alert--success {
+            border: 1px solid #b7ebce;
+            border-radius: 14px;
+            background: #eaf9f0;
+            color: #185b39;
+        }
+        .admin-dashboard .alert--danger {
+            border: 1px solid #f1c4c4;
+            border-radius: 14px;
+            background: #fff0f0;
+            color: #7c2929;
+        }
+        .admin-dashboard .alert .btn { flex: 0 0 auto; }
         .admin-dashboard #dwDatePicker, .admin-dashboard #trxDatePicker {
             border-color: var(--dash-line) !important;
             border-radius: 10px !important;
-            background: rgba(9, 14, 29, .48);
-            color: #c6cde1;
+            background: #f6f8fc;
+            color: #44526b;
             font-size: 12px;
         }
         .admin-dashboard #dwChartArea, .admin-dashboard #transactionChartArea { min-height: 300px; }
