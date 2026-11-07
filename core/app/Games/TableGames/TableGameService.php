@@ -956,7 +956,21 @@ class TableGameService
         return $this->schemaColumnCache[$key] ??= Schema::hasColumn($table, $column);
     }
 
+    /**
+     * Thin wrapper around doSettle() so every call site (there are three) gets GAME_WIN/GAME_LOSS
+     * notifications for free without threading notify() calls through the intricate multi-winner
+     * bcmath payout logic below. previouslySettledIds snapshots who was already settled before
+     * this call, so a redundant settle() on an already-settled table (doSettle()'s own
+     * settlement_key guards make that a safe no-op financially) doesn't re-notify anyone.
+     */
     private function settle(TableGame $table, ?int $winnerSeat, ?array $winnerSeats = null): void
+    {
+        $previouslySettledIds = $table->players()->whereNotNull('settlement_key')->pluck('id')->all();
+        $this->doSettle($table, $winnerSeat, $winnerSeats);
+        $this->notifySettlementOutcomes($table, $previouslySettledIds);
+    }
+
+    private function doSettle(TableGame $table, ?int $winnerSeat, ?array $winnerSeats = null): void
     {
         if (bccomp((string) $table->stake, '0', 8) === 0) return;
         $players = $table->players()->lockForUpdate()->get();
@@ -1013,6 +1027,47 @@ class TableGameService
             ]);
         }
         $this->markLosers($table, $players, [$winner->user_id]);
+    }
+
+    /**
+     * Fires GAME_WIN/GAME_LOSS for every player newly settled by this settle() call (a draw/
+     * refund is neither, so it stays silent - matches the seeded templates, which only cover win
+     * and loss). Reuses the exact amount-formatting logic snapshot() already uses for the
+     * win/loss popup, so the notification text matches what the player sees on screen.
+     */
+    private function notifySettlementOutcomes(TableGame $table, array $previouslySettledIds): void
+    {
+        $players = $table->players()
+            ->whereIn('settlement_type', ['payout', 'loss'])
+            ->whereNotIn('id', $previouslySettledIds)
+            ->get();
+        if ($players->isEmpty()) return;
+
+        $usedCoins = $this->tableUsedCoinStakes($table, $players);
+        $money = new Money();
+        $gameLabel = ucfirst(str_replace('_', ' ', $table->game_type));
+
+        foreach ($players as $player) {
+            $user = $player->user ?? User::find($player->user_id);
+            if (!$user) continue;
+            $stakeAmount = (string) ($player->wallet_stake ?? $player->stake);
+            $netAmount = $player->settlement_type === 'payout'
+                ? bcsub((string) $player->settlement_amount, $stakeAmount, 8)
+                : bcmul($stakeAmount, '-1', 8);
+            $walletCurrency = $user->walletCurrency;
+            $amountText = $usedCoins
+                ? coinAmountText(ltrim($netAmount, '-'))
+                : ($walletCurrency ? $walletCurrency->formatMinor($money->toMinor(ltrim($netAmount, '-'), (int) $walletCurrency->decimals), true) : ltrim($netAmount, '-'));
+            $opponent = $table->players->firstWhere('user_id', '!=', $player->user_id)?->user?->username ?? __('the table');
+
+            notify($user, $player->settlement_type === 'payout' ? 'GAME_WIN' : 'GAME_LOSS', [
+                'game'        => $gameLabel,
+                'amount'      => $amountText,
+                'opponent'    => $opponent,
+                'notif_icon'  => $player->settlement_type === 'payout' ? 'trophy' : 'skull',
+                'notif_url'   => route('user.tables.show', $table->id),
+            ], ['push', 'inapp'], false);
+        }
     }
 
     /**
