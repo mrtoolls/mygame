@@ -38,6 +38,7 @@ window.SnookerTable = (function () {
     let lastRenderedVersion = null;
     let lastShotCache = null; // the most recent last_move payload, for "Replay last shot"
     let playing = false;
+    let strikeAnimating = false; // true only during the brief cue pull-back/strike flourish before keyframe playback
     // power starts at 0 deliberately - the shoot button stays disabled until the player actually
     // performs the pull-back gesture (or drags the aim line, which also sets power - see
     // onPointerUp), so a shot is always a deliberate action, never an accidental default-power tap.
@@ -172,14 +173,24 @@ window.SnookerTable = (function () {
         // overflowed off the right edge of the screen. Sizing it explicitly in JS instead: the
         // stage reserves a portrait-shaped box, and the canvas (rotated around its own centre)
         // is sized so that once rotated, it exactly fills that box.
-        const available = Math.min(window.innerWidth - 24, 480); // the visual WIDTH of the rotated table on screen, capped to the viewport
-        const stageHeight = Math.min(window.innerHeight * 0.52, available * 2); // the visual HEIGHT on screen, capped so it doesn't crowd out the HUD/controls
-        stage.style.height = stageHeight + 'px';
+        //
+        // Solve width and height TOGETHER, not height-first: the table's on-screen box keeps a
+        // fixed 2:1 (height:width) ratio once rotated, so start from "use the full available
+        // screen width" and only shrink toward the height budget if that would actually overflow
+        // it. Deriving width from a height-first value (the previous approach) left the table far
+        // narrower than the screen on any tall phone, where the height budget binds before the
+        // width budget does - wasting most of the screen's width.
+        const widthBudget = Math.min(window.innerWidth - 24, 480); // the visual WIDTH of the rotated table on screen, capped to the viewport
+        const heightBudget = window.innerHeight * 0.64; // the visual HEIGHT budget, capped so it doesn't crowd out the HUD/controls
+        let visualWidth = widthBudget;
+        let visualHeight = visualWidth * 2; // fixed 2:1 table ratio
+        if (visualHeight > heightBudget) { visualHeight = heightBudget; visualWidth = visualHeight / 2; }
+        stage.style.height = visualHeight + 'px';
         // The canvas itself is sized and rotated in its OWN (unrotated) coordinate space - once
         // rotated 90deg about its centre, its pre-rotation width becomes the visual height and
-        // vice versa, so we solve for the pre-rotation box that produces the on-screen box above.
-        canvas.style.width = stageHeight + 'px';
-        canvas.style.height = (stageHeight / 2) + 'px'; // keep the table's fixed 2:1 ratio
+        // vice versa, so the pre-rotation box is the swap of the on-screen box solved above.
+        canvas.style.width = visualHeight + 'px';
+        canvas.style.height = visualWidth + 'px';
     }
 
     // ---- HUD / scoreboard --------------------------------------------------------------------------
@@ -297,15 +308,22 @@ window.SnookerTable = (function () {
         // Rail (wood-toned gradient) then cloth (green, radial sheen for a felt-like look).
         const railPad = 26;
         const railGrad = ctx.createLinearGradient(0, tableY - railPad, 0, tableY + TABLE_H * scale + railPad);
-        railGrad.addColorStop(0, '#3a2414'); railGrad.addColorStop(0.5, '#523018'); railGrad.addColorStop(1, '#2c1a0d');
+        railGrad.addColorStop(0, '#4a2e18'); railGrad.addColorStop(0.08, '#6b4322'); railGrad.addColorStop(0.5, '#523018'); railGrad.addColorStop(0.92, '#3a2414'); railGrad.addColorStop(1, '#241408');
         ctx.fillStyle = railGrad;
         roundRect(ctx, tableX - railPad, tableY - railPad, TABLE_W * scale + railPad * 2, TABLE_H * scale + railPad * 2, 18);
         ctx.fill();
 
         const clothGrad = ctx.createRadialGradient(tableX + TABLE_W * scale * 0.5, tableY + TABLE_H * scale * 0.4, 20, tableX + TABLE_W * scale * 0.5, tableY + TABLE_H * scale * 0.5, TABLE_W * scale * 0.6);
-        clothGrad.addColorStop(0, '#0f7a44'); clothGrad.addColorStop(1, '#0a5c33');
+        clothGrad.addColorStop(0, '#118249'); clothGrad.addColorStop(0.65, '#0f7a44'); clothGrad.addColorStop(1, '#0a5733');
         ctx.fillStyle = clothGrad;
         ctx.fillRect(tableX, tableY, TABLE_W * scale, TABLE_H * scale);
+
+        // Inner rail lip: a thin dark seam then a pale highlight where cushion meets cloth - gives
+        // the rail actual thickness/depth instead of reading as a flat painted border.
+        ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = Math.max(1, 2 * scale);
+        ctx.strokeRect(tableX, tableY, TABLE_W * scale, TABLE_H * scale);
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = Math.max(1, 1 * scale);
+        ctx.strokeRect(tableX + 1.5, tableY + 1.5, TABLE_W * scale - 3, TABLE_H * scale - 3);
 
         // Baulk line + D.
         const baulk = toCanvas(BAULK_X, 0);
@@ -313,11 +331,17 @@ window.SnookerTable = (function () {
         ctx.beginPath(); ctx.moveTo(baulk.cx, tableY); ctx.lineTo(baulk.cx, tableY + TABLE_H * scale); ctx.stroke();
         ctx.beginPath(); ctx.arc(baulk.cx, toCanvas(BAULK_X, TABLE_H / 2).cy, D_RADIUS * scale, Math.PI / 2, Math.PI * 1.5); ctx.stroke();
 
-        // Pockets.
+        // Pockets: a radial falloff into black (instead of a flat disc) reads as a real hole with
+        // depth rather than a painted circle, plus a thin rim highlight where the jaw catches light.
         POCKETS.forEach(p => {
             const c = toCanvas(p.x, p.y);
-            ctx.fillStyle = '#05120a';
-            ctx.beginPath(); ctx.arc(c.cx, c.cy, p.r * scale, 0, Math.PI * 2); ctx.fill();
+            const pr = p.r * scale;
+            const pocketGrad = ctx.createRadialGradient(c.cx, c.cy, pr * 0.15, c.cx, c.cy, pr);
+            pocketGrad.addColorStop(0, '#000000'); pocketGrad.addColorStop(0.75, '#060f09'); pocketGrad.addColorStop(1, '#13231a');
+            ctx.fillStyle = pocketGrad;
+            ctx.beginPath(); ctx.arc(c.cx, c.cy, pr, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = Math.max(1, 1.2 * scale);
+            ctx.beginPath(); ctx.arc(c.cx, c.cy, pr - 1, 0, Math.PI * 2); ctx.stroke();
         });
 
         // Placement preview (cue-ball-in-hand).
@@ -343,18 +367,59 @@ window.SnookerTable = (function () {
             ctx.stroke();
         }
 
+        // The cue stick itself: only drawn for the player whose turn it is (nobody else can drag
+        // it, so showing it otherwise would just be a stale, non-interactive leftover), and only
+        // while idle/aiming - playStrikeAnimation()/the strike-animation path draws its own stick
+        // with its own pull-back state during a shot, so the two never run at the same time.
+        if (cueBall && !playing && !strikeAnimating && dragState !== 'cue' && isMyTurn()) {
+            drawCueStick(cueBall, aim.angle, aim.power * STICK_MAX_PULLBACK_MM, 1);
+        }
+
         // Balls, drawn back-to-front by y for a touch of depth (no real 3D, just paint order).
         Object.entries(positions).sort((a, b) => a[1].y - b[1].y).forEach(([id, pos]) => {
             drawBall(toCanvas(pos.x, pos.y), colourOf(id), id === 'cue');
         });
     }
 
+    // Draws a tapered wooden cue stick: tip (with a pale ferrule cap) pulled back from the cue
+    // ball by pullBackMm along the direction OPPOSITE the shot's travel angle, butt further back
+    // still. alpha fades the stick in/out during the strike flourish.
+    const STICK_MAX_PULLBACK_MM = 260;
+    function drawCueStick(cueWorldPos, angle, pullBackMm, alpha) {
+        const c = toCanvas(cueWorldPos.x, cueWorldPos.y);
+        const dirX = Math.cos(angle), dirY = -Math.sin(angle); // ball-travel direction, in canvas space
+        const tipGapPx = (6 + pullBackMm) * c.scale;
+        const tipX = c.cx - dirX * tipGapPx, tipY = c.cy - dirY * tipGapPx;
+        const lengthPx = 480 * c.scale;
+        const buttX = tipX - dirX * lengthPx, buttY = tipY - dirY * lengthPx;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const grad = ctx.createLinearGradient(tipX, tipY, buttX, buttY);
+        grad.addColorStop(0, '#e9cf9e'); grad.addColorStop(0.08, '#eef0f5'); grad.addColorStop(0.16, '#dcbb86');
+        grad.addColorStop(0.7, '#a9713c'); grad.addColorStop(1, '#3f2414');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = Math.max(2.2, 4 * c.scale);
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(buttX, buttY); ctx.stroke();
+        // Ferrule: the small pale cap right at the tip, same visual language real cues use.
+        ctx.fillStyle = '#f2f4f8';
+        ctx.beginPath(); ctx.arc(tipX, tipY, Math.max(1.6, 2.6 * c.scale), 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
     function drawBall(c, colour, isCue) {
         const r = BALL_R * c.scale;
         ctx.save();
-        ctx.beginPath(); ctx.ellipse(c.cx, c.cy + r * 0.85, r * 0.9, r * 0.35, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
+        // Soft contact shadow, a touch bigger/softer than before for more weight/separation from
+        // the cloth - a single hard-edged ellipse read as "sticker on felt" rather than a sphere
+        // actually resting on it.
+        ctx.beginPath(); ctx.ellipse(c.cx, c.cy + r * 0.92, r * 0.95, r * 0.4, 0, 0, Math.PI * 2);
+        const shadowGrad = ctx.createRadialGradient(c.cx, c.cy + r * 0.92, 0, c.cx, c.cy + r * 0.92, r * 0.95);
+        shadowGrad.addColorStop(0, 'rgba(0,0,0,.4)'); shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = shadowGrad; ctx.fill();
 
+        // Base sphere shading, lit from the upper-left.
         const grad = ctx.createRadialGradient(c.cx - r * 0.35, c.cy - r * 0.4, r * 0.1, c.cx, c.cy, r);
         grad.addColorStop(0, lighten(colour, 0.55));
         grad.addColorStop(0.55, colour);
@@ -363,9 +428,27 @@ window.SnookerTable = (function () {
         ctx.fillStyle = grad; ctx.fill();
         if (isCue) { ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1; ctx.stroke(); }
 
+        // Rim light along the lower-right edge - light bouncing up off the cloth is what makes a
+        // glossy sphere read as sitting IN a lit scene rather than a flat painted circle.
+        ctx.save();
+        ctx.beginPath(); ctx.arc(c.cx, c.cy, r, 0, Math.PI * 2); ctx.clip();
+        const rim = ctx.createRadialGradient(c.cx + r * 0.45, c.cy + r * 0.5, r * 0.6, c.cx + r * 0.45, c.cy + r * 0.5, r * 1.05);
+        rim.addColorStop(0, 'rgba(255,255,255,0)'); rim.addColorStop(0.85, 'rgba(255,255,255,0)'); rim.addColorStop(1, lightenAlpha(colour, 0.22));
+        ctx.fillStyle = rim; ctx.beginPath(); ctx.arc(c.cx, c.cy, r, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        // Primary specular highlight (the light source itself) plus a small secondary sparkle -
+        // two highlights of different sizes read as "glossy" far more than one ever does alone.
         ctx.beginPath(); ctx.arc(c.cx - r * 0.32, c.cy - r * 0.35, r * 0.28, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(c.cx - r * 0.1, c.cy - r * 0.08, r * 0.09, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill();
         ctx.restore();
+    }
+    function lightenAlpha(hex, alpha) {
+        const a = hexToRgb(hex), b = { r: 255, g: 255, b: 255 }, amt = 0.6;
+        const r = Math.round(a.r + (b.r - a.r) * amt), g = Math.round(a.g + (b.g - a.g) * amt), bl = Math.round(a.b + (b.b - a.b) * amt);
+        return `rgba(${r},${g},${bl},${alpha})`;
     }
 
     function roundRect(c, x, y, w, h, r) {
@@ -386,7 +469,27 @@ window.SnookerTable = (function () {
     }
 
     // ---- Keyframe playback --------------------------------------------------------------------------
+    // Every shot replay (natural or via the "Replay last shot" button) opens with a brief cue
+    // pull-back/strike flourish before the physics keyframes play - the server doesn't echo the
+    // original angle/power, so the travel angle is derived from the first real displacement the
+    // cue ball shows in its own keyframes (the authoritative source both players already share,
+    // so their local flourishes end up pointing the same way without needing a new field on the
+    // wire), and the pull-back distance is purely cosmetic.
     function playKeyframes(keyframes, events, finalState) {
+        const cueStart = positions.cue;
+        let angle = aim.angle;
+        if (cueStart && keyframes && keyframes.length) {
+            for (let i = 0; i < Math.min(keyframes.length, 20); i++) {
+                const xy = keyframes[i].cue;
+                if (!xy) continue;
+                const dx = xy[0] / 10 - cueStart.x, dy = xy[1] / 10 - cueStart.y;
+                if (dx * dx + dy * dy > 1) { angle = Math.atan2(-dy, dx); break; } // > ~1mm of real movement
+            }
+        }
+        if (!cueStart || strikeAnimating) { startPlayback(); return; }
+        playStrikeAnimation(cueStart, angle, startPlayback);
+
+        function startPlayback() {
         playing = true;
         let frameIndex = 0;
         let eventCursor = 0;
@@ -425,7 +528,41 @@ window.SnookerTable = (function () {
             }
         }
         requestAnimationFrame((t) => { lastTick = t; requestAnimationFrame(step); });
+        } // end startPlayback
     }
+
+    // Brief (~230ms) cue pull-back/forward-strike flourish, purely cosmetic: pulls the stick back
+    // from the cue ball, then snaps it forward to "contact" (playing the strike sound at that
+    // instant), then hands off to onDone (the real physics keyframe playback).
+    function playStrikeAnimation(cueWorldPos, angle, onDone) {
+        strikeAnimating = true;
+        const pullMs = 130, strikeMs = 90;
+        const totalMs = pullMs + strikeMs;
+        const startedAt = performance.now();
+        let struck = false;
+        function tick(now) {
+            const t = now - startedAt;
+            let pullBack;
+            if (t < pullMs) {
+                pullBack = STICK_MAX_PULLBACK_MM * easeOutQuad(t / pullMs);
+            } else {
+                const strikeT = Math.min(1, (t - pullMs) / strikeMs);
+                pullBack = STICK_MAX_PULLBACK_MM * (1 - easeInQuad(strikeT));
+                if (!struck && strikeT >= 0.92) { struck = true; playSound('strike'); vibrate([12]); }
+            }
+            drawFrame();
+            drawCueStick(cueWorldPos, angle, pullBack, 1);
+            if (t < totalMs) {
+                requestAnimationFrame(tick);
+            } else {
+                strikeAnimating = false;
+                onDone();
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+    function easeOutQuad(t) { return 1 - (1 - t) * (1 - t); }
+    function easeInQuad(t) { return t * t; }
 
     function applyKeyframe(frame) {
         Object.entries(frame).forEach(([id, xy]) => {
@@ -436,9 +573,13 @@ window.SnookerTable = (function () {
     }
 
     function fireEventFeedback(event) {
-        if (event.type === 'contact') playSound('contact');
-        else if (event.type === 'cushion') playSound('cushion');
-        else if (event.type === 'pot') { playSound('pot'); vibrate([30, 20, 30]); }
+        // A touch of random intensity variance so a run of several contacts/cushions in one shot
+        // doesn't sound like the exact same sample looping - no speed data comes from the server
+        // per event, so this is cosmetic variety, not a real physics-driven loudness cue.
+        const amt = 0.75 + Math.random() * 0.25;
+        if (event.type === 'contact') playSound('contact', amt);
+        else if (event.type === 'cushion') playSound('cushion', amt);
+        else if (event.type === 'pot') { playSound('pot', 1); vibrate([30, 20, 30]); }
     }
 
     // ---- Controls: aim (drag), power (pull-back), spin (dial), shoot, cue placement --------------
@@ -606,30 +747,68 @@ window.SnookerTable = (function () {
     }
 
     // ---- Sound (synthesised - no external audio files) + haptics -----------------------------------
+    // Every sound is built from a short noise burst (through a bandpass/lowpass filter) layered
+    // with a pitched tone - the noise gives the percussive "click"/"thud" transient real balls and
+    // cushions actually have, which a bare oscillator tone alone can't produce; the tone underneath
+    // gives it a believable pitch. All generated at play time, so there's nothing to load/host.
+    let noiseBuffer = null;
     function ensureAudio() {
         if (audioCtx || muted) return audioCtx;
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        } catch (_) {}
         return audioCtx;
     }
-    function playSound(kind) {
+    function playSound(kind, intensity) {
         if (muted) return;
         const ac = ensureAudio();
         if (!ac) return;
         const now = ac.currentTime;
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        osc.connect(gain); gain.connect(ac.destination);
+        const amt = Math.max(0.35, Math.min(1, intensity ?? 1)); // soft impacts should sound softer, not just shorter
         const presets = {
-            contact: { freq: 820, dur: 0.05, type: 'triangle', vol: 0.22 },
-            cushion: { freq: 340, dur: 0.07, type: 'sine', vol: 0.14 },
-            pot: { freq: 180, dur: 0.18, type: 'sine', vol: 0.3 },
+            strike: { freq: 1500, filterFreq: 2600, filterQ: 1.1, filterType: 'bandpass', dur: 0.1, vol: 0.4, toneType: 'triangle' },
+            contact: { freq: 1100, filterFreq: 2200, filterQ: 1.2, filterType: 'bandpass', dur: 0.07, vol: 0.26, toneType: 'triangle' },
+            cushion: { freq: 220, filterFreq: 450, filterQ: 0.9, filterType: 'lowpass', dur: 0.1, vol: 0.18, toneType: 'sine' },
+            pot: { freq: 190, filterFreq: 900, filterQ: 0.8, filterType: 'lowpass', dur: 0.26, vol: 0.34, toneType: 'sine' },
         };
         const p = presets[kind] || presets.contact;
-        osc.type = p.type; osc.frequency.setValueAtTime(p.freq, now);
-        if (kind === 'pot') osc.frequency.exponentialRampToValueAtTime(70, now + p.dur);
-        gain.gain.setValueAtTime(p.vol, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + p.dur);
+
+        // Noise transient: the percussive "click"/"thud" body of the sound.
+        const noise = ac.createBufferSource();
+        noise.buffer = noiseBuffer;
+        const filter = ac.createBiquadFilter();
+        filter.type = p.filterType; filter.frequency.setValueAtTime(p.filterFreq, now); filter.Q.value = p.filterQ;
+        const noiseGain = ac.createGain();
+        noiseGain.gain.setValueAtTime(p.vol * amt, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + p.dur);
+        noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ac.destination);
+        noise.start(now); noise.stop(now + p.dur + 0.02);
+
+        // Pitched tone underneath, for a believable "what kind of impact was that" cue.
+        const osc = ac.createOscillator();
+        const oscGain = ac.createGain();
+        osc.connect(oscGain); oscGain.connect(ac.destination);
+        osc.type = p.toneType; osc.frequency.setValueAtTime(p.freq, now);
+        if (kind === 'pot') osc.frequency.exponentialRampToValueAtTime(65, now + p.dur);
+        oscGain.gain.setValueAtTime(p.vol * amt * 0.55, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + p.dur);
         osc.start(now); osc.stop(now + p.dur + 0.02);
+
+        // Pot gets a short soft reverb-like tail (a second, quieter/lower echo) for a satisfying
+        // "ball dropping into the pocket" feel instead of just stopping dead.
+        if (kind === 'pot') {
+            const tail = ac.createOscillator();
+            const tailGain = ac.createGain();
+            tail.connect(tailGain); tailGain.connect(ac.destination);
+            tail.type = 'sine'; tail.frequency.setValueAtTime(110, now + 0.07);
+            tailGain.gain.setValueAtTime(0, now);
+            tailGain.gain.linearRampToValueAtTime(p.vol * 0.18, now + 0.09);
+            tailGain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+            tail.start(now + 0.07); tail.stop(now + 0.36);
+        }
     }
     function vibrate(pattern) {
         if (muted) return;

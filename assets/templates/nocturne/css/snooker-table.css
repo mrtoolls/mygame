@@ -81,8 +81,15 @@
 @media (max-width: 420px) {
     .sk-score__name { max-width: 56px; font-size: 10px; }
     .sk-score__value { font-size: 16px; }
-    .sk-shoot { min-width: 140px; padding: 0 20px; font-size: 13.5px; }
+    .sk-shoot { min-width: 140px; min-height: 44px; padding: 0 20px; font-size: 13.5px; }
     .sk-spin-dial { width: 44px; height: 44px; }
+    /* Trim chrome padding/gaps (not touch-target sizes) on narrow phones so more of the limited
+       vertical budget goes to the table itself, which is what the player actually needs to see. */
+    .sk-root { gap: 6px; }
+    .sk-hud { padding: 7px 9px; gap: 4px; }
+    .sk-hud__row--sub { font-size: 10px; }
+    .sk-controls { padding: 8px 10px; gap: 6px; }
+    .sk-power__label { font-size: 9.5px; }
 }
 
 /* Safe-area padding so controls never sit under a device's home-indicator/notch. */
