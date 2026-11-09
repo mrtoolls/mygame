@@ -1211,7 +1211,27 @@ function renderBoard(data) {
         // genuinely more complex than any DOM-based game here, so it isn't inlined into this
         // already-large shared file. board/send/userId/latest/root are this closure's own state;
         // passed through explicitly since the external script has no access to this scope.
-        window.SnookerTable?.render(data, active, { board, send, userId, latest, root });
+        //
+        // snooker-table.js is requested via @push('script-lib'), which this template's layout
+        // renders near the END of <body> - AFTER this inline script block. The very first
+        // renderBoard() call here fires from an async initial-snapshot fetch, so on a cold cache
+        // it can resolve (and reach this line) before that external script has finished loading,
+        // leaving window.SnookerTable undefined; the old `?.` call then silently no-op'd, leaving
+        // a blank, non-interactive table until the next real game-state change ever called
+        // renderBoard() again. Instead, wait for the script rather than giving up on this call.
+        if (window.SnookerTable) {
+            window.SnookerTable.render(data, active, { board, send, userId, latest, root });
+        } else if (!window.__snookerRenderPending) {
+            window.__snookerRenderPending = true;
+            (function waitForSnookerTable() {
+                if (window.SnookerTable) {
+                    window.__snookerRenderPending = false;
+                    window.SnookerTable.render(latest, latest.current_user_id === userId, { board, send, userId, latest, root });
+                } else {
+                    setTimeout(waitForSnookerTable, 50);
+                }
+            })();
+        }
     } else if (type === 'snakes_and_ladders') {
         const wrap=document.createElement('div');wrap.className='board-track-wrap';
         const cellXY=n=>{const rowFromBottom=Math.floor((n-1)/10),posInRow=(n-1)%10,col=rowFromBottom%2===0?posInRow:9-posInRow,row=9-rowFromBottom;return{x:(col+0.5)*10,y:(row+0.5)*10,row,col};};

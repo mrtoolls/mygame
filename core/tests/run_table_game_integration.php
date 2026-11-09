@@ -73,6 +73,20 @@ $followUpMigrations = array_map(
 );
 foreach ($followUpMigrations as $followUpMigration) $followUpMigration->up();
 
+// Minimal notification_templates stand-in (no tracked migration for the base table - same
+// situation as every other test touching it) + the real in-app-channel migration on top. Needed
+// because settle() fires GAME_WIN/GAME_LOSS notifications on every match conclusion, and this
+// script's own settlement tests reach that path - without this the failure is silent/intermittent
+// (only whichever runs actually conclude a match with a real winner hit it).
+Schema::create('notification_templates', function (Blueprint $table) {
+    $table->id(); $table->string('name'); $table->string('act'); $table->string('subject')->nullable();
+    $table->boolean('email_status')->default(0); $table->text('email_body')->nullable();
+    $table->boolean('sms_status')->default(0); $table->text('sms_body')->nullable();
+    $table->boolean('push_status')->default(0); $table->string('push_title')->nullable(); $table->text('push_body')->nullable();
+    $table->text('shortcodes')->nullable(); $table->timestamps();
+});
+(require dirname(__DIR__) . '/database/migrations/2026_11_07_000001_create_in_app_notification_channel.php')->up();
+
 $insertUser = static function (string $username, string $balance, int $currencyId = 1): User {
     $id = DB::table('users')->insertGetId(['username' => $username, 'balance' => $balance, 'currency_id' => $currencyId, 'created_at' => now(), 'updated_at' => now()]);
     return User::findOrFail($id);
