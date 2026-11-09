@@ -1,0 +1,89 @@
+/* Snooker client UI. UI chrome (panels, buttons, text, badges) uses the site's own nocturne
+   palette; the table/cloth/balls stay true-to-life (green baize, real ball colours) since a
+   themed-purple snooker table would just look broken rather than "on brand". */
+.sk-root {
+    --sk-line: var(--tm-line, var(--nocturne-line, rgba(145, 156, 205, .16)));
+    --sk-panel: var(--tm-panel, var(--nocturne-panel, #151a31));
+    --sk-raised: var(--tm-raised, var(--nocturne-raised, #232a47));
+    --sk-text: var(--tm-text, var(--nocturne-text, #f5f6ff));
+    --sk-muted: var(--tm-muted, var(--nocturne-muted, #929abc));
+    --sk-green: var(--tm-green, var(--nocturne-green, #00ef87));
+    display: flex; flex-direction: column; gap: 10px; width: 100%; color: var(--sk-text);
+}
+.sk-hud { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--sk-line); border-radius: 16px; background: var(--sk-panel); }
+.sk-hud__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sk-hud__row--sub { font-size: 11px; color: var(--sk-muted); }
+.sk-score { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; transition: background .15s ease; min-width: 0; }
+.sk-score.is-turn { background: rgba(0, 239, 135, .1); }
+.sk-score--right { flex-direction: row-reverse; text-align: right; }
+.sk-score__name { font-size: 11px; font-weight: 800; color: var(--sk-muted); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-score.is-turn .sk-score__name { color: var(--sk-green); }
+.sk-score__value { font-size: 20px; font-weight: 900; }
+.sk-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+.sk-frame { font-size: 11px; font-weight: 800; color: var(--sk-muted); }
+.sk-break { font-size: 11px; color: var(--sk-green); font-weight: 800; }
+.sk-ballon { font-size: 10.5px; color: var(--sk-muted); }
+.sk-timer { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; }
+.sk-timer[hidden] { display: none; }
+.sk-timer.is-warning { color: #ff6b81; animation: skPulse 1s ease-in-out infinite; }
+@keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+.sk-ticker { flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 14px; }
+.sk-hud__tools { display: flex; gap: 6px; flex: 0 0 auto; }
+.sk-icon-btn { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--sk-line); border-radius: 9px; background: var(--sk-raised); color: var(--sk-text); cursor: pointer; }
+.sk-icon-btn:hover { color: var(--sk-green); border-color: rgba(0, 239, 135, .35); }
+
+.sk-stage { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; touch-action: none; }
+.sk-canvas { width: 100%; max-width: 760px; height: auto; aspect-ratio: 2 / 1; border-radius: 10px; box-shadow: 0 18px 50px rgba(0, 0, 0, .4); touch-action: none; }
+/* Portrait: the table's long side should run vertically on screen. Rotating a landscape-shaped
+   canvas 90deg visually produces a portrait shape, but its LAYOUT box keeps occupying its
+   original (unrotated) footprint - a plain CSS transform here left the table overflowing the
+   viewport. snooker-table.js's layoutOrientation() sizes .sk-stage (a real portrait-shaped box,
+   reserving the correct space in the page flow) and .sk-canvas (its own pre-rotation box, solved
+   so that once rotated it exactly fills the stage) explicitly in pixels instead - this class only
+   supplies the rotation itself. */
+.sk-root--portrait .sk-canvas { transform: rotate(90deg); max-width: none; }
+.sk-root--portrait .sk-stage { touch-action: none; }
+
+.sk-spin-dial {
+    position: absolute; right: 10px; bottom: 10px; width: 54px; height: 54px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 42%, #efe6cf, #d8c998 55%, #a98f52 100%);
+    border: 2px solid rgba(0, 0, 0, .35); box-shadow: 0 6px 16px rgba(0, 0, 0, .4); touch-action: none; cursor: grab;
+}
+.sk-root--portrait .sk-spin-dial { transform: rotate(-90deg); right: auto; left: 10px; bottom: 10px; }
+.sk-spin-dial__dot { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #b2211f; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); transition: transform .05s linear; }
+
+.sk-controls { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--sk-line); border-radius: 16px; background: var(--sk-panel); }
+.sk-controls.is-disabled { opacity: .55; pointer-events: none; }
+.sk-power { display: flex; flex-direction: column; gap: 6px; }
+.sk-power__track { position: relative; height: 14px; border-radius: 999px; background: var(--sk-raised); overflow: hidden; }
+.sk-power__fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--sk-green), #ffcc70, #ff6b81); transition: width .08s linear; }
+.sk-power__label { font-size: 10.5px; color: var(--sk-muted); text-align: center; }
+.sk-actions { display: flex; justify-content: center; }
+.sk-shoot {
+    min-width: 180px; min-height: 48px; padding: 0 28px; border: 0; border-radius: 14px;
+    background: var(--sk-green); color: #062b1d; font-size: 15px; font-weight: 900; cursor: pointer;
+    transition: transform .1s ease, opacity .15s ease;
+}
+.sk-shoot:active { transform: scale(.97); }
+.sk-shoot:disabled { opacity: .4; cursor: not-allowed; }
+
+.sk-nominate { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--sk-line); }
+.sk-nominate[hidden] { display: none; }
+.sk-nominate p { margin: 0; font-size: 11.5px; color: var(--sk-muted); text-align: center; }
+.sk-nominate__grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.sk-nominate__chip {
+    min-height: 40px; padding: 0 14px; border: 2px solid var(--sk-line); border-radius: 11px;
+    background: var(--sk-raised); color: var(--sk-text); font-weight: 800; font-size: 12.5px; cursor: pointer;
+}
+.sk-nominate__chip::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-inline-end: 7px; border-radius: 50%; background: var(--chip-colour, #999); vertical-align: middle; }
+.sk-nominate__chip.is-active { border-color: var(--sk-green); box-shadow: 0 0 0 2px rgba(0, 239, 135, .25); }
+
+@media (max-width: 420px) {
+    .sk-score__name { max-width: 56px; font-size: 10px; }
+    .sk-score__value { font-size: 16px; }
+    .sk-shoot { min-width: 140px; padding: 0 20px; font-size: 13.5px; }
+    .sk-spin-dial { width: 44px; height: 44px; }
+}
+
+/* Safe-area padding so controls never sit under a device's home-indicator/notch. */
+.sk-controls { padding-bottom: max(12px, env(safe-area-inset-bottom)); }

@@ -39,6 +39,32 @@
                             </label>
                         @endif
                     </div>
+                    @if ($key === 'snooker' && \Illuminate\Support\Facades\Schema::hasColumn('table_game_settings', 'snooker_variant'))
+                        <div class="table-admin-guide">
+                            <p class="text-muted mb-2">@lang('Snooker has no per-table lobby picker (like every other game here) - these apply to every new snooker table site-wide.')</p>
+                            <div class="table-admin-grid">
+                                <label><span>@lang('Variant')</span>
+                                    <select name="settings[{{ $key }}][snooker_variant]">
+                                        <option value="6_red" @selected($value($key, 'snooker_variant', '6_red') === '6_red')>@lang('6 reds (mobile default)')</option>
+                                        <option value="15_red" @selected($value($key, 'snooker_variant', '6_red') === '15_red')>@lang('15 reds (full)')</option>
+                                    </select>
+                                </label>
+                                <label><span>@lang('Frames per match')</span>
+                                    <select name="settings[{{ $key }}][snooker_frames_target]">
+                                        <option value="1" @selected((int) $value($key, 'snooker_frames_target', 1) === 1)>@lang('Best of 1')</option>
+                                        <option value="3" @selected((int) $value($key, 'snooker_frames_target', 1) === 3)>@lang('Best of 3')</option>
+                                        <option value="5" @selected((int) $value($key, 'snooker_frames_target', 1) === 5)>@lang('Best of 5')</option>
+                                    </select>
+                                </label>
+                                <label><span>@lang('Aim aid')</span>
+                                    <select name="settings[{{ $key }}][snooker_aid_level]">
+                                        <option value="competitive" @selected($value($key, 'snooker_aid_level', 'competitive') === 'competitive')>@lang('Competitive (no guide line)')</option>
+                                        <option value="casual" @selected($value($key, 'snooker_aid_level', 'competitive') === 'casual')>@lang('Casual (short guide line)')</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                    @endif
                     @if ($key !== '*')
                         <div class="table-admin-guide">
                             <p class="text-muted mb-2">@lang('Shown to players on the (i) How to Play sheet for this game. Leave any field blank to use the built-in default text.')</p>

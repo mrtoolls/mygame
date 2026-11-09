@@ -85,6 +85,16 @@ class TableGameService
                 'join_deadline_at' => now()->addHours(24),
                 'settings' => ['commission_percent' => (float) $setting->commission_percent, 'turn_seconds' => (int) $setting->turn_seconds],
             ];
+            // Snooker has no per-table lobby variant picker (nothing in this framework does -
+            // every other game also just uses fixed defaults in TableGameRules::start()); its
+            // variant/frames-target/aid-level are admin-configured site-wide on the same
+            // Admin > Table Games screen every other game's commission/stakes live on, and copied
+            // through here so TableGameRules::start() can read them via $customSettings.
+            if ($gameType === 'snooker' && $this->hasColumn('table_game_settings', 'snooker_variant')) {
+                $tableData['settings']['snooker_variant'] = $setting->snooker_variant ?? '6_red';
+                $tableData['settings']['snooker_frames_target'] = (int) ($setting->snooker_frames_target ?? 1);
+                $tableData['settings']['snooker_aid_level'] = $setting->snooker_aid_level ?? 'competitive';
+            }
             if ($this->hasColumn('table_games', 'rules_version')) $tableData['rules_version'] = in_array($gameType, ['ludo', 'whot', 'oware'], true) ? 2 : 1;
             if ($this->hasColumn('table_games', 'currency_id')) $tableData['currency_id'] = $lockedUser->currency_id;
             $table = TableGame::create($tableData);
@@ -427,6 +437,9 @@ class TableGameService
                 }
                 $table->save();
             }
+                if ($table->game_type === 'snooker' && $table->status === 'active' && !empty($table->settings['is_practice'])) {
+                    $this->playSnookerBotTurns($table);
+                }
                 return $table->fresh(['players.user']);
             }, 3);
         } catch (InvalidArgumentException|ModelNotFoundException $exception) {
@@ -611,6 +624,26 @@ class TableGameService
             $moveRow = TableGameMove::where('table_game_id', $table->id)->where('action', 'move')->latest('id')->first();
             if ($moveRow && !empty($moveRow->public_data['events'])) {
                 $lastMove = ['version' => (int) $moveRow->version, 'events' => $moveRow->public_data['events'], 'message' => $moveRow->public_data['message'] ?? null];
+            }
+        } elseif ($table->game_type === 'snooker') {
+            // Keyframes (60Hz ball positions, for smooth client playback) live in state's own
+            // last_shot rather than the move row's public_data - the generic move() path only
+            // ever forwards $result['events']/['message'] into public_data, and keyframes are a
+            // snooker-only concept with nowhere to fit in that shared contract. Reading it
+            // straight from state is simplest and needs no change to the generic move() path.
+            $lastShot = is_array($table->state) ? ($table->state['last_shot'] ?? null) : null;
+            if ($lastShot) {
+                $lastMove = [
+                    'version' => (int) $table->version,
+                    'events' => $lastShot['events'] ?? [],
+                    'keyframes' => $lastShot['keyframes'] ?? [],
+                    'foul' => $lastShot['foul'] ?? false,
+                    'foul_reason' => $lastShot['foul_reason'] ?? null,
+                    'penalty' => $lastShot['penalty'] ?? 0,
+                    'potted' => $lastShot['potted'] ?? [],
+                    'points' => $lastShot['points'] ?? 0,
+                    'frame_result' => $lastShot['frame_result'] ?? null,
+                ];
             }
         }
         $recentRolls = null;
@@ -813,7 +846,7 @@ class TableGameService
     private function startLocked(TableGame $table): void
     {
         $players = $table->players()->where('status', 'seated')->orderBy('seat')->get();
-        $table->state = $this->rules->start($table->game_type, $players->count(), (int) ($table->rules_version ?? 1));
+        $table->state = $this->rules->start($table->game_type, $players->count(), (int) ($table->rules_version ?? 1), (array) ($table->settings ?? []));
         $table->status = 'active';
         $table->current_user_id = $players->first()->user_id;
         $table->started_at = now();
@@ -1265,6 +1298,17 @@ class TableGameService
 
     private function recordMissedTurn(TableGame $table): void
     {
+        // Snooker's timeout rule is match-specific (an auto-played safe shot, 3 timeouts in ONE
+        // frame forfeits just that frame - not the generic "2 missed turns anywhere and you're
+        // ejected from the table" rule every other game uses, which doesn't map onto a best-of-N-
+        // frames match where missing a shot clock isn't remotely the same severity as abandoning
+        // the whole table). Mirrors the existing precedent for per-game special-casing already in
+        // this method (the spades/hearts and ludo branches below).
+        if ($table->game_type === 'snooker') {
+            $this->recordSnookerMissedTurn($table);
+            return;
+        }
+
         $player = $table->players()->where('user_id', $table->current_user_id)->lockForUpdate()->first();
         if (!$player) throw new RuntimeException('The active seat could not be found.');
         $player->missed_turns++;
@@ -1311,6 +1355,164 @@ class TableGameService
         $table->turn_started_at = now();
         $table->turn_deadline_at = now()->addSeconds((int) data_get($table->settings, 'turn_seconds', 60));
         $table->save();
+    }
+
+    /**
+     * Snooker's shot-clock timeout: plays a conservative auto-safe-shot through the SAME rules
+     * engine a real move uses (so scoring/fouls/frame-end all apply identically - a timeout isn't
+     * a free pass, it's just an unattended shot), tracked per-frame; a 3rd timeout in one frame
+     * forfeits that frame only (not the whole match), matching the task brief exactly.
+     */
+    private function recordSnookerMissedTurn(TableGame $table): void
+    {
+        $player = $table->players()->where('user_id', $table->current_user_id)->lockForUpdate()->first();
+        if (!$player) throw new RuntimeException('The active seat could not be found.');
+        $seat = (int) $player->seat;
+        $state = is_array($table->state) ? $table->state : [];
+        $timeouts = (int) ($state['timeouts_this_frame'][$seat] ?? 0) + 1;
+        $state['timeouts_this_frame'][$seat] = $timeouts;
+
+        $rules = new \App\Games\TableGames\Snooker\SnookerRules();
+        $priorVersion = (int) $table->version;
+
+        if ($timeouts >= \App\Games\TableGames\Snooker\SnookerConfig::MAX_TIMEOUTS_PER_FRAME) {
+            $result = $rules->forfeitFrame($state, $seat);
+            $actionLabel = 'frame_forfeit_on_timeout';
+        } else {
+            $actionLabel = 'auto_safe_shot';
+            try {
+                $result = $rules->applyShot($state, $seat, $rules->autoSafeShot($state));
+            } catch (\Throwable $exception) {
+                // Defensive only - autoSafeShot() always targets a real ball with a legal, in-
+                // bounds placement, so this should never actually trigger; never let a shot-clock
+                // tick crash the table if it somehow does.
+                $result = $rules->forfeitFrame($state, $seat);
+                $actionLabel = 'frame_forfeit_on_timeout';
+            }
+        }
+
+        $table->state = $result['state'];
+        $table->version++;
+        TableGameMove::create([
+            'table_game_id' => $table->id,
+            'user_id' => $player->user_id,
+            'version' => $table->version,
+            'action' => $actionLabel,
+            'public_data' => ['missed_turns' => $timeouts, 'message' => $result['message'] ?? null, 'events' => $result['events'] ?? []],
+            'idempotency_key' => $table->id . ':timeout:' . $priorVersion,
+        ]);
+
+        if ($result['winner'] !== null) {
+            $table->status = 'finished';
+            $table->result = 'winner:' . $result['winner'];
+            $table->finished_at = now();
+            $table->save();
+            $this->settle($table, (int) $result['winner']);
+            return;
+        }
+
+        $nextSeat = (int) ($table->state['turn'] ?? $seat);
+        $table->current_user_id = $table->players()->where('seat', $nextSeat)->value('user_id') ?? $table->current_user_id;
+        $table->turn_started_at = now();
+        $table->turn_deadline_at = now()->addSeconds((int) data_get($table->settings, 'turn_seconds', 60));
+        $table->save();
+    }
+
+    /**
+     * Practice tables (see createSnookerPracticeTable()) pit the human against a reserved bot
+     * user account - there's no cron/worker to drive the bot's turns asynchronously (no always-on
+     * server, no WebSocket, per the build brief), so instead the bot plays its whole run of shots
+     * synchronously, right here, within the SAME transaction/request as the human's own move that
+     * just passed the turn to it. A capped loop guards against a rules-engine bug ever looping
+     * forever (the bot could in principle keep potting and retaining the turn indefinitely).
+     */
+    private function playSnookerBotTurns(TableGame $table): void
+    {
+        $rules = new \App\Games\TableGames\Snooker\SnookerRules();
+        $bot = new \App\Games\TableGames\Snooker\SnookerBot();
+        $botUserId = (int) data_get($table->settings, 'practice_bot_user_id');
+        if (!$botUserId) return;
+
+        $guard = 0;
+        while ($guard++ < 80 && $table->status === 'active' && (int) $table->current_user_id === $botUserId) {
+            $botPlayerRow = $table->players()->where('user_id', $botUserId)->first();
+            if (!$botPlayerRow) break;
+            $state = is_array($table->state) ? $table->state : [];
+            $shotAction = $bot->chooseShot($state);
+            try {
+                $result = $rules->applyShot($state, (int) $botPlayerRow->seat, $shotAction);
+            } catch (\Throwable $exception) {
+                // A bot shot should never throw (chooseShot() always targets a real ball with a
+                // legal placement), but never let practice mode get stuck if it somehow does.
+                report($exception);
+                break;
+            }
+            $table->state = $result['state'];
+            $table->version++;
+            TableGameMove::create([
+                'table_game_id' => $table->id, 'user_id' => $botUserId, 'version' => $table->version,
+                'action' => 'bot_shot', 'public_data' => ['message' => $result['message'] ?? null, 'events' => $result['events'] ?? null],
+                'idempotency_key' => $table->id . ':bot:' . $table->version,
+            ]);
+
+            if ($result['winner'] !== null) {
+                $table->status = 'finished';
+                $table->result = 'winner:' . $result['winner'];
+                $table->finished_at = now();
+                $table->save();
+                $this->settle($table, (int) $result['winner']);
+                return;
+            }
+
+            $nextSeat = (int) ($table->state['turn'] ?? $botPlayerRow->seat);
+            $table->current_user_id = $table->players()->where('seat', $nextSeat)->value('user_id') ?? $table->current_user_id;
+            $table->turn_started_at = now();
+            $table->turn_deadline_at = now()->addSeconds((int) data_get($table->settings, 'turn_seconds', 60));
+            $table->save();
+        }
+    }
+
+    /**
+     * A free, stakeless table against a simple reserved-account bot (see SnookerBot) - always
+     * auto-starts (the bot is always "ready"), so new players can learn snooker's controls and
+     * rules without any money on the table. The bot user is created lazily on first use rather
+     * than seeded by a migration, so it works the same on any existing install.
+     */
+    public function createSnookerPracticeTable(User $user): TableGame
+    {
+        return DB::transaction(function () use ($user) {
+            // App\Models\User declares neither $fillable nor $guarded, so it inherits Eloquent's
+            // guard-everything-by-default - User::firstOrCreate()/create() with an attributes
+            // array throws a MassAssignmentException. Every other bot/system-account precedent in
+            // this codebase sets attributes directly instead, so this does the same.
+            $bot = User::where('username', 'snooker_practice_bot')->first();
+            if (!$bot) {
+                $bot = new User();
+                $bot->username = 'snooker_practice_bot';
+                $bot->email = 'snooker-practice-bot@local.invalid';
+                $bot->password = bcrypt(Str::random(40));
+                $bot->status = 1;
+                $bot->ev = 1;
+                $bot->sv = 1;
+                $bot->balance = 0;
+                $bot->save();
+            }
+            $setting = $this->setting('snooker');
+            $table = TableGame::create([
+                'game_type' => 'snooker', 'creator_id' => $user->id, 'create_idempotency_key' => 'practice:' . $user->id . ':' . Str::random(12),
+                'player_limit' => 2, 'stake' => '0', 'status' => 'waiting', 'join_deadline_at' => now()->addHours(24),
+                'settings' => [
+                    'commission_percent' => 0, 'turn_seconds' => (int) $setting->turn_seconds,
+                    'snooker_variant' => $setting->snooker_variant ?? '6_red', 'snooker_frames_target' => (int) ($setting->snooker_frames_target ?? 1),
+                    'snooker_aid_level' => 'casual', 'is_practice' => true, 'practice_bot_user_id' => $bot->id,
+                ],
+                'rules_version' => 1,
+            ]);
+            TableGamePlayer::create(['table_game_id' => $table->id, 'user_id' => $user->id, 'seat' => 0, 'stake' => '0', 'status' => 'seated', 'stake_debit_key' => $table->id . ':stake:' . $user->id, 'last_seen_at' => now()]);
+            TableGamePlayer::create(['table_game_id' => $table->id, 'user_id' => $bot->id, 'seat' => 1, 'stake' => '0', 'status' => 'seated', 'stake_debit_key' => $table->id . ':stake:' . $bot->id, 'last_seen_at' => now()]);
+            $this->startLocked($table);
+            return $table->fresh(['players.user']);
+        }, 3);
     }
 
     private function nextPlayerId(TableGame $table, int $afterSeat): int
@@ -1379,6 +1581,7 @@ class TableGameService
             'draughts' => 'A draw is declared after 80 consecutive half-moves without a capture or promotion; stakes are refunded.',
             'dominoes' => 'Play until one hand is empty. If the stock is empty and every player passes, the player with the fewest pips wins; equal low totals draw.',
             'crazy_eights' => 'A draw is declared only when the draw and discard piles are exhausted and every player is blocked; all stakes are refunded.',
+            'snooker' => 'No draw: the match is won by frames (best of the configured number), and a frame that ends level is decided by a re-spotted black.',
             default => 'Game-specific rules determine whether a draw is possible.',
         };
     }

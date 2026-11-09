@@ -210,6 +210,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('duels', 'duels')->name('duels.index');
                 Route::post('duels', 'createDuel')->middleware('throttle:10,1')->name('duels.create');
                 Route::post('/', 'create')->middleware('throttle:10,1')->name('create');
+                Route::post('snooker/practice', 'snookerPractice')->middleware('throttle:10,1')->name('snooker.practice');
                 Route::get('leaderboard', 'leaderboard')->middleware('throttle:60,1')->name('leaderboard');
                 Route::get('{id}', 'show')->whereUuid('id')->name('show');
                 Route::get('{id}/snapshot', 'snapshot')->whereUuid('id')->name('snapshot');

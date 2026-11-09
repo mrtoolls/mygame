@@ -61,6 +61,14 @@ class TableGameAdminController extends Controller
             $rules["settings.$key.guide.draw"] = 'nullable|string|max:500';
             $rules["settings.$key.guide.win"] = 'nullable|string|max:500';
         }
+        // Snooker has no per-table lobby variant picker (nothing in this framework does) - its
+        // variant/frames-target/aid-level are configured here instead, site-wide, same as every
+        // other per-game setting on this screen.
+        if (Schema::hasColumn('table_game_settings', 'snooker_variant')) {
+            $rules['settings.snooker.snooker_variant'] = 'required|in:6_red,15_red';
+            $rules['settings.snooker.snooker_frames_target'] = 'required|in:1,3,5';
+            $rules['settings.snooker.snooker_aid_level'] = 'required|in:competitive,casual';
+        }
         $validated = Validator::make($request->all(), $rules)->validate();
         Validator::make($request->all(), [
             'game_images' => 'sometimes|array',

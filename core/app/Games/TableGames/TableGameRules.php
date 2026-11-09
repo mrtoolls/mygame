@@ -2,6 +2,7 @@
 
 namespace App\Games\TableGames;
 
+use App\Games\TableGames\Snooker\SnookerRules;
 use InvalidArgumentException;
 
 /** Pure, server-authoritative rules for the introductory board games. */
@@ -26,9 +27,10 @@ class TableGameRules
         'hearts' => ['name' => 'Hearts', 'min' => 4, 'max' => 4],
         'crazy_eights' => ['name' => 'Crazy Eights', 'min' => 2, 'max' => 4],
         'fantasy_duel' => ['name' => 'Live Duel', 'min' => 2, 'max' => 4],
+        'snooker' => ['name' => 'Snooker', 'min' => 2, 'max' => 2],
     ];
 
-    public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts', 'fantasy_duel'];
+    public const AVAILABLE = ['ludo', 'chess', 'draughts', 'tic_tac_toe', 'four_in_a_row', 'snakes_and_ladders', 'oware', 'dominoes', 'crazy_eights', 'sea_battle', 'blackjack', 'rummy', 'whot', 'backgammon', 'texas_holdem', 'spades', 'hearts', 'fantasy_duel', 'snooker'];
 
     // Default icon glyph shown until an admin uploads a real card_image for that game
     // (Admin > Table Games). Every class here is confirmed present in line-awesome.min.css.
@@ -51,6 +53,7 @@ class TableGameRules
         'hearts' => 'la-heart',
         'crazy_eights' => 'la-clone',
         'fantasy_duel' => 'la-futbol',
+        'snooker' => 'la-bullseye',
     ];
 
     // Each seat's own start square (0,13,26,39 - see 'starts' in start()) plus the classic star
@@ -71,7 +74,14 @@ class TableGameRules
         'Star' => [1, 2, 3, 4, 5, 7, 8],
     ];
 
-    public function start(string $game, int $playerCount, int $rulesVersion = 1): array
+    /**
+     * $customSettings carries the table's own settings blob (TableGameService::$table->settings)
+     * through to games whose starting state depends on admin-configured options beyond the
+     * generic commission/turn-timer ones every game already gets - currently only snooker
+     * (variant/frames target/aid level, see the 2026_11_08_000001 migration). Every other game
+     * ignores this parameter entirely; it's optional and backward compatible.
+     */
+    public function start(string $game, int $playerCount, int $rulesVersion = 1, array $customSettings = []): array
     {
         if (!isset(self::GAMES[$game]) || $playerCount < self::GAMES[$game]['min'] || $playerCount > self::GAMES[$game]['max']) {
             throw new InvalidArgumentException('Unsupported game or player count.');
@@ -97,6 +107,11 @@ class TableGameRules
             'dominoes' => $this->dominoesStartingState($playerCount),
             'crazy_eights' => $this->crazyEightsStartingState($playerCount),
             'fantasy_duel' => ['turn' => 0, 'moves' => 0, 'mode' => 'fantasy_duel'],
+            'snooker' => (new SnookerRules())->start([
+                'variant' => $customSettings['snooker_variant'] ?? '6_red',
+                'frames_target' => (int) ($customSettings['snooker_frames_target'] ?? 1),
+                'aid_level' => $customSettings['snooker_aid_level'] ?? 'competitive',
+            ]),
             default => throw new InvalidArgumentException('This game ruleset is not available yet.'),
         };
     }
@@ -124,6 +139,7 @@ class TableGameRules
             'oware' => $this->oware($state, $seat, $action, $rulesVersion),
             'dominoes' => $this->dominoes($state, $seat, $action, $activeSeats),
             'crazy_eights' => $this->crazyEights($state, $seat, $action, $activeSeats),
+            'snooker' => (new SnookerRules())->applyShot($state, $seat, $action),
             default => throw new InvalidArgumentException('This game ruleset is not available yet.'),
         };
     }

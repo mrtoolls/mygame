@@ -65,6 +65,44 @@
             </div>
         </a>
 
+        @if (in_array('snooker', \App\Games\TableGames\TableGameRules::AVAILABLE, true))
+            <div class="snooker-practice-banner">
+                <div>
+                    <span class="snooker-practice-banner__eyebrow"><i class="la la-circle"></i> @lang('New: Snooker')</span>
+                    <strong>@lang('New to snooker? Practice free against the computer first.')</strong>
+                </div>
+                <form method="post" action="{{ route('user.tables.snooker.practice') }}" id="snooker-practice-form">
+                    @csrf
+                    <button type="submit" class="snooker-practice-banner__btn"><i class="la la-play"></i> @lang('Practice vs Bot')</button>
+                    <span class="snooker-practice-banner__error" id="snooker-practice-error"></span>
+                </form>
+            </div>
+            <style>
+                .snooker-practice-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:14px 0;padding:14px 18px;border:1px solid var(--nocturne-line,rgba(145,156,205,.16));border-radius:16px;background:linear-gradient(120deg,rgba(0,239,135,.08),transparent)}
+                .snooker-practice-banner__eyebrow{display:block;margin-bottom:3px;color:var(--nocturne-green,#00ef87);font-size:10.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+                .snooker-practice-banner strong{color:var(--nocturne-text,#f5f6ff);font-size:13.5px}
+                .snooker-practice-banner__btn{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 18px;border:0;border-radius:11px;background:var(--nocturne-green,#00ef87);color:#063b29;font-weight:900;font-size:13px;cursor:pointer}
+                .snooker-practice-banner__error{display:block;margin-top:5px;color:#ff8a9a;font-size:11px}
+            </style>
+            <script>
+                document.getElementById('snooker-practice-form')?.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const btn = this.querySelector('button');
+                    const err = document.getElementById('snooker-practice-error');
+                    btn.disabled = true; err.textContent = '';
+                    try {
+                        const response = await fetch(this.action, { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', Accept: 'application/json' } });
+                        const data = await response.json();
+                        if (!response.ok || !data.success) throw new Error(data.message || 'Could not start a practice table.');
+                        location.href = `{{ url('/user/tables') }}/${data.table.id}`;
+                    } catch (error) {
+                        err.textContent = error.message;
+                        btn.disabled = false;
+                    }
+                });
+            </script>
+        @endif
+
         <div class="table-lobby__layout">
             <form class="table-card" id="create-table-form">
                 <div class="table-card__heading"><span class="table-card__icon"><i class="las la-plus"></i></span><div><h2>@lang('Create a Table')</h2><p>@lang('Set the game and stake for your table.')</p></div></div>

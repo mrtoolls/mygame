@@ -131,6 +131,12 @@ class TableGameController extends Controller
         return $this->run(fn () => $service->create($request->user(), $data['game_type'], (int) $data['player_limit'], $stake, $data['idempotency_key']));
     }
 
+    /** A free, stakeless snooker table against a simple bot opponent - for learning the controls and rules before playing for coins. */
+    public function snookerPractice(Request $request, TableGameService $service)
+    {
+        return $this->run(fn () => $service->createSnookerPracticeTable($request->user()));
+    }
+
     public function join(Request $request, string $id, TableGameService $service)
     {
         if (!$request->expectsJson()) {

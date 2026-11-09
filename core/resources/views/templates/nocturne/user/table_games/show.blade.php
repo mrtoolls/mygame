@@ -5,11 +5,17 @@
 @if ($table->game_type === 'oware')
 <script src="{{ asset('assets/templates/nocturne/js/ayo-board.js') }}?v={{ @filemtime(public_path('assets/templates/nocturne/js/ayo-board.js')) }}"></script>
 @endif
+@if ($table->game_type === 'snooker')
+<script src="{{ asset('assets/templates/nocturne/js/snooker-table.js') }}?v={{ @filemtime(public_path('assets/templates/nocturne/js/snooker-table.js')) }}"></script>
+@endif
 @endpush
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/global/css/gift-effects.css') }}?v={{ @filemtime(public_path('assets/global/css/gift-effects.css')) }}">
 @if ($table->game_type === 'oware')
 <link rel="stylesheet" href="{{ asset('assets/templates/nocturne/css/ayo-board.css') }}?v={{ @filemtime(public_path('assets/templates/nocturne/css/ayo-board.css')) }}">
+@endif
+@if ($table->game_type === 'snooker')
+<link rel="stylesheet" href="{{ asset('assets/templates/nocturne/css/snooker-table.css') }}?v={{ @filemtime(public_path('assets/templates/nocturne/css/snooker-table.css')) }}">
 @endif
 @endpush
 @section('content')
@@ -1199,6 +1205,13 @@ function renderBoard(data) {
         }else{const counts=document.createElement('p');counts.textContent=(state.hand_counts||[]).map((count,index)=>`Player ${index+1}: ${count} tiles`).join('  ');board.append(counts);}
     } else if (type === 'oware') {
         owareRender(data, active);
+    } else if (type === 'snooker') {
+        // Canvas rendering, shot controls, physics-keyframe playback and sound live entirely in
+        // an external asset (conditionally loaded below, like oware's own ayo-board.js/css) -
+        // genuinely more complex than any DOM-based game here, so it isn't inlined into this
+        // already-large shared file. board/send/userId/latest/root are this closure's own state;
+        // passed through explicitly since the external script has no access to this scope.
+        window.SnookerTable?.render(data, active, { board, send, userId, latest, root });
     } else if (type === 'snakes_and_ladders') {
         const wrap=document.createElement('div');wrap.className='board-track-wrap';
         const cellXY=n=>{const rowFromBottom=Math.floor((n-1)/10),posInRow=(n-1)%10,col=rowFromBottom%2===0?posInRow:9-posInRow,row=9-rowFromBottom;return{x:(col+0.5)*10,y:(row+0.5)*10,row,col};};

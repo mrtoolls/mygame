@@ -146,6 +146,19 @@ class TableGameGuides
             'draw' => 'Equal best hands at showdown split the pot evenly as a draw.',
             'win' => 'The best standard poker hand ranking at showdown wins the pot.',
         ],
+        'snooker' => [
+            'goal' => 'Score more points than your opponent across a frame by legally potting balls in the correct order, then win the match by taking more frames than them.',
+            'setup' => 'Reds are racked in a triangle; the six colours sit on their own spots. Drag to aim, pull back for power, and use the spin dial for side/top/back spin. The cue ball starts in the D for your first shot and after any foul.',
+            'how_to_play' => [
+                'While reds remain: pot a red (1 point), then nominate and pot a colour (2-7 points) - colours you pot are re-spotted while reds remain on the table.',
+                'Once all reds are gone: pot the six colours strictly in order - yellow, green, brown, blue, pink, black.',
+                'Potting continues your turn; missing, fouling, or potting the cue ball passes it to your opponent.',
+                'The shot clock plays an automatic safe shot for you if it runs out - a 3rd timeout in one frame forfeits that frame.',
+            ],
+            'special_rules' => 'A foul costs you the higher of 4 points or the value of the ball on/the ball involved (max 7), awarded to your opponent, who also gets the cue ball in hand. If you\'re snookered (no straight line to any ball you\'re allowed to hit) after an opponent\'s foul, you may play a free ball - nominate any ball and pot it for the value of the ball actually on.',
+            'draw' => 'No draw: frames decide the match. A frame level on points when the colours run out is decided by a re-spotted black.',
+            'win' => 'Win more frames than your opponent (best of the match\'s configured frame count) to take the match and the stake.',
+        ],
     ];
 
     public static function for(string $gameType): array
