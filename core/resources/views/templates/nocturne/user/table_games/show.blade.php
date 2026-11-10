@@ -1212,8 +1212,8 @@ function renderBoard(data) {
         // already-large shared file. board/send/userId/latest/root are this closure's own state;
         // passed through explicitly since the external script has no access to this scope.
         //
-        // snooker-table.js is requested via @push('script-lib'), which this template's layout
-        // renders near the END of <body> - AFTER this inline script block. The very first
+        // snooker-table.js is requested via the script-lib stack push, which this template's
+        // layout renders near the END of <body> - AFTER this inline script block. The very first
         // renderBoard() call here fires from an async initial-snapshot fetch, so on a cold cache
         // it can resolve (and reach this line) before that external script has finished loading,
         // leaving window.SnookerTable undefined; the old `?.` call then silently no-op'd, leaving
