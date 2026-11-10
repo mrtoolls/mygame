@@ -176,33 +176,48 @@ window.SnookerTable = (function () {
         const stage = root.querySelector('.sk-stage');
         if (!stage) return;
         if (!portrait) {
-            stage.style.height = ''; canvas.style.width = ''; canvas.style.height = '';
+            stage.style.height = ''; stage.style.width = ''; stage.style.overflow = '';
+            canvas.style.position = ''; canvas.style.top = ''; canvas.style.left = ''; canvas.style.transform = '';
+            canvas.style.width = ''; canvas.style.height = '';
             return;
         }
-        // Pure-CSS rotation (transform: rotate(90deg)) leaves the element's LAYOUT box at its
-        // original (landscape) footprint even though it now visually reads as portrait-shaped -
-        // the surrounding flow never reserves the right space for that, so the rotated table
-        // overflowed off the right edge of the screen. Sizing it explicitly in JS instead: the
-        // stage reserves a portrait-shaped box, and the canvas (rotated around its own centre)
-        // is sized so that once rotated, it exactly fills that box.
+        // transform: rotate(90deg) alone changes only how the canvas PAINTS, not its LAYOUT box -
+        // the canvas still demands its full pre-rotation WIDTH from the surrounding flex container
+        // (.sk-stage), which is usually far more than the screen is wide once that width is the
+        // table's long side - the rotated table overflowed off the right edge of the screen, with
+        // the stage's own bounding box (and anything absolutely positioned against it, like the
+        // spin dial) distorted to match that oversized, wrong-shaped child.
+        //
+        // Fixed by taking the canvas out of normal flow entirely: position it absolutely, centred
+        // in the stage via top/left 50% + translate(-50%,-50%), THEN rotate - its pre-rotation box
+        // size can no longer affect the stage's own layout at all. The stage itself gets an
+        // explicit width AND height (not height alone) plus overflow:hidden, so it reserves
+        // exactly the on-screen footprint the rotated table actually needs, and nothing else
+        // (like the spin dial, absolutely positioned against this same stage) resolves against a
+        // distorted bounding box.
         //
         // Solve width and height TOGETHER, not height-first: the table's on-screen box keeps a
         // fixed 2:1 (height:width) ratio once rotated, so start from "use the full available
         // screen width" and only shrink toward the height budget if that would actually overflow
-        // it. Deriving width from a height-first value (the previous approach) left the table far
-        // narrower than the screen on any tall phone, where the height budget binds before the
-        // width budget does - wasting most of the screen's width.
+        // it. Deriving width from a height-first value left the table far narrower than the
+        // screen on any tall phone, where the height budget binds before the width budget does -
+        // wasting most of the screen's width.
         const widthBudget = Math.min(window.innerWidth - 24, 480); // the visual WIDTH of the rotated table on screen, capped to the viewport
         const heightBudget = window.innerHeight * 0.64; // the visual HEIGHT budget, capped so it doesn't crowd out the HUD/controls
         let visualWidth = widthBudget;
         let visualHeight = visualWidth * 2; // fixed 2:1 table ratio
         if (visualHeight > heightBudget) { visualHeight = heightBudget; visualWidth = visualHeight / 2; }
+        stage.style.width = visualWidth + 'px';
         stage.style.height = visualHeight + 'px';
-        // The canvas itself is sized and rotated in its OWN (unrotated) coordinate space - once
-        // rotated 90deg about its centre, its pre-rotation width becomes the visual height and
-        // vice versa, so the pre-rotation box is the swap of the on-screen box solved above.
+        stage.style.overflow = 'hidden';
+        // The canvas itself is sized in its OWN (unrotated) coordinate space - once rotated 90deg
+        // about its centre, its pre-rotation width becomes the visual height and vice versa, so
+        // the pre-rotation box is the swap of the on-screen box solved above.
+        canvas.style.position = 'absolute';
+        canvas.style.top = '50%'; canvas.style.left = '50%';
         canvas.style.width = visualHeight + 'px';
         canvas.style.height = visualWidth + 'px';
+        canvas.style.transform = 'translate(-50%, -50%) rotate(90deg)';
     }
 
     // ---- HUD / scoreboard --------------------------------------------------------------------------

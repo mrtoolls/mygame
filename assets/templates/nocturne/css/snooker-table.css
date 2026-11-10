@@ -37,11 +37,13 @@
 /* Portrait: the table's long side should run vertically on screen. Rotating a landscape-shaped
    canvas 90deg visually produces a portrait shape, but its LAYOUT box keeps occupying its
    original (unrotated) footprint - a plain CSS transform here left the table overflowing the
-   viewport. snooker-table.js's layoutOrientation() sizes .sk-stage (a real portrait-shaped box,
-   reserving the correct space in the page flow) and .sk-canvas (its own pre-rotation box, solved
-   so that once rotated it exactly fills the stage) explicitly in pixels instead - this class only
-   supplies the rotation itself. */
-.sk-root--portrait .sk-canvas { transform: rotate(90deg); max-width: none; }
+   viewport. snooker-table.js's layoutOrientation() handles the whole portrait layout in JS
+   instead: it gives .sk-stage an explicit width+height+overflow:hidden (a real portrait-shaped,
+   clipped box, reserving the correct space in the page flow) and takes .sk-canvas out of normal
+   flow entirely (position:absolute, centred, then rotated) so its oversized pre-rotation box can
+   never push the stage - or anything positioned against it, like the spin dial below - wider
+   than the screen. No CSS rule is needed here; .sk-canvas's position/width/height/transform are
+   all set and cleared directly by that function. */
 .sk-root--portrait .sk-stage { touch-action: none; }
 
 .sk-spin-dial {
