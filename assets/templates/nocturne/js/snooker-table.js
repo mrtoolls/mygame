@@ -31,7 +31,6 @@ window.SnookerTable = (function () {
     const colourOf = (id) => id.startsWith('red') ? redColour : (BALL_COLOURS[id] || '#999');
 
     // ---- Module-level per-table state -----------------------------------------------------------
-    let built = false;
     let canvas, ctx, root, boardEl, hudEl, controlsEl;
     let ctxApi = null; // {board, send, userId, latest, root} from show.blade.php
     let positions = {}; // current (possibly mid-animation) ball positions, id => {x,y}
@@ -53,10 +52,24 @@ window.SnookerTable = (function () {
     try { muted = localStorage.getItem('snookerMuted') === '1'; } catch (_) {}
 
     // ---- Public entry point ----------------------------------------------------------------------
+    // Returns true while a shot is actively animating (strike flourish or keyframe playback) -
+    // show.blade.php's gameState() checks this before calling render() again, the same way it
+    // already does for Ludo's dice roll and Oware's sow animation, so an in-flight poll update
+    // can't tear the board down mid-animation (see the DOM-rebuild note in render() below).
+    function isAnimating() { return playing || strikeAnimating; }
+
     function render(data, active, context) {
         ctxApi = context;
         const state = data.state || {};
-        if (!built) buildDom(context.board);
+        // renderBoard() in show.blade.php unconditionally calls board.replaceChildren() before
+        // dispatching here on EVERY call, including every real poll update - not just the first
+        // one. A one-time `if (!built)` build assumed the DOM it created would persist, but it
+        // gets wiped out from under it on the very next update, leaving #table-board empty with
+        // no code path that ever rebuilds it (exactly the "board goes blank, needs a reload"
+        // report - reloading is what reset `built` back to false). Checking that the DOM we
+        // actually built is still attached - not a one-shot flag - is what Oware's own render
+        // effectively does too, just by rebuilding unconditionally every single call instead.
+        if (!root || !root.isConnected) buildDom(context.board);
         syncHud(data, state, active);
         // Resolves whether this is a FRESH "ball in hand" (clearing any stale placement) before
         // snapToState()/drawFrame() below read cuePlacement - must run first, not after.
@@ -83,7 +96,6 @@ window.SnookerTable = (function () {
 
     // ---- DOM construction --------------------------------------------------------------------------
     function buildDom(boardMount) {
-        built = true;
         boardEl = boardMount;
         boardEl.innerHTML = '';
         root = document.createElement('div');
@@ -388,23 +400,48 @@ window.SnookerTable = (function () {
     function drawCueStick(cueWorldPos, angle, pullBackMm, alpha) {
         const c = toCanvas(cueWorldPos.x, cueWorldPos.y);
         const dirX = Math.cos(angle), dirY = -Math.sin(angle); // ball-travel direction, in canvas space
+        const perpX = -dirY, perpY = dirX; // perpendicular, for the stick's width
         const tipGapPx = (6 + pullBackMm) * c.scale;
         const tipX = c.cx - dirX * tipGapPx, tipY = c.cy - dirY * tipGapPx;
-        const lengthPx = 480 * c.scale;
+        // A real cue is roughly 55x the ball's diameter and tapers from a wide butt to a narrow
+        // tip - a uniform-width stroked line (the previous approach) reads as a thin stray line
+        // rather than a cue, especially at typical canvas scales. Drawing it as a tapered
+        // polygon, long enough to visibly run off the near edge of the table the way a real cue
+        // does when aiming, is what actually makes it read as a stick.
+        const lengthPx = Math.min(1500, BALL_R * 30) * c.scale;
+        const tipWidth = Math.max(1.8, BALL_R * 0.16 * c.scale);
+        const buttWidth = Math.max(4, BALL_R * 0.5 * c.scale);
         const buttX = tipX - dirX * lengthPx, buttY = tipY - dirY * lengthPx;
 
         ctx.save();
         ctx.globalAlpha = alpha;
-        const grad = ctx.createLinearGradient(tipX, tipY, buttX, buttY);
-        grad.addColorStop(0, '#e9cf9e'); grad.addColorStop(0.08, '#eef0f5'); grad.addColorStop(0.16, '#dcbb86');
-        grad.addColorStop(0.7, '#a9713c'); grad.addColorStop(1, '#3f2414');
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = Math.max(2.2, 4 * c.scale);
+        // Soft shadow on the cloth, offset slightly toward the viewer's implied light source.
+        ctx.strokeStyle = 'rgba(0,0,0,.35)';
+        ctx.lineWidth = buttWidth * 0.9;
         ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(buttX, buttY); ctx.stroke();
-        // Ferrule: the small pale cap right at the tip, same visual language real cues use.
+        ctx.beginPath(); ctx.moveTo(tipX + 3, tipY + 4); ctx.lineTo(buttX + 3, buttY + 4); ctx.stroke();
+
+        const grad = ctx.createLinearGradient(tipX, tipY, buttX, buttY);
+        grad.addColorStop(0, '#f1dfb2'); grad.addColorStop(0.1, '#fdfdfb'); grad.addColorStop(0.2, '#dcb97c');
+        grad.addColorStop(0.75, '#a9713c'); grad.addColorStop(1, '#3f2414');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(tipX + perpX * tipWidth, tipY + perpY * tipWidth);
+        ctx.lineTo(buttX + perpX * buttWidth, buttY + perpY * buttWidth);
+        ctx.lineTo(buttX - perpX * buttWidth, buttY - perpY * buttWidth);
+        ctx.lineTo(tipX - perpX * tipWidth, tipY - perpY * tipWidth);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = Math.max(0.6, 0.8 * c.scale); ctx.stroke();
+        // A thin highlight stripe down the shaft's lit edge sells the cylindrical/wood look.
+        ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(0.5, tipWidth * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(tipX + perpX * tipWidth * 0.3, tipY + perpY * tipWidth * 0.3);
+        ctx.lineTo(buttX + perpX * buttWidth * 0.3, buttY + perpY * buttWidth * 0.3);
+        ctx.stroke();
+        // Ferrule: the pale cap right at the tip, same visual language a real cue uses.
         ctx.fillStyle = '#f2f4f8';
-        ctx.beginPath(); ctx.arc(tipX, tipY, Math.max(1.6, 2.6 * c.scale), 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tipX, tipY, Math.max(2.4, tipWidth * 1.3), 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
@@ -699,11 +736,55 @@ window.SnookerTable = (function () {
         let x = BAULK_X + Math.cos(angle) * clampedDist;
         if (x > BAULK_X) x = BAULK_X; // never past the baulk line
         const y = TABLE_H / 2 + Math.sin(angle) * clampedDist;
-        cuePlacement = { x: Math.max(BALL_R, Math.min(TABLE_W - BALL_R, x)), y: Math.max(BALL_R, Math.min(TABLE_H - BALL_R, y)) };
+        let placement = { x: Math.max(BALL_R, Math.min(TABLE_W - BALL_R, x)), y: Math.max(BALL_R, Math.min(TABLE_H - BALL_R, y)) };
+        // Push the placement away from any ball it would overlap (mirrors the server's own
+        // 2*BALL_R rejection in SnookerRules::placeCueBall()) INSTEAD of letting the player drop
+        // it there and only finding out it was invalid after pressing Shoot - a real cue ball
+        // physically can't rest touching another ball, so the UI shouldn't let you aim one at a
+        // spot that doesn't exist either. The brown spot sits exactly at the D's own centre (true
+        // to a real table), which made this the single most common way to trigger that rejection.
+        placement = resolveCuePlacementCollisions(placement);
+        cuePlacement = placement;
         placingCue = true;
         positions.cue = cuePlacement;
         drawFrame();
         updateShootEnabled();
+    }
+
+    function resolveCuePlacementCollisions(placement) {
+        const minDist = BALL_R * 2 + 1.5; // +1.5mm clearance so float rounding never re-trips the server's own check
+        for (let pass = 0; pass < 8; pass++) {
+            let moved = false;
+            for (const [id, ball] of Object.entries(positions)) {
+                if (id === 'cue') continue;
+                const dx = placement.x - ball.x, dy = placement.y - ball.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < minDist) {
+                    // Push straight away from the offending ball's centre; if the two centres
+                    // coincide exactly (dist===0, vanishingly rare but possible at the D's centre)
+                    // push along the angle back toward the D's own centre instead of by zero.
+                    const pushAngle = dist > 0.01 ? Math.atan2(dy, dx) : Math.atan2(placement.y - TABLE_H / 2, placement.x - BAULK_X);
+                    placement = {
+                        x: Math.max(BALL_R, Math.min(TABLE_W - BALL_R, ball.x + Math.cos(pushAngle) * minDist)),
+                        y: Math.max(BALL_R, Math.min(TABLE_H - BALL_R, ball.y + Math.sin(pushAngle) * minDist)),
+                    };
+                    moved = true;
+                }
+            }
+            if (!moved) break;
+        }
+        // Re-clamp to the D/baulk-line constraint - pushing away from a ball can otherwise land
+        // just outside it, especially near the D's own edge.
+        const dx = placement.x - BAULK_X, dy = placement.y - TABLE_H / 2;
+        const dist = Math.hypot(dx, dy);
+        if (placement.x > BAULK_X || dist > D_RADIUS - 1) {
+            const angle = Math.atan2(dy, dx);
+            const clampedDist = Math.min(dist, D_RADIUS - 1);
+            let x = BAULK_X + Math.cos(angle) * clampedDist;
+            if (x > BAULK_X) x = BAULK_X;
+            placement = { x: Math.max(BALL_R, Math.min(TABLE_W - BALL_R, x)), y: Math.max(BALL_R, Math.min(TABLE_H - BALL_R, TABLE_H / 2 + Math.sin(angle) * clampedDist)) };
+        }
+        return placement;
     }
 
     function isMyTurn() {
@@ -821,5 +902,5 @@ window.SnookerTable = (function () {
         icon.className = muted ? 'ph-fill ph-speaker-x' : 'ph-fill ph-speaker-high';
     }
 
-    return { render };
+    return { render, isAnimating };
 })();

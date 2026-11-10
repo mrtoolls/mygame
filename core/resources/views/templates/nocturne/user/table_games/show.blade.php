@@ -797,8 +797,11 @@ function renderWaitingRoom(data){
 function gameState(data){
 // A Ludo roll animation is actively tumbling - let it finish its full 900ms reveal
 // undisturbed instead of a mid-flight poll yanking the die out from under it. The
-// freshest data is kept and applied the instant the animation completes.
-if(diceAnimating||owareAnimating){pendingGameState=data;return;}
+// freshest data is kept and applied the instant the animation completes. Snooker's own
+// strike/keyframe playback joins this same guard - renderBoard() wipes #table-board on every
+// call, and letting a poll interrupt mid-animation would tear the canvas out from under its
+// own still-running requestAnimationFrame loop.
+if(diceAnimating||owareAnimating||window.SnookerTable?.isAnimating?.()){pendingGameState=data;return;}
 const previous=latest;
 const newLudoRoll=type==='ludo'&&previous&&data.state?.last_roll&&Number(data.state.last_roll.version)>Number(previous.state?.last_roll?.version||0);
 if(type==='whot'&&previous?.state?.hand_counts&&data.state?.hand_counts){
